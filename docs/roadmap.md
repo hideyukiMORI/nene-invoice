@@ -44,7 +44,7 @@ See [`docs/explanation/requirements.md#phase-1--api-only`](./explanation/require
 
 Goal: operators manage billing without CLI.
 
-- React admin SPA
+- React admin SPA — ja + en locale catalogs (ADR 0005; no other locales)
 - Server-side qualified invoice PDF (Japanese layout)
 - Email delivery via SMTP
 - Public PDF download token

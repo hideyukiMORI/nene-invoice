@@ -37,6 +37,14 @@ Companies with 1–20 staff who already pay for shared hosting (Xserver, Sakura,
 
 Docker Compose for local development and production. Same API and admin UI as Tier A.
 
+**Non-Japanese operators doing business in Japan**
+
+A growing segment: founders and staff who are not native Japanese speakers but
+run a company registered in Japan. They are bound by the same Japanese invoice
+and tax rules, but operate the admin UI more comfortably in English. NeNe
+Invoice serves them with an **English admin UI**, while statutory documents
+remain Japanese — see [ADR 0005](../adr/0005-bilingual-ja-en-scope.md).
+
 **Multi-tenant hosting operators (later)**
 
 Agencies running one NeNe Invoice instance for multiple client organizations — same pattern as NeNe Records / Concierge multi-tenancy.
@@ -94,7 +102,18 @@ MIT license. Operators control data. SMTP for email delivery uses operator-provi
 
 MCP tools map to admin API operations ("list overdue invoices", "create quote for client X"). Client-facing PDF download uses tokenized URLs — not MCP.
 
-### 6. Separation from sibling products
+### 6. Japanese and English only — not multilingual
+
+The product localizes to **Japanese (primary) and English (secondary) only**.
+More non-Japanese operators now run businesses inside Japan; they work under
+Japanese accounting rules but prefer an English admin UI, so English is
+first-class. Arbitrary multilingual support is a deliberate **non-goal**: the
+domain is locked to Japanese invoice/tax rules, so additional locales add
+translation and maintenance surface without serving any real operator. The
+qualified invoice PDF's statutory content stays Japanese (legal document); en
+applies to the operator UI and guides. See [ADR 0005](../adr/0005-bilingual-ja-en-scope.md).
+
+### 7. Separation from sibling products
 
 NeNe Records owns CMS content. NeNe Corpus owns knowledge chat. NeNe Concierge owns scenario chat. NeNe Invoice owns billing documents. Integration is HTTP-only — ADR 0002.
 
@@ -127,6 +146,7 @@ See also [`requirements.md`](./requirements.md#explicit-non-goals).
 - **Not** embedded inside NeNe Records or other sibling repos
 - **Not** e-invoice (電子インボイス) PEPPOL network transmission in Phase 1–3 — PDF + email first
 - **Not** payment gateway integration in Phase 1 — manual payment recording first; Stripe/PayPay in Phase 4+
+- **Not** multilingual beyond Japanese and English — UI locales bound to ja/en by [ADR 0005](../adr/0005-bilingual-ja-en-scope.md)
 
 ## Success Criteria (Phase 3 complete)
 

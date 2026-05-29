@@ -16,6 +16,7 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 - **Quote-to-cash** — estimate → invoice → payment in one product
 - **Sibling to NeNe ecosystem** — optional HTTP link to Records / Concierge; never merged into CMS
 - **AI-readable** — OpenAPI contract, MCP for ops, explicit Clean Architecture
+- **Bilingual, not multilingual** — Japanese + English admin UI for operators (incl. non-Japanese running businesses in Japan); other locales are a deliberate non-goal ([ADR 0005](./docs/adr/0005-bilingual-ja-en-scope.md))
 
 ## Quick Start
 
