@@ -15,7 +15,7 @@ Goal: establish NeNe Invoice engineering discipline and product design before bi
 - [x] ADR 0001 and ADR 0002 accepted
 - [x] `docs/roadmap.md`, `docs/todo/current.md` initialized
 - [x] Product vision, requirements, domain model (Issue #3)
-- [ ] `composer check` green on `main` (Issue #4 — runtime scaffold)
+- [x] `composer check` green on `main` (Issue #4 — runtime scaffold + `GET /health`)
 
 ## Follow-up Milestone
 

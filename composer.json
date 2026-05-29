@@ -1,0 +1,39 @@
+{
+    "name": "hideyukimori/nene-invoice",
+    "description": "NeNe Invoice — self-hosted, multi-tenant quote, invoice, and payment platform on NENE2.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.4.1 <9.0",
+        "hideyukimori/nene2": "^1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "NeneInvoice\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NeneInvoice\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit --testsuite NeneInvoice",
+        "analyse": "phpstan analyse --memory-limit 512M",
+        "cs": "php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php",
+        "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.php",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^13.1"
+    }
+}

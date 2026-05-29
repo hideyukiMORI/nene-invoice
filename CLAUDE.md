@@ -24,8 +24,8 @@ Ops / MCP         ──→         │
 | フェーズ | 状態 |
 | --- | --- |
 | Phase 0 ガバナンス | ✅ 完了（Issue #1） |
-| Phase 0 プロダクト設計 | ✅ 完了（Issue #3 / #9 / #11） |
-| Phase 0+ ランタイム scaffold | 🔲 Issue #4 以降 |
+| Phase 0 プロダクト設計 | ✅ 完了（Issue #3 / #9 / #11 / #13 / #15 / #17） |
+| Phase 0+ ランタイム scaffold | 🔄 Issue #4（scaffold + `GET /health` 完了、テナント解決/認証は後続 PR） |
 
 ---
 

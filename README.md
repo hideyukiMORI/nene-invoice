@@ -21,12 +21,16 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 
 ## Quick Start
 
-**Status:** Phase 0 — product design complete; runtime scaffold in progress (Issue #4).
+**Status:** Phase 0 — product design complete; runtime scaffold landed (Issue #4). Tenant resolution, auth, and billing domains are next.
 
 ```bash
 git clone https://github.com/hideyukiMORI/nene-invoice.git
 cd nene-invoice
-# docker compose up — lands with Issue #4
+composer install
+composer check                          # PHPUnit + PHPStan 8 + php-cs-fixer
+php -S 127.0.0.1:8080 -t public_html public_html/index.php
+curl http://127.0.0.1:8080/health       # {"status":"ok",...}
+# docker compose — Tier B, lands with ADR 0003 (Issue #7)
 ```
 
 ## Architecture (planned)
