@@ -11,6 +11,8 @@ use NeneInvoice\Auth\AuthRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\User\UserNotFoundExceptionHandler;
+use NeneInvoice\User\UserRouteRegistrar;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -33,6 +35,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 static function (ContainerInterface $container): array {
                     $authRoutes = $container->get(AuthRouteRegistrar::class);
                     $organizationRoutes = $container->get(OrganizationRouteRegistrar::class);
+                    $userRoutes = $container->get(UserRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -42,24 +45,33 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Organization route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $organizationRoutes];
+                    if (!$userRoutes instanceof UserRouteRegistrar) {
+                        throw new LogicException('User route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $organizationRoutes, $userRoutes];
                 },
             )
             ->set(
                 self::EXCEPTION_HANDLERS,
                 static function (ContainerInterface $container): array {
-                    $notFound = $container->get(OrganizationNotFoundExceptionHandler::class);
-                    $slugConflict = $container->get(OrganizationSlugConflictExceptionHandler::class);
+                    $orgNotFound = $container->get(OrganizationNotFoundExceptionHandler::class);
+                    $orgSlugConflict = $container->get(OrganizationSlugConflictExceptionHandler::class);
+                    $userNotFound = $container->get(UserNotFoundExceptionHandler::class);
 
-                    if (!$notFound instanceof OrganizationNotFoundExceptionHandler) {
+                    if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
                     }
 
-                    if (!$slugConflict instanceof OrganizationSlugConflictExceptionHandler) {
+                    if (!$orgSlugConflict instanceof OrganizationSlugConflictExceptionHandler) {
                         throw new LogicException('Organization slug-conflict exception handler service is invalid.');
                     }
 
-                    return [$notFound, $slugConflict];
+                    if (!$userNotFound instanceof UserNotFoundExceptionHandler) {
+                        throw new LogicException('User not-found exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound];
                 },
             );
     }
