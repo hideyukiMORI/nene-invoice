@@ -6,7 +6,8 @@ NeNe Invoice coding standards split by surface. **Full policies live in the dedi
 | --- | --- |
 | **PHP / API / database** | [`backend-standards.md`](./backend-standards.md) |
 | **Naming (code, API, DB, tests)** | [`naming-conventions.md`](./naming-conventions.md) |
-| **Product terms (glossary)** | [`../explanation/glossary.md`](../explanation/glossary.md) |
+| **Canonical term/identifier spellings** | [`../explanation/terminology.md`](../explanation/terminology.md) |
+| **Product term meanings (glossary)** | [`../explanation/glossary.md`](../explanation/glossary.md) |
 | **React / TypeScript admin** | [`frontend-standards.md`](./frontend-standards.md) (Phase 2+) |
 | **NENE2 inheritance map** | [`../inheritance-from-nene2.md`](../inheritance-from-nene2.md) |
 
@@ -16,6 +17,9 @@ NeNe Invoice coding standards split by surface. **Full policies live in the dedi
 
 ## Shared rules (all surfaces)
 
+- **Naming conventions are absolute (non-negotiable).** Violations and typos block merge — see [`naming-conventions.md`](./naming-conventions.md).
+- **Terminology has one source of truth:** [`../explanation/terminology.md`](../explanation/terminology.md). Every identifier must match it exactly; adding/renaming a term updates the registry in the same PR.
+- **Zero typos in identifiers.** Spelling variants of registered terms are defects, not style preferences.
 - GitHub Issue-driven work; focused PRs; no direct commits to `main`
 - **Strict typing** at boundaries — PHP readonly DTOs; TypeScript strict mode (when frontend exists)
 - **OpenAPI** is the public API contract; MCP maps to the same HTTP operations

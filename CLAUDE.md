@@ -51,6 +51,7 @@ Ops / MCP         ──→         │
 
 **絶対順守:**
 - **会計・税務コンプライアンス完全順守**（非交渉）。請求・税・採番・PDF・保存に関わる変更は `docs/explanation/accounting-compliance.md` と `docs/review/compliance.md` で確認必須。逸脱は ADR ＋ 税理士確認なしに禁止。正本: `docs/explanation/accounting-compliance.md`
+- **命名規則の絶対順守・タイポ厳禁**。全識別子（エンティティ／状態値／JSON・DB フィールド／Problem Details slug／operationId）は用語レジストリ `docs/explanation/terminology.md` と **完全一致**。スペルゆれ・未登録語はマージ禁止。追加・改名は同一 PR でレジストリ更新必須。
 
 ---
 
@@ -67,7 +68,7 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 - 金額: **integer cents**（float 禁止）
 - SQL: `Pdo*Repository` 内のみ
 
-詳細: `docs/development/backend-standards.md`, `docs/development/naming-conventions.md`
+詳細: `docs/development/backend-standards.md`, `docs/development/naming-conventions.md`, `docs/explanation/terminology.md`（用語レジストリ＝唯一の真実）
 
 ---
 
@@ -76,6 +77,7 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 | 目的 | ドキュメント |
 | --- | --- |
 | **会計・税務コンプライアンス（拘束）** | `docs/explanation/accounting-compliance.md` |
+| **用語レジストリ（識別子の正準スペル）** | `docs/explanation/terminology.md` |
 | 現在のタスク | `docs/todo/current.md` |
 | ロードマップ | `docs/roadmap.md` |
 | プロダクトビジョン | `docs/explanation/product-vision.md` |

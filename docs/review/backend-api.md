@@ -11,6 +11,7 @@ Source policies: `docs/development/backend-standards.md`, `docs/development/nami
 - [ ] Business rules live in UseCase, not Handler or Repository.
 - [ ] Money fields use integer cents — no floats.
 - [ ] Japan invoice validation rules enforced in UseCase before persistence/PDF.
+- [ ] All identifiers (fields, status values, `operationId`, slugs) match `docs/explanation/terminology.md` exactly — no typos, no unregistered terms.
 - [ ] New routes documented in OpenAPI with `operationId`.
 - [ ] Problem Details used for errors; no stack traces in responses.
 - [ ] Admin mutating routes require auth when applicable.

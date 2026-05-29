@@ -2,7 +2,18 @@
 
 Authoritative naming rules for NeNe Invoice code, API contracts, database objects, tests, and English documentation.
 
-**Glossary (product terms):** [`docs/explanation/glossary.md`](../explanation/glossary.md)
+> **Absolute adherence — non-negotiable.** These rules are **MUST**, not
+> suggestions. A name that violates a rule here, or a typo / spelling variant of
+> a registered term, is a defect and **blocks merge**. There is no "close
+> enough." When in doubt, match the registry exactly.
+>
+> The concrete canonical spelling of every term and identifier lives in the
+> **single source of truth**: [`../explanation/terminology.md`](../explanation/terminology.md).
+> This document defines the *patterns*; the registry defines the *exact strings*.
+> Introducing or renaming any identifier **MUST** update the registry in the same PR.
+
+**Terminology registry (canonical spellings):** [`docs/explanation/terminology.md`](../explanation/terminology.md)
+**Glossary (product term meanings):** [`docs/explanation/glossary.md`](../explanation/glossary.md)
 
 **Framework baseline:** NENE2 [`domain-layer.md`](https://github.com/hideyukiMORI/NENE2/blob/main/docs/development/domain-layer.md) and [`database-migrations.md`](https://github.com/hideyukiMORI/NENE2/blob/main/docs/development/database-migrations.md). This document is the NeNe Invoice override and extension list.
 
@@ -198,12 +209,14 @@ Full frontend standards: **`docs/development/frontend-standards.md`** (Phase 2).
 | Commit subject | Conventional Commits + `(#issue)` | See [`commit-conventions.md`](./commit-conventions.md) |
 | ADR file | `NNNN-kebab-title.md` | `0002-separate-from-sibling-products.md` |
 
-When adding a new public term, update [`glossary.md`](../explanation/glossary.md) in the same PR.
+When adding or renaming any identifier, update [`terminology.md`](../explanation/terminology.md) in the same PR; if it is a product concept, also update [`glossary.md`](../explanation/glossary.md).
 
 ---
 
 ## 11. Prohibited patterns
 
+- **Typos or spelling variants of any term registered in `terminology.md`** (e.g. `tax_registration_number` for `registration_number`, `sub_total_cents` for `subtotal_cents`) — blocks merge
+- **Unregistered identifiers** — using an entity, status, field, slug, or `operationId` not present in `terminology.md` without adding it in the same PR
 - Layer-first folders (`src/Handlers/`, `src/Repositories/`)
 - SQL outside `Pdo*Repository`
 - camelCase in public JSON property names

@@ -73,6 +73,7 @@ Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/p
 | **Requirements** | [`docs/explanation/requirements.md`](./docs/explanation/requirements.md) |
 | **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |
 | **Glossary** | [`docs/explanation/glossary.md`](./docs/explanation/glossary.md) |
+| **Terminology registry** | [`docs/explanation/terminology.md`](./docs/explanation/terminology.md) |
 | **Start here (agents)** | [`AGENTS.md`](./AGENTS.md) |
 | **Workflow** | [`docs/workflow.md`](./docs/workflow.md) |
 

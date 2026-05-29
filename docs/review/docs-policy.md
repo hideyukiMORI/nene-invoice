@@ -23,5 +23,6 @@ Source policies:
 - [ ] Issue and PR references included where useful.
 - [ ] Wording is concrete enough for humans and AI agents to follow.
 - [ ] English docs use canonical terms from `docs/explanation/glossary.md`.
-- [ ] New public terms added to glossary and/or `naming-conventions.md` when introduced.
+- [ ] All identifiers match `docs/explanation/terminology.md` exactly — no typos or spelling variants.
+- [ ] New or renamed terms/identifiers registered in `docs/explanation/terminology.md` in this PR (and glossary if a product concept).
 - [ ] `git diff --check` reviewed for whitespace errors.
