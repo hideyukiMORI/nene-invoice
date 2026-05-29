@@ -82,6 +82,10 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Total | `total_cents` | `amount_cents` (on documents), `grand_total` |
 | Unit price | `unit_price_cents` | `price_cents`, `unitprice_cents` |
 | Payment amount | `amount_cents` | `paid_cents`, `payment_cents` |
+| Outstanding balance | `outstanding_cents` | `balance`, `remaining`, `unpaid_cents` |
+| External (Clear) reconciliation id | `external_reference` | `ext_ref`, `clear_id`, `reconciliation_id` |
+| Idempotency key | `idempotency_key` | `idempotencyKey`, `dedupe_key` |
+| Currency | `currency` (ISO 4217, `JPY`) | `ccy`, `currency_code` |
 | Tax rate | `tax_rate_bps` | `tax_rate`, `rate`, `tax_rate_percent` |
 | Foreign keys | `client_id`, `quote_id`, `invoice_id` | `clientId`, `client` |
 | Polymorphic parent | `parent_type`, `parent_id` | `parentType`, `owner_id` |
@@ -121,6 +125,9 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `invalid-state-transition` | Disallowed status change |
 | `company-settings-not-found` | Issuer profile not configured for the organization (404) |
 | `qualified-invoice-incomplete` | Missing required qualified-invoice field |
+| `payment-exceeds-outstanding` | Payment would exceed the invoice outstanding balance (422; service API) |
+| `payment-not-found` | Payment id / external_reference not found (404; service API) |
+| `insufficient-scope` | Service token lacks the required scope (403; service API) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is
@@ -144,7 +151,20 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |
-| `listPayments`, `recordPayment` | Payment |
+| `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
+
+### Service API (`/api/*`, NeNe Clear — ADR 0009)
+
+A **separate** OpenAPI document for the machine consumer; `operationId`s may
+reuse operator-surface names within their own doc. New / service-scope stems:
+
+| operationId | Resource |
+| --- | --- |
+| `listInvoices`, `getInvoiceById` | Invoice (service read; outstanding + payments) |
+| `createPayment`, `voidPayment` | Payment (service write; idempotent, `external_reference`) |
+| `listClients` | Client (service read; optional) |
+
+Service-token scopes (not human `Capability`): `read:invoices`, `write:payments`.
 
 Extend this list (do not improvise) when adding operations.
 
