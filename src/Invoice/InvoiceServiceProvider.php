@@ -11,9 +11,11 @@ use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
 use Psr\Container\ContainerInterface;
 
@@ -44,6 +46,16 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, QuoteRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, AuditRecorderInterface::class),
+                ),
+            )
+            ->set(
+                CreateInvoiceUseCase::class,
+                static fn (ContainerInterface $c): CreateInvoiceUseCase => new CreateInvoiceUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, ClientRepositoryInterface::class),
+                    self::resolve($c, TaxCalculator::class),
                     self::resolve($c, AuditRecorderInterface::class),
                 ),
             )
@@ -90,6 +102,14 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                CreateInvoiceHandler::class,
+                static fn (ContainerInterface $c): CreateInvoiceHandler => new CreateInvoiceHandler(
+                    self::resolve($c, CreateInvoiceUseCase::class),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
                 IssueInvoiceHandler::class,
                 static fn (ContainerInterface $c): IssueInvoiceHandler => new IssueInvoiceHandler(
                     self::resolve($c, IssueInvoiceUseCase::class),
@@ -114,14 +134,15 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static function (ContainerInterface $c): InvoiceRouteRegistrar {
                     $list = $c->get(ListInvoicesHandler::class);
                     $get = $c->get(GetInvoiceByIdHandler::class);
+                    $create = $c->get(CreateInvoiceHandler::class);
                     $convert = $c->get(ConvertQuoteToInvoiceHandler::class);
                     $issue = $c->get(IssueInvoiceHandler::class);
 
-                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler) {
+                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler) {
                         throw new LogicException('Invoice handler services are invalid.');
                     }
 
-                    return new InvoiceRouteRegistrar($list, $get, $convert, $issue);
+                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue);
                 },
             );
     }
