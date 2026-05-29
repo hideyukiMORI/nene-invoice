@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace NeneInvoice\Company;
 
 use LogicException;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateCompanySettingsUseCase
 {
     public function __construct(
         private CompanySettingsRepositoryInterface $repository,
+        private AuditRecorderInterface $audit,
     ) {
     }
 
@@ -19,11 +21,13 @@ final readonly class UpdateCompanySettingsUseCase
      *
      * @throws InvalidRegistrationNumberException
      */
-    public function execute(int $organizationId, UpdateCompanySettingsInput $input): CompanySettings
+    public function execute(int $organizationId, ?int $actorUserId, UpdateCompanySettingsInput $input): CompanySettings
     {
         if ($input->registrationNumber !== null && !RegistrationNumber::isValid($input->registrationNumber)) {
             throw new InvalidRegistrationNumberException($input->registrationNumber);
         }
+
+        $existing = $this->repository->findByOrganization($organizationId);
 
         $this->repository->save(new CompanySettings(
             organizationId: $organizationId,
@@ -44,6 +48,16 @@ final readonly class UpdateCompanySettingsUseCase
         if ($saved === null) {
             throw new LogicException('Company settings disappeared immediately after save.');
         }
+
+        $this->audit->record(
+            $actorUserId,
+            $organizationId,
+            $existing === null ? 'company_settings.created' : 'company_settings.updated',
+            'company_settings',
+            $organizationId,
+            $existing !== null ? CompanySettingsResponse::toArray($existing) : null,
+            CompanySettingsResponse::toArray($saved),
+        );
 
         return $saved;
     }

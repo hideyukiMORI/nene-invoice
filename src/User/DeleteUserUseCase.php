@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace NeneInvoice\User;
 
+use NeneInvoice\Audit\AuditRecorderInterface;
+
 final readonly class DeleteUserUseCase
 {
     public function __construct(
         private UserRepositoryInterface $users,
+        private AuditRecorderInterface $audit,
     ) {
     }
 
@@ -31,5 +34,7 @@ final readonly class DeleteUserUseCase
         }
 
         $this->users->delete($userId);
+
+        $this->audit->record($callerUserId, $organizationId, 'user.deleted', 'user', $userId, UserResponse::toArray($existing), null);
     }
 }

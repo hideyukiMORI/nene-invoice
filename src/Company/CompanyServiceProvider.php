@@ -10,6 +10,7 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -34,7 +35,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(GetCompanySettingsUseCase::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c)))
-            ->set(UpdateCompanySettingsUseCase::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c)))
+            ->set(UpdateCompanySettingsUseCase::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c)))
             ->set(
                 GetCompanySettingsHandler::class,
                 static fn (ContainerInterface $c): GetCompanySettingsHandler => new GetCompanySettingsHandler(
@@ -83,6 +84,17 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
         }
 
         return $repo;
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    {
+        $recorder = $c->get(AuditRecorderInterface::class);
+
+        if (!$recorder instanceof AuditRecorderInterface) {
+            throw new LogicException('Audit recorder service is invalid.');
+        }
+
+        return $recorder;
     }
 
     private static function getUseCase(ContainerInterface $c): GetCompanySettingsUseCase

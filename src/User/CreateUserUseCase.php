@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace NeneInvoice\User;
 
 use LogicException;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Auth\Role;
 
 final readonly class CreateUserUseCase
 {
     public function __construct(
         private UserRepositoryInterface $users,
+        private AuditRecorderInterface $audit,
     ) {
     }
 
@@ -22,7 +24,7 @@ final readonly class CreateUserUseCase
      * @throws RoleNotAssignableException   when attempting to assign superadmin
      * @throws UserEmailConflictException   when the email is already in use
      */
-    public function execute(int $organizationId, CreateUserInput $input): User
+    public function execute(int $organizationId, ?int $actorUserId, CreateUserInput $input): User
     {
         if ($input->role === Role::Superadmin) {
             throw new RoleNotAssignableException($input->role);
@@ -41,6 +43,8 @@ final readonly class CreateUserUseCase
         if ($created === null) {
             throw new LogicException('User disappeared immediately after creation.');
         }
+
+        $this->audit->record($actorUserId, $organizationId, 'user.created', 'user', $id, null, UserResponse::toArray($created));
 
         return $created;
     }

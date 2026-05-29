@@ -6,6 +6,7 @@ namespace NeneInvoice\Organization;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -40,7 +41,7 @@ final readonly class CreateOrganizationHandler implements RequestHandlerInterfac
         $plan = $decoded['plan'] ?? 'free';
         $plan = is_string($plan) && $plan !== '' ? $plan : 'free';
 
-        $organization = $this->useCase->execute(new CreateOrganizationInput($name, $slug, $plan));
+        $organization = $this->useCase->execute(AuthContext::userId($request), new CreateOrganizationInput($name, $slug, $plan));
 
         return $this->json->create(OrganizationResponse::toArray($organization), 201);
     }
