@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #39)
+Last updated: 2026-05-29 (Issue #41)
 
 ## Recently merged
 
@@ -20,13 +20,14 @@ Last updated: 2026-05-29 (Issue #39)
 - **Issue #33 / PR #34** — 並行 Cursor 由来 #27/#31 の revert（NeNe Clear 等を除去）✅ merged
 - **Issue #35 / PR #36** — CapabilityMiddleware + CapabilityResolver（RBAC 強制）✅ merged
 - **Issue #37 / PR #38** — 組織 CRUD（superadmin・/admin/organizations）✅ merged
-- **Issue #39** — ユーザー読み取り（/admin/users）+ org スコープ ⏳ this PR
+- **Issue #39 / PR #40** — ユーザー読み取り（/admin/users）+ org スコープ ✅ merged
+- **Issue #41** — ユーザー write（create/update/delete）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #39 | `feat/39-user-read-org-scope` | ユーザー read（list/get）+ テナント分離（claims.org スコープ） | 🔄 PR pending |
+| #41 | `feat/41-user-write` | ユーザー write（create/update/delete・ロール昇格防止・クロス組織防止） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -128,13 +129,18 @@ Last updated: 2026-05-29 (Issue #39)
 - `GET/POST /admin/organizations`, `GET/DELETE /admin/organizations/{id}` — Handler → UseCase → repo
 - Domain exceptions → Problem Details (404 / 409) via EXCEPTION_HANDLERS
 
-**Phase 1 — User read + tenant isolation: 🔄 in progress** (Issue #39)
+**Phase 1 — User read + tenant isolation: ✅ complete** (Issue #39 / PR #40)
 
-- `GET /admin/users`, `GET /admin/users/{id}` — admin-only (`manage_users`), scoped to the caller's org
-- `Auth/AuthContext` reads `sub`/`role`/`org` from token claims; queries scoped by `org`
-- Cross-org reads return 404 (no existence leak); `password_hash` never serialized; no org context → 400
-- Verified live: org-1 admin sees only org-1 users; org-2 user → 404; no password_hash in output
-- **Decision:** admin self-service is scoped by the token's `org` claim. The URL-addressed OrgResolverMiddleware (path/subdomain) is deferred until a tenant-addressed route needs it
+- `GET /admin/users`, `GET /admin/users/{id}` — admin-only, scoped to caller's org via `Auth/AuthContext`
+- Cross-org reads → 404; `password_hash` never serialized
+- **Decision:** admin self-service scoped by token `org` claim; URL-addressed OrgResolverMiddleware deferred
+
+**Phase 1 — User write: 🔄 in progress** (Issue #41)
+
+- `POST /admin/users` (create), `PATCH /admin/users/{id}` (update), `DELETE /admin/users/{id}` (delete)
+- Security: password hashed; org forced to caller (no cross-org create); cross-org update/delete → 404; superadmin cannot be assigned (422); cannot delete self (409); email conflict (409)
+- Verified live: create 201 (org forced) / superadmin 422 / dup-email 409 / patch 200 / patch→superadmin 422 / delete-self 409 / delete-other 204 / delete-again 404
+- User management complete (CRUD + tenant isolation + escalation prevention)
 
 ## Handoff Notes
 
@@ -152,6 +158,5 @@ Last updated: 2026-05-29 (Issue #39)
 
 ## Next steps
 
-1. User write (create/update/delete `/admin/users`) — password hashing, role-escalation prevention (no superadmin), cross-org write protection
-2. Complete Phase 1 billing core: clients, quotes, invoices, payments
-3. Phase 2 admin UI + PDF (minimum for overdue list)
+1. Phase 1 billing core — Client CRUD (org-scoped) → company settings → quotes → invoices → payments
+2. Phase 2 admin UI + PDF (minimum for overdue list)

@@ -11,6 +11,9 @@ use NeneInvoice\Auth\AuthRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\User\CannotDeleteSelfExceptionHandler;
+use NeneInvoice\User\RoleNotAssignableExceptionHandler;
+use NeneInvoice\User\UserEmailConflictExceptionHandler;
 use NeneInvoice\User\UserNotFoundExceptionHandler;
 use NeneInvoice\User\UserRouteRegistrar;
 use Psr\Container\ContainerInterface;
@@ -58,6 +61,9 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $orgNotFound = $container->get(OrganizationNotFoundExceptionHandler::class);
                     $orgSlugConflict = $container->get(OrganizationSlugConflictExceptionHandler::class);
                     $userNotFound = $container->get(UserNotFoundExceptionHandler::class);
+                    $userEmailConflict = $container->get(UserEmailConflictExceptionHandler::class);
+                    $roleNotAssignable = $container->get(RoleNotAssignableExceptionHandler::class);
+                    $cannotDeleteSelf = $container->get(CannotDeleteSelfExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -71,7 +77,19 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('User not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound];
+                    if (!$userEmailConflict instanceof UserEmailConflictExceptionHandler) {
+                        throw new LogicException('User email-conflict exception handler service is invalid.');
+                    }
+
+                    if (!$roleNotAssignable instanceof RoleNotAssignableExceptionHandler) {
+                        throw new LogicException('Role not-assignable exception handler service is invalid.');
+                    }
+
+                    if (!$cannotDeleteSelf instanceof CannotDeleteSelfExceptionHandler) {
+                        throw new LogicException('Cannot-delete-self exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf];
                 },
             );
     }

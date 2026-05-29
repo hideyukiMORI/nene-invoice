@@ -110,6 +110,9 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `organization-not-found` | Organization id/slug not found |
 | `organization-slug-conflict` | Organization slug already in use (409) |
 | `user-not-found` | User id not found |
+| `user-email-conflict` | User email already in use (409) |
+| `role-not-assignable` | Role cannot be assigned via user management, e.g. superadmin (422) |
+| `cannot-delete-self` | A user cannot delete their own account (409) |
 | `invalid-credentials` | Login failed — wrong email or password |
 | `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
 | `insufficient-capability` | Authenticated but lacks required capability |
