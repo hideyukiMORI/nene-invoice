@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #67)
+Last updated: 2026-05-29 (Issue #69)
 
 ## Recently merged
 
@@ -34,13 +34,14 @@ Last updated: 2026-05-29 (Issue #67)
 - **Issue #61 / PR #62** — Quote 作成/一覧/取得（結線）✅ merged
 - **Issue #63 / PR #64** — Quote 状態遷移 ✅ merged
 - **Issue #65 / PR #66** — Invoice 永続化レイヤ ✅ merged
-- **Issue #67** — 見積→請求書変換 + 請求書一覧/取得 ⏳ this PR
+- **Issue #67 / PR #68** — 見積→請求書変換 + 請求書一覧/取得 ✅ merged
+- **Issue #69** — 請求書の発行（INV 採番 + 適格請求書検証）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #67 | `feat/67-invoice-convert-read` | 見積→請求書変換 + 請求書一覧/取得 | 🔄 PR pending |
+| #69 | `feat/69-invoice-issue` | 請求書の発行（INV 採番 + 適格請求書検証） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -169,12 +170,18 @@ Last updated: 2026-05-29 (Issue #67)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Invoice convert + list/get: 🔄 in progress** (Issue #67)
+**Phase 1 — Invoice issue (INV 採番 + 適格請求書検証): 🔄 in progress** (Issue #69)
+
+- `POST /admin/invoices/{id}/issue` {qualified?:bool=true, due_at?} — draft → issued
+- Compliance gates (accounting-compliance §2/§4): only a **draft** can be issued (issued docs immutable → 422 `validation-failed`); a **qualified** invoice requires the issuer registration number in company settings (→ 422 `qualified-invoice-incomplete`); no line items → 422
+- Allocates `INV-YYYY-NNN` (DocumentNumberGenerator) on issue; sets status/issued_at/due_at/is_qualified_invoice; `invoice.issued` audit (before/after)
+- Tested: qualified issue (number assigned, qualified true), non-qualified issue w/o registration, qualified-without-registration → reject, non-draft → reject, no-lines → reject, cross-org → 404; full DI boot verified (HealthEndpointTest)
+
+**Phase 1 — Invoice convert + list/get: ✅ complete** (Issue #67 / PR #68)
 
 - `POST /admin/quotes/{id}/convert` (accepted quote → draft invoice; copies client/totals/line_items, links quote_id, `invoice.created` audit; non-accepted → 422)
 - `GET /admin/invoices`, `GET /admin/invoices/{id}` (org-scoped, +line_items)
 - Verified live: convert-before-accept 422, accepted→draft invoice (total 2180, 2 lines, no number yet), list/get, audit trail
-- Next: issue (assign INV number + qualified-invoice validation)
 
 **Phase 1 — Invoice persistence: ✅ complete** (Issue #65 / PR #66)
 
@@ -239,6 +246,6 @@ Last updated: 2026-05-29 (Issue #67)
 
 ## Next steps
 
-1. Invoice issue — assign INV-YYYY-NNN + qualified-invoice field validation (issuer registration etc.) + status draft→issued
-2. Payments (record) → invoice paid/partially_paid; overdue computed
-3. Direct invoice create; audit read endpoint
+1. Payments (record) → invoice paid/partially_paid; overdue computed
+2. Direct invoice create; audit read endpoint (`GET /admin/audit-logs`)
+3. OpenAPI stub (Issue #5); Backend CI (Issue #6); ADR 0003 dual deployment (Issue #7)
