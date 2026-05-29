@@ -11,9 +11,14 @@ export function ListInvoices() {
 
   return (
     <Stack gap="md">
-      <Text as="h1" variant="heading-md">
-        {t('admin.invoices.title')}
-      </Text>
+      <div className="flex items-center justify-between">
+        <Text as="h1" variant="heading-md">
+          {t('admin.invoices.title')}
+        </Text>
+        <Link to="/invoices/new" className="text-body text-accent">
+          {t('admin.invoices.newButton')}
+        </Link>
+      </div>
 
       {state.kind === 'loading' && (
         <Stack direction="row" gap="sm">

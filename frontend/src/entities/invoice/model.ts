@@ -37,3 +37,17 @@ export interface LineItem {
 export interface InvoiceWithLines extends Invoice {
   line_items: LineItem[]
 }
+
+/** One line as submitted on create (no derived/server fields). */
+export interface LineItemInput {
+  description: string
+  quantity: number
+  unit_price_cents: number
+  tax_rate_bps: number
+}
+
+export interface CreateInvoiceInput {
+  client_id: number
+  line_items: LineItemInput[]
+  notes: string | null
+}

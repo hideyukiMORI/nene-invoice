@@ -1,5 +1,13 @@
 export { type InvoiceId, toInvoiceId } from './ids'
-export type { Invoice, InvoicePage, InvoiceWithLines, LineItem } from './model'
+export type {
+  Invoice,
+  InvoicePage,
+  InvoiceWithLines,
+  LineItem,
+  LineItemInput,
+  CreateInvoiceInput,
+} from './model'
 export { INVOICE_STATUSES, type InvoiceStatus } from './enum'
 export { invoiceKeys, type InvoiceListParams } from './query-keys'
 export { useInvoiceList, useInvoice } from './queries'
+export { useCreateInvoice } from './mutations'
