@@ -58,9 +58,14 @@ When `is_qualified_invoice = true`, the system must enforce and render:
 
 ### Validation rules (API layer)
 
-- Registration number regex: `^T[0-9]{13}$`
+- Registration number regex: `^T[0-9]{13}$` — **syntax check only**. This
+  validates format, not existence; the system does **not** verify the number
+  against the National Tax Agency registry or compute a check digit. Passing the
+  regex does not mean the number is registered or valid.
 - Tax rates allowed: 1000 (10%), 800 (8% reduced) — extensible via ADR
 - Invoice cannot be marked qualified if issuer registration_number is empty
+- Consumption tax is rounded **once per tax rate per document**, never per line
+  item — see [ADR 0004](../adr/0004-tax-rounding-per-rate.md)
 - PDF totals must match API-calculated cents (single source: UseCase)
 
 ---

@@ -114,7 +114,7 @@ Do not mix camelCase in public JSON. Do not use floats for money.
 | --- | --- | --- |
 | Base URL | `https://nene-invoice.dev/problems/` | — |
 | Type slug | kebab-case | `validation-failed`, `invoice-not-found` |
-| Validation `errors[].field` | snake_case path | `body.tax_registration_number` |
+| Validation `errors[].field` | snake_case path | `body.registration_number` |
 | Validation `errors[].code` | snake_case | `required`, `invalid_invoice_number` |
 
 Problem Details `title` and `detail`: English.

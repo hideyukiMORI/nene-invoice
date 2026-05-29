@@ -11,7 +11,8 @@ Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments
 | **client** | Customer / buyer (取引先) in the billing system | "customer" in code identifiers |
 | **line item** | A single row on a quote or invoice (品名, quantity, unit price, tax rate) | "row", "detail" |
 | **payment** | A recorded receipt against an invoice (入金) | "receipt" (PDF noun) |
-| **registration number** | Japan invoice registration number (インボイス登録番号), format `T` + 13 digits | "T-number" without context |
+| **registration number** | Japan invoice registration number (インボイス登録番号), format `T` + 13 digits. API validation is **syntax only** — format, not existence or check digit | "T-number" without context; treating regex pass as proof of validity |
+| **cents** | Integer amount in the **smallest currency unit**. For JPY (the only Phase 1–3 currency) one "cent" is one 円, so `total_cents = 1000` means ¥1,000. The suffix is a fixed internal convention, not a sub-yen unit | float or DECIMAL money; reading `_cents` as 1/100 yen |
 | **tax rate bps** | Tax rate in basis points (1000 = 10.00%, 800 = 8.00%) | float percentages in DB |
 | **quote-to-cash** | Flow from estimate through invoice to payment | "order-to-cash" (ERP term) |
 | **Tier A** | Shared hosting deployment (ZIP + web installer + MySQL) | "rental server" in code |

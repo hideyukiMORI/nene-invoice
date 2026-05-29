@@ -88,23 +88,27 @@ erDiagram
 
 ## Tax calculation (UseCase)
 
-Single source of truth for API and PDF:
+Single source of truth for API and PDF. Consumption tax is rounded **once per
+tax rate per document** — never per line item — to comply with the qualified
+invoice system. See [ADR 0004](../adr/0004-tax-rounding-per-rate.md).
 
 ```
 For each line_item:
-  line_subtotal_cents = quantity * unit_price_cents
-  line_tax_cents = round(line_subtotal_cents * tax_rate_bps / 10000)
+  line_subtotal_cents = quantity * unit_price_cents   # not rounded for tax
 
 Group by tax_rate_bps:
   taxable_amount_cents[rate] += line_subtotal_cents
-  tax_cents[rate] += line_tax_cents
+  tax_cents[rate] = round(taxable_amount_cents[rate] * rate / 10000)   # round ONCE per rate
 
-subtotal_cents = sum(line_subtotal_cents)
-tax_cents = sum(line_tax_cents)
+subtotal_cents = sum(taxable_amount_cents[rate])
+tax_cents = sum(tax_cents[rate])
 total_cents = subtotal_cents + tax_cents
 ```
 
-Rounding: half-up to integer cents per line (document choice — record in ADR when implementing).
+Rounding: half-up to integer minimum currency units, applied per rate group, not
+per line. Any per-line tax shown in the UI is illustrative only and must not be
+summed into the document total. Rationale and rejected alternatives:
+[ADR 0004](../adr/0004-tax-rounding-per-rate.md).
 
 ---
 
@@ -165,3 +169,4 @@ UseCase never calls PDF library directly. Handler never recalculates tax.
 - Requirements: [`requirements.md`](./requirements.md)
 - Backend standards: [`../development/backend-standards.md`](../development/backend-standards.md)
 - ADR 0002: [`../adr/0002-separate-from-sibling-products.md`](../adr/0002-separate-from-sibling-products.md)
+- ADR 0004 (tax rounding): [`../adr/0004-tax-rounding-per-rate.md`](../adr/0004-tax-rounding-per-rate.md)
