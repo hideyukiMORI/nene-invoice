@@ -1,12 +1,25 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useDeleteClient, type Client } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
-import { EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ConfirmDialog, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
 import { useListClients } from '../hooks/use-list-clients'
 
-/** Client (取引先) list screen. Renders exactly one of loading / error / empty / ready. */
+/** Client (取引先) list screen with per-row delete (confirmed). */
 export function ListClients() {
   const { t } = useTranslation()
   const state = useListClients()
+  const deleteClient = useDeleteClient()
+  const [pendingDelete, setPendingDelete] = useState<Client | null>(null)
+
+  const confirmDelete = (): void => {
+    if (pendingDelete === null) return
+    deleteClient.mutate(pendingDelete.id, {
+      onSuccess: () => {
+        setPendingDelete(null)
+      },
+    })
+  }
 
   return (
     <Stack gap="md">
@@ -49,7 +62,12 @@ export function ListClients() {
               <th className="py-stack-sm pr-inline-md font-medium">
                 {t('admin.clients.col.email')}
               </th>
-              <th className="py-stack-sm font-medium">{t('admin.clients.col.registration')}</th>
+              <th className="py-stack-sm pr-inline-md font-medium">
+                {t('admin.clients.col.registration')}
+              </th>
+              <th className="py-stack-sm text-right font-medium">
+                {t('admin.clients.col.actions')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -58,11 +76,42 @@ export function ListClients() {
                 <td className="py-stack-sm pr-inline-md">{client.name}</td>
                 <td className="py-stack-sm pr-inline-md">{client.contact_name ?? '—'}</td>
                 <td className="py-stack-sm pr-inline-md">{client.email ?? '—'}</td>
-                <td className="py-stack-sm">{client.registration_number ?? '—'}</td>
+                <td className="py-stack-sm pr-inline-md">{client.registration_number ?? '—'}</td>
+                <td className="py-stack-sm text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPendingDelete(client)
+                    }}
+                  >
+                    {t('admin.clients.delete.action')}
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+
+      {deleteClient.isError && (
+        <Text variant="muted" role="alert">
+          {t('admin.clients.delete.error')}
+        </Text>
+      )}
+
+      {pendingDelete !== null && (
+        <ConfirmDialog
+          title={t('admin.clients.delete.title')}
+          message={t('admin.clients.delete.message', { name: pendingDelete.name })}
+          confirmLabel={t('admin.clients.delete.confirm')}
+          cancelLabel={t('common.actions.cancel')}
+          pending={deleteClient.isPending}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setPendingDelete(null)
+          }}
+        />
       )}
     </Stack>
   )

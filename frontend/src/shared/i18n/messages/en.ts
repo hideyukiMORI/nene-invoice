@@ -38,6 +38,13 @@ export const enMessages: MessageCatalog = {
   'admin.clients.create.error':
     'Could not create the client. Check your input (e.g. registration number format).',
   'admin.clients.create.nameRequired': 'Name is required.',
+  'admin.clients.col.actions': 'Actions',
+  'admin.clients.delete.action': 'Delete',
+  'admin.clients.delete.title': 'Delete this client?',
+  'admin.clients.delete.message': '"{{name}}" will be removed. This cannot be undone.',
+  'admin.clients.delete.confirm': 'Delete',
+  'admin.clients.delete.error': 'Could not delete the client.',
+  'common.actions.cancel': 'Cancel',
   'admin.invoices.title': 'Invoices',
   'admin.invoices.loading': 'Loading…',
   'admin.invoices.empty': 'No invoices yet.',
