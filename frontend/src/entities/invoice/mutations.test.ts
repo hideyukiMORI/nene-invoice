@@ -3,7 +3,8 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '@tests/msw/server'
 import { renderHookWithProviders } from '@tests/render/render-with-providers'
-import { useCreateInvoice } from './mutations'
+import { toInvoiceId } from './ids'
+import { useCreateInvoice, useIssueInvoice } from './mutations'
 
 describe('useCreateInvoice', () => {
   it('posts and returns the mapped invoice on success', async () => {
@@ -45,5 +46,44 @@ describe('useCreateInvoice', () => {
       expect(result.current.isError).toBe(true)
     })
     expect(result.current.error?.slug).toBe('validation-failed')
+  })
+})
+
+describe('useIssueInvoice', () => {
+  it('issues a draft and returns the issued invoice', async () => {
+    const { result } = renderHookWithProviders(() => useIssueInvoice())
+
+    result.current.mutate({ id: toInvoiceId(1), qualified: true, due_at: null })
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+    expect(result.current.data?.status).toBe('issued')
+    expect(result.current.data?.invoice_number).toBe('INV-2026-001')
+  })
+
+  it('surfaces a 422 when qualified-invoice requirements are missing', async () => {
+    server.use(
+      http.post(
+        '/admin/invoices/:id/issue',
+        () =>
+          new HttpResponse(
+            JSON.stringify({
+              type: 'https://nene-invoice.dev/problems/qualified-invoice-incomplete',
+              title: 'Validation Failed',
+              status: 422,
+            }),
+            { status: 422, headers: { 'Content-Type': 'application/problem+json' } },
+          ),
+      ),
+    )
+
+    const { result } = renderHookWithProviders(() => useIssueInvoice())
+    result.current.mutate({ id: toInvoiceId(1), qualified: true, due_at: null })
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true)
+    })
+    expect(result.current.error?.slug).toBe('qualified-invoice-incomplete')
   })
 })
