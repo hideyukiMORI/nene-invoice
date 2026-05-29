@@ -12,8 +12,8 @@ use Nene2\Http\JsonResponseFactory;
 use Psr\Container\ContainerInterface;
 
 /**
- * Wires the User domain read side: use cases, handlers, the not-found exception
- * handler, and the route registrar. `UserRepositoryInterface` is provided by
+ * Wires the User domain: use cases, handlers, domain exception handlers, and the
+ * route registrar. `UserRepositoryInterface` is provided by
  * {@see \NeneInvoice\Auth\AuthServiceProvider}.
  */
 final readonly class UserServiceProvider implements ServiceProviderInterface
@@ -23,6 +23,9 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
         $builder
             ->set(ListUsersUseCase::class, static fn (ContainerInterface $c): ListUsersUseCase => new ListUsersUseCase(self::repository($c)))
             ->set(GetUserByIdUseCase::class, static fn (ContainerInterface $c): GetUserByIdUseCase => new GetUserByIdUseCase(self::repository($c)))
+            ->set(CreateUserUseCase::class, static fn (ContainerInterface $c): CreateUserUseCase => new CreateUserUseCase(self::repository($c)))
+            ->set(UpdateUserUseCase::class, static fn (ContainerInterface $c): UpdateUserUseCase => new UpdateUserUseCase(self::repository($c)))
+            ->set(DeleteUserUseCase::class, static fn (ContainerInterface $c): DeleteUserUseCase => new DeleteUserUseCase(self::repository($c)))
             ->set(
                 ListUsersHandler::class,
                 static fn (ContainerInterface $c): ListUsersHandler => new ListUsersHandler(
@@ -40,20 +43,64 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                CreateUserHandler::class,
+                static fn (ContainerInterface $c): CreateUserHandler => new CreateUserHandler(
+                    self::createUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                UpdateUserHandler::class,
+                static fn (ContainerInterface $c): UpdateUserHandler => new UpdateUserHandler(
+                    self::updateUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                DeleteUserHandler::class,
+                static fn (ContainerInterface $c): DeleteUserHandler => new DeleteUserHandler(
+                    self::deleteUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
                 UserNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): UserNotFoundExceptionHandler => new UserNotFoundExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
+                UserEmailConflictExceptionHandler::class,
+                static fn (ContainerInterface $c): UserEmailConflictExceptionHandler => new UserEmailConflictExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
+                RoleNotAssignableExceptionHandler::class,
+                static fn (ContainerInterface $c): RoleNotAssignableExceptionHandler => new RoleNotAssignableExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
+                CannotDeleteSelfExceptionHandler::class,
+                static fn (ContainerInterface $c): CannotDeleteSelfExceptionHandler => new CannotDeleteSelfExceptionHandler(self::problemDetails($c)),
             )
             ->set(
                 UserRouteRegistrar::class,
                 static function (ContainerInterface $c): UserRouteRegistrar {
                     $list = $c->get(ListUsersHandler::class);
                     $get = $c->get(GetUserByIdHandler::class);
+                    $create = $c->get(CreateUserHandler::class);
+                    $update = $c->get(UpdateUserHandler::class);
+                    $delete = $c->get(DeleteUserHandler::class);
 
-                    if (!$list instanceof ListUsersHandler || !$get instanceof GetUserByIdHandler) {
+                    if (!$list instanceof ListUsersHandler
+                        || !$get instanceof GetUserByIdHandler
+                        || !$create instanceof CreateUserHandler
+                        || !$update instanceof UpdateUserHandler
+                        || !$delete instanceof DeleteUserHandler
+                    ) {
                         throw new LogicException('User handler services are invalid.');
                     }
 
-                    return new UserRouteRegistrar($list, $get);
+                    return new UserRouteRegistrar($list, $get, $create, $update, $delete);
                 },
             );
     }
@@ -86,6 +133,39 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
         if (!$u instanceof GetUserByIdUseCase) {
             throw new LogicException('Get user use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function createUseCase(ContainerInterface $c): CreateUserUseCase
+    {
+        $u = $c->get(CreateUserUseCase::class);
+
+        if (!$u instanceof CreateUserUseCase) {
+            throw new LogicException('Create user use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function updateUseCase(ContainerInterface $c): UpdateUserUseCase
+    {
+        $u = $c->get(UpdateUserUseCase::class);
+
+        if (!$u instanceof UpdateUserUseCase) {
+            throw new LogicException('Update user use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function deleteUseCase(ContainerInterface $c): DeleteUserUseCase
+    {
+        $u = $c->get(DeleteUserUseCase::class);
+
+        if (!$u instanceof DeleteUserUseCase) {
+            throw new LogicException('Delete user use case service is invalid.');
         }
 
         return $u;
