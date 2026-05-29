@@ -15,3 +15,11 @@ export interface ClientPage {
   limit: number
   offset: number
 }
+
+export interface CreateClientInput {
+  name: string
+  contact_name: string | null
+  email: string | null
+  billing_address: string | null
+  registration_number: string | null
+}
