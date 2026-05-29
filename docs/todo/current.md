@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #41)
+Last updated: 2026-05-29 (Issue #43)
 
 ## Recently merged
 
@@ -21,13 +21,14 @@ Last updated: 2026-05-29 (Issue #41)
 - **Issue #35 / PR #36** — CapabilityMiddleware + CapabilityResolver（RBAC 強制）✅ merged
 - **Issue #37 / PR #38** — 組織 CRUD（superadmin・/admin/organizations）✅ merged
 - **Issue #39 / PR #40** — ユーザー読み取り（/admin/users）+ org スコープ ✅ merged
-- **Issue #41** — ユーザー write（create/update/delete）⏳ this PR
+- **Issue #41 / PR #42** — ユーザー write（create/update/delete）✅ merged
+- **Issue #43** — Client（取引先）永続化 + 読み取り ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #41 | `feat/41-user-write` | ユーザー write（create/update/delete・ロール昇格防止・クロス組織防止） | 🔄 PR pending |
+| #43 | `feat/43-client-read` | Client 永続化（ソフト削除）+ 読み取り（list/get・org スコープ） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -135,12 +136,17 @@ Last updated: 2026-05-29 (Issue #41)
 - Cross-org reads → 404; `password_hash` never serialized
 - **Decision:** admin self-service scoped by token `org` claim; URL-addressed OrgResolverMiddleware deferred
 
-**Phase 1 — User write: 🔄 in progress** (Issue #41)
+**Phase 1 — User write: ✅ complete** (Issue #41 / PR #42)
 
-- `POST /admin/users` (create), `PATCH /admin/users/{id}` (update), `DELETE /admin/users/{id}` (delete)
-- Security: password hashed; org forced to caller (no cross-org create); cross-org update/delete → 404; superadmin cannot be assigned (422); cannot delete self (409); email conflict (409)
-- Verified live: create 201 (org forced) / superadmin 422 / dup-email 409 / patch 200 / patch→superadmin 422 / delete-self 409 / delete-other 204 / delete-again 404
+- `POST/PATCH/DELETE /admin/users` — password hashing, org forced to caller, cross-org → 404, superadmin not assignable (422), self-delete (409), email conflict (409)
 - User management complete (CRUD + tenant isolation + escalation prevention)
+
+**Phase 1 — Client persistence + read: 🔄 in progress** (Issue #43)
+
+- `clients` table (Phinx + SQLite snapshot) with **soft delete** (`is_deleted`/`deleted_at`); `Client` entity + `PdoClientRepository` (reads exclude deleted)
+- `GET /admin/clients`, `GET /admin/clients/{id}` — org-scoped (`view_billing`); cross-org/missing → 404
+- Repo tests (incl. soft delete) + use-case tests; verified live: member sees only own-org clients, org-2 client → 404
+- Write endpoints (create/update/delete + `registration_number` T+13 validation) land next
 
 ## Handoff Notes
 
@@ -158,5 +164,6 @@ Last updated: 2026-05-29 (Issue #41)
 
 ## Next steps
 
-1. Phase 1 billing core — Client CRUD (org-scoped) → company settings → quotes → invoices → payments
-2. Phase 2 admin UI + PDF (minimum for overdue list)
+1. Client write (create/update/delete) — `registration_number` T+13 syntax validation, soft delete
+2. Company settings (issuer profile, per organization) → quotes → invoices → payments
+3. Phase 2 admin UI + PDF (minimum for overdue list)
