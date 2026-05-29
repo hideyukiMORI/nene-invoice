@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #45)
+Last updated: 2026-05-29 (Issue #47)
 
 ## Recently merged
 
@@ -23,13 +23,14 @@ Last updated: 2026-05-29 (Issue #45)
 - **Issue #39 / PR #40** — ユーザー読み取り（/admin/users）+ org スコープ ✅ merged
 - **Issue #41 / PR #42** — ユーザー write（create/update/delete）✅ merged
 - **Issue #43 / PR #44** — Client（取引先）永続化 + 読み取り ✅ merged
-- **Issue #45** — Client write（create/update/delete）⏳ this PR
+- **Issue #45 / PR #46** — Client write（create/update/delete）✅ merged
+- **Issue #47** — 発行者プロフィール（company settings）+ 登録番号検証の共有化 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #45 | `feat/45-client-write` | Client write（create/update/delete・registration_number T+13 検証） | 🔄 PR pending |
+| #47 | `feat/47-company-settings` | 発行者プロフィール（GET/PUT）+ Compliance\RegistrationNumber 共有化 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -146,12 +147,16 @@ Last updated: 2026-05-29 (Issue #45)
 
 - `clients` table with soft delete; `PdoClientRepository` (reads exclude deleted); `GET /admin/clients[/{id}]` org-scoped
 
-**Phase 1 — Client write: 🔄 in progress** (Issue #45)
+**Phase 1 — Client write: ✅ complete** (Issue #45 / PR #46)
 
-- `POST/PATCH/DELETE /admin/clients` — `manage_billing`, org-scoped; create forces caller org; cross-org → 404; delete is soft
-- `registration_number` (buyer) syntax-validated `^T[0-9]{13}$` in the UseCase → 422 `invalid-registration-number` (accounting-compliance §4)
-- Verified live: create 201 (org forced) / bad-reg 422 / no-name 422 / patch 200 / patch-other-org 404 / delete 204→get 404 / delete-other-org 404
-- Client CRUD complete
+- `POST/PATCH/DELETE /admin/clients` — org-scoped, soft delete, buyer `registration_number` T+13 validated
+
+**Phase 1 — Company settings (issuer profile): 🔄 in progress** (Issue #47)
+
+- `GET /admin/company-settings` (404 if unconfigured) / `PUT` (upsert) — `manage_company_settings`, org-scoped, one row per org
+- `Compliance\RegistrationNumber` is now the single home of the T+13 rule; Client and the issuer both use it
+- Verified live: GET-before 404 / bad-reg 422 / no-legal-name 422 / PUT 200 / GET-after 200 / PUT-again upsert (1 row); per-org scoping
+- Issuer side of qualified invoices is ready
 
 ## Handoff Notes
 
@@ -169,6 +174,6 @@ Last updated: 2026-05-29 (Issue #45)
 
 ## Next steps
 
-1. Company settings (issuer profile, per organization) — incl. issuer `registration_number` (T+13), bank info
-2. Quotes (見積) → Invoices (請求書) → Payments (入金) + tax calc (ADR 0004) + qualified-invoice field validation
-3. Phase 2 admin UI + PDF (minimum for overdue list)
+1. Quotes (見積) — line items (quantity / unit_price_cents / tax_rate_bps), tax calc per ADR 0004 (round once per rate), status machine
+2. Invoices (請求書) — convert from quote, issue, qualified-invoice field validation (accounting-compliance)
+3. Payments (入金) → overdue; then Phase 2 admin UI + PDF

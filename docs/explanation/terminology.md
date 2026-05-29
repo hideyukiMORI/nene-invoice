@@ -119,6 +119,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `insufficient-capability` | Authenticated but lacks required capability |
 | `organization-not-resolved` | Tenant could not be resolved for the request |
 | `invalid-state-transition` | Disallowed status change |
+| `company-settings-not-found` | Issuer profile not configured for the organization (404) |
 | `qualified-invoice-incomplete` | Missing required qualified-invoice field |
 
 Add new slugs here before using them. Validation `errors[].field` uses
@@ -138,6 +139,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `login`, `getCurrentUser` | Auth |
 | `listOrganizations`, `getOrganizationById`, `createOrganization`, `deleteOrganization` | Organization (superadmin) |
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
+| `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
 | `listQuotes`, `getQuoteById`, `createQuote`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |

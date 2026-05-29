@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use LogicException;
+use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class CreateClientUseCase
 {
@@ -21,7 +22,7 @@ final readonly class CreateClientUseCase
      */
     public function execute(int $organizationId, CreateClientInput $input): Client
     {
-        if ($input->registrationNumber !== null && preg_match(InvalidRegistrationNumberException::PATTERN, $input->registrationNumber) !== 1) {
+        if ($input->registrationNumber !== null && !RegistrationNumber::isValid($input->registrationNumber)) {
             throw new InvalidRegistrationNumberException($input->registrationNumber);
         }
 
