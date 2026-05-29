@@ -8,6 +8,9 @@ use LogicException;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use NeneInvoice\Auth\AuthRouteRegistrar;
+use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
+use NeneInvoice\Organization\OrganizationRouteRegistrar;
+use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -29,14 +32,35 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 self::ROUTE_REGISTRARS,
                 static function (ContainerInterface $container): array {
                     $authRoutes = $container->get(AuthRouteRegistrar::class);
+                    $organizationRoutes = $container->get(OrganizationRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
                     }
 
-                    return [$authRoutes];
+                    if (!$organizationRoutes instanceof OrganizationRouteRegistrar) {
+                        throw new LogicException('Organization route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $organizationRoutes];
                 },
             )
-            ->set(self::EXCEPTION_HANDLERS, static fn (ContainerInterface $container): array => []);
+            ->set(
+                self::EXCEPTION_HANDLERS,
+                static function (ContainerInterface $container): array {
+                    $notFound = $container->get(OrganizationNotFoundExceptionHandler::class);
+                    $slugConflict = $container->get(OrganizationSlugConflictExceptionHandler::class);
+
+                    if (!$notFound instanceof OrganizationNotFoundExceptionHandler) {
+                        throw new LogicException('Organization not-found exception handler service is invalid.');
+                    }
+
+                    if (!$slugConflict instanceof OrganizationSlugConflictExceptionHandler) {
+                        throw new LogicException('Organization slug-conflict exception handler service is invalid.');
+                    }
+
+                    return [$notFound, $slugConflict];
+                },
+            );
     }
 }

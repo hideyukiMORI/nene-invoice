@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #35)
+Last updated: 2026-05-29 (Issue #37)
 
 ## Recently merged
 
@@ -18,13 +18,14 @@ Last updated: 2026-05-29 (Issue #35)
 - **Issue #26 / PR #29** — JWT ログイン（POST /auth/login）+ トークン発行 ✅ merged
 - **Issue #30** — Bearer トークンゲート（/admin/ 保護）+ GET /admin/me ✅ merged（commit `f412a52`）
 - **Issue #33 / PR #34** — 並行 Cursor 由来 #27/#31 の revert（NeNe Clear 等を除去）✅ merged
-- **Issue #35** — CapabilityMiddleware + CapabilityResolver（RBAC 強制）⏳ this PR
+- **Issue #35 / PR #36** — CapabilityMiddleware + CapabilityResolver（RBAC 強制）✅ merged
+- **Issue #37** — 組織 CRUD（superadmin・/admin/organizations）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #35 | `feat/35-capability-rbac` | CapabilityMiddleware + CapabilityResolver（ルート→capability RBAC） | 🔄 PR pending |
+| #37 | `feat/37-organization-crud` | 組織 CRUD（list/get/create/delete・superadmin） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -116,12 +117,17 @@ Last updated: 2026-05-29 (Issue #35)
 - Reverted Cursor-authored #27 (expansion-roadmap) and #31 (ADR 0007 NeNe Clear + philosophy)
 - NeNe Clear is a *separate* sibling product (入金消込/督促), not this repo — do not reintroduce here
 
-**Phase 1 — RBAC enforcement: 🔄 in progress** (Issue #35)
+**Phase 1 — RBAC enforcement: ✅ complete** (Issue #35 / PR #36)
 
 - `CapabilityResolver` (path+method → Capability) + `CapabilityMiddleware` (after BearerTokenMiddleware)
 - authMiddleware = [BearerTokenMiddleware, CapabilityMiddleware]
-- Verified live: member → /admin/organizations 403, superadmin → passes (404, no route yet), /admin/me 200, no token 401
-- Org scoping (`organization_id`) added with org-resolution middleware when tenant-scoped routes land
+
+**Phase 1 — Organization CRUD (superadmin): 🔄 in progress** (Issue #37)
+
+- `GET/POST /admin/organizations`, `GET/DELETE /admin/organizations/{id}` — Handler → UseCase → repo
+- Domain exceptions → Problem Details via `OrganizationNotFoundExceptionHandler` (404) / `OrganizationSlugConflictExceptionHandler` (409); wired into EXCEPTION_HANDLERS (no try/catch in handlers)
+- Verified live: create 201 / member 403 / dup-slug 409 / missing 422 / list+get 200 / not-found 404 / delete 204
+- First real feature guarded by RBAC. Org scoping (`organization_id`) lands with the org-resolution middleware
 
 ## Handoff Notes
 
@@ -139,7 +145,6 @@ Last updated: 2026-05-29 (Issue #35)
 
 ## Next steps
 
-1. Organization CRUD (superadmin, `/admin/organizations`) — exercises RBAC; cross-tenant so no org resolution needed
-2. User CRUD (admin, `/admin/users`) + org resolution middleware (`single`) + `organization_id` scoping
-3. Complete Phase 1 billing core: clients, quotes, invoices, payments
-4. Phase 2 admin UI + PDF (minimum for overdue list)
+1. User CRUD (admin, `/admin/users`) + org resolution middleware (`single`) + `organization_id` scoping
+2. Complete Phase 1 billing core: clients, quotes, invoices, payments
+3. Phase 2 admin UI + PDF (minimum for overdue list)
