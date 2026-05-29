@@ -1,0 +1,111 @@
+# Backend Standards
+
+NeNe Invoice backend policy for PHP API code. Adapted from [NeNe Records](https://github.com/hideyukiMORI/nene-records) and [NeNe Corpus](https://github.com/hideyukiMORI/nene-corpus) backend standards for a **billing OSS** on NENE2.
+
+**Framework baseline:** NENE2 `docs/development/` — deviate only via local ADR.
+
+**Naming and terms:** [`naming-conventions.md`](./naming-conventions.md), [`glossary.md`](../explanation/glossary.md).
+
+---
+
+## 1. Project shape
+
+NeNe Invoice is a **NENE2 consumer project**:
+
+```
+vendor/hideyukimori/nene2/   ← framework (do not edit)
+src/                         ← product code (NeneInvoice\)
+tests/                       ← mirrors src/
+docs/openapi/openapi.yaml    ← public contract
+public_html/index.php        ← front controller
+```
+
+Namespace: `NeneInvoice\`
+
+---
+
+## 2. Module layout (domain-grouped)
+
+Organize by **domain**, not technical layer:
+
+```
+src/
+  ApplicationServiceProvider.php
+  Http/
+  AdminAuth/
+  Company/          # issuer profile, tax registration, bank info
+  Client/           # customer master
+  Quote/            # estimates
+  Invoice/          # issued invoices, qualified invoice fields
+  LineItem/         # shared line item logic (quote + invoice)
+  Payment/          # payment records, status
+  Pdf/              # server-side PDF generation
+  Upstream/         # optional HTTP clients (Records, Concierge)
+```
+
+**Zero-tolerance placement:** handlers live in their domain folder (`Invoice/CreateInvoiceHandler.php`), not `src/Handlers/`.
+
+---
+
+## 3. Layering rules
+
+```
+Handler → UseCase → RepositoryInterface → PdoRepository
+```
+
+| Layer | May | Must not |
+| --- | --- | --- |
+| **Handler** | Parse HTTP, build DTO, call UseCase, map JSON response | SQL, business rules, direct PDF library calls |
+| **UseCase** | Business rules, tax calculation, orchestration | `$_SERVER`, PDO, raw HTTP |
+| **Repository** | SQL / persistence | HTTP, PDF generation |
+| **Pdf adapter** | Render PDF from DTO | Domain invariants, SQL |
+
+Use `final readonly` classes and `declare(strict_types=1);` in every PHP file.
+
+---
+
+## 4. HTTP & OpenAPI
+
+- Every public route appears in `docs/openapi/openapi.yaml` with `operationId`.
+- Success and Problem Details error shapes documented.
+- RFC 9457 Problem Details for errors; base URL `https://nene-invoice.dev/problems/`.
+- Admin routes require JWT Bearer auth (Phase 1+).
+
+---
+
+## 5. Money and tax
+
+- Store all amounts as **integer cents** (`subtotal_cents`, `tax_cents`, `total_cents`).
+- Tax rates: store as basis points or documented enum — never float percentages in persisted data.
+- Japan qualified invoice fields validated in UseCase layer before PDF generation.
+- PDF totals must match API-calculated cents — single source of truth in UseCase.
+
+---
+
+## 6. Database
+
+- Phinx migrations under `database/migrations/`.
+- Schema snapshots under `database/schema/`.
+- Soft delete: `is_deleted`, `deleted_at` unless ADR says otherwise.
+- Multi-tenant: `organization_id` on tenant-scoped tables when tenancy lands (ADR TBD).
+
+---
+
+## 7. Testing
+
+- UseCase tests: no DB — inject repository fakes or in-memory implementations.
+- Repository tests: SQLite in-memory PDO.
+- HTTP tests: contract tests against OpenAPI shapes.
+- PDF tests: assert byte output or snapshot hash — do not visually review in CI.
+
+---
+
+## 8. Verification
+
+```bash
+composer check
+composer openapi
+composer mcp
+```
+
+Self-review: [`docs/review/backend-api.md`](../review/backend-api.md), [`docs/review/database.md`](../review/database.md).
