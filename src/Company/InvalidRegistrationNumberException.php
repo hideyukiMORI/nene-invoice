@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NeneInvoice\Client;
+namespace NeneInvoice\Company;
 
 use DomainException;
 
 /**
- * Thrown when a client's Japan invoice registration number is present but does
- * not match the required syntax. The rule itself lives in
- * {@see \NeneInvoice\Compliance\RegistrationNumber} (single source of truth).
+ * Thrown when the issuer's registration number is present but malformed. The
+ * rule lives in {@see \NeneInvoice\Compliance\RegistrationNumber}.
  */
 final class InvalidRegistrationNumberException extends DomainException
 {
