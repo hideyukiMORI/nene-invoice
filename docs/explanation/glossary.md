@@ -21,5 +21,6 @@ Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments
 | **use case** | Business logic class with `execute()` | "service" (UseCase sense) |
 | **sync PDF download** | Single HTTP response returning PDF bytes | "streaming PDF" |
 | **overdue** | Invoice past `due_at` with unpaid balance — computed status | stored status in Phase 1 (optional) |
+| **UI locale** | Admin UI / operator-facing language. Bound to **ja (primary) + en (secondary) only** — not multilingual (ADR 0005). Distinct from the English-only dev-docs language policy | adding locales beyond ja/en; conflating UI locale with statutory invoice language |
 
 When adding terms, update this table in the same PR.

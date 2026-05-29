@@ -105,6 +105,7 @@ Quote numbers and invoice numbers: auto-increment per organization with configur
 ### Phase 2 — Admin UI + PDF
 
 - [ ] React admin SPA (clients, quotes, invoices, payments, settings)
+- [ ] Admin UI locale catalogs: **ja (primary) + en (secondary)** — no other locales (ADR 0005)
 - [ ] Server-side qualified invoice PDF (Japanese layout)
 - [ ] Quote PDF (optional, simpler layout)
 - [ ] Email invoice PDF via SMTP
@@ -159,6 +160,7 @@ Quote numbers and invoice numbers: auto-increment per organization with configur
 | Inventory / stock | NeNe Shop territory |
 | PEPPOL / 電子インボイス network | Phase 4+ research; PDF first |
 | Multi-currency | JPY only for Phase 1–3 |
+| Multilingual UI beyond ja/en | Domain locked to Japanese rules; UI bound to Japanese + English (ADR 0005) |
 | Consumption tax filing (申告) | Operator exports data; no tax return generation |
 
 ---
