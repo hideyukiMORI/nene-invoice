@@ -43,9 +43,17 @@ final readonly class ListInvoicesHandler implements RequestHandlerInterface
         $offset = max(0, $offset);
 
         $result = $this->useCase->execute($organizationId, $limit, $offset);
+        $outstanding = $result->outstandingByInvoiceId;
 
         return $this->json->create([
-            'items' => array_map(static fn (Invoice $i): array => InvoiceResponse::toArray($i), $result->items),
+            'items' => array_map(
+                static fn (Invoice $i): array => InvoiceResponse::toArray(
+                    $i,
+                    null,
+                    $i->id !== null ? ($outstanding[$i->id] ?? null) : null,
+                ),
+                $result->items,
+            ),
             'total' => $result->total,
             'limit' => $limit,
             'offset' => $offset,

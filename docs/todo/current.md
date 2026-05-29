@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #97)
+Last updated: 2026-05-30 (Issue #99)
 
 ## Recently merged
 
@@ -50,13 +50,14 @@ Last updated: 2026-05-30 (Issue #97)
 - **Issue #91 / PR #92** — 請求書作成フォーム（client 選択 + 明細）✅ merged
 - **Issue #93 / PR #94** — 請求書の発行アクション（下書き詳細から issue）✅ merged
 - **Issue #95 / PR #96** — 入金記録（発行済み詳細で入金フォーム＋入金一覧）✅ merged
-- **Issue #97** — NeNe Clear 上流契約の受諾＋ガバナンス整備（ADR 0009 / sibling / 用語）⏳ this PR
+- **Issue #97 / PR #98** — NeNe Clear 上流契約の受諾＋ガバナンス整備（ADR 0009 / sibling / 用語）✅ merged
+- **Issue #99** — 売掛金残高 `outstanding_cents` を read モデルに公開 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #97 | `docs/97-clear-upstream-contract` | NeNe Clear 上流契約 受諾（ADR 0009 + sibling + 用語） | 🔄 PR pending |
+| #99 | `feat/99-outstanding-cents` | `outstanding_cents` を read モデルに公開（ADR 0009 ①の土台） | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -64,6 +65,8 @@ Last updated: 2026-05-30 (Issue #97)
 - 方針: Invoice が請求・入金の SoR。Clear は HTTP の read + scoped write のみ。service スコープ **`/api/*`** 名前空間（独立 OpenAPI）+ **サービストークン principal**（`read:invoices` / `write:payments`、組織スコープ）。
 - このPRはドキュメントのみ（ADR / sibling-products / terminology）。
 - 後続（段階実装・別 Issue）: ①読み取りAPI（filters + `outstanding_cents` + payments 履歴）②書き込みAPI（idempotent payment create + `external_reference`、過入金→`payment-exceeds-outstanding`、void-with-audit）③サービストークン認証 ④`/api/*` OpenAPI + 契約テスト。
+  - ①-a **済(#99)**: `outstanding_cents` を `/admin` の list/get read モデルに公開（PaymentRepo batch sum、純 read 派生・gate なし）。サービス read API がこの算出を再利用する。
+  - 次: `/api/*` サービス面 + サービストークン認証 + サービス read（filters / payments 履歴）。
 - **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
 
 ### Frontend 画面の進め方（縦スライス）

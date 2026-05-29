@@ -6,12 +6,14 @@ namespace NeneInvoice\Invoice;
 
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\Payment\PaymentRepositoryInterface;
 
 final readonly class GetInvoiceByIdUseCase
 {
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private LineItemRepositoryInterface $lineItems,
+        private PaymentRepositoryInterface $payments,
     ) {
     }
 
@@ -24,6 +26,9 @@ final readonly class GetInvoiceByIdUseCase
             throw new InvoiceNotFoundException($id);
         }
 
-        return new InvoiceWithLines($invoice, $this->lineItems->findByParent(LineItemParent::Invoice, $id));
+        $lines = $this->lineItems->findByParent(LineItemParent::Invoice, $id);
+        $outstanding = max(0, $invoice->totalCents - $this->payments->totalPaidForInvoice($id));
+
+        return new InvoiceWithLines($invoice, $lines, $outstanding);
     }
 }

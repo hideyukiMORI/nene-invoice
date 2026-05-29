@@ -58,6 +58,32 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         return $row !== null ? (int) $row['total'] : 0;
     }
 
+    /**
+     * @param list<int> $invoiceIds
+     * @return array<int, int>
+     */
+    public function sumPaidForInvoices(array $invoiceIds): array
+    {
+        if ($invoiceIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($invoiceIds), '?'));
+        $rows = $this->query->fetchAll(
+            'SELECT invoice_id, COALESCE(SUM(amount_cents), 0) AS total
+             FROM payments WHERE is_deleted = 0 AND invoice_id IN (' . $placeholders . ')
+             GROUP BY invoice_id',
+            $invoiceIds,
+        );
+
+        $totals = [];
+        foreach ($rows as $row) {
+            $totals[(int) $row['invoice_id']] = (int) $row['total'];
+        }
+
+        return $totals;
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): Payment
     {

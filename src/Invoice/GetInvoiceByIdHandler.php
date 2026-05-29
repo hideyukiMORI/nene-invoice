@@ -37,6 +37,8 @@ final readonly class GetInvoiceByIdHandler implements RequestHandlerInterface
 
         $result = $this->useCase->execute($organizationId, $id);
 
-        return $this->json->create(InvoiceResponse::toArray($result->invoice, $result->lines));
+        return $this->json->create(
+            InvoiceResponse::toArray($result->invoice, $result->lines, $result->outstandingCents),
+        );
     }
 }
