@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #51)
+Last updated: 2026-05-29 (Issue #53)
 
 ## Recently merged
 
@@ -26,13 +26,14 @@ Last updated: 2026-05-29 (Issue #51)
 - **Issue #45 / PR #46** — Client write（create/update/delete）✅ merged
 - **Issue #47 / PR #48** — 発行者プロフィール（company settings）+ 登録番号検証共有化 ✅ merged
 - **Issue #49 / PR #50** — 税計算エンジン（ADR 0004）✅ merged
-- **Issue #51** — 監査ログ基盤（ADR 0008）+ Client 統合 ⏳ this PR
+- **Issue #51 / PR #52** — 監査ログ基盤（ADR 0008）+ Client 統合 ✅ merged
+- **Issue #53** — 監査ログを Organization / User / CompanySettings に retrofit ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #51 | `feat/51-audit-log` | 監査ログ基盤（ADR 0008・before/after）+ Client 統合 | 🔄 PR pending |
+| #53 | `feat/53-audit-retrofit` | 監査を Organization / User / CompanySettings に展開 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -161,14 +162,13 @@ Last updated: 2026-05-29 (Issue #51)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Audit logging foundation: 🔄 in progress** (Issue #51, ADR 0008)
+**Phase 1 — Audit logging: ✅ foundation + full platform coverage** (Issue #51 / PR #52, Issue #53)
 
-- `audit_logs` table + `Audit\AuditRecorder`: who (actor_user_id) / org / action / entity / **before & after sanitized snapshots**
-- Recorded in the UseCase; snapshots reuse `*Response` presenters so secrets (password_hash) are never logged
-- **Integrated into Client create/update/delete** (reference); actor plumbed from `AuthContext`
-- Verified live: create (before=null), update (before+after), delete (after=null) rows written; no password_hash leaked
-- Limitation (ADR 0008): recording is synchronous best-effort, not yet in the mutation's DB transaction
-- Next: retrofit Organization / User / CompanySettings; audit read endpoint
+- `audit_logs` + `Audit\AuditRecorder` (ADR 0008): actor / org / action / entity / before & after sanitized snapshots
+- **Integrated into every mutating operation**: Client, Organization (create/delete), User (create/update/delete), CompanySettings (upsert → created/updated)
+- Verified live: all write actions record rows with the correct actor; `password_hash` never logged
+- Limitation (ADR 0008): synchronous best-effort recording, not yet in the mutation's DB transaction (planned)
+- Follow-up: audit read endpoint (`GET /admin/audit-logs`); transactional recording
 
 ## Handoff Notes
 
@@ -186,6 +186,6 @@ Last updated: 2026-05-29 (Issue #51)
 
 ## Next steps
 
-1. Retrofit audit into Organization / User / CompanySettings mutating use cases (ADR 0008)
-2. Quote persistence — `quotes` + `line_items`, `document_sequences` numbering (EST-YYYY-NNN); built with audit + `TaxCalculator`
-3. Quote CRUD + status machine → Invoices (convert/issue/qualified validation) → Payments → overdue
+1. Quote persistence — `quotes` + `line_items`, `document_sequences` numbering (EST-YYYY-NNN); built with audit + `TaxCalculator` from the start
+2. Quote CRUD + status machine (draft→sent→accepted/rejected/expired)
+3. Invoices (convert/issue/qualified validation) → Payments → overdue; then audit read endpoint

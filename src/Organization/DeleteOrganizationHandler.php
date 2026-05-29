@@ -6,6 +6,7 @@ namespace NeneInvoice\Organization;
 
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
+use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -27,7 +28,7 @@ final readonly class DeleteOrganizationHandler implements RequestHandlerInterfac
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $this->useCase->execute($id);
+        $this->useCase->execute(AuthContext::userId($request), $id);
 
         return $this->json->createEmpty(204);
     }

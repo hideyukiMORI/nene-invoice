@@ -6,6 +6,7 @@ namespace NeneInvoice\Tests\User;
 
 use NeneInvoice\Auth\Role;
 use NeneInvoice\Tests\Support\InMemoryUserRepository;
+use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use NeneInvoice\User\CannotDeleteSelfException;
 use NeneInvoice\User\CreateUserInput;
 use NeneInvoice\User\CreateUserUseCase;
@@ -21,35 +22,52 @@ use PHPUnit\Framework\TestCase;
 final class UserWriteUseCasesTest extends TestCase
 {
     private InMemoryUserRepository $repo;
+    private RecordingAuditRecorder $audit;
 
     protected function setUp(): void
     {
         $this->repo = new InMemoryUserRepository();
+        $this->audit = new RecordingAuditRecorder();
     }
 
-    public function test_create_hashes_password_and_forces_caller_organization(): void
+    public function test_create_hashes_password_forces_org_and_audits(): void
     {
-        $user = (new CreateUserUseCase($this->repo))->execute(1, new CreateUserInput('m@org1', 'secret', Role::Member));
+        $user = (new CreateUserUseCase($this->repo, $this->audit))->execute(1, 99, new CreateUserInput('m@org1', 'secret', Role::Member));
 
         self::assertSame(1, $user->organizationId);
         self::assertSame(Role::Member, $user->role);
-        self::assertNotSame('secret', $user->passwordHash);
         self::assertTrue(password_verify('secret', $user->passwordHash));
+
+        self::assertSame('user.created', $this->audit->records[0]['action']);
+        self::assertSame(99, $this->audit->records[0]['actor_user_id']);
+        // The audit snapshot must not leak the password hash.
+        self::assertArrayNotHasKey('password_hash', $this->audit->records[0]['after']);
     }
 
     public function test_create_blocks_superadmin_role(): void
     {
         $this->expectException(RoleNotAssignableException::class);
-        (new CreateUserUseCase($this->repo))->execute(1, new CreateUserInput('x@org1', 'secret', Role::Superadmin));
+        (new CreateUserUseCase($this->repo, $this->audit))->execute(1, 1, new CreateUserInput('x@org1', 'secret', Role::Superadmin));
     }
 
     public function test_create_rejects_duplicate_email(): void
     {
-        $create = new CreateUserUseCase($this->repo);
-        $create->execute(1, new CreateUserInput('dup@org1', 'secret', Role::Member));
+        $create = new CreateUserUseCase($this->repo, $this->audit);
+        $create->execute(1, 1, new CreateUserInput('dup@org1', 'secret', Role::Member));
 
         $this->expectException(UserEmailConflictException::class);
-        $create->execute(1, new CreateUserInput('dup@org1', 'secret', Role::Admin));
+        $create->execute(1, 1, new CreateUserInput('dup@org1', 'secret', Role::Admin));
+    }
+
+    public function test_update_records_before_and_after(): void
+    {
+        $id = $this->repo->save(new User('a@org1', 'h', Role::Member, 1));
+
+        (new UpdateUserUseCase($this->repo, $this->audit))->execute(1, 7, $id, new UpdateUserInput(Role::Admin, 'active'));
+
+        self::assertSame('user.updated', $this->audit->records[0]['action']);
+        self::assertSame('member', $this->audit->records[0]['before']['role'] ?? null);
+        self::assertSame('admin', $this->audit->records[0]['after']['role'] ?? null);
     }
 
     public function test_update_blocks_cross_organization_target(): void
@@ -57,7 +75,7 @@ final class UserWriteUseCasesTest extends TestCase
         $otherOrgUser = $this->repo->save(new User('a@org2', 'h', Role::Member, 2));
 
         $this->expectException(UserNotFoundException::class);
-        (new UpdateUserUseCase($this->repo))->execute(1, $otherOrgUser, new UpdateUserInput(Role::Admin, 'active'));
+        (new UpdateUserUseCase($this->repo, $this->audit))->execute(1, 1, $otherOrgUser, new UpdateUserInput(Role::Admin, 'active'));
     }
 
     public function test_update_blocks_superadmin_escalation(): void
@@ -65,7 +83,7 @@ final class UserWriteUseCasesTest extends TestCase
         $id = $this->repo->save(new User('a@org1', 'h', Role::Member, 1));
 
         $this->expectException(RoleNotAssignableException::class);
-        (new UpdateUserUseCase($this->repo))->execute(1, $id, new UpdateUserInput(Role::Superadmin, 'active'));
+        (new UpdateUserUseCase($this->repo, $this->audit))->execute(1, 1, $id, new UpdateUserInput(Role::Superadmin, 'active'));
     }
 
     public function test_delete_blocks_self(): void
@@ -73,7 +91,7 @@ final class UserWriteUseCasesTest extends TestCase
         $caller = $this->repo->save(new User('me@org1', 'h', Role::Admin, 1));
 
         $this->expectException(CannotDeleteSelfException::class);
-        (new DeleteUserUseCase($this->repo))->execute(1, $caller, $caller);
+        (new DeleteUserUseCase($this->repo, $this->audit))->execute(1, $caller, $caller);
     }
 
     public function test_delete_blocks_cross_organization_target(): void
@@ -82,16 +100,18 @@ final class UserWriteUseCasesTest extends TestCase
         $otherOrgUser = $this->repo->save(new User('a@org2', 'h', Role::Member, 2));
 
         $this->expectException(UserNotFoundException::class);
-        (new DeleteUserUseCase($this->repo))->execute(1, $caller, $otherOrgUser);
+        (new DeleteUserUseCase($this->repo, $this->audit))->execute(1, $caller, $otherOrgUser);
     }
 
-    public function test_delete_removes_user_in_same_organization(): void
+    public function test_delete_removes_user_and_audits(): void
     {
         $caller = $this->repo->save(new User('me@org1', 'h', Role::Admin, 1));
         $target = $this->repo->save(new User('t@org1', 'h', Role::Member, 1));
 
-        (new DeleteUserUseCase($this->repo))->execute(1, $caller, $target);
+        (new DeleteUserUseCase($this->repo, $this->audit))->execute(1, $caller, $target);
 
         self::assertNull($this->repo->findById($target));
+        self::assertSame('user.deleted', $this->audit->records[0]['action']);
+        self::assertSame($caller, $this->audit->records[0]['actor_user_id']);
     }
 }

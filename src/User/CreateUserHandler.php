@@ -52,7 +52,7 @@ final readonly class CreateUserHandler implements RequestHandlerInterface
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'A valid "role" is required.');
         }
 
-        $user = $this->useCase->execute($organizationId, new CreateUserInput($email, $password, $role));
+        $user = $this->useCase->execute($organizationId, AuthContext::userId($request), new CreateUserInput($email, $password, $role));
 
         return $this->json->create(UserResponse::toArray($user), 201);
     }

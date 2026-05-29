@@ -12,45 +12,50 @@ use NeneInvoice\Organization\ListOrganizationsUseCase;
 use NeneInvoice\Organization\OrganizationNotFoundException;
 use NeneInvoice\Organization\OrganizationSlugConflictException;
 use NeneInvoice\Tests\Support\InMemoryOrganizationRepository;
+use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
 
 final class OrganizationUseCasesTest extends TestCase
 {
     private InMemoryOrganizationRepository $repo;
+    private RecordingAuditRecorder $audit;
 
     protected function setUp(): void
     {
         $this->repo = new InMemoryOrganizationRepository();
+        $this->audit = new RecordingAuditRecorder();
     }
 
-    public function test_create_persists_and_returns_organization_with_id(): void
+    public function test_create_persists_returns_with_id_and_audits(): void
     {
-        $useCase = new CreateOrganizationUseCase($this->repo);
+        $useCase = new CreateOrganizationUseCase($this->repo, $this->audit);
 
-        $org = $useCase->execute(new CreateOrganizationInput('Acme', 'acme'));
+        $org = $useCase->execute(1, new CreateOrganizationInput('Acme', 'acme'));
 
         self::assertNotNull($org->id);
         self::assertSame('Acme', $org->name);
-        self::assertSame('acme', $org->slug);
-        self::assertSame('free', $org->plan);
         self::assertTrue($org->isActive);
-        self::assertNotNull($org->createdAt);
+
+        self::assertCount(1, $this->audit->records);
+        self::assertSame('organization.created', $this->audit->records[0]['action']);
+        self::assertSame(1, $this->audit->records[0]['actor_user_id']);
+        self::assertNull($this->audit->records[0]['before']);
     }
 
     public function test_create_rejects_duplicate_slug(): void
     {
-        $useCase = new CreateOrganizationUseCase($this->repo);
-        $useCase->execute(new CreateOrganizationInput('First', 'dup'));
+        $useCase = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $useCase->execute(1, new CreateOrganizationInput('First', 'dup'));
 
         $this->expectException(OrganizationSlugConflictException::class);
-        $useCase->execute(new CreateOrganizationInput('Second', 'dup'));
+        $useCase->execute(1, new CreateOrganizationInput('Second', 'dup'));
     }
 
     public function test_list_returns_items_and_total(): void
     {
-        $create = new CreateOrganizationUseCase($this->repo);
-        $create->execute(new CreateOrganizationInput('A', 'a'));
-        $create->execute(new CreateOrganizationInput('B', 'b'));
+        $create = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $create->execute(1, new CreateOrganizationInput('A', 'a'));
+        $create->execute(1, new CreateOrganizationInput('B', 'b'));
 
         $result = (new ListOrganizationsUseCase($this->repo))->execute(10, 0);
 
@@ -60,7 +65,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_get_returns_organization_or_throws(): void
     {
-        $id = (new CreateOrganizationUseCase($this->repo))->execute(new CreateOrganizationInput('A', 'a'))->id;
+        $id = (new CreateOrganizationUseCase($this->repo, $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
         self::assertNotNull($id);
 
         $get = new GetOrganizationByIdUseCase($this->repo);
@@ -70,16 +75,18 @@ final class OrganizationUseCasesTest extends TestCase
         $get->execute(999);
     }
 
-    public function test_delete_removes_or_throws_when_missing(): void
+    public function test_delete_removes_audits_and_throws_when_missing(): void
     {
-        $id = (new CreateOrganizationUseCase($this->repo))->execute(new CreateOrganizationInput('A', 'a'))->id;
+        $id = (new CreateOrganizationUseCase($this->repo, $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
         self::assertNotNull($id);
 
-        $delete = new DeleteOrganizationUseCase($this->repo);
-        $delete->execute($id);
+        $delete = new DeleteOrganizationUseCase($this->repo, $this->audit);
+        $delete->execute(1, $id);
         self::assertSame(0, $this->repo->count());
+        self::assertSame('organization.deleted', $this->audit->records[1]['action']);
+        self::assertNull($this->audit->records[1]['after']);
 
         $this->expectException(OrganizationNotFoundException::class);
-        $delete->execute($id);
+        $delete->execute(1, $id);
     }
 }

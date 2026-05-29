@@ -10,6 +10,7 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -35,8 +36,8 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             )
             ->set(ListOrganizationsUseCase::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
             ->set(GetOrganizationByIdUseCase::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
-            ->set(CreateOrganizationUseCase::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::repository($c)))
-            ->set(DeleteOrganizationUseCase::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c)))
+            ->set(CreateOrganizationUseCase::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::repository($c), self::audit($c)))
+            ->set(DeleteOrganizationUseCase::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::audit($c)))
             ->set(
                 ListOrganizationsHandler::class,
                 static fn (ContainerInterface $c): ListOrganizationsHandler => new ListOrganizationsHandler(
@@ -104,6 +105,17 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
         }
 
         return $repo;
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    {
+        $recorder = $c->get(AuditRecorderInterface::class);
+
+        if (!$recorder instanceof AuditRecorderInterface) {
+            throw new LogicException('Audit recorder service is invalid.');
+        }
+
+        return $recorder;
     }
 
     private static function listUseCase(ContainerInterface $c): ListOrganizationsUseCase

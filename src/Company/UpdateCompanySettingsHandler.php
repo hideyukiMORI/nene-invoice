@@ -44,7 +44,7 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"legal_name" is required.');
         }
 
-        $settings = $this->useCase->execute($organizationId, new UpdateCompanySettingsInput(
+        $settings = $this->useCase->execute($organizationId, AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
             address: $this->optional($decoded, 'address'),
             phone: $this->optional($decoded, 'phone'),

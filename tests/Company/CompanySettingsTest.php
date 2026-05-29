@@ -13,14 +13,18 @@ use NeneInvoice\Company\InvalidRegistrationNumberException;
 use NeneInvoice\Company\PdoCompanySettingsRepository;
 use NeneInvoice\Company\UpdateCompanySettingsInput;
 use NeneInvoice\Company\UpdateCompanySettingsUseCase;
+use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
 
 final class CompanySettingsTest extends TestCase
 {
     private PdoCompanySettingsRepository $repository;
+    private RecordingAuditRecorder $audit;
 
     protected function setUp(): void
     {
+        $this->audit = new RecordingAuditRecorder();
+
         $config = new DatabaseConfig(
             url: null,
             environment: 'test',
@@ -50,9 +54,9 @@ final class CompanySettingsTest extends TestCase
 
     public function test_update_upserts_and_get_returns_settings(): void
     {
-        $update = new UpdateCompanySettingsUseCase($this->repository);
+        $update = new UpdateCompanySettingsUseCase($this->repository, $this->audit);
 
-        $created = $update->execute(1, new UpdateCompanySettingsInput(
+        $created = $update->execute(1, 5, new UpdateCompanySettingsInput(
             legalName: '株式会社あやね',
             registrationNumber: 'T1234567890123',
             bankName: 'みずほ',
@@ -61,7 +65,7 @@ final class CompanySettingsTest extends TestCase
         self::assertSame('T1234567890123', $created->registrationNumber);
 
         // Upsert: a second update replaces, not duplicates.
-        $update->execute(1, new UpdateCompanySettingsInput(legalName: '株式会社あやね（改）'));
+        $update->execute(1, 5, new UpdateCompanySettingsInput(legalName: '株式会社あやね（改）'));
 
         $fetched = (new GetCompanySettingsUseCase($this->repository))->execute(1);
         self::assertSame('株式会社あやね（改）', $fetched->legalName);
@@ -71,7 +75,7 @@ final class CompanySettingsTest extends TestCase
     public function test_update_rejects_malformed_registration_number(): void
     {
         $this->expectException(InvalidRegistrationNumberException::class);
-        (new UpdateCompanySettingsUseCase($this->repository))->execute(1, new UpdateCompanySettingsInput(
+        (new UpdateCompanySettingsUseCase($this->repository, $this->audit))->execute(1, 5, new UpdateCompanySettingsInput(
             legalName: 'X',
             registrationNumber: 'bad',
         ));
@@ -79,9 +83,9 @@ final class CompanySettingsTest extends TestCase
 
     public function test_settings_are_scoped_per_organization(): void
     {
-        $update = new UpdateCompanySettingsUseCase($this->repository);
-        $update->execute(1, new UpdateCompanySettingsInput(legalName: 'Org One'));
-        $update->execute(2, new UpdateCompanySettingsInput(legalName: 'Org Two'));
+        $update = new UpdateCompanySettingsUseCase($this->repository, $this->audit);
+        $update->execute(1, 5, new UpdateCompanySettingsInput(legalName: 'Org One'));
+        $update->execute(2, 5, new UpdateCompanySettingsInput(legalName: 'Org Two'));
 
         self::assertSame('Org One', (new GetCompanySettingsUseCase($this->repository))->execute(1)->legalName);
         self::assertSame('Org Two', (new GetCompanySettingsUseCase($this->repository))->execute(2)->legalName);

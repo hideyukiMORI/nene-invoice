@@ -61,7 +61,7 @@ final readonly class UpdateUserHandler implements RequestHandlerInterface
         $passwordValue = $decoded['password'] ?? null;
         $password = is_string($passwordValue) && $passwordValue !== '' ? $passwordValue : null;
 
-        $user = $this->useCase->execute($organizationId, $id, new UpdateUserInput($role, $status, $password));
+        $user = $this->useCase->execute($organizationId, AuthContext::userId($request), $id, new UpdateUserInput($role, $status, $password));
 
         return $this->json->create(UserResponse::toArray($user));
     }
