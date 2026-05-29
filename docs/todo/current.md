@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #49)
+Last updated: 2026-05-29 (Issue #51)
 
 ## Recently merged
 
@@ -25,13 +25,14 @@ Last updated: 2026-05-29 (Issue #49)
 - **Issue #43 / PR #44** — Client（取引先）永続化 + 読み取り ✅ merged
 - **Issue #45 / PR #46** — Client write（create/update/delete）✅ merged
 - **Issue #47 / PR #48** — 発行者プロフィール（company settings）+ 登録番号検証共有化 ✅ merged
-- **Issue #49** — 税計算エンジン（ADR 0004）⏳ this PR
+- **Issue #49 / PR #50** — 税計算エンジン（ADR 0004）✅ merged
+- **Issue #51** — 監査ログ基盤（ADR 0008）+ Client 統合 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #49 | `feat/49-tax-calculator` | 税計算エンジン（ADR 0004: 税率ごと1回丸め）純粋ドメイン | 🔄 PR pending |
+| #51 | `feat/51-audit-log` | 監査ログ基盤（ADR 0008・before/after）+ Client 統合 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -156,12 +157,18 @@ Last updated: 2026-05-29 (Issue #49)
 
 - `GET/PUT /admin/company-settings` (upsert, one row per org); `Compliance\RegistrationNumber` single home of the T+13 rule
 
-**Phase 1 — Tax calculation engine: 🔄 in progress** (Issue #49)
+**Phase 1 — Tax calculation engine: ✅ complete** (Issue #49 / PR #50)
 
-- `LineItem\TaxCalculator` (pure, integer-only): groups line subtotals by `tax_rate_bps`, rounds **once per rate** half-up (ADR 0004)
-- Returns subtotal / tax / total + per-rate breakdown (税率ごとの対価の額・消費税額 for qualified invoices)
-- Unit-tested incl. the round-once-per-rate proof (8% × ¥105 + ¥105 → 17, not 8+8=16), mixed 10/8, half-up boundary
-- Single source of truth for document totals; quotes/invoices will use it
+- `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
+
+**Phase 1 — Audit logging foundation: 🔄 in progress** (Issue #51, ADR 0008)
+
+- `audit_logs` table + `Audit\AuditRecorder`: who (actor_user_id) / org / action / entity / **before & after sanitized snapshots**
+- Recorded in the UseCase; snapshots reuse `*Response` presenters so secrets (password_hash) are never logged
+- **Integrated into Client create/update/delete** (reference); actor plumbed from `AuthContext`
+- Verified live: create (before=null), update (before+after), delete (after=null) rows written; no password_hash leaked
+- Limitation (ADR 0008): recording is synchronous best-effort, not yet in the mutation's DB transaction
+- Next: retrofit Organization / User / CompanySettings; audit read endpoint
 
 ## Handoff Notes
 
@@ -179,6 +186,6 @@ Last updated: 2026-05-29 (Issue #49)
 
 ## Next steps
 
-1. Quote persistence — `quotes` + `line_items` tables, `document_sequences` numbering (EST-YYYY-NNN), repository
-2. Quote CRUD + status machine (draft→sent→accepted/rejected/expired), using `TaxCalculator` for totals
-3. Invoices (convert from quote, issue, qualified-invoice validation) → Payments → overdue
+1. Retrofit audit into Organization / User / CompanySettings mutating use cases (ADR 0008)
+2. Quote persistence — `quotes` + `line_items`, `document_sequences` numbering (EST-YYYY-NNN); built with audit + `TaxCalculator`
+3. Quote CRUD + status machine → Invoices (convert/issue/qualified validation) → Payments → overdue
