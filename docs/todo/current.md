@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #76)
+Last updated: 2026-05-29 (Issue #5)
 
 ## Recently merged
 
@@ -38,22 +38,22 @@ Last updated: 2026-05-29 (Issue #76)
 - **Issue #69 / PR #71** — 請求書の発行（INV 採番 + 適格請求書検証）✅ merged
 - **Issue #72 / PR #73** — 入金記録（payments）— paid/partially_paid 遷移 ✅ merged
 - **Issue #74 / PR #75** — 請求書の直接作成（POST /admin/invoices）✅ merged
-- **Issue #76** — 監査ログ参照 API（GET /admin/audit-logs）⏳ this PR
+- **Issue #76 / PR #77** — 監査ログ参照 API（GET /admin/audit-logs）✅ merged
+- **Issue #5** — OpenAPI stub + MCP カタログ ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #76 | `feat/76-audit-read` | 監査ログ参照 API（GET /admin/audit-logs） | 🔄 PR pending |
+| #5 | `feat/5-openapi-mcp` | OpenAPI stub + MCP カタログ | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
 | Issue | Topic | Priority |
 | --- | --- | --- |
-| #4 | ランタイム基盤: テナント解決＋JWT認証＋RBAC＋`GET /health`（ADR 0006 で拡張） | P0 |
-| #5 | OpenAPI stub + MCP catalog | P0 |
-| #6 | Backend CI workflow | P0 |
+| #6 | Backend CI workflow（`composer check` を Actions で実行） | P0 |
 | #7 | ADR 0003 dual deployment (Tier A / Tier B) | P1 |
+| — | `public_html/openapi.php`（spec の HTTP 配信）/ ランタイム応答↔example 突合 | P2 |
 
 > マルチテナント前提のため、Issue #4 は単なる health から **テナント解決＋認証＋RBAC を含むランタイム基盤** に拡張。組織/ユーザー CRUD は後続 PR。
 
@@ -173,7 +173,17 @@ Last updated: 2026-05-29 (Issue #76)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Audit read API (監査ログ参照): 🔄 in progress** (Issue #76)
+**Phase 0+ — OpenAPI + MCP catalog: 🔄 in progress** (Issue #5)
+
+- `docs/openapi/openapi.yaml` (3.1.0) — 全 31 オペレーションを網羅（System/Auth/Audit/Organizations/Users/CompanySettings/Clients/Quotes/Invoices/Payments）、再利用 schema・parameters・Problem Details responses・examples
+- `docs/mcp/tools.json`（read 専用 15 tools; mutating は非公開）+ `tools/generate-mcp-tools.php`（再生成可能）
+- `tools/validate-openapi.php`（$ref 解決検証）; MCP は NENE2 `validate-mcp-tools.php` で検証（tool source↔OpenAPI operation, responseSchemaRef↔200 schema）
+- composer: `openapi` / `mcp` / `mcp:generate` を追加し、`check` に `@openapi` `@mcp` を組み込み（CI ゲート化）
+- `tests/OpenApi/OpenApiContractTest`: operationId 集合が実装エンドポイントと一致 / 一意 / well-formed / `{id}` パラメータ宣言 / MCP↔spec 整合
+- dev 依存に `symfony/yaml ^8.1` を追加（YAML パース）
+- フォロー: `public_html/openapi.php`（HTTP 配信）、ランタイム応答↔example 突合テスト
+
+**Phase 1 — Audit read API (監査ログ参照): ✅ complete** (Issue #76 / PR #77)
 
 - `GET /admin/audit-logs?limit&offset` — org-scoped audit trail, newest first (id DESC)
 - Access: `Capability::ManageUsers`（**admin / superadmin only**）— 監査証跡は管理者オーバーサイトで、billing オペレーター（member/viewer）には非開示
@@ -278,6 +288,6 @@ Last updated: 2026-05-29 (Issue #76)
 
 ## Next steps
 
-1. OpenAPI stub + MCP catalog (Issue #5) — 主要エンドポイントが出揃ったので着手適期
-2. Backend CI workflow (Issue #6); overdue 表示（issued/partially_paid past due_at）
+1. Backend CI workflow (Issue #6) — `composer check`（openapi/mcp 含む）を GitHub Actions で実行
+2. `public_html/openapi.php`（spec の HTTP 配信）; overdue 表示（issued/partially_paid past due_at）
 3. ADR 0003 dual deployment (Issue #7); 監査の transactional 記録

@@ -1,0 +1,1348 @@
+openapi: 3.1.0
+info:
+  title: NeNe Invoice API
+  version: 0.1.0
+  description: >
+    NeNe Invoice API contract — self-hosted estimate / invoice / payment
+    management for Japanese SMBs (qualified-invoice / 適格請求書 compliant).
+    Multi-tenant (organization-scoped); money is always integer cents and tax
+    rates are basis points (1000 = 10%). All mutating operations are audited.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: System
+    description: Runtime health endpoint.
+  - name: Auth
+    description: Authentication and current-user self-service.
+  - name: Audit
+    description: Audit trail read access (admin oversight).
+  - name: Organizations
+    description: Tenant organizations (superadmin only).
+  - name: Users
+    description: User accounts within an organization (admin).
+  - name: CompanySettings
+    description: Issuer (自社) profile per organization.
+  - name: Clients
+    description: Buyers / trading partners (取引先).
+  - name: Quotes
+    description: Estimates / quotes (見積).
+  - name: Invoices
+    description: Invoices (請求書), including issue and quote conversion.
+  - name: Payments
+    description: Payments (入金) recorded against invoices.
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Reports runtime and database health.
+      operationId: getHealth
+      security: []
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+                service: nene-invoice
+                checks:
+                  database: ok
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Admin login
+      description: Authenticates with email and password and returns a bearer token.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: admin@example.com
+              password: secret
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      description: Returns the authenticated user resolved from the bearer token.
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/audit-logs:
+    get:
+      tags: [Audit]
+      summary: List audit logs
+      description: >
+        Lists the organization's audit trail, newest first. Admin oversight —
+        requires the manage_users capability (admin / superadmin).
+      operationId: listAuditLogs
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Audit log page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/organizations:
+    get:
+      tags: [Organizations]
+      summary: List organizations
+      operationId: listOrganizations
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Organization page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Organizations]
+      summary: Create organization
+      operationId: createOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrganizationRequest'
+            example:
+              name: Acme KK
+              slug: acme
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '409':
+          $ref: '#/components/responses/SlugConflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/organizations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Organizations]
+      summary: Get organization by id
+      operationId: getOrganizationById
+      responses:
+        '200':
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Organizations]
+      summary: Delete organization
+      operationId: deleteOrganization
+      responses:
+        '204':
+          description: Organization deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/users:
+    get:
+      tags: [Users]
+      summary: List users
+      operationId: listUsers
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: User page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Users]
+      summary: Create user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            example:
+              email: member@example.com
+              password: secret
+              role: member
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '409':
+          $ref: '#/components/responses/EmailConflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Users]
+      summary: Get user by id
+      operationId: getUserById
+      responses:
+        '200':
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Users]
+      summary: Update user
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/EmailConflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [Users]
+      summary: Delete user
+      operationId: deleteUser
+      responses:
+        '204':
+          description: User deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/company-settings:
+    get:
+      tags: [CompanySettings]
+      summary: Get company settings
+      description: Returns the issuer profile for the caller's organization.
+      operationId: getCompanySettings
+      responses:
+        '200':
+          description: Company settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [CompanySettings]
+      summary: Update company settings
+      description: Upserts the issuer profile (one record per organization).
+      operationId: updateCompanySettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCompanySettingsRequest'
+            example:
+              legal_name: Acme KK
+              registration_number: T1234567890123
+      responses:
+        '200':
+          description: Company settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/InvalidRegistrationNumber'
+  /admin/clients:
+    get:
+      tags: [Clients]
+      summary: List clients
+      operationId: listClients
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Client page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Clients]
+      summary: Create client
+      operationId: createClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+            example:
+              name: Buyer KK
+              registration_number: T9876543210123
+      responses:
+        '201':
+          description: Client created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/InvalidRegistrationNumber'
+  /admin/clients/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Clients]
+      summary: Get client by id
+      operationId: getClientById
+      responses:
+        '200':
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Clients]
+      summary: Update client
+      operationId: updateClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+      responses:
+        '200':
+          description: Client updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidRegistrationNumber'
+    delete:
+      tags: [Clients]
+      summary: Delete client
+      operationId: deleteClient
+      responses:
+        '204':
+          description: Client deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/quotes:
+    get:
+      tags: [Quotes]
+      summary: List quotes
+      operationId: listQuotes
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Quote page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Quotes]
+      summary: Create quote
+      description: Creates a draft quote; computes totals (round once per tax rate).
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuoteRequest'
+            example:
+              client_id: 1
+              line_items:
+                - description: Consulting
+                  quantity: 1
+                  unit_price_cents: 100000
+                  tax_rate_bps: 1000
+      responses:
+        '201':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/quotes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Quotes]
+      summary: Get quote by id
+      operationId: getQuoteById
+      responses:
+        '200':
+          description: Quote with line items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Quotes]
+      summary: Change quote status
+      description: Transitions the quote status (draft→sent→accepted/rejected/expired).
+      operationId: changeQuoteStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeQuoteStatusRequest'
+            example:
+              status: sent
+      responses:
+        '200':
+          description: Quote updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidStateTransition'
+  /admin/quotes/{id}/convert:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Invoices]
+      summary: Convert quote to invoice
+      description: Converts an accepted quote into a draft invoice (copies lines/totals).
+      operationId: convertQuoteToInvoice
+      responses:
+        '201':
+          description: Invoice created from quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/invoices:
+    get:
+      tags: [Invoices]
+      summary: List invoices
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Invoice page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Invoices]
+      summary: Create invoice
+      description: Creates a draft invoice directly (no originating quote).
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceRequest'
+            example:
+              client_id: 1
+              line_items:
+                - description: License
+                  quantity: 2
+                  unit_price_cents: 50000
+                  tax_rate_bps: 1000
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/invoices/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Invoices]
+      summary: Get invoice by id
+      operationId: getInvoiceById
+      responses:
+        '200':
+          description: Invoice with line items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/invoices/{id}/issue:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Invoices]
+      summary: Issue invoice
+      description: >
+        Issues a draft invoice: allocates an INV number and locks it. A qualified
+        invoice requires the issuer registration number in company settings.
+      operationId: issueInvoice
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssueInvoiceRequest'
+            example:
+              qualified: true
+      responses:
+        '200':
+          description: Invoice issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceWithLines'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/QualifiedInvoiceIncomplete'
+  /admin/invoices/{id}/payments:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Payments]
+      summary: List payments
+      description: Lists the payments recorded against an invoice.
+      operationId: listPayments
+      responses:
+        '200':
+          description: Payments for the invoice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Payments]
+      summary: Record payment
+      description: >
+        Records a payment against an issued invoice and advances its status to
+        partially_paid or paid. Amounts are integer cents; over-payment is rejected.
+      operationId: recordPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentRequest'
+            example:
+              amount_cents: 110000
+              method: bank_transfer
+      responses:
+        '201':
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordPaymentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of items to return (1–100, default 20).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      description: Number of items to skip (default 0).
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    IdPathParam:
+      name: id
+      in: path
+      required: true
+      description: Resource identifier.
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token, or bad credentials.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InsufficientCapability:
+      description: Authenticated but lacking the required capability.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: Resource not found (or not in the caller's organization).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Conflict:
+      description: Conflicting request (e.g. cannot delete self).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    SlugConflict:
+      description: Organization slug already in use.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    EmailConflict:
+      description: User email already in use.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ValidationFailed:
+      description: Request body or field validation error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InvalidRegistrationNumber:
+      description: Registration number is not `T` followed by 13 digits.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InvalidStateTransition:
+      description: Disallowed status change.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    QualifiedInvoiceIncomplete:
+      description: A required qualified-invoice field is missing.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+  schemas:
+    ProblemDetails:
+      type: object
+      description: RFC 9457 problem details.
+      properties:
+        type:
+          type: string
+          description: Problem type URI (base https://nene-invoice.dev/problems/).
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+      required: [type, title, status]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: nene-invoice
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
+              example: ok
+      required: [status, service]
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: HMAC bearer token (HS256).
+      required: [token]
+    CurrentUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        organization_id:
+          type: [integer, 'null']
+      required: [id, email, role]
+    Role:
+      type: string
+      enum: [superadmin, admin, member, viewer]
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        organization_id:
+          type: [integer, 'null']
+        status:
+          type: string
+          enum: [active, invited]
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, email, role]
+    UserList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+      required: [email, password, role]
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+    Organization:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        plan:
+          type: [string, 'null']
+        is_active:
+          type: boolean
+        external_id:
+          type: [string, 'null']
+        custom_domain:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, name, slug, is_active]
+    OrganizationList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateOrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+      required: [name, slug]
+    CompanySettings:
+      type: object
+      description: Issuer (自社) profile. registration_number is `T` + 13 digits.
+      properties:
+        organization_id:
+          type: integer
+        legal_name:
+          type: string
+        address:
+          type: [string, 'null']
+        phone:
+          type: [string, 'null']
+        email:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+        bank_name:
+          type: [string, 'null']
+        bank_branch:
+          type: [string, 'null']
+        account_type:
+          type: [string, 'null']
+        account_number:
+          type: [string, 'null']
+        logo_url:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [organization_id, legal_name]
+    UpdateCompanySettingsRequest:
+      type: object
+      properties:
+        legal_name:
+          type: string
+        address:
+          type: [string, 'null']
+        phone:
+          type: [string, 'null']
+        email:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+        bank_name:
+          type: [string, 'null']
+        bank_branch:
+          type: [string, 'null']
+        account_type:
+          type: [string, 'null']
+        account_number:
+          type: [string, 'null']
+        logo_url:
+          type: [string, 'null']
+      required: [legal_name]
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        name:
+          type: string
+        contact_name:
+          type: [string, 'null']
+        email:
+          type: [string, 'null']
+        billing_address:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, name]
+    ClientList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        contact_name:
+          type: [string, 'null']
+        email:
+          type: [string, 'null']
+        billing_address:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+      required: [name]
+    UpdateClientRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        contact_name:
+          type: [string, 'null']
+        email:
+          type: [string, 'null']
+        billing_address:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+    LineItem:
+      type: object
+      description: A line on a quote or invoice. Money is integer cents.
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        quantity:
+          type: integer
+        unit_price_cents:
+          type: integer
+          description: Unit price in integer cents (smallest currency unit).
+        tax_rate_bps:
+          type: integer
+          description: Tax rate in basis points (1000 = 10%, 800 = 8%).
+        sort_order:
+          type: integer
+        line_subtotal_cents:
+          type: integer
+          description: quantity × unit_price_cents (pre-tax, not rounded).
+      required: [description, quantity, unit_price_cents, tax_rate_bps]
+    LineItemInput:
+      type: object
+      properties:
+        description:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        unit_price_cents:
+          type: integer
+          minimum: 0
+        tax_rate_bps:
+          type: integer
+          enum: [800, 1000]
+      required: [description, quantity, unit_price_cents, tax_rate_bps]
+    Quote:
+      type: object
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        client_id:
+          type: integer
+        quote_number:
+          type: string
+          description: Format EST-YYYY-NNN.
+        status:
+          type: string
+          enum: [draft, sent, accepted, rejected, expired]
+        issued_at:
+          type: [string, 'null']
+        valid_until:
+          type: [string, 'null']
+        subtotal_cents:
+          type: integer
+        tax_cents:
+          type: integer
+        total_cents:
+          type: integer
+        notes:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, client_id, quote_number, status, subtotal_cents, tax_cents, total_cents]
+    QuoteWithLines:
+      allOf:
+        - $ref: '#/components/schemas/Quote'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+    QuoteList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateQuoteRequest:
+      type: object
+      properties:
+        client_id:
+          type: integer
+        line_items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LineItemInput'
+        valid_until:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+      required: [client_id, line_items]
+    ChangeQuoteStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, sent, accepted, rejected, expired]
+      required: [status]
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        client_id:
+          type: integer
+        quote_id:
+          type: [integer, 'null']
+        invoice_number:
+          type: [string, 'null']
+          description: Null until issued; format INV-YYYY-NNN.
+        status:
+          type: string
+          enum: [draft, issued, partially_paid, paid]
+        is_qualified_invoice:
+          type: boolean
+        issued_at:
+          type: [string, 'null']
+        due_at:
+          type: [string, 'null']
+        subtotal_cents:
+          type: integer
+        tax_cents:
+          type: integer
+        total_cents:
+          type: integer
+        notes:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, client_id, status, is_qualified_invoice, subtotal_cents, tax_cents, total_cents]
+    InvoiceWithLines:
+      allOf:
+        - $ref: '#/components/schemas/Invoice'
+        - type: object
+          properties:
+            line_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/LineItem'
+    InvoiceList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateInvoiceRequest:
+      type: object
+      properties:
+        client_id:
+          type: integer
+        line_items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LineItemInput'
+        notes:
+          type: [string, 'null']
+      required: [client_id, line_items]
+    IssueInvoiceRequest:
+      type: object
+      properties:
+        qualified:
+          type: boolean
+          default: true
+          description: Whether to issue as a qualified invoice (適格請求書).
+        due_at:
+          type: [string, 'null']
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        invoice_id:
+          type: integer
+        amount_cents:
+          type: integer
+          description: Payment amount in integer cents.
+        paid_at:
+          type: string
+        method:
+          type: [string, 'null']
+          enum: [bank_transfer, cash, other, null]
+        note:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, invoice_id, amount_cents, paid_at]
+    PaymentList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        total_paid_cents:
+          type: integer
+      required: [items, total_paid_cents]
+    RecordPaymentRequest:
+      type: object
+      properties:
+        amount_cents:
+          type: integer
+          minimum: 1
+          description: Payment amount in integer cents (positive).
+        paid_at:
+          type: [string, 'null']
+        method:
+          type: [string, 'null']
+          enum: [bank_transfer, cash, other, null]
+        note:
+          type: [string, 'null']
+      required: [amount_cents]
+    RecordPaymentResponse:
+      type: object
+      properties:
+        payment:
+          $ref: '#/components/schemas/Payment'
+        invoice:
+          $ref: '#/components/schemas/Invoice'
+        total_paid_cents:
+          type: integer
+      required: [payment, invoice, total_paid_cents]
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        actor_user_id:
+          type: [integer, 'null']
+        organization_id:
+          type: [integer, 'null']
+        action:
+          type: string
+          description: e.g. invoice.created, invoice.issued, payment.recorded.
+        entity_type:
+          type: string
+        entity_id:
+          type: [integer, 'null']
+        before:
+          type: [object, 'null']
+          additionalProperties: true
+        after:
+          type: [object, 'null']
+          additionalProperties: true
+        created_at:
+          type: [string, 'null']
+      required: [id, action, entity_type]
+    AuditLogList:
+      $ref: '#/components/schemas/PageEnvelope'
+    PageEnvelope:
+      type: object
+      description: Standard list envelope (items vary by endpoint).
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [items, total, limit, offset]
+security:
+  - bearerAuth: []

@@ -1,0 +1,396 @@
+{
+    "version": 1,
+    "source": "docs/openapi/openapi.yaml",
+    "tools": [
+        {
+            "name": "getHealth",
+            "title": "Health",
+            "description": "Operational health check for the NeNe Invoice API runtime.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getHealth",
+                "method": "GET",
+                "path": "/health"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/HealthStatus"
+        },
+        {
+            "name": "getCurrentUser",
+            "title": "Current user",
+            "description": "Returns the authenticated user resolved from the bearer token.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getCurrentUser",
+                "method": "GET",
+                "path": "/admin/me"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/CurrentUser"
+        },
+        {
+            "name": "listAuditLogs",
+            "title": "List audit logs",
+            "description": "Lists the organization audit trail, newest first (admin oversight).",
+            "safety": "admin",
+            "source": {
+                "type": "openapi",
+                "operationId": "listAuditLogs",
+                "method": "GET",
+                "path": "/admin/audit-logs"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/AuditLogList"
+        },
+        {
+            "name": "listOrganizations",
+            "title": "List organizations",
+            "description": "Lists tenant organizations (superadmin).",
+            "safety": "admin",
+            "source": {
+                "type": "openapi",
+                "operationId": "listOrganizations",
+                "method": "GET",
+                "path": "/admin/organizations"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/OrganizationList"
+        },
+        {
+            "name": "getOrganizationById",
+            "title": "Get organization",
+            "description": "Returns one organization by id (superadmin).",
+            "safety": "admin",
+            "source": {
+                "type": "openapi",
+                "operationId": "getOrganizationById",
+                "method": "GET",
+                "path": "/admin/organizations/{id}"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/Organization"
+        },
+        {
+            "name": "listUsers",
+            "title": "List users",
+            "description": "Lists users in the caller organization (admin).",
+            "safety": "admin",
+            "source": {
+                "type": "openapi",
+                "operationId": "listUsers",
+                "method": "GET",
+                "path": "/admin/users"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/UserList"
+        },
+        {
+            "name": "getUserById",
+            "title": "Get user",
+            "description": "Returns one user by id (admin).",
+            "safety": "admin",
+            "source": {
+                "type": "openapi",
+                "operationId": "getUserById",
+                "method": "GET",
+                "path": "/admin/users/{id}"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/User"
+        },
+        {
+            "name": "getCompanySettings",
+            "title": "Get company settings",
+            "description": "Returns the issuer profile for the caller organization.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getCompanySettings",
+                "method": "GET",
+                "path": "/admin/company-settings"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/CompanySettings"
+        },
+        {
+            "name": "listClients",
+            "title": "List clients",
+            "description": "Lists clients (trading partners) in the caller organization.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "listClients",
+                "method": "GET",
+                "path": "/admin/clients"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/ClientList"
+        },
+        {
+            "name": "getClientById",
+            "title": "Get client",
+            "description": "Returns one client by id.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getClientById",
+                "method": "GET",
+                "path": "/admin/clients/{id}"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/Client"
+        },
+        {
+            "name": "listQuotes",
+            "title": "List quotes",
+            "description": "Lists quotes (estimates) in the caller organization.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "listQuotes",
+                "method": "GET",
+                "path": "/admin/quotes"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/QuoteList"
+        },
+        {
+            "name": "getQuoteById",
+            "title": "Get quote",
+            "description": "Returns one quote with its line items.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getQuoteById",
+                "method": "GET",
+                "path": "/admin/quotes/{id}"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/QuoteWithLines"
+        },
+        {
+            "name": "listInvoices",
+            "title": "List invoices",
+            "description": "Lists invoices in the caller organization.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "listInvoices",
+                "method": "GET",
+                "path": "/admin/invoices"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 20
+                    },
+                    "offset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                },
+                "additionalProperties": false
+            },
+            "responseSchemaRef": "#/components/schemas/InvoiceList"
+        },
+        {
+            "name": "getInvoiceById",
+            "title": "Get invoice",
+            "description": "Returns one invoice with its line items.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "getInvoiceById",
+                "method": "GET",
+                "path": "/admin/invoices/{id}"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/InvoiceWithLines"
+        },
+        {
+            "name": "listPayments",
+            "title": "List payments",
+            "description": "Lists the payments recorded against an invoice.",
+            "safety": "read",
+            "source": {
+                "type": "openapi",
+                "operationId": "listPayments",
+                "method": "GET",
+                "path": "/admin/invoices/{id}/payments"
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "id"
+                ]
+            },
+            "responseSchemaRef": "#/components/schemas/PaymentList"
+        }
+    ]
+}
