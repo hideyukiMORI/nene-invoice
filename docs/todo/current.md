@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #55)
+Last updated: 2026-05-29 (Issue #57)
 
 ## Recently merged
 
@@ -28,13 +28,14 @@ Last updated: 2026-05-29 (Issue #55)
 - **Issue #49 / PR #50** — 税計算エンジン（ADR 0004）✅ merged
 - **Issue #51 / PR #52** — 監査ログ基盤（ADR 0008）+ Client 統合 ✅ merged
 - **Issue #53 / PR #54** — 監査を Organization / User / CompanySettings に展開 ✅ merged
-- **Issue #55** — 文書採番（document_sequences）⏳ this PR
+- **Issue #55 / PR #56** — 文書採番（document_sequences）✅ merged
+- **Issue #57** — line_items 永続化（quote/invoice 共有）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #55 | `feat/55-document-numbering` | 文書採番（EST-/INV-YYYY-NNN・org×種別×年） | 🔄 PR pending |
+| #57 | `feat/57-line-items` | line_items 永続化（polymorphic・replaceForParent） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -163,7 +164,14 @@ Last updated: 2026-05-29 (Issue #55)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Document numbering: 🔄 in progress** (Issue #55)
+**Phase 1 — Line items persistence: 🔄 in progress** (Issue #57)
+
+- `line_items` (polymorphic `parent_type`+`parent_id`) + `PdoLineItemRepository` (findByParent ordered / replaceForParent / deleteForParent)
+- `LineItem` entity + `LineItemParent` enum; `LineItemResponse` (line_subtotal_cents only, no per-line tax per ADR 0004)
+- Tenant scoping via the parent (no org_id on line_items); tested on SQLite (order/replace/isolation/delete)
+- Quotes/invoices attach lines via `replaceForParent`
+
+**Phase 1 — Document numbering: ✅ complete** (Issue #55 / PR #56)
 
 - `document_sequences` (org × doc_type × year, unique) + `DocumentNumberGenerator` → `EST-2026-001` / `INV-2026-001`
 - Atomic allocation (UPDATE+1 / INSERT fallback on unique conflict); per-org/type/year isolation with yearly reset
@@ -194,6 +202,6 @@ Last updated: 2026-05-29 (Issue #55)
 
 ## Next steps
 
-1. `line_items` table + repository (polymorphic quote/invoice)
-2. Quote persistence — `quotes` + entity/repository; create uses `DocumentNumberGenerator` + `TaxCalculator` + audit
-3. Quote CRUD + status machine → Invoices (convert/issue/qualified validation) → Payments → overdue
+1. Quote persistence — `quotes` table + entity/repository (totals columns); reuses line items + numbering + tax
+2. Quote create/list/get + status machine; create uses `DocumentNumberGenerator` + `TaxCalculator` + audit
+3. Invoices (convert/issue/qualified validation) → Payments → overdue
