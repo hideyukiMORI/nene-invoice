@@ -7,6 +7,7 @@ namespace NeneInvoice;
 use LogicException;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use NeneInvoice\Audit\AuditRouteRegistrar;
 use NeneInvoice\Auth\AuthRouteRegistrar;
 use NeneInvoice\Client\ClientNotFoundExceptionHandler;
 use NeneInvoice\Client\ClientRouteRegistrar;
@@ -53,6 +54,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                 self::ROUTE_REGISTRARS,
                 static function (ContainerInterface $container): array {
                     $authRoutes = $container->get(AuthRouteRegistrar::class);
+                    $auditRoutes = $container->get(AuditRouteRegistrar::class);
                     $organizationRoutes = $container->get(OrganizationRouteRegistrar::class);
                     $userRoutes = $container->get(UserRouteRegistrar::class);
                     $clientRoutes = $container->get(ClientRouteRegistrar::class);
@@ -63,6 +65,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
+                    }
+
+                    if (!$auditRoutes instanceof AuditRouteRegistrar) {
+                        throw new LogicException('Audit route registrar service is invalid.');
                     }
 
                     if (!$organizationRoutes instanceof OrganizationRouteRegistrar) {
@@ -93,7 +99,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes];
+                    return [$authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes];
                 },
             )
             ->set(

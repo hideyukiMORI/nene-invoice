@@ -18,6 +18,11 @@ final class CapabilityResolverTest extends TestCase
         self::assertSame(Capability::ManageCompanySettings, CapabilityResolver::resolve('/admin/company-settings', 'PUT'));
     }
 
+    public function test_audit_logs_require_admin_oversight_capability(): void
+    {
+        self::assertSame(Capability::ManageUsers, CapabilityResolver::resolve('/admin/audit-logs', 'GET'));
+    }
+
     public function test_billing_paths_split_read_and_write(): void
     {
         self::assertSame(Capability::ViewBilling, CapabilityResolver::resolve('/admin/invoices', 'GET'));

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #74)
+Last updated: 2026-05-29 (Issue #76)
 
 ## Recently merged
 
@@ -37,13 +37,14 @@ Last updated: 2026-05-29 (Issue #74)
 - **Issue #67 / PR #68** — 見積→請求書変換 + 請求書一覧/取得 ✅ merged
 - **Issue #69 / PR #71** — 請求書の発行（INV 採番 + 適格請求書検証）✅ merged
 - **Issue #72 / PR #73** — 入金記録（payments）— paid/partially_paid 遷移 ✅ merged
-- **Issue #74** — 請求書の直接作成（POST /admin/invoices）⏳ this PR
+- **Issue #74 / PR #75** — 請求書の直接作成（POST /admin/invoices）✅ merged
+- **Issue #76** — 監査ログ参照 API（GET /admin/audit-logs）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #74 | `feat/74-invoice-create` | 請求書の直接作成（見積を介さない） | 🔄 PR pending |
+| #76 | `feat/76-audit-read` | 監査ログ参照 API（GET /admin/audit-logs） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -172,7 +173,16 @@ Last updated: 2026-05-29 (Issue #74)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Invoice direct create (見積を介さない請求書作成): 🔄 in progress** (Issue #74)
+**Phase 1 — Audit read API (監査ログ参照): 🔄 in progress** (Issue #76)
+
+- `GET /admin/audit-logs?limit&offset` — org-scoped audit trail, newest first (id DESC)
+- Access: `Capability::ManageUsers`（**admin / superadmin only**）— 監査証跡は管理者オーバーサイトで、billing オペレーター（member/viewer）には非開示
+- Response: `items`（id, actor_user_id, organization_id, action, entity_type, entity_id, before, after, created_at）+ `total` / `limit` / `offset`
+- Reuses existing `AuditLogRepositoryInterface::findByOrganization` / `countByOrganization`（read-only; no new table）
+- operationId `listAuditLogs` registered; `/admin/audit-logs` → ManageUsers added to CapabilityResolver
+- Tested: org isolation + newest-first + pagination + empty; CapabilityResolver mapping; full DI boot (HealthEndpointTest)
+
+**Phase 1 — Invoice direct create (見積を介さない請求書作成): ✅ complete** (Issue #74 / PR #75)
 
 - `POST /admin/invoices` {client_id, line_items[], notes?} — creates a draft invoice directly (no quote)
 - Same orchestration as quote create: client in-org validation + per-line checks + `TaxCalculator` (round once per rate, ADR 0004)
@@ -248,8 +258,9 @@ Last updated: 2026-05-29 (Issue #74)
 - `audit_logs` + `Audit\AuditRecorder` (ADR 0008): actor / org / action / entity / before & after sanitized snapshots
 - **Integrated into every mutating operation**: Client, Organization (create/delete), User (create/update/delete), CompanySettings (upsert → created/updated)
 - Verified live: all write actions record rows with the correct actor; `password_hash` never logged
+- **Read API added** (Issue #76): `GET /admin/audit-logs` (admin oversight; see Audit read API above)
 - Limitation (ADR 0008): synchronous best-effort recording, not yet in the mutation's DB transaction (planned)
-- Follow-up: audit read endpoint (`GET /admin/audit-logs`); transactional recording
+- Follow-up: transactional recording; richer audit filters (by entity_type / actor / date range)
 
 ## Handoff Notes
 
@@ -267,6 +278,6 @@ Last updated: 2026-05-29 (Issue #74)
 
 ## Next steps
 
-1. Audit read endpoint (`GET /admin/audit-logs`)
-2. overdue 表示（issued/partially_paid past due_at）; 請求書 PDF / 帳票（後続フェーズ）
-3. OpenAPI stub (Issue #5); Backend CI (Issue #6); ADR 0003 dual deployment (Issue #7)
+1. OpenAPI stub + MCP catalog (Issue #5) — 主要エンドポイントが出揃ったので着手適期
+2. Backend CI workflow (Issue #6); overdue 表示（issued/partially_paid past due_at）
+3. ADR 0003 dual deployment (Issue #7); 監査の transactional 記録
