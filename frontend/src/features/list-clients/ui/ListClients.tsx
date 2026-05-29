@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
 import { EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
 import { useListClients } from '../hooks/use-list-clients'
@@ -9,9 +10,14 @@ export function ListClients() {
 
   return (
     <Stack gap="md">
-      <Text as="h1" variant="heading-md">
-        {t('admin.clients.title')}
-      </Text>
+      <div className="flex items-center justify-between">
+        <Text as="h1" variant="heading-md">
+          {t('admin.clients.title')}
+        </Text>
+        <Link to="/clients/new" className="text-body text-accent">
+          {t('admin.clients.newButton')}
+        </Link>
+      </div>
 
       {state.kind === 'loading' && (
         <Stack direction="row" gap="sm">
