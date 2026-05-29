@@ -14,9 +14,19 @@ final readonly class ListInvoicesUseCase
     ) {
     }
 
-    public function execute(int $organizationId, int $limit, int $offset): ListInvoicesResult
-    {
-        $items = $this->invoices->findAllByOrganization($organizationId, $limit, $offset);
+    public function execute(
+        int $organizationId,
+        int $limit,
+        int $offset,
+        ?InvoiceListFilter $filter = null,
+    ): ListInvoicesResult {
+        if ($filter !== null && !$filter->isEmpty()) {
+            $items = $this->invoices->findByOrganizationFiltered($organizationId, $filter, $limit, $offset);
+            $total = $this->invoices->countByOrganizationFiltered($organizationId, $filter);
+        } else {
+            $items = $this->invoices->findAllByOrganization($organizationId, $limit, $offset);
+            $total = $this->invoices->countByOrganization($organizationId);
+        }
 
         $ids = [];
         foreach ($items as $invoice) {
@@ -34,10 +44,6 @@ final readonly class ListInvoicesUseCase
             }
         }
 
-        return new ListInvoicesResult(
-            $items,
-            $this->invoices->countByOrganization($organizationId),
-            $outstanding,
-        );
+        return new ListInvoicesResult($items, $total, $outstanding);
     }
 }

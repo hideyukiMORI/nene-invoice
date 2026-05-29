@@ -46,6 +46,77 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         return $row !== null ? (int) $row['cnt'] : 0;
     }
 
+    /** @return list<Invoice> */
+    public function findByOrganizationFiltered(
+        int $organizationId,
+        InvoiceListFilter $filter,
+        int $limit,
+        int $offset,
+    ): array {
+        [$where, $params] = $this->buildWhere($organizationId, $filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . ' FROM invoices WHERE ' . $where . ' ORDER BY id DESC LIMIT ? OFFSET ?',
+            [...$params, $limit, $offset],
+        );
+
+        return array_map(fn (array $row): Invoice => $this->mapRow($row), $rows);
+    }
+
+    public function countByOrganizationFiltered(int $organizationId, InvoiceListFilter $filter): int
+    {
+        [$where, $params] = $this->buildWhere($organizationId, $filter);
+
+        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM invoices WHERE ' . $where, $params);
+
+        return $row !== null ? (int) $row['cnt'] : 0;
+    }
+
+    /**
+     * @return array{0: string, 1: list<int|string>}
+     */
+    private function buildWhere(int $organizationId, InvoiceListFilter $filter): array
+    {
+        $clauses = ['organization_id = ?', 'is_deleted = 0'];
+        /** @var list<int|string> $params */
+        $params = [$organizationId];
+
+        if ($filter->statuses !== []) {
+            $placeholders = implode(', ', array_fill(0, count($filter->statuses), '?'));
+            $clauses[] = 'status IN (' . $placeholders . ')';
+            foreach ($filter->statuses as $status) {
+                $params[] = $status;
+            }
+        }
+
+        if ($filter->clientId !== null) {
+            $clauses[] = 'client_id = ?';
+            $params[] = $filter->clientId;
+        }
+
+        if ($filter->dueBefore !== null) {
+            $clauses[] = 'due_at IS NOT NULL AND due_at < ?';
+            $params[] = $filter->dueBefore;
+        }
+
+        if ($filter->dueAfter !== null) {
+            $clauses[] = 'due_at IS NOT NULL AND due_at > ?';
+            $params[] = $filter->dueAfter;
+        }
+
+        // Outstanding > 0 ⟺ the invoice is issued or partially paid (our model).
+        if ($filter->outstandingOnly || $filter->overdueOnly) {
+            $clauses[] = "status IN ('issued', 'partially_paid')";
+        }
+
+        if ($filter->overdueOnly) {
+            $clauses[] = 'due_at IS NOT NULL AND due_at < ?';
+            $params[] = $filter->todayOrNow();
+        }
+
+        return [implode(' AND ', $clauses), $params];
+    }
+
     public function save(Invoice $invoice): int
     {
         $now = date('Y-m-d H:i:s');

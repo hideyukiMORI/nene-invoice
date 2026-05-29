@@ -8,6 +8,7 @@ use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneInvoice\Invoice\Invoice;
+use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Invoice\PdoInvoiceRepository;
@@ -110,5 +111,35 @@ final class PdoInvoiceRepositoryTest extends TestCase
 
         $this->expectException(InvoiceNotFoundException::class);
         $this->repository->delete(999);
+    }
+
+    public function test_filter_by_status_client_due_and_outstanding(): void
+    {
+        // org 1: a paid one (client 5), an issued one past due (client 5), an issued one future (client 9)
+        $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Paid, subtotalCents: 1000, taxCents: 0, totalCents: 1000, invoiceNumber: 'INV-1', issuedAt: '2026-01-01 00:00:00', dueAt: '2026-01-31'));
+        $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Issued, subtotalCents: 2000, taxCents: 0, totalCents: 2000, invoiceNumber: 'INV-2', issuedAt: '2026-02-01 00:00:00', dueAt: '2026-02-28'));
+        $this->repository->save(new Invoice(organizationId: 1, clientId: 9, status: InvoiceStatus::Issued, subtotalCents: 3000, taxCents: 0, totalCents: 3000, invoiceNumber: 'INV-3', issuedAt: '2026-02-01 00:00:00', dueAt: '2026-12-31'));
+
+        // status filter
+        $issued = new InvoiceListFilter(statuses: ['issued']);
+        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $issued));
+
+        // client filter
+        $client5 = new InvoiceListFilter(clientId: 5);
+        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $client5));
+
+        // outstanding only (open = issued/partially_paid) excludes the paid one
+        $open = new InvoiceListFilter(outstandingOnly: true);
+        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $open));
+
+        // overdue as of 2026-06-01: INV-2 (due 02-28) is overdue, INV-3 (due 12-31) is not
+        $overdue = new InvoiceListFilter(overdueOnly: true, today: '2026-06-01');
+        $rows = $this->repository->findByOrganizationFiltered(1, $overdue, 10, 0);
+        self::assertCount(1, $rows);
+        self::assertSame('INV-2', $rows[0]->invoiceNumber);
+
+        // due_before
+        $dueBeforeMarch = new InvoiceListFilter(dueBefore: '2026-03-01');
+        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $dueBeforeMarch)); // 01-31 and 02-28
     }
 }
