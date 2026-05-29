@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #47)
+Last updated: 2026-05-29 (Issue #49)
 
 ## Recently merged
 
@@ -24,13 +24,14 @@ Last updated: 2026-05-29 (Issue #47)
 - **Issue #41 / PR #42** — ユーザー write（create/update/delete）✅ merged
 - **Issue #43 / PR #44** — Client（取引先）永続化 + 読み取り ✅ merged
 - **Issue #45 / PR #46** — Client write（create/update/delete）✅ merged
-- **Issue #47** — 発行者プロフィール（company settings）+ 登録番号検証の共有化 ⏳ this PR
+- **Issue #47 / PR #48** — 発行者プロフィール（company settings）+ 登録番号検証共有化 ✅ merged
+- **Issue #49** — 税計算エンジン（ADR 0004）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #47 | `feat/47-company-settings` | 発行者プロフィール（GET/PUT）+ Compliance\RegistrationNumber 共有化 | 🔄 PR pending |
+| #49 | `feat/49-tax-calculator` | 税計算エンジン（ADR 0004: 税率ごと1回丸め）純粋ドメイン | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -151,12 +152,16 @@ Last updated: 2026-05-29 (Issue #47)
 
 - `POST/PATCH/DELETE /admin/clients` — org-scoped, soft delete, buyer `registration_number` T+13 validated
 
-**Phase 1 — Company settings (issuer profile): 🔄 in progress** (Issue #47)
+**Phase 1 — Company settings (issuer profile): ✅ complete** (Issue #47 / PR #48)
 
-- `GET /admin/company-settings` (404 if unconfigured) / `PUT` (upsert) — `manage_company_settings`, org-scoped, one row per org
-- `Compliance\RegistrationNumber` is now the single home of the T+13 rule; Client and the issuer both use it
-- Verified live: GET-before 404 / bad-reg 422 / no-legal-name 422 / PUT 200 / GET-after 200 / PUT-again upsert (1 row); per-org scoping
-- Issuer side of qualified invoices is ready
+- `GET/PUT /admin/company-settings` (upsert, one row per org); `Compliance\RegistrationNumber` single home of the T+13 rule
+
+**Phase 1 — Tax calculation engine: 🔄 in progress** (Issue #49)
+
+- `LineItem\TaxCalculator` (pure, integer-only): groups line subtotals by `tax_rate_bps`, rounds **once per rate** half-up (ADR 0004)
+- Returns subtotal / tax / total + per-rate breakdown (税率ごとの対価の額・消費税額 for qualified invoices)
+- Unit-tested incl. the round-once-per-rate proof (8% × ¥105 + ¥105 → 17, not 8+8=16), mixed 10/8, half-up boundary
+- Single source of truth for document totals; quotes/invoices will use it
 
 ## Handoff Notes
 
@@ -174,6 +179,6 @@ Last updated: 2026-05-29 (Issue #47)
 
 ## Next steps
 
-1. Quotes (見積) — line items (quantity / unit_price_cents / tax_rate_bps), tax calc per ADR 0004 (round once per rate), status machine
-2. Invoices (請求書) — convert from quote, issue, qualified-invoice field validation (accounting-compliance)
-3. Payments (入金) → overdue; then Phase 2 admin UI + PDF
+1. Quote persistence — `quotes` + `line_items` tables, `document_sequences` numbering (EST-YYYY-NNN), repository
+2. Quote CRUD + status machine (draft→sent→accepted/rejected/expired), using `TaxCalculator` for totals
+3. Invoices (convert from quote, issue, qualified-invoice validation) → Payments → overdue
