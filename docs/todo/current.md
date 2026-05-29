@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #95)
+Last updated: 2026-05-30 (Issue #97)
 
 ## Recently merged
 
@@ -49,18 +49,26 @@ Last updated: 2026-05-30 (Issue #95)
 - **Issue #89 / PR #90** — 請求書詳細画面（/invoices/:id・明細表示）✅ merged
 - **Issue #91 / PR #92** — 請求書作成フォーム（client 選択 + 明細）✅ merged
 - **Issue #93 / PR #94** — 請求書の発行アクション（下書き詳細から issue）✅ merged
-- **Issue #95** — 入金記録（発行済み詳細で入金フォーム＋入金一覧）⏳ this PR
-- **Issue #93** — 請求書の発行アクション（下書き詳細から issue）⏳ this PR
+- **Issue #95 / PR #96** — 入金記録（発行済み詳細で入金フォーム＋入金一覧）✅ merged
+- **Issue #97** — NeNe Clear 上流契約の受諾＋ガバナンス整備（ADR 0009 / sibling / 用語）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #95 | `feat/95-payments` | 入金記録（発行済み詳細で入金フォーム＋一覧） | 🔄 PR pending |
+| #97 | `docs/97-clear-upstream-contract` | NeNe Clear 上流契約 受諾（ADR 0009 + sibling + 用語） | 🔄 PR pending |
+
+### NeNe Clear 連携（入金消込・督促、downstream consumer）
+
+契約原本: `nene-clear/docs/integrations/invoice-upstream-contract.md`。受諾 = **ADR 0009**。
+- 方針: Invoice が請求・入金の SoR。Clear は HTTP の read + scoped write のみ。service スコープ **`/api/*`** 名前空間（独立 OpenAPI）+ **サービストークン principal**（`read:invoices` / `write:payments`、組織スコープ）。
+- このPRはドキュメントのみ（ADR / sibling-products / terminology）。
+- 後続（段階実装・別 Issue）: ①読み取りAPI（filters + `outstanding_cents` + payments 履歴）②書き込みAPI（idempotent payment create + `external_reference`、過入金→`payment-exceeds-outstanding`、void-with-audit）③サービストークン認証 ④`/api/*` OpenAPI + 契約テスト。
+- **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
 
 ### Frontend 画面の進め方（縦スライス）
 
-請求書 詳細(#89) ✅ → 作成(#91) ✅ → 発行(#93) ✅ → **入金(#95)** ＝ quote-to-cash UI 一巡。
+請求書 詳細(#89) ✅ → 作成(#91) ✅ → 発行(#93) ✅ → 入金(#95) ✅ ＝ quote-to-cash UI 一巡。
 - entities: invoice（list/detail/create/issue）、client（list）、payment（list/record）、auth。
 - 詳細ページが ViewInvoice + IssueInvoice + ManagePayments をページ合成（feature 間 import なし、useInvoice 共有）。payment mutation は invoice 無効化をフィーチャ側で実施（sibling entity 直接 import 回避）。
 - 共有 UI: Button/Input/Select/Text/Stack/Spinner + Field/EmptyState/ErrorState（Storybook 必須）。
