@@ -35,7 +35,7 @@ final readonly class DeleteClientHandler implements RequestHandlerInterface
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $this->useCase->execute($organizationId, $id);
+        $this->useCase->execute($organizationId, AuthContext::userId($request), $id);
 
         return $this->json->createEmpty(204);
     }

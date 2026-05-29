@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use LogicException;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateClientUseCase
 {
     public function __construct(
         private ClientRepositoryInterface $clients,
+        private AuditRecorderInterface $audit,
     ) {
     }
 
@@ -21,7 +23,7 @@ final readonly class UpdateClientUseCase
      * @throws ClientNotFoundException
      * @throws InvalidRegistrationNumberException
      */
-    public function execute(int $organizationId, int $id, UpdateClientInput $input): Client
+    public function execute(int $organizationId, ?int $actorUserId, int $id, UpdateClientInput $input): Client
     {
         $existing = $this->clients->findById($id);
 
@@ -51,6 +53,8 @@ final readonly class UpdateClientUseCase
         if ($updated === null) {
             throw new LogicException('Client disappeared immediately after update.');
         }
+
+        $this->audit->record($actorUserId, $organizationId, 'client.updated', 'client', $id, ClientResponse::toArray($existing), ClientResponse::toArray($updated));
 
         return $updated;
     }

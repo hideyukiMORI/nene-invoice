@@ -10,6 +10,7 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -35,9 +36,9 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
             )
             ->set(ListClientsUseCase::class, static fn (ContainerInterface $c): ListClientsUseCase => new ListClientsUseCase(self::repository($c)))
             ->set(GetClientByIdUseCase::class, static fn (ContainerInterface $c): GetClientByIdUseCase => new GetClientByIdUseCase(self::repository($c)))
-            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c)))
-            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c)))
-            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c)))
+            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c), self::audit($c)))
+            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::audit($c)))
+            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::audit($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
@@ -151,6 +152,17 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
         }
 
         return $repo;
+    }
+
+    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    {
+        $recorder = $c->get(AuditRecorderInterface::class);
+
+        if (!$recorder instanceof AuditRecorderInterface) {
+            throw new LogicException('Audit recorder service is invalid.');
+        }
+
+        return $recorder;
     }
 
     private static function listUseCase(ContainerInterface $c): ListClientsUseCase

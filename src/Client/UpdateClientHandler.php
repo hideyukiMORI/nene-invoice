@@ -47,7 +47,7 @@ final readonly class UpdateClientHandler implements RequestHandlerInterface
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"name" is required.');
         }
 
-        $client = $this->useCase->execute($organizationId, $id, new UpdateClientInput(
+        $client = $this->useCase->execute($organizationId, AuthContext::userId($request), $id, new UpdateClientInput(
             name: $name,
             contactName: ClientField::optionalString($decoded, 'contact_name'),
             email: ClientField::optionalString($decoded, 'email'),

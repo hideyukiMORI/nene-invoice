@@ -19,6 +19,7 @@ use Nene2\Http\ResponseEmitter;
 use Nene2\Http\RuntimeApplicationFactory;
 use Nene2\Routing\Router;
 use NeneInvoice\ApplicationServiceProvider;
+use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Auth\AuthServiceProvider;
 use NeneInvoice\Auth\CapabilityMiddleware;
 use NeneInvoice\Client\ClientServiceProvider;
@@ -43,6 +44,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
     public function register(ContainerBuilder $builder): void
     {
         $builder->addProvider(new ApplicationServiceProvider());
+        $builder->addProvider(new AuditServiceProvider());
         $builder->addProvider(new AuthServiceProvider());
         $builder->addProvider(new OrganizationServiceProvider());
         $builder->addProvider(new UserServiceProvider());
