@@ -97,6 +97,9 @@ export const jaMessages = {
   'admin.invoices.issue.action': '発行する（適格請求書）',
   'admin.invoices.issue.submitting': '発行中…',
   'admin.invoices.issue.error': '発行できませんでした。会社情報の登録番号を確認してください。',
+  'admin.invoices.issue.confirmTitle': '請求書を発行しますか？',
+  'admin.invoices.issue.confirmMessage':
+    '発行すると番号が採番され、内容は確定（変更不可）になります。',
   'admin.payments.title': '入金',
   'admin.payments.loading': '入金を読み込み中…',
   'admin.payments.empty': '入金はまだありません。',
