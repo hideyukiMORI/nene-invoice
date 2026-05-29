@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #115)
+Last updated: 2026-05-30 (Issue #117)
 
 ## Recently merged
 
@@ -59,13 +59,14 @@ Last updated: 2026-05-30 (Issue #115)
 - **Issue #109 / PR #110** — payment external_reference / idempotency_key / void データ層 ✅ merged
 - **Issue #111 / PR #112** — `POST /api/invoices/{id}/payments`（冪等・external_reference・過入金422）✅ merged
 - **Issue #113 / PR #114** — `POST /api/invoices/{id}/payments/{paymentId}/void`（void-with-audit・冪等）✅ merged
-- **Issue #115** — フロント: 取引先の作成フォーム（/clients/new）⏳ this PR
+- **Issue #115 / PR #116** — フロント: 取引先の作成フォーム（/clients/new）✅ merged
+- **Issue #117** — フロント: ConfirmDialog primitive + 取引先の削除 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #115 | `feat/115-client-create` | フロント: 取引先作成フォーム（/clients/new） | 🔄 PR pending |
+| #117 | `feat/117-client-delete` | フロント: ConfirmDialog + 取引先削除（行操作） | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 

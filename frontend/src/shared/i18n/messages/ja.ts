@@ -39,6 +39,13 @@ export const jaMessages = {
   'admin.clients.create.error':
     '取引先を作成できませんでした。入力内容（登録番号の形式など）を確認してください。',
   'admin.clients.create.nameRequired': '名称を入力してください。',
+  'admin.clients.col.actions': '操作',
+  'admin.clients.delete.action': '削除',
+  'admin.clients.delete.title': '取引先を削除しますか？',
+  'admin.clients.delete.message': '「{{name}}」を削除します。この操作は取り消せません。',
+  'admin.clients.delete.confirm': '削除する',
+  'admin.clients.delete.error': '削除できませんでした。',
+  'common.actions.cancel': 'キャンセル',
   'admin.invoices.title': '請求書一覧',
   'admin.invoices.loading': '読み込み中…',
   'admin.invoices.empty': '請求書がまだありません。',

@@ -3,7 +3,8 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '@tests/msw/server'
 import { renderHookWithProviders } from '@tests/render/render-with-providers'
-import { useCreateClient } from './mutations'
+import { toClientId } from './ids'
+import { useCreateClient, useDeleteClient } from './mutations'
 
 describe('useCreateClient', () => {
   it('posts and returns the mapped client', async () => {
@@ -68,5 +69,19 @@ describe('useCreateClient', () => {
       expect(result.current.isError).toBe(true)
     })
     expect(result.current.error?.slug).toBe('invalid-registration-number')
+  })
+})
+
+describe('useDeleteClient', () => {
+  it('deletes and resolves with the id', async () => {
+    server.use(http.delete('/admin/clients/:id', () => new HttpResponse(null, { status: 204 })))
+
+    const { result } = renderHookWithProviders(() => useDeleteClient())
+    result.current.mutate(toClientId(5))
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+    expect(result.current.data).toBe(5)
   })
 })
