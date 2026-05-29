@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 /**
- * Quote lifecycle states (domain-model.md). Transition rules are enforced by the
- * quote use cases (see the status-transition PR), not here.
+ * Quote lifecycle states and allowed transitions (domain-model.md):
+ * draft → sent → accepted / rejected / expired. Accepted/rejected/expired are
+ * terminal here (acceptance leads to invoice conversion in the Invoice domain).
  */
 enum QuoteStatus: string
 {
@@ -15,4 +16,13 @@ enum QuoteStatus: string
     case Accepted = 'accepted';
     case Rejected = 'rejected';
     case Expired = 'expired';
+
+    public function canTransitionTo(self $target): bool
+    {
+        return match ($this) {
+            self::Draft => $target === self::Sent,
+            self::Sent => in_array($target, [self::Accepted, self::Rejected, self::Expired], true),
+            self::Accepted, self::Rejected, self::Expired => false,
+        };
+    }
 }

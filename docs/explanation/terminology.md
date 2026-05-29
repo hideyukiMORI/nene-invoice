@@ -141,7 +141,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
-| `listQuotes`, `getQuoteById`, `createQuote`, `convertQuoteToInvoice` | Quote |
+| `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |
 | `listPayments`, `createPayment` | Payment |
 
