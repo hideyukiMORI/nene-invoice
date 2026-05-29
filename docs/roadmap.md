@@ -22,8 +22,8 @@ Goal: engineering discipline and product design before runtime code.
 - Governance docs, ADR 0001/0002, inheritance map ✅
 - Product vision, requirements, domain model ✅ (Issue #3)
 - Multi-tenancy + role hierarchy adopted as foundational ✅ ADR 0006 (Issue #17)
-- NENE2 consumer scaffold (tenant resolution + JWT auth + RBAC + `GET /health`), OpenAPI, CI 🔲 Issues #4–#7
-- ADR 0003 dual deployment 🔲 Issue #7
+- NENE2 consumer scaffold (tenant resolution + JWT auth + RBAC + `GET /health`), OpenAPI, CI ✅ Issues #4–#6
+- ADR 0003 dual deployment ✅ Issue #7
 
 Tracked by `docs/milestones/2026-05-governance-and-foundation.md`.
 
