@@ -6,6 +6,8 @@ This file is the entry point for AI agents working on NeNe Invoice.
 
 - **Current work & status:** `docs/todo/current.md`
 - **Product vision:** `docs/explanation/product-vision.md`
+- **Requirements:** `docs/explanation/requirements.md`
+- **Domain model:** `docs/explanation/domain-model.md`
 - **Glossary:** `docs/explanation/glossary.md`
 - **Naming conventions:** `docs/development/naming-conventions.md`
 - Inheritance map: `docs/inheritance-from-nene2.md`

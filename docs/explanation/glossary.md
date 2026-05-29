@@ -1,20 +1,24 @@
 # Glossary
 
-Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments. Use these spellings consistently.
+Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments.
 
 | Term | Definition | Avoid |
 | --- | --- | --- |
-| **quote** | An estimate sent to a client before work is confirmed; may convert to an invoice | "estimate" in code identifiers (OK in UI copy) |
-| **invoice** | A billing document issued to a client; may be a qualified invoice (適格請求書) | "bill" |
-| **qualified invoice** | Japan invoice system compliant document with required fields and registration number | "適格請求書" in English API fields |
-| **client** | Customer / buyer organization or individual in the billing system | "customer" in code (OK in UI) |
-| **line item** | A single row on a quote or invoice (description, quantity, unit price) | "row", "detail line" |
-| **payment** | A recorded receipt against an invoice | "receipt" (reserved for PDF noun) |
-| **issuer** | The company that issues quotes and invoices (operator's company profile) | "seller" |
-| **registration number** | Japan invoice registration number (インボイス登録番号) | "T-number" alone without context |
-| **Tier A** | Shared hosting deployment (ZIP + web installer + MySQL) | "rental server tier" |
-| **Tier B** | Docker / VPS deployment | "cloud-only" |
+| **quote** | An estimate (見積書) sent to a client before work is confirmed; may convert to an invoice | "estimate" in code identifiers |
+| **invoice** | A billing document (請求書) issued to a client | "bill" |
+| **qualified invoice** | Japan invoice system compliant document (適格請求書) with required issuer, tax, and registration fields | mixing Japanese in API field names |
+| **issuer** | The operator's company that issues quotes and invoices (自社) | "seller", "supplier" in code |
+| **client** | Customer / buyer (取引先) in the billing system | "customer" in code identifiers |
+| **line item** | A single row on a quote or invoice (品名, quantity, unit price, tax rate) | "row", "detail" |
+| **payment** | A recorded receipt against an invoice (入金) | "receipt" (PDF noun) |
+| **registration number** | Japan invoice registration number (インボイス登録番号), format `T` + 13 digits | "T-number" without context |
+| **tax rate bps** | Tax rate in basis points (1000 = 10.00%, 800 = 8.00%) | float percentages in DB |
+| **quote-to-cash** | Flow from estimate through invoice to payment | "order-to-cash" (ERP term) |
+| **Tier A** | Shared hosting deployment (ZIP + web installer + MySQL) | "rental server" in code |
+| **Tier B** | Docker / VPS deployment | "cloud tier" |
 | **handler** | HTTP entry point class | "controller" |
-| **use case** | Business logic class with `execute()` | "service" (in UseCase sense) |
+| **use case** | Business logic class with `execute()` | "service" (UseCase sense) |
+| **sync PDF download** | Single HTTP response returning PDF bytes | "streaming PDF" |
+| **overdue** | Invoice past `due_at` with unpaid balance — computed status | stored status in Phase 1 (optional) |
 
-Expanded definitions will follow in Issue #2 product documentation.
+When adding terms, update this table in the same PR.

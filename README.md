@@ -1,49 +1,94 @@
 # NeNe Invoice
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php)](https://www.php.net/)
 
-**Self-hosted quote and invoice management for Japan SMB — built on [NENE2](https://github.com/hideyukiMORI/NENE2).**
+**Quote, invoice, and payment tracking for Japan SMB — self-hosted on your stack.**
 
-NeNe Invoice is an open-source billing platform: create quotes, issue invoice-compliant PDFs, track payments, and operate everything on infrastructure you control — without a monthly SaaS subscription.
+NeNe Invoice is an open-source billing platform built on [NENE2](https://github.com/hideyukiMORI/NENE2). Create quotes, issue **qualified invoice** (適格請求書) PDFs, track payments, and run everything on shared hosting or Docker — without a monthly SaaS fee.
 
-> **Status:** Phase 0 — governance and product design. Runtime scaffold follows in Phase 0+ Issues.
+> **Example operator:** an office manager on shared hosting issues invoice-compliant PDFs from admin UI instead of Excel + manual PDF — see [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md#primary-persona).
 
-## Goals (summary)
+## Goals
 
-- **Japan invoice compliance** — qualified invoice (適格請求書) fields, tax rates, registration number
-- **Self-hosted OSS** — MIT licensed; shared hosting (Tier A) or Docker/VPS (Tier B)
-- **Quote-to-cash flow** — estimate → invoice → payment tracking
-- **Sibling to NeNe ecosystem** — HTTP integration with Records, Concierge, Corpus; never merged into CMS
+- **Japan invoice compliance** — registration number, tax rates, qualified invoice PDF fields
+- **Self-hosted OSS** — MIT licensed; Tier A shared hosting or Tier B Docker/VPS
+- **Quote-to-cash** — estimate → invoice → payment in one product
+- **Sibling to NeNe ecosystem** — optional HTTP link to Records / Concierge; never merged into CMS
 - **AI-readable** — OpenAPI contract, MCP for ops, explicit Clean Architecture
+
+## Quick Start
+
+**Status:** Phase 0 — product design complete; runtime scaffold in progress (Issue #4).
+
+```bash
+git clone https://github.com/hideyukiMORI/nene-invoice.git
+cd nene-invoice
+# docker compose up — lands with Issue #4
+```
+
+## Architecture (planned)
+
+```
+Admin UI (React)  ──→  NeNe Invoice API (NENE2)  ──→  MySQL
+Ops / MCP           ──→         │
+                                ↓ HTTP (optional)
+                    NeNe Records / NeNe Concierge
+```
+
+- **Backend**: PHP 8.4, NENE2, Handler → UseCase → Repository
+- **Money**: integer cents everywhere — no floats
+- **PDF**: server-side qualified invoice generation
+- **Deploy**: Tier A (shared hosting) + Tier B (Docker) — ADR 0003 planned
+
+## Current Status
+
+| Phase | Scope | Status |
+| --- | --- | --- |
+| 0 | Governance + product docs | ✅ |
+| 0+ | Runtime scaffold, OpenAPI, CI | 🔲 Issues #4–#7 |
+| 1 | Core billing API | 🔲 Planned |
+| 2 | Admin UI + PDF | 🔲 Planned |
+| 3 | Tier A shared hosting | 🔲 Planned |
+
+See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
+
+## Non-goals
+
+- Not full accounting / general ledger
+- Not payroll or expense reimbursement
+- Not inventory or POS
+- Not a WordPress plugin
+- Not embedded inside NeNe Records
+
+Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/product-vision.md#non-goals)
 
 ## Documentation
 
 | Topic | Document |
 | --- | --- |
-| **Start here (agents)** | [`AGENTS.md`](./AGENTS.md) |
+| **Product vision** | [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md) |
+| **Requirements** | [`docs/explanation/requirements.md`](./docs/explanation/requirements.md) |
+| **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |
 | **Glossary** | [`docs/explanation/glossary.md`](./docs/explanation/glossary.md) |
-| **Product vision** | Issue #2 (in progress) |
-| **Naming conventions** | [`docs/development/naming-conventions.md`](./docs/development/naming-conventions.md) |
-| **NENE2 inheritance** | [`docs/inheritance-from-nene2.md`](./docs/inheritance-from-nene2.md) |
+| **Start here (agents)** | [`AGENTS.md`](./AGENTS.md) |
 | **Workflow** | [`docs/workflow.md`](./docs/workflow.md) |
-| **Roadmap** | [`docs/roadmap.md`](./docs/roadmap.md) |
-| **Current work** | [`docs/todo/current.md`](./docs/todo/current.md) |
 
 ## Ecosystem
 
-```
-NENE2 (framework)
-  ├── NeNe Records   (CMS · optional product catalog upstream)
-  ├── NeNe Corpus    (knowledge chat — optional)
-  ├── NeNe Concierge (scenario chat · lead capture upstream)
-  └── NeNe Invoice   (quote · invoice · payment — this repo)
-```
+Part of the [hideyukiMORI NeNe portfolio](https://github.com/hideyukiMORI):
 
-Integration is **HTTP-only**. NeNe Invoice never shares databases with sibling products.
+| Product | Role |
+| --- | --- |
+| [NENE2](https://github.com/hideyukiMORI/NENE2) | Framework runtime |
+| [nene-records](https://github.com/hideyukiMORI/nene-records) | CMS · optional product catalog |
+| [nene-corpus](https://github.com/hideyukiMORI/nene-corpus) | Knowledge chat |
+| [nene-concierge](https://github.com/hideyukiMORI/nene-concierge) | Scenario chat · optional leads |
+| **nene-invoice** | Quote · invoice · payment (this repo) |
 
 ## Contributing
 
-See [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md). All work is Issue-driven; do not commit directly to `main`.
+Issue-driven development — see [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md).
 
 ## License
 
