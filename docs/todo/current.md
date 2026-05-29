@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #7)
+Last updated: 2026-05-29 (Issue #83)
 
 ## Recently merged
 
@@ -42,13 +42,14 @@ Last updated: 2026-05-29 (Issue #7)
 - **Issue #5 / PR #78** — OpenAPI stub + MCP カタログ ✅ merged
 - **Issue #6 / PR #79** — Backend CI workflow（GitHub Actions）✅ merged
 - **Issue #80 / PR #81** — CI Actions を Node 24 対応版（checkout/cache @v5）へ更新 ✅ merged
-- **Issue #7** — ADR 0003 dual deployment（Tier A / Tier B）⏳ this PR
+- **Issue #7 / PR #82** — ADR 0003 dual deployment（Tier A / Tier B）✅ merged
+- **Issue #83** — フロントエンド規約を本実装版へ拡張（sibling 準拠）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #7 | `docs/7-adr-dual-deployment` | ADR 0003 dual deployment（Tier A / Tier B） | 🔄 PR pending |
+| #83 | `docs/83-frontend-standards` | フロントエンド規約 本実装版（frontend-standards / review） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -176,7 +177,14 @@ Last updated: 2026-05-29 (Issue #7)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 0+ — ADR 0003 dual deployment: 🔄 in progress** (Issue #7)
+**Phase 2 — Frontend standards (本実装版): 🔄 in progress** (Issue #83)
+
+- `docs/development/frontend-standards.md` をスタブ→本実装版へ拡張（nene-records 準拠の厳格規約: レイヤード `app→pages→features→entities→shared`、配置ゼロトレランス、データフロー、TanStack/RHF+Zod/Tailwind v4 トークン/Storybook/Vitest+MSW、ESLint 境界）
+- 本製品調整を明記: **ja/en のみ（ADR 0005）**、法定請求書は常に日本語、snake_case 保持、money=integer cents・税率=bps、ビルド出力 `public_html/admin/`（Tier A 同一オリジン）、**Bearer トークンは既定 in-memory**（localStorage/Cookie 化は ADR 必須）、RBAC は UX のみ
+- `docs/review/frontend.md` を本実装版チェックリストへ
+- 次 PR で `frontend/` スキャフォールド（configs + app shell + shared/api + theme + i18n + invoice entity + list-invoices feature + login、`npm run check` green）
+
+**Phase 0+ — ADR 0003 dual deployment: ✅ complete** (Issue #7 / PR #82)
 
 - `docs/adr/0003-dual-deployment-tiers.md`（status: accepted）— Tier A 共有ホスティング（ZIP + web installer、MySQL、same-origin admin、CLI/daemon/root 不可）と Tier B Docker Compose を**単一コードベース**で両立する決定を正式化
 - 共有不変条件: 本番は MySQL（SQLite はテストのみ）、env ベース設定、ドメインロジックに tier 分岐なし、PHP 8.4 floor
