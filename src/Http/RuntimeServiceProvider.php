@@ -28,6 +28,7 @@ use NeneInvoice\DocumentSequence\DocumentSequenceServiceProvider;
 use NeneInvoice\Invoice\InvoiceServiceProvider;
 use NeneInvoice\LineItem\LineItemServiceProvider;
 use NeneInvoice\Organization\OrganizationServiceProvider;
+use NeneInvoice\Payment\PaymentServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
 use NeneInvoice\User\UserServiceProvider;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -58,6 +59,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new LineItemServiceProvider());
         $builder->addProvider(new QuoteServiceProvider());
         $builder->addProvider(new InvoiceServiceProvider());
+        $builder->addProvider(new PaymentServiceProvider());
 
         $builder
             ->set(Psr17Factory::class, static fn (ContainerInterface $container): Psr17Factory => new Psr17Factory())

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #69)
+Last updated: 2026-05-29 (Issue #72)
 
 ## Recently merged
 
@@ -35,13 +35,14 @@ Last updated: 2026-05-29 (Issue #69)
 - **Issue #63 / PR #64** — Quote 状態遷移 ✅ merged
 - **Issue #65 / PR #66** — Invoice 永続化レイヤ ✅ merged
 - **Issue #67 / PR #68** — 見積→請求書変換 + 請求書一覧/取得 ✅ merged
-- **Issue #69** — 請求書の発行（INV 採番 + 適格請求書検証）⏳ this PR
+- **Issue #69 / PR #71** — 請求書の発行（INV 採番 + 適格請求書検証）✅ merged
+- **Issue #72** — 入金記録（payments）— paid/partially_paid 遷移 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #69 | `feat/69-invoice-issue` | 請求書の発行（INV 採番 + 適格請求書検証） | 🔄 PR pending |
+| #72 | `feat/72-payments` | 入金記録（payments）— paid/partially_paid 遷移 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -170,7 +171,17 @@ Last updated: 2026-05-29 (Issue #69)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Invoice issue (INV 採番 + 適格請求書検証): 🔄 in progress** (Issue #69)
+**Phase 1 — Payments (入金記録): 🔄 in progress** (Issue #72)
+
+- `POST /admin/invoices/{id}/payments` {amount_cents, paid_at?, method?, note?} — records a payment, advances the invoice: partial → `partially_paid`, full → `paid`
+- `GET /admin/invoices/{id}/payments` — payment list + running `total_paid_cents`（org スコープ）
+- Compliance gates: integer cents only (ADR 0004); only **issued / partially_paid** invoices accept payments (draft / paid → 422 `validation-failed`); non-positive amount → 422; over-payment (recorded total > invoice total) → 422
+- `payment.recorded` audit with before/after invoice status (ADR 0008); cross-org → 404
+- `payments` table (Phinx + SQLite snapshot) + `Payment` entity + `PdoPaymentRepository`
+- Terminology: operationId `recordPayment` registered (was speculative `createPayment`)
+- Tested: partial→partially_paid / full→paid / cumulative→paid / over-payment→422 / non-positive→422 / draft→422 / paid→422 / cross-org→404; Pdo repo (sum/order); full DI boot (HealthEndpointTest)
+
+**Phase 1 — Invoice issue (INV 採番 + 適格請求書検証): ✅ complete** (Issue #69 / PR #71)
 
 - `POST /admin/invoices/{id}/issue` {qualified?:bool=true, due_at?} — draft → issued
 - Compliance gates (accounting-compliance §2/§4): only a **draft** can be issued (issued docs immutable → 422 `validation-failed`); a **qualified** invoice requires the issuer registration number in company settings (→ 422 `qualified-invoice-incomplete`); no line items → 422
@@ -246,6 +257,6 @@ Last updated: 2026-05-29 (Issue #69)
 
 ## Next steps
 
-1. Payments (record) → invoice paid/partially_paid; overdue computed
-2. Direct invoice create; audit read endpoint (`GET /admin/audit-logs`)
+1. Direct invoice create（見積を介さない請求書作成）
+2. Audit read endpoint (`GET /admin/audit-logs`); overdue 表示（issued/partially_paid past due_at）
 3. OpenAPI stub (Issue #5); Backend CI (Issue #6); ADR 0003 dual deployment (Issue #7)

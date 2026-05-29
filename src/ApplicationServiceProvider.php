@@ -21,6 +21,8 @@ use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\Payment\PaymentRouteRegistrar;
+use NeneInvoice\Payment\PaymentValidationExceptionHandler;
 use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
 use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
@@ -57,6 +59,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $companyRoutes = $container->get(CompanyRouteRegistrar::class);
                     $quoteRoutes = $container->get(QuoteRouteRegistrar::class);
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
+                    $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -86,7 +89,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Invoice route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes];
+                    if (!$paymentRoutes instanceof PaymentRouteRegistrar) {
+                        throw new LogicException('Payment route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes];
                 },
             )
             ->set(
@@ -108,6 +115,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceNotFound = $container->get(InvoiceNotFoundExceptionHandler::class);
                     $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
+                    $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -173,7 +181,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Qualified invoice incomplete exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete];
+                    if (!$paymentValidation instanceof PaymentValidationExceptionHandler) {
+                        throw new LogicException('Payment validation exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation];
                 },
             );
     }
