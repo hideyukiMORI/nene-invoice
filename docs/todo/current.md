@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #85)
+Last updated: 2026-05-30 (Issue #89)
 
 ## Recently merged
 
@@ -44,13 +44,19 @@ Last updated: 2026-05-30 (Issue #85)
 - **Issue #80 / PR #81** — CI Actions を Node 24 対応版（checkout/cache @v5）へ更新 ✅ merged
 - **Issue #7 / PR #82** — ADR 0003 dual deployment（Tier A / Tier B）✅ merged
 - **Issue #83 / PR #84** — フロントエンド規約を本実装版へ拡張（sibling 準拠）✅ merged
-- **Issue #85** — admin UI スキャフォールド + ログイン〜請求書一覧の縦スライス ⏳ this PR
+- **Issue #85 / PR #86** — admin UI スキャフォールド + ログイン〜請求書一覧 ✅ merged
+- **Issue #87 / PR #88** — Vite dev の base 修正（import 解決）✅ merged
+- **Issue #89** — 請求書詳細画面（/invoices/:id・明細表示）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #85 | `feat/85-frontend-scaffold` | admin UI スキャフォールド（ログイン→請求書一覧） | 🔄 PR pending |
+| #89 | `feat/89-invoice-detail` | 請求書詳細画面（/invoices/:id・明細） | 🔄 PR pending |
+
+### Frontend 画面の進め方（縦スライス）
+
+請求書 **詳細(#89)** → 作成 → 発行 → 入金 の順。各 PR で `entities/{r}` スライス + `features/*` を同パターンで追加。
 
 ## Phase 0+ Backlog
 

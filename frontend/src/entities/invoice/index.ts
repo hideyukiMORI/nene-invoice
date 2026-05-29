@@ -1,5 +1,5 @@
-export type { InvoiceId } from './ids'
-export type { Invoice, InvoicePage } from './model'
+export { type InvoiceId, toInvoiceId } from './ids'
+export type { Invoice, InvoicePage, InvoiceWithLines, LineItem } from './model'
 export { INVOICE_STATUSES, type InvoiceStatus } from './enum'
 export { invoiceKeys, type InvoiceListParams } from './query-keys'
-export { useInvoiceList } from './queries'
+export { useInvoiceList, useInvoice } from './queries'

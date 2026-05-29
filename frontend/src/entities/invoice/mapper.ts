@@ -1,6 +1,6 @@
-import type { InvoiceDto, InvoiceListDto } from './api-types'
+import type { InvoiceDto, InvoiceListDto, InvoiceWithLinesDto, LineItemDto } from './api-types'
 import { toInvoiceId } from './ids'
-import type { Invoice, InvoicePage } from './model'
+import type { Invoice, InvoicePage, InvoiceWithLines, LineItem } from './model'
 
 /** Pure DTO → model. Brands the id; normalises optional nulls. */
 export function toInvoice(dto: InvoiceDto): Invoice {
@@ -24,5 +24,24 @@ export function toInvoicePage(dto: InvoiceListDto): InvoicePage {
     total: dto.total,
     limit: dto.limit,
     offset: dto.offset,
+  }
+}
+
+function toLineItem(dto: LineItemDto): LineItem {
+  const quantity = dto.quantity
+  const unitPrice = dto.unit_price_cents
+  return {
+    description: dto.description,
+    quantity,
+    unit_price_cents: unitPrice,
+    tax_rate_bps: dto.tax_rate_bps,
+    line_subtotal_cents: dto.line_subtotal_cents ?? quantity * unitPrice,
+  }
+}
+
+export function toInvoiceWithLines(dto: InvoiceWithLinesDto): InvoiceWithLines {
+  return {
+    ...toInvoice(dto),
+    line_items: (dto.line_items ?? []).map(toLineItem),
   }
 }

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import { EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
@@ -52,7 +53,11 @@ export function ListInvoices() {
           <tbody>
             {state.invoices.map((invoice) => (
               <tr key={invoice.id} className="border-b border-border">
-                <td className="py-stack-sm pr-inline-md">{invoice.invoice_number ?? '—'}</td>
+                <td className="py-stack-sm pr-inline-md">
+                  <Link to={`/invoices/${String(invoice.id)}`} className="text-accent">
+                    {invoice.invoice_number ?? '—'}
+                  </Link>
+                </td>
                 <td className="py-stack-sm pr-inline-md">
                   {t(`admin.invoices.status.${invoice.status}`)}
                 </td>

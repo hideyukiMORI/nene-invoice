@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { InvoiceDto } from './api-types'
-import { toInvoice, toInvoicePage } from './mapper'
+import type { InvoiceDto, InvoiceWithLinesDto } from './api-types'
+import { toInvoice, toInvoicePage, toInvoiceWithLines } from './mapper'
 
 const dto: InvoiceDto = {
   id: 1,
@@ -36,5 +36,34 @@ describe('toInvoicePage', () => {
     expect(page.items).toHaveLength(1)
     expect(page.items[0]?.id).toBe(1)
     expect(page.total).toBe(1)
+  })
+})
+
+describe('toInvoiceWithLines', () => {
+  it('maps line items and falls back to computed line subtotal', () => {
+    const withLines: InvoiceWithLinesDto = {
+      ...dto,
+      line_items: [
+        {
+          description: 'Std',
+          quantity: 2,
+          unit_price_cents: 1500,
+          tax_rate_bps: 1000,
+          line_subtotal_cents: 3000,
+        },
+        { description: 'NoSubtotal', quantity: 3, unit_price_cents: 1000, tax_rate_bps: 800 },
+      ],
+    }
+
+    const model = toInvoiceWithLines(withLines)
+    expect(model.id).toBe(1)
+    expect(model.line_items).toHaveLength(2)
+    expect(model.line_items[0]?.line_subtotal_cents).toBe(3000)
+    expect(model.line_items[1]?.line_subtotal_cents).toBe(3000) // 3 × 1000 computed
+  })
+
+  it('defaults to an empty line item array', () => {
+    const model = toInvoiceWithLines({ ...dto })
+    expect(model.line_items).toEqual([])
   })
 })
