@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #17)
+Last updated: 2026-05-29 (Issue #4)
 
 ## Recently merged
 
@@ -10,12 +10,13 @@ Last updated: 2026-05-29 (Issue #17)
 - **Issue #11 / PR #12** — 日英(ja/en)バイリンガル方針宣言（ADR 0005）・多言語非対象 ✅ merged
 - **Issue #13 / PR #14** — 会計・税務コンプライアンス完全順守を拘束ルール化（accounting-compliance.md・compliance チェックリスト）✅ merged
 - **Issue #15 / PR #16** — 命名規則の絶対順守・用語レジストリ（唯一の真実）・タイポ厳禁 ✅ merged
+- **Issue #17 / PR #18** — マルチテナント基盤＋ロール階層を土台採用（ADR 0006） ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #17 | `docs/17-adopt-multi-tenancy` | マルチテナント基盤＋ロール階層（superadmin/admin/member）を土台採用（ADR 0006） | 🔄 PR pending |
+| #4 | `feat/4-runtime-scaffold` | ランタイム基盤 PR-B: NENE2 consumer scaffold + `GET /health` + composer check green | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -61,14 +62,18 @@ Last updated: 2026-05-29 (Issue #17)
 - Naming made absolute; typos / unregistered terms block merge
 - Registry update required in the same PR as any term add/rename
 
-**Phase 0 — Multi-tenancy adoption: 🔄 in progress** (Issue #17, docs/ADR only)
+**Phase 0 — Multi-tenancy adoption: ✅ complete** (Issue #17, docs/ADR only)
 
 - ADR 0006: multi-tenant + role hierarchy (superadmin/admin/member/viewer) adopted as foundational
 - Tenant-scoped `organization_id` on all billing tables; per-org issuer profile
 - Org resolution default `single`; superadmin manages orgs, admin manages users
 - terminology registry extended (roles, capabilities, resolution modes, org/user)
 
-**Runtime: not started** — Issue #4 builds the tenant-aware foundation (PR-B) after #17 merges.
+**Phase 0+ — Runtime scaffold (PR-B): 🔄 in progress** (Issue #4)
+
+- NENE2 consumer bootstrap: `composer.json` (require `hideyukimori/nene2 ^1.5`), `public_html/index.php`, `RuntimeContainerFactory` → `RuntimeServiceProvider` → `ApplicationServiceProvider`
+- `GET /health` (framework built-in) verified end-to-end; `composer check` green (PHPUnit + PHPStan 8 + php-cs-fixer)
+- Module layout is tenant-ready; org resolution + JWT auth + RBAC wired in the next PRs
 
 ## Handoff Notes
 
@@ -86,6 +91,7 @@ Last updated: 2026-05-29 (Issue #17)
 
 ## Next steps
 
-1. Merge Issue #17 PR (multi-tenancy adoption — docs/ADR)
-2. PR-B (Issue #4): tenant-aware runtime foundation — org resolution + JWT auth + RBAC + `GET /health`, mirroring nene-records bootstrap (`RuntimeContainerFactory` → `RuntimeServiceProvider` → `ApplicationServiceProvider`)
-3. PR-C+: organization CRUD (superadmin), user CRUD (admin)
+1. Merge Issue #4 PR-B (runtime scaffold + health)
+2. Next PR: organization resolution middleware (default `single`) + `organization_id` query scoping + `organizations` migration (SQLite/MySQL) + DatabaseHealthCheck
+3. Then: JWT auth + `Role`/`Capability` RBAC wiring (`Auth/`), `users` migration
+4. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)
