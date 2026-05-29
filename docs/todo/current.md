@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #61)
+Last updated: 2026-05-29 (Issue #63)
 
 ## Recently merged
 
@@ -31,13 +31,14 @@ Last updated: 2026-05-29 (Issue #61)
 - **Issue #55 / PR #56** — 文書採番（document_sequences）✅ merged
 - **Issue #57 / PR #58** — line_items 永続化（quote/invoice 共有）✅ merged
 - **Issue #59 / PR #60** — Quote 永続化レイヤ ✅ merged
-- **Issue #61** — Quote 作成/一覧/取得（結線）⏳ this PR
+- **Issue #61 / PR #62** — Quote 作成/一覧/取得（結線）✅ merged
+- **Issue #63** — Quote 状態遷移 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #61 | `feat/61-quote-create-read` | Quote 作成/一覧/取得（採番+税+明細+監査の結線） | 🔄 PR pending |
+| #63 | `feat/63-quote-status` | Quote 状態遷移（draft→sent→accepted/rejected/expired） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -166,7 +167,13 @@ Last updated: 2026-05-29 (Issue #61)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Quote create/list/get: 🔄 in progress** (Issue #61)
+**Phase 1 — Quote status transitions: 🔄 in progress** (Issue #63)
+
+- `QuoteStatus::canTransitionTo` (draft→sent→accepted/rejected/expired; terminal states blocked)
+- `PATCH /admin/quotes/{id}` {status} → 422 `invalid-state-transition` on illegal moves; draft→sent sets issued_at; `quote.status_changed` audit
+- Verified live: sent/accepted ok, accepted→rejected 422, garbage 422, audit trail
+
+**Phase 1 — Quote create/list/get: ✅ complete** (Issue #61 / PR #62)
 
 - `POST/GET /admin/quotes`, `GET /admin/quotes/{id}` — create orchestrates client validation + `TaxCalculator` + `DocumentNumberGenerator` (EST-YYYY-NNN) + line items + `quote.created` audit
 - Allowed tax rates 10%/8% (accounting-compliance §3); cross-org client / empty lines / bad rate → 422
@@ -217,6 +224,6 @@ Last updated: 2026-05-29 (Issue #61)
 
 ## Next steps
 
-1. Quote status transitions (draft→sent→accepted/rejected/expired) with rules + audit
-2. Invoices — convert from accepted quote, issue (number/qualified validation), line items
-3. Payments → overdue; audit read endpoint
+1. Invoice persistence — `invoices` table + entity/repository (qualified fields, totals, soft delete)
+2. Invoice convert-from-quote / issue (qualified validation) / list / get
+3. Payments → overdue (paid/partially_paid); audit read endpoint

@@ -50,6 +50,13 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     self::resolve($c, AuditRecorderInterface::class),
                 ),
             )
+            ->set(
+                ChangeQuoteStatusUseCase::class,
+                static fn (ContainerInterface $c): ChangeQuoteStatusUseCase => new ChangeQuoteStatusUseCase(
+                    self::quotes($c),
+                    self::resolve($c, AuditRecorderInterface::class),
+                ),
+            )
             ->set(ListQuotesUseCase::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
             ->set(
                 GetQuoteByIdUseCase::class,
@@ -83,6 +90,14 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ChangeQuoteStatusHandler::class,
+                static fn (ContainerInterface $c): ChangeQuoteStatusHandler => new ChangeQuoteStatusHandler(
+                    self::resolve($c, ChangeQuoteStatusUseCase::class),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
                 QuoteNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): QuoteNotFoundExceptionHandler => new QuoteNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -91,17 +106,22 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): QuoteValidationExceptionHandler => new QuoteValidationExceptionHandler(self::problemDetails($c)),
             )
             ->set(
+                InvalidStateTransitionExceptionHandler::class,
+                static fn (ContainerInterface $c): InvalidStateTransitionExceptionHandler => new InvalidStateTransitionExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
                 QuoteRouteRegistrar::class,
                 static function (ContainerInterface $c): QuoteRouteRegistrar {
                     $list = $c->get(ListQuotesHandler::class);
                     $get = $c->get(GetQuoteByIdHandler::class);
                     $create = $c->get(CreateQuoteHandler::class);
+                    $changeStatus = $c->get(ChangeQuoteStatusHandler::class);
 
-                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler) {
+                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler || !$changeStatus instanceof ChangeQuoteStatusHandler) {
                         throw new LogicException('Quote handler services are invalid.');
                     }
 
-                    return new QuoteRouteRegistrar($list, $get, $create);
+                    return new QuoteRouteRegistrar($list, $get, $create, $changeStatus);
                 },
             );
     }

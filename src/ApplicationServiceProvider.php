@@ -17,6 +17,7 @@ use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInva
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
 use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
 use NeneInvoice\Quote\QuoteValidationExceptionHandler;
@@ -94,6 +95,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $companyInvalidRegNumber = $container->get(CompanyInvalidRegistrationNumberExceptionHandler::class);
                     $quoteNotFound = $container->get(QuoteNotFoundExceptionHandler::class);
                     $quoteValidation = $container->get(QuoteValidationExceptionHandler::class);
+                    $quoteInvalidTransition = $container->get(InvalidStateTransitionExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -143,7 +145,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Quote validation exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation];
+                    if (!$quoteInvalidTransition instanceof InvalidStateTransitionExceptionHandler) {
+                        throw new LogicException('Quote invalid state transition exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition];
                 },
             );
     }
