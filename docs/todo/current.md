@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #105)
+Last updated: 2026-05-30 (Issue #107)
 
 ## Recently merged
 
@@ -54,13 +54,14 @@ Last updated: 2026-05-30 (Issue #105)
 - **Issue #99 / PR #100** — 売掛金残高 `outstanding_cents` を read モデルに公開 ✅ merged
 - **Issue #101 / PR #102** — `/api/*` サービス面 + サービストークン認証 + 請求書 read（Clear 向け）✅ merged
 - **Issue #103 / PR #104** — フロント: 請求書の残高 `outstanding_cents` を一覧・詳細に表示 ✅ merged
-- **Issue #105** — `GET /api/invoices` に read フィルタ（status/overdue/client/due/outstanding）⏳ this PR
+- **Issue #105 / PR #106** — `GET /api/invoices` に read フィルタ（status/overdue/client/due/outstanding）✅ merged
+- **Issue #107** — フロント: 取引先一覧画面 + ヘッダーナビ ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #105 | `feat/105-service-invoice-filters` | `GET /api/invoices` の read フィルタ（Clear ②前半） | 🔄 PR pending |
+| #107 | `feat/107-clients-list` | フロント: 取引先一覧 + ヘッダーナビ | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -80,7 +81,8 @@ Last updated: 2026-05-30 (Issue #105)
 - entities: invoice（list/detail/create/issue）、client（list）、payment（list/record）、auth。
 - 詳細ページが ViewInvoice + IssueInvoice + ManagePayments をページ合成（feature 間 import なし、useInvoice 共有）。payment mutation は invoice 無効化をフィーチャ側で実施（sibling entity 直接 import 回避）。
 - 共有 UI: Button/Input/Select/Text/Stack/Spinner + Field/EmptyState/ErrorState（Storybook 必須）。
-- フォロー: 発行/入金の確認ダイアログ（ConfirmDialog primitive）、due_at 入力、取引先 CRUD 画面、一覧ページング/フィルタ、Tier A 同一オリジン配信の PHP 結線。
+- 取引先一覧(#107): `features/list-clients` + `pages/clients`、AppShell に 請求書/取引先 ナビ。取引先 CRUD（作成/編集/削除）は後続。
+- フォロー: 発行/入金の確認ダイアログ（ConfirmDialog primitive）、due_at 入力、取引先 CRUD 画面、一覧ページング、Tier A 同一オリジン配信の PHP 結線。
 
 ## Phase 0+ Backlog
 
