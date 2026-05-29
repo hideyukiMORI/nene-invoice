@@ -20,6 +20,7 @@ use Nene2\Http\RuntimeApplicationFactory;
 use Nene2\Routing\Router;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Auth\AuthServiceProvider;
+use NeneInvoice\Auth\CapabilityMiddleware;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -129,6 +130,12 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Bearer token middleware service is invalid.');
                     }
 
+                    $capabilityMiddleware = $container->get(CapabilityMiddleware::class);
+
+                    if (!$capabilityMiddleware instanceof CapabilityMiddleware) {
+                        throw new LogicException('Capability middleware service is invalid.');
+                    }
+
                     $routeRegistrars = $container->get(ApplicationServiceProvider::ROUTE_REGISTRARS);
 
                     if (!is_array($routeRegistrars) || !array_is_list($routeRegistrars)) {
@@ -150,7 +157,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
-                        authMiddleware: [$bearerTokenMiddleware],
+                        authMiddleware: [$bearerTokenMiddleware, $capabilityMiddleware],
                         healthChecks: [$databaseHealthCheck],
                         debug: $config->debug,
                     );

@@ -132,6 +132,18 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                CapabilityMiddleware::class,
+                static function (ContainerInterface $container): CapabilityMiddleware {
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    return new CapabilityMiddleware($problemDetails);
+                },
+            )
+            ->set(
                 LoginUseCaseInterface::class,
                 static function (ContainerInterface $container): LoginUseCaseInterface {
                     $users = $container->get(UserRepositoryInterface::class);
