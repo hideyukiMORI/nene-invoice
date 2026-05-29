@@ -57,5 +57,8 @@ export const jaMessages = {
   'admin.invoices.create.submitting': '作成中…',
   'admin.invoices.create.error': '請求書を作成できませんでした。入力内容を確認してください。',
   'admin.invoices.create.invalid': '入力内容に誤りがあります。',
+  'admin.invoices.issue.action': '発行する（適格請求書）',
+  'admin.invoices.issue.submitting': '発行中…',
+  'admin.invoices.issue.error': '発行できませんでした。会社情報の登録番号を確認してください。',
   'admin.forbidden.title': 'アクセス権限がありません。',
 } as const

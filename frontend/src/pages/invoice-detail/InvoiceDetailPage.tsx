@@ -1,6 +1,8 @@
 import { Navigate, useParams } from 'react-router-dom'
 import { toInvoiceId } from '@/entities/invoice'
+import { IssueInvoice } from '@/features/issue-invoice'
 import { ViewInvoice } from '@/features/view-invoice'
+import { Stack } from '@/shared/ui'
 
 export function InvoiceDetailPage() {
   const { id } = useParams()
@@ -10,5 +12,12 @@ export function InvoiceDetailPage() {
     return <Navigate to="/invoices" replace />
   }
 
-  return <ViewInvoice invoiceId={toInvoiceId(numericId)} />
+  const invoiceId = toInvoiceId(numericId)
+
+  return (
+    <Stack gap="lg">
+      <ViewInvoice invoiceId={invoiceId} />
+      <IssueInvoice invoiceId={invoiceId} />
+    </Stack>
+  )
 }

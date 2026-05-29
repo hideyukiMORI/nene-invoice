@@ -23,4 +23,6 @@ export const handlers = [
   ),
 
   http.get('/admin/invoices/:id', () => HttpResponse.json(buildInvoiceWithLinesDto())),
+
+  http.post('/admin/invoices/:id/issue', () => HttpResponse.json(buildInvoiceWithLinesDto())),
 ]

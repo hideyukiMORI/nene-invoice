@@ -3,7 +3,7 @@ import { apiClient } from '@/shared/api/client'
 import type { AppError } from '@/shared/api/errors'
 import type { InvoiceWithLinesDto } from './api-types'
 import { toInvoiceWithLines } from './mapper'
-import type { CreateInvoiceInput, InvoiceWithLines } from './model'
+import type { CreateInvoiceInput, InvoiceWithLines, IssueInvoiceInput } from './model'
 import { invoiceKeys } from './query-keys'
 
 /**
@@ -32,6 +32,32 @@ export function useCreateInvoice(): UseMutationResult<
       return toInvoiceWithLines(dto)
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+    },
+  })
+}
+
+/**
+ * POST /admin/invoices/{id}/issue — issues a draft invoice (allocates the INV
+ * number, locks it). Invalidates the detail and lists so the new state shows.
+ */
+export function useIssueInvoice(): UseMutationResult<
+  InvoiceWithLines,
+  AppError,
+  IssueInvoiceInput
+> {
+  const queryClient = useQueryClient()
+
+  return useMutation<InvoiceWithLines, AppError, IssueInvoiceInput>({
+    mutationFn: async (input) => {
+      const dto = await apiClient.post<InvoiceWithLinesDto>(
+        `/admin/invoices/${String(input.id)}/issue`,
+        { qualified: input.qualified, due_at: input.due_at },
+      )
+      return toInvoiceWithLines(dto)
+    },
+    onSuccess: (invoice) => {
+      void queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(invoice.id) })
       void queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
     },
   })

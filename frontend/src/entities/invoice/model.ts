@@ -51,3 +51,9 @@ export interface CreateInvoiceInput {
   line_items: LineItemInput[]
   notes: string | null
 }
+
+export interface IssueInvoiceInput {
+  id: InvoiceId
+  qualified: boolean
+  due_at: string | null
+}

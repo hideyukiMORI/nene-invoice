@@ -6,8 +6,9 @@ export type {
   LineItem,
   LineItemInput,
   CreateInvoiceInput,
+  IssueInvoiceInput,
 } from './model'
 export { INVOICE_STATUSES, type InvoiceStatus } from './enum'
 export { invoiceKeys, type InvoiceListParams } from './query-keys'
 export { useInvoiceList, useInvoice } from './queries'
-export { useCreateInvoice } from './mutations'
+export { useCreateInvoice, useIssueInvoice } from './mutations'

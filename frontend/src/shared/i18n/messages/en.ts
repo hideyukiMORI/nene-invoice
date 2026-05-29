@@ -56,5 +56,9 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.create.submitting': 'Creating…',
   'admin.invoices.create.error': 'Could not create the invoice. Check your input.',
   'admin.invoices.create.invalid': 'Please fix the highlighted fields.',
+  'admin.invoices.issue.action': 'Issue (qualified invoice)',
+  'admin.invoices.issue.submitting': 'Issuing…',
+  'admin.invoices.issue.error':
+    'Could not issue. Check the registration number in company settings.',
   'admin.forbidden.title': 'You do not have access.',
 }
