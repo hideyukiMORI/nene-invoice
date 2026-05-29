@@ -107,6 +107,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `invoice-not-found` | Invoice id/token not found |
 | `quote-not-found` | Quote id not found |
 | `client-not-found` | Client id not found |
+| `invalid-registration-number` | Registration number not `T` + 13 digits (422) |
 | `organization-not-found` | Organization id/slug not found |
 | `organization-slug-conflict` | Organization slug already in use (409) |
 | `user-not-found` | User id not found |

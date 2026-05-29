@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #43)
+Last updated: 2026-05-29 (Issue #45)
 
 ## Recently merged
 
@@ -22,13 +22,14 @@ Last updated: 2026-05-29 (Issue #43)
 - **Issue #37 / PR #38** — 組織 CRUD（superadmin・/admin/organizations）✅ merged
 - **Issue #39 / PR #40** — ユーザー読み取り（/admin/users）+ org スコープ ✅ merged
 - **Issue #41 / PR #42** — ユーザー write（create/update/delete）✅ merged
-- **Issue #43** — Client（取引先）永続化 + 読み取り ⏳ this PR
+- **Issue #43 / PR #44** — Client（取引先）永続化 + 読み取り ✅ merged
+- **Issue #45** — Client write（create/update/delete）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #43 | `feat/43-client-read` | Client 永続化（ソフト削除）+ 読み取り（list/get・org スコープ） | 🔄 PR pending |
+| #45 | `feat/45-client-write` | Client write（create/update/delete・registration_number T+13 検証） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -141,12 +142,16 @@ Last updated: 2026-05-29 (Issue #43)
 - `POST/PATCH/DELETE /admin/users` — password hashing, org forced to caller, cross-org → 404, superadmin not assignable (422), self-delete (409), email conflict (409)
 - User management complete (CRUD + tenant isolation + escalation prevention)
 
-**Phase 1 — Client persistence + read: 🔄 in progress** (Issue #43)
+**Phase 1 — Client persistence + read: ✅ complete** (Issue #43 / PR #44)
 
-- `clients` table (Phinx + SQLite snapshot) with **soft delete** (`is_deleted`/`deleted_at`); `Client` entity + `PdoClientRepository` (reads exclude deleted)
-- `GET /admin/clients`, `GET /admin/clients/{id}` — org-scoped (`view_billing`); cross-org/missing → 404
-- Repo tests (incl. soft delete) + use-case tests; verified live: member sees only own-org clients, org-2 client → 404
-- Write endpoints (create/update/delete + `registration_number` T+13 validation) land next
+- `clients` table with soft delete; `PdoClientRepository` (reads exclude deleted); `GET /admin/clients[/{id}]` org-scoped
+
+**Phase 1 — Client write: 🔄 in progress** (Issue #45)
+
+- `POST/PATCH/DELETE /admin/clients` — `manage_billing`, org-scoped; create forces caller org; cross-org → 404; delete is soft
+- `registration_number` (buyer) syntax-validated `^T[0-9]{13}$` in the UseCase → 422 `invalid-registration-number` (accounting-compliance §4)
+- Verified live: create 201 (org forced) / bad-reg 422 / no-name 422 / patch 200 / patch-other-org 404 / delete 204→get 404 / delete-other-org 404
+- Client CRUD complete
 
 ## Handoff Notes
 
@@ -164,6 +169,6 @@ Last updated: 2026-05-29 (Issue #43)
 
 ## Next steps
 
-1. Client write (create/update/delete) — `registration_number` T+13 syntax validation, soft delete
-2. Company settings (issuer profile, per organization) → quotes → invoices → payments
+1. Company settings (issuer profile, per organization) — incl. issuer `registration_number` (T+13), bank info
+2. Quotes (見積) → Invoices (請求書) → Payments (入金) + tax calc (ADR 0004) + qualified-invoice field validation
 3. Phase 2 admin UI + PDF (minimum for overdue list)

@@ -35,6 +35,9 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
             )
             ->set(ListClientsUseCase::class, static fn (ContainerInterface $c): ListClientsUseCase => new ListClientsUseCase(self::repository($c)))
             ->set(GetClientByIdUseCase::class, static fn (ContainerInterface $c): GetClientByIdUseCase => new GetClientByIdUseCase(self::repository($c)))
+            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c)))
+            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c)))
+            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
@@ -52,22 +55,91 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                CreateClientHandler::class,
+                static fn (ContainerInterface $c): CreateClientHandler => new CreateClientHandler(
+                    self::createUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                UpdateClientHandler::class,
+                static fn (ContainerInterface $c): UpdateClientHandler => new UpdateClientHandler(
+                    self::updateUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
+                DeleteClientHandler::class,
+                static fn (ContainerInterface $c): DeleteClientHandler => new DeleteClientHandler(
+                    self::deleteUseCase($c),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
                 ClientNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ClientNotFoundExceptionHandler => new ClientNotFoundExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
+                InvalidRegistrationNumberExceptionHandler::class,
+                static fn (ContainerInterface $c): InvalidRegistrationNumberExceptionHandler => new InvalidRegistrationNumberExceptionHandler(self::problemDetails($c)),
             )
             ->set(
                 ClientRouteRegistrar::class,
                 static function (ContainerInterface $c): ClientRouteRegistrar {
                     $list = $c->get(ListClientsHandler::class);
                     $get = $c->get(GetClientByIdHandler::class);
+                    $create = $c->get(CreateClientHandler::class);
+                    $update = $c->get(UpdateClientHandler::class);
+                    $delete = $c->get(DeleteClientHandler::class);
 
-                    if (!$list instanceof ListClientsHandler || !$get instanceof GetClientByIdHandler) {
+                    if (!$list instanceof ListClientsHandler
+                        || !$get instanceof GetClientByIdHandler
+                        || !$create instanceof CreateClientHandler
+                        || !$update instanceof UpdateClientHandler
+                        || !$delete instanceof DeleteClientHandler
+                    ) {
                         throw new LogicException('Client handler services are invalid.');
                     }
 
-                    return new ClientRouteRegistrar($list, $get);
+                    return new ClientRouteRegistrar($list, $get, $create, $update, $delete);
                 },
             );
+    }
+
+    private static function createUseCase(ContainerInterface $c): CreateClientUseCase
+    {
+        $u = $c->get(CreateClientUseCase::class);
+
+        if (!$u instanceof CreateClientUseCase) {
+            throw new LogicException('Create client use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function updateUseCase(ContainerInterface $c): UpdateClientUseCase
+    {
+        $u = $c->get(UpdateClientUseCase::class);
+
+        if (!$u instanceof UpdateClientUseCase) {
+            throw new LogicException('Update client use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function deleteUseCase(ContainerInterface $c): DeleteClientUseCase
+    {
+        $u = $c->get(DeleteClientUseCase::class);
+
+        if (!$u instanceof DeleteClientUseCase) {
+            throw new LogicException('Delete client use case service is invalid.');
+        }
+
+        return $u;
     }
 
     private static function repository(ContainerInterface $c): ClientRepositoryInterface
