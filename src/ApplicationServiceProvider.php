@@ -8,6 +8,8 @@ use LogicException;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use NeneInvoice\Auth\AuthRouteRegistrar;
+use NeneInvoice\Client\ClientNotFoundExceptionHandler;
+use NeneInvoice\Client\ClientRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
@@ -39,6 +41,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $authRoutes = $container->get(AuthRouteRegistrar::class);
                     $organizationRoutes = $container->get(OrganizationRouteRegistrar::class);
                     $userRoutes = $container->get(UserRouteRegistrar::class);
+                    $clientRoutes = $container->get(ClientRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -52,7 +55,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('User route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $organizationRoutes, $userRoutes];
+                    if (!$clientRoutes instanceof ClientRouteRegistrar) {
+                        throw new LogicException('Client route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes];
                 },
             )
             ->set(
@@ -64,6 +71,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $userEmailConflict = $container->get(UserEmailConflictExceptionHandler::class);
                     $roleNotAssignable = $container->get(RoleNotAssignableExceptionHandler::class);
                     $cannotDeleteSelf = $container->get(CannotDeleteSelfExceptionHandler::class);
+                    $clientNotFound = $container->get(ClientNotFoundExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -89,7 +97,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Cannot-delete-self exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf];
+                    if (!$clientNotFound instanceof ClientNotFoundExceptionHandler) {
+                        throw new LogicException('Client not-found exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound];
                 },
             );
     }
