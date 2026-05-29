@@ -28,6 +28,11 @@ describe('toInvoice', () => {
     expect(invoice.invoice_number).toBeNull()
     expect(invoice.issued_at).toBeNull()
   })
+
+  it('maps outstanding_cents when present and null when absent', () => {
+    expect(toInvoice({ ...dto, outstanding_cents: 1400 }).outstanding_cents).toBe(1400)
+    expect(toInvoice(dto).outstanding_cents).toBeNull()
+  })
 })
 
 describe('toInvoicePage', () => {

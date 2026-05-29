@@ -106,6 +106,12 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         />
         <TotalRow label={t('admin.invoices.detail.tax')} value={formatYen(invoice.tax_cents)} />
         <TotalRow label={t('admin.invoices.detail.total')} value={formatYen(invoice.total_cents)} />
+        {invoice.outstanding_cents !== null && (
+          <TotalRow
+            label={t('admin.invoices.detail.outstanding')}
+            value={formatYen(invoice.outstanding_cents)}
+          />
+        )}
       </Stack>
     </Stack>
   )

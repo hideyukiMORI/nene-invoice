@@ -16,6 +16,8 @@ export interface Invoice {
   subtotal_cents: number
   tax_cents: number
   total_cents: number
+  /** total_cents − Σ valid payments. Null on mutation responses (read-only field). */
+  outstanding_cents: number | null
 }
 
 export interface InvoicePage {

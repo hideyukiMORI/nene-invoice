@@ -586,6 +586,8 @@ export interface components {
             subtotal_cents: number;
             tax_cents: number;
             total_cents: number;
+            /** @description total_cents − Σ valid payments. Present on read endpoints (list / get); authoritative balance owned by Invoice. Integer cents. */
+            outstanding_cents?: number;
             notes?: string | null;
             created_at?: string | null;
             updated_at?: string | null;
