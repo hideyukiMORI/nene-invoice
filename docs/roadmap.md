@@ -69,6 +69,20 @@ Goal: connect to sibling products.
 - MCP tool catalog
 - CSV export; optional payment gateway
 
+## Post-MVP expansions (maintainer sequence)
+
+After Phase 1–3 core billing is stable, implement in this order:
+
+1. **Payment reconciliation & dunning** — 入金消込・督促管理
+2. **Purchase order & delivery note** — 発注書・納品書管理
+3. **Contract term & renewal** — 契約期限・更新管理
+4. **Small-scale subscription billing** — 小規模サブスク請求管理
+5. **Minimal expense reimbursement** — 経費申請の最小版
+
+Full scope, prerequisites, and MVP boundaries: [`docs/explanation/expansion-roadmap.md`](./explanation/expansion-roadmap.md).
+
+**Current expansion focus:** #1 (after core invoice + payment lands).
+
 ## Non-goals
 
 See [`docs/explanation/product-vision.md#non-goals`](./explanation/product-vision.md#non-goals).
