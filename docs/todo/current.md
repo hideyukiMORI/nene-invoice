@@ -111,6 +111,17 @@ Last updated: 2026-05-29 (Issue #24)
 
 ## Next steps
 
-1. Merge Issue #24 PR (User + RBAC domain)
-2. Next PR: HTTP auth pipeline — JWT login + token verifier, auth middleware, `CapabilityMiddleware` (route → capability), org resolution middleware (default `single`) + `organization_id` request scoping
-3. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)
+1. Merge Issue #24 PR (User + RBAC domain) — or current auth pipeline work
+2. Complete Phase 1 core: clients, quotes, invoices, payments
+3. Phase 2 admin UI + PDF (minimum for overdue list)
+4. **Expansion #1** — payment reconciliation & dunning ([`expansion-roadmap.md`](./explanation/expansion-roadmap.md))
+
+## Post-MVP expansion sequence (approved)
+
+See [`docs/explanation/expansion-roadmap.md`](./explanation/expansion-roadmap.md):
+
+1. 入金消込・督促管理
+2. 発注書・納品書管理
+3. 契約期限・更新管理
+4. 小規模サブスク請求管理
+5. 経費申請の最小版

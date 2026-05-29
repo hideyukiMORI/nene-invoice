@@ -19,7 +19,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 - Backend standards: `docs/development/backend-standards.md`
 - Commit messages: `docs/development/commit-conventions.md`
 - AI tool policy: `docs/integrations/ai-tools.md`
-- Roadmap: `docs/roadmap.md`
+- **Expansion roadmap (post-MVP):** `docs/explanation/expansion-roadmap.md`
 - Milestones: `docs/milestones/2026-05-governance-and-foundation.md`
 
 ## Operating Rules
