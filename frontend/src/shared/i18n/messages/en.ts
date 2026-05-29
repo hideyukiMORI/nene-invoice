@@ -1,0 +1,33 @@
+import type { MessageCatalog } from '../translate'
+
+/** Secondary locale (ADR 0005). Partial — missing keys fall back to ja. */
+export const enMessages: MessageCatalog = {
+  'common.appName': 'NeNe Invoice Admin',
+  'common.actions.retry': 'Retry',
+  'common.actions.signOut': 'Sign out',
+  'common.error.generic': 'Something went wrong.',
+  'common.locale.ja': '日本語',
+  'common.locale.en': 'English',
+  'admin.auth.title': 'Sign in',
+  'admin.auth.email': 'Email',
+  'admin.auth.password': 'Password',
+  'admin.auth.submit': 'Sign in',
+  'admin.auth.failed': 'Incorrect email or password.',
+  'admin.auth.emailInvalid': 'Enter a valid email address.',
+  'admin.auth.passwordRequired': 'Enter your password.',
+  'admin.account.signedInAs': 'Signed in as {{email}}',
+  'admin.nav.invoices': 'Invoices',
+  'admin.invoices.title': 'Invoices',
+  'admin.invoices.loading': 'Loading…',
+  'admin.invoices.empty': 'No invoices yet.',
+  'admin.invoices.error': 'Could not load invoices.',
+  'admin.invoices.col.number': 'Number',
+  'admin.invoices.col.status': 'Status',
+  'admin.invoices.col.client': 'Client ID',
+  'admin.invoices.col.total': 'Total',
+  'admin.invoices.status.draft': 'Draft',
+  'admin.invoices.status.issued': 'Issued',
+  'admin.invoices.status.partially_paid': 'Partially paid',
+  'admin.invoices.status.paid': 'Paid',
+  'admin.forbidden.title': 'You do not have access.',
+}

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #83)
+Last updated: 2026-05-30 (Issue #85)
 
 ## Recently merged
 
@@ -43,13 +43,14 @@ Last updated: 2026-05-29 (Issue #83)
 - **Issue #6 / PR #79** — Backend CI workflow（GitHub Actions）✅ merged
 - **Issue #80 / PR #81** — CI Actions を Node 24 対応版（checkout/cache @v5）へ更新 ✅ merged
 - **Issue #7 / PR #82** — ADR 0003 dual deployment（Tier A / Tier B）✅ merged
-- **Issue #83** — フロントエンド規約を本実装版へ拡張（sibling 準拠）⏳ this PR
+- **Issue #83 / PR #84** — フロントエンド規約を本実装版へ拡張（sibling 準拠）✅ merged
+- **Issue #85** — admin UI スキャフォールド + ログイン〜請求書一覧の縦スライス ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #83 | `docs/83-frontend-standards` | フロントエンド規約 本実装版（frontend-standards / review） | 🔄 PR pending |
+| #85 | `feat/85-frontend-scaffold` | admin UI スキャフォールド（ログイン→請求書一覧） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -177,7 +178,19 @@ Last updated: 2026-05-29 (Issue #83)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 2 — Frontend standards (本実装版): 🔄 in progress** (Issue #83)
+**Phase 2 — Admin UI scaffold (縦スライス): 🔄 in progress** (Issue #85)
+
+- `frontend/`（React 19 + TS strict + Vite 7 + Tailwind v4 + TanStack Query v5 + RHF/Zod + Storybook 9 + Vitest/MSW）を規約準拠で新規構築
+- レイヤード実装: `shared/{api,config,i18n,lib,ui}` → `entities/{auth,invoice}` → `features/{sign-in,list-invoices,account-menu}` → `pages/{login,layout,invoices}` → `app/{providers,router,auth-gate,root-error-boundary}`
+- 認証: Bearer トークンを **in-memory** 保持（client.ts、`useSyncExternalStore` で gate 反応）。fail-closed（401→login）。localStorage/Cookie 化は ADR 待ち
+- i18n は ja/en のみ、theme は `@theme` トークン（active.css 1 行差し替えで総入れ替え）、money は cents 表示整形のみ、API 型は `openapi-typescript` 生成（schema.gen.ts）
+- ESLint 境界（import/no-restricted-paths）+ Tailwind 任意値禁止、`npm run check`（type-check+lint+format+test+knip+build-storybook）green、本番ビルドは `public_html/admin/`（gitignore 済み）
+- テスト 9 件（mapper / list-invoices hook 3状態 / sign-in UI / account-menu hook、MSW）
+- Frontend CI（`.github/workflows/frontend-ci.yml`、paths フィルタ、npm ci→check→audit、checkout/cache/setup-node @v5）
+- ライブ確認: Vite dev → proxy 経由で実 API ログイン（JWT 取得）・/health OK
+- 次: 一覧のページング/フィルタ、請求書詳細・作成・発行・入金の画面、Tier A 同一オリジン配信の PHP 結線
+
+**Phase 2 — Frontend standards (本実装版): ✅ complete** (Issue #83 / PR #84)
 
 - `docs/development/frontend-standards.md` をスタブ→本実装版へ拡張（nene-records 準拠の厳格規約: レイヤード `app→pages→features→entities→shared`、配置ゼロトレランス、データフロー、TanStack/RHF+Zod/Tailwind v4 トークン/Storybook/Vitest+MSW、ESLint 境界）
 - 本製品調整を明記: **ja/en のみ（ADR 0005）**、法定請求書は常に日本語、snake_case 保持、money=integer cents・税率=bps、ビルド出力 `public_html/admin/`（Tier A 同一オリジン）、**Bearer トークンは既定 in-memory**（localStorage/Cookie 化は ADR 必須）、RBAC は UX のみ

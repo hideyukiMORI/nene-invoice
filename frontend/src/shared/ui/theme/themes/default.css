@@ -1,0 +1,72 @@
+/*
+ * Default theme — the complete token set. Every visual value in the app lives
+ * here. A sibling themes/*.css must redefine all of these to restyle the app;
+ * switching is a one-line change in ../active.css.
+ */
+@theme {
+  /* Color (semantic). Utility names derive from the part after --color-,
+     e.g. --color-fg → text-fg / bg-fg; --color-surface → bg-surface. */
+  --color-surface: oklch(98% 0.005 250);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-surface-overlay: oklch(96% 0.008 250);
+  --color-fg: oklch(28% 0.02 260);
+  --color-fg-muted: oklch(55% 0.02 260);
+  --color-fg-inverse: oklch(99% 0 0);
+  --color-border: oklch(90% 0.01 260);
+  --color-accent: oklch(52% 0.15 255);
+  --color-accent-hover: oklch(46% 0.15 255);
+  --color-danger: oklch(55% 0.2 25);
+  --color-success: oklch(58% 0.13 150);
+  --color-focus-ring: oklch(60% 0.16 255);
+
+  /* Spacing — inline (x) and stack (y) */
+  --spacing-inline-xs: 0.25rem;
+  --spacing-inline-sm: 0.5rem;
+  --spacing-inline-md: 1rem;
+  --spacing-inline-lg: 1.5rem;
+  --spacing-inline-xl: 2.5rem;
+  --spacing-stack-xs: 0.25rem;
+  --spacing-stack-sm: 0.5rem;
+  --spacing-stack-md: 1rem;
+  --spacing-stack-lg: 1.5rem;
+  --spacing-stack-xl: 2.5rem;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --text-body: 0.875rem;
+  --text-heading-sm: 1.125rem;
+  --text-heading-md: 1.5rem;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-full: 9999px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.1);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  /* Z-index */
+  --z-dropdown: 1000;
+  --z-modal: 1100;
+  --z-toast: 1200;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
