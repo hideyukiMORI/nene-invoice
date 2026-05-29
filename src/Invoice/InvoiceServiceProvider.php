@@ -16,6 +16,7 @@ use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Payment\PaymentRepositoryInterface;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
 use Psr\Container\ContainerInterface;
 
@@ -69,12 +70,19 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, AuditRecorderInterface::class),
                 ),
             )
-            ->set(ListInvoicesUseCase::class, static fn (ContainerInterface $c): ListInvoicesUseCase => new ListInvoicesUseCase(self::resolve($c, InvoiceRepositoryInterface::class)))
+            ->set(
+                ListInvoicesUseCase::class,
+                static fn (ContainerInterface $c): ListInvoicesUseCase => new ListInvoicesUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, PaymentRepositoryInterface::class),
+                ),
+            )
             ->set(
                 GetInvoiceByIdUseCase::class,
                 static fn (ContainerInterface $c): GetInvoiceByIdUseCase => new GetInvoiceByIdUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, PaymentRepositoryInterface::class),
                 ),
             )
             ->set(

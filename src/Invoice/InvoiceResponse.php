@@ -17,8 +17,11 @@ final class InvoiceResponse
      * @param list<LineItem>|null $lines
      * @return array<string, mixed>
      */
-    public static function toArray(Invoice $invoice, ?array $lines = null): array
-    {
+    public static function toArray(
+        Invoice $invoice,
+        ?array $lines = null,
+        ?int $outstandingCents = null,
+    ): array {
         $data = [
             'id' => $invoice->id,
             'organization_id' => $invoice->organizationId,
@@ -36,6 +39,10 @@ final class InvoiceResponse
             'created_at' => $invoice->createdAt,
             'updated_at' => $invoice->updatedAt,
         ];
+
+        if ($outstandingCents !== null) {
+            $data['outstanding_cents'] = $outstandingCents;
+        }
 
         if ($lines !== null) {
             $data['line_items'] = array_map(static fn (LineItem $l): array => LineItemResponse::toArray($l), $lines);

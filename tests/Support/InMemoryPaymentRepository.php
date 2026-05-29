@@ -54,4 +54,22 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
 
         return $total;
     }
+
+    /**
+     * @param list<int> $invoiceIds
+     * @return array<int, int>
+     */
+    public function sumPaidForInvoices(array $invoiceIds): array
+    {
+        $totals = [];
+
+        foreach ($invoiceIds as $invoiceId) {
+            $paid = $this->totalPaidForInvoice($invoiceId);
+            if ($paid > 0) {
+                $totals[$invoiceId] = $paid;
+            }
+        }
+
+        return $totals;
+    }
 }

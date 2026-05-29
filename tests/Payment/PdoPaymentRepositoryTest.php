@@ -77,4 +77,22 @@ final class PdoPaymentRepositoryTest extends TestCase
         self::assertSame('2026-05-29 10:00:00', $payments[0]->paidAt);
         self::assertSame('2026-05-29 11:00:00', $payments[1]->paidAt);
     }
+
+    public function test_sum_paid_for_invoices_batches_and_omits_empties(): void
+    {
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 42, amountCents: 1000, paidAt: '2026-05-29 10:00:00'));
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 42, amountCents: 1200, paidAt: '2026-05-29 11:00:00'));
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 99, amountCents: 500, paidAt: '2026-05-29 12:00:00'));
+
+        $totals = $this->repository->sumPaidForInvoices([42, 99, 7]);
+
+        self::assertSame(2200, $totals[42] ?? null);
+        self::assertSame(500, $totals[99] ?? null);
+        self::assertArrayNotHasKey(7, $totals); // no payments → omitted
+    }
+
+    public function test_sum_paid_for_invoices_empty_input(): void
+    {
+        self::assertSame([], $this->repository->sumPaidForInvoices([]));
+    }
 }
