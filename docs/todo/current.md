@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #5)
+Last updated: 2026-05-29 (Issue #6)
 
 ## Recently merged
 
@@ -39,21 +39,22 @@ Last updated: 2026-05-29 (Issue #5)
 - **Issue #72 / PR #73** — 入金記録（payments）— paid/partially_paid 遷移 ✅ merged
 - **Issue #74 / PR #75** — 請求書の直接作成（POST /admin/invoices）✅ merged
 - **Issue #76 / PR #77** — 監査ログ参照 API（GET /admin/audit-logs）✅ merged
-- **Issue #5** — OpenAPI stub + MCP カタログ ⏳ this PR
+- **Issue #5 / PR #78** — OpenAPI stub + MCP カタログ ✅ merged
+- **Issue #6** — Backend CI workflow（GitHub Actions）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #5 | `feat/5-openapi-mcp` | OpenAPI stub + MCP カタログ | 🔄 PR pending |
+| #6 | `feat/6-backend-ci` | Backend CI workflow（GitHub Actions） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
 | Issue | Topic | Priority |
 | --- | --- | --- |
-| #6 | Backend CI workflow（`composer check` を Actions で実行） | P0 |
 | #7 | ADR 0003 dual deployment (Tier A / Tier B) | P1 |
 | — | `public_html/openapi.php`（spec の HTTP 配信）/ ランタイム応答↔example 突合 | P2 |
+| — | overdue 表示 / 請求書 PDF・帳票 / 監査の transactional 記録 | P2 |
 
 > マルチテナント前提のため、Issue #4 は単なる health から **テナント解決＋認証＋RBAC を含むランタイム基盤** に拡張。組織/ユーザー CRUD は後続 PR。
 
@@ -173,7 +174,14 @@ Last updated: 2026-05-29 (Issue #5)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 0+ — OpenAPI + MCP catalog: 🔄 in progress** (Issue #5)
+**Phase 0+ — Backend CI: 🔄 in progress** (Issue #6)
+
+- `.github/workflows/backend-ci.yml` — push/PR to `main` で `composer check`（test + analyse + cs + openapi + mcp）を実行
+- PHP 8.4（`shivammathur/setup-php`, ext pdo/pdo_sqlite）、Composer キャッシュ、`composer install`（NENE2 は Packagist から取得）
+- NENE2 clone 不要（reference の nene-records は path 依存だが本リポジトリは Packagist 依存）
+- `cp .env.example .env` + `mkdir -p var` は防御的（テストは phpunit が env を強制するため本来不要）
+
+**Phase 0+ — OpenAPI + MCP catalog: ✅ complete** (Issue #5 / PR #78)
 
 - `docs/openapi/openapi.yaml` (3.1.0) — 全 31 オペレーションを網羅（System/Auth/Audit/Organizations/Users/CompanySettings/Clients/Quotes/Invoices/Payments）、再利用 schema・parameters・Problem Details responses・examples
 - `docs/mcp/tools.json`（read 専用 15 tools; mutating は非公開）+ `tools/generate-mcp-tools.php`（再生成可能）
@@ -288,6 +296,6 @@ Last updated: 2026-05-29 (Issue #5)
 
 ## Next steps
 
-1. Backend CI workflow (Issue #6) — `composer check`（openapi/mcp 含む）を GitHub Actions で実行
-2. `public_html/openapi.php`（spec の HTTP 配信）; overdue 表示（issued/partially_paid past due_at）
-3. ADR 0003 dual deployment (Issue #7); 監査の transactional 記録
+1. `public_html/openapi.php`（spec の HTTP 配信）; overdue 表示（issued/partially_paid past due_at）
+2. ADR 0003 dual deployment (Issue #7); 監査の transactional 記録
+3. 請求書 PDF / 帳票（後続フェーズ）; ランタイム応答↔OpenAPI example 突合テスト
