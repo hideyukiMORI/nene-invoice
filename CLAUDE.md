@@ -23,9 +23,9 @@ Ops / MCP         ──→         │
 
 | フェーズ | 状態 |
 | --- | --- |
-| Phase 0 ガバナンス | 🔄 進行中（Issue #1） |
-| Phase 0+ プロダクト設計 | 🔲 Issue #2 以降 |
-| Phase 1 ランタイム scaffold | 🔲 未着手 |
+| Phase 0 ガバナンス | ✅ 完了（Issue #1） |
+| Phase 0 プロダクト設計 | 🔄 Issue #3 PR 待ち |
+| Phase 0+ ランタイム scaffold | 🔲 Issue #4 以降 |
 
 ---
 
