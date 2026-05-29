@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #4)
+Last updated: 2026-05-29 (Issue #20)
 
 ## Recently merged
 
@@ -11,12 +11,13 @@ Last updated: 2026-05-29 (Issue #4)
 - **Issue #13 / PR #14** — 会計・税務コンプライアンス完全順守を拘束ルール化（accounting-compliance.md・compliance チェックリスト）✅ merged
 - **Issue #15 / PR #16** — 命名規則の絶対順守・用語レジストリ（唯一の真実）・タイポ厳禁 ✅ merged
 - **Issue #17 / PR #18** — マルチテナント基盤＋ロール階層を土台採用（ADR 0006） ✅ merged
+- **Issue #4 / PR #19** — ランタイム基盤: NENE2 consumer scaffold + `GET /health` ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #4 | `feat/4-runtime-scaffold` | ランタイム基盤 PR-B: NENE2 consumer scaffold + `GET /health` + composer check green | 🔄 PR pending |
+| #20 | `feat/20-organization-persistence` | Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -69,11 +70,16 @@ Last updated: 2026-05-29 (Issue #4)
 - Org resolution default `single`; superadmin manages orgs, admin manages users
 - terminology registry extended (roles, capabilities, resolution modes, org/user)
 
-**Phase 0+ — Runtime scaffold (PR-B): 🔄 in progress** (Issue #4)
+**Phase 0+ — Runtime scaffold (PR-B): ✅ complete** (Issue #4)
 
 - NENE2 consumer bootstrap: `composer.json` (require `hideyukimori/nene2 ^1.5`), `public_html/index.php`, `RuntimeContainerFactory` → `RuntimeServiceProvider` → `ApplicationServiceProvider`
 - `GET /health` (framework built-in) verified end-to-end; `composer check` green (PHPUnit + PHPStan 8 + php-cs-fixer)
-- Module layout is tenant-ready; org resolution + JWT auth + RBAC wired in the next PRs
+
+**Phase 1 — Organization persistence: 🔄 in progress** (Issue #20)
+
+- `organizations` table (Phinx migration + SQLite schema snapshot); `Organization` entity + `PdoOrganizationRepository`
+- Phinx wired (`phinx.php`, `composer migrations:*`); `suffix => ''` so SQLite migrate/app share one file
+- Repository tested on SQLite `:memory:`; HTTP runtime unchanged (org resolution + auth in next PRs)
 
 ## Handoff Notes
 
@@ -91,7 +97,7 @@ Last updated: 2026-05-29 (Issue #4)
 
 ## Next steps
 
-1. Merge Issue #4 PR-B (runtime scaffold + health)
-2. Next PR: organization resolution middleware (default `single`) + `organization_id` query scoping + `organizations` migration (SQLite/MySQL) + DatabaseHealthCheck
+1. Merge Issue #20 PR (Organization persistence layer)
+2. Next PR: organization resolution middleware (default `single`) + container wiring (ConfigLoader/AppConfig/DB executor/OrganizationRepository) + `organization_id` query scoping + DatabaseHealthCheck
 3. Then: JWT auth + `Role`/`Capability` RBAC wiring (`Auth/`), `users` migration
 4. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)
