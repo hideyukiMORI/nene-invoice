@@ -5,6 +5,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 ## Read First
 
 - **Current work & status:** `docs/todo/current.md`
+- **Accounting & tax compliance (binding):** `docs/explanation/accounting-compliance.md`
 - **Product vision:** `docs/explanation/product-vision.md`
 - **Requirements:** `docs/explanation/requirements.md`
 - **Domain model:** `docs/explanation/domain-model.md`
@@ -28,6 +29,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 - **Full lifecycle** (unless user limits scope): Issue → branch → implement → verify → commit → push → PR → merge → sync `main`.
 - Read NENE2 upstream docs for framework behavior; read local docs for product rules.
 - **Never integrate billing into NeNe Records or other sibling repos.** Dependency direction is `NeNe Invoice → upstream APIs`, never the reverse. See ADR 0002.
+- **Accounting/tax compliance is binding and non-negotiable.** Any change touching quotes, invoices, payments, tax, numbering, PDF, or retention must comply with `docs/explanation/accounting-compliance.md` and pass `docs/review/compliance.md`. A finance professional must find zero deviations. Deviations require an ADR with tax-professional sign-off — never merge one without it. When a rule is unclear, stop and consult a 税理士; do not guess.
 - Keep `docs/todo/current.md` and milestones aligned with Issues and PRs.
 - Keep changes focused. Do not mix governance, feature work, and unrelated cleanup in one PR.
 - Do not commit secrets, credentials, local `.env` files, or generated build outputs.

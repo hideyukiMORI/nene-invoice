@@ -35,6 +35,11 @@ All money: **integer cents**. Tax rate: **basis points** (1000 = 10.00%).
 
 ## 3. Japan qualified invoice (適格請求書) — required fields
 
+> **Binding compliance.** The rules in this section are governed by
+> [`accounting-compliance.md`](./accounting-compliance.md) (non-negotiable). A
+> finance professional reviewing the system must find zero deviations. Any
+> departure requires an ADR with tax-professional sign-off.
+
 When `is_qualified_invoice = true`, the system must enforce and render:
 
 ### Issuer (supplier)
@@ -178,6 +183,7 @@ Quote numbers and invoice numbers: auto-increment per organization with configur
 
 ## Related
 
+- **Compliance (binding):** [`accounting-compliance.md`](./accounting-compliance.md)
 - Domain model: [`domain-model.md`](./domain-model.md)
 - Naming: [`../development/naming-conventions.md`](../development/naming-conventions.md)
 - Roadmap: [`../roadmap.md`](../roadmap.md)

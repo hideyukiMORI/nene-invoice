@@ -24,7 +24,7 @@ Ops / MCP         ──→         │
 | フェーズ | 状態 |
 | --- | --- |
 | Phase 0 ガバナンス | ✅ 完了（Issue #1） |
-| Phase 0 プロダクト設計 | 🔄 Issue #3 PR 待ち |
+| Phase 0 プロダクト設計 | ✅ 完了（Issue #3 / #9 / #11） |
 | Phase 0+ ランタイム scaffold | 🔲 Issue #4 以降 |
 
 ---
@@ -49,6 +49,9 @@ Ops / MCP         ──→         │
 - `.env` / トークン / パスワードのコミット
 - sibling 製品への請求ロジック統合（ADR 0002）
 
+**絶対順守:**
+- **会計・税務コンプライアンス完全順守**（非交渉）。請求・税・採番・PDF・保存に関わる変更は `docs/explanation/accounting-compliance.md` と `docs/review/compliance.md` で確認必須。逸脱は ADR ＋ 税理士確認なしに禁止。正本: `docs/explanation/accounting-compliance.md`
+
 ---
 
 ## アーキテクチャ規約（概要）
@@ -72,6 +75,7 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 
 | 目的 | ドキュメント |
 | --- | --- |
+| **会計・税務コンプライアンス（拘束）** | `docs/explanation/accounting-compliance.md` |
 | 現在のタスク | `docs/todo/current.md` |
 | ロードマップ | `docs/roadmap.md` |
 | プロダクトビジョン | `docs/explanation/product-vision.md` |
