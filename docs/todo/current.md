@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #93)
+Last updated: 2026-05-30 (Issue #95)
 
 ## Recently merged
 
@@ -48,21 +48,23 @@ Last updated: 2026-05-30 (Issue #93)
 - **Issue #87 / PR #88** — Vite dev の base 修正（import 解決）✅ merged
 - **Issue #89 / PR #90** — 請求書詳細画面（/invoices/:id・明細表示）✅ merged
 - **Issue #91 / PR #92** — 請求書作成フォーム（client 選択 + 明細）✅ merged
+- **Issue #93 / PR #94** — 請求書の発行アクション（下書き詳細から issue）✅ merged
+- **Issue #95** — 入金記録（発行済み詳細で入金フォーム＋入金一覧）⏳ this PR
 - **Issue #93** — 請求書の発行アクション（下書き詳細から issue）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #93 | `feat/93-invoice-issue` | 請求書の発行アクション（下書き詳細から issue） | 🔄 PR pending |
+| #95 | `feat/95-payments` | 入金記録（発行済み詳細で入金フォーム＋一覧） | 🔄 PR pending |
 
 ### Frontend 画面の進め方（縦スライス）
 
-請求書 詳細(#89) ✅ → 作成(#91) ✅ → **発行(#93)** → 入金 の順。各 PR で `entities/{r}` + `features/*` を同パターンで追加。
-- entities/invoice: list/detail/create/issue。次は payment（記録）。
-- feature 同士は import せず**ページで合成**（詳細ページが ViewInvoice + IssueInvoice を並置、useInvoice 共有でクエリは重複しない）。
+請求書 詳細(#89) ✅ → 作成(#91) ✅ → 発行(#93) ✅ → **入金(#95)** ＝ quote-to-cash UI 一巡。
+- entities: invoice（list/detail/create/issue）、client（list）、payment（list/record）、auth。
+- 詳細ページが ViewInvoice + IssueInvoice + ManagePayments をページ合成（feature 間 import なし、useInvoice 共有）。payment mutation は invoice 無効化をフィーチャ側で実施（sibling entity 直接 import 回避）。
 - 共有 UI: Button/Input/Select/Text/Stack/Spinner + Field/EmptyState/ErrorState（Storybook 必須）。
-- フォロー: 発行の確認ダイアログ（ConfirmDialog primitive）、due_at 入力。
+- フォロー: 発行/入金の確認ダイアログ（ConfirmDialog primitive）、due_at 入力、取引先 CRUD 画面、一覧ページング/フィルタ、Tier A 同一オリジン配信の PHP 結線。
 
 ## Phase 0+ Backlog
 

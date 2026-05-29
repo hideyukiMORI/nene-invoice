@@ -25,4 +25,27 @@ export const handlers = [
   http.get('/admin/invoices/:id', () => HttpResponse.json(buildInvoiceWithLinesDto())),
 
   http.post('/admin/invoices/:id/issue', () => HttpResponse.json(buildInvoiceWithLinesDto())),
+
+  http.get('/admin/invoices/:id/payments', () =>
+    HttpResponse.json({ items: [], total_paid_cents: 0 }),
+  ),
+
+  http.post('/admin/invoices/:id/payments', () =>
+    HttpResponse.json(
+      {
+        payment: {
+          id: 1,
+          organization_id: 1,
+          invoice_id: 1,
+          amount_cents: 50000,
+          paid_at: '2026-05-30 10:00:00',
+          method: 'bank_transfer',
+          note: null,
+        },
+        invoice: buildInvoiceDto({ status: 'partially_paid' }),
+        total_paid_cents: 50000,
+      },
+      { status: 201 },
+    ),
+  ),
 ]
