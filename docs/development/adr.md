@@ -23,7 +23,6 @@ docs/adr/
 ├── 0000-template.md
 ├── 0001-inherit-nene2-governance.md
 ├── 0002-separate-from-sibling-products.md
-├── 0007-product-identity-nene-clear.md
 └── NNNN-short-title.md
 ```
 
