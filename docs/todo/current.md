@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #57)
+Last updated: 2026-05-29 (Issue #59)
 
 ## Recently merged
 
@@ -29,13 +29,14 @@ Last updated: 2026-05-29 (Issue #57)
 - **Issue #51 / PR #52** — 監査ログ基盤（ADR 0008）+ Client 統合 ✅ merged
 - **Issue #53 / PR #54** — 監査を Organization / User / CompanySettings に展開 ✅ merged
 - **Issue #55 / PR #56** — 文書採番（document_sequences）✅ merged
-- **Issue #57** — line_items 永続化（quote/invoice 共有）⏳ this PR
+- **Issue #57 / PR #58** — line_items 永続化（quote/invoice 共有）✅ merged
+- **Issue #59** — Quote 永続化レイヤ ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #57 | `feat/57-line-items` | line_items 永続化（polymorphic・replaceForParent） | 🔄 PR pending |
+| #59 | `feat/59-quote-persistence` | Quote 永続化（quotes テーブル・totals・ソフト削除） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -164,7 +165,13 @@ Last updated: 2026-05-29 (Issue #57)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Line items persistence: 🔄 in progress** (Issue #57)
+**Phase 1 — Quote persistence: 🔄 in progress** (Issue #59)
+
+- `quotes` table (totals columns, soft delete, unique org+quote_number) + `Quote` entity + `QuoteStatus` enum + `PdoQuoteRepository`
+- Org-scoped reads exclude soft-deleted; tested on SQLite (save/list/count/update/soft-delete)
+- Line items stay separate (`line_items`); the create use case orchestrates header + lines + numbering + tax + audit (next PR)
+
+**Phase 1 — Line items persistence: ✅ complete** (Issue #57 / PR #58)
 
 - `line_items` (polymorphic `parent_type`+`parent_id`) + `PdoLineItemRepository` (findByParent ordered / replaceForParent / deleteForParent)
 - `LineItem` entity + `LineItemParent` enum; `LineItemResponse` (line_subtotal_cents only, no per-line tax per ADR 0004)
@@ -202,6 +209,6 @@ Last updated: 2026-05-29 (Issue #57)
 
 ## Next steps
 
-1. Quote persistence — `quotes` table + entity/repository (totals columns); reuses line items + numbering + tax
-2. Quote create/list/get + status machine; create uses `DocumentNumberGenerator` + `TaxCalculator` + audit
-3. Invoices (convert/issue/qualified validation) → Payments → overdue
+1. Quote create/list/get endpoints — create orchestrates `DocumentNumberGenerator` + `TaxCalculator` + `LineItemRepository` + audit
+2. Quote status transitions (draft→sent→accepted/rejected/expired) with rules
+3. Invoices (convert from quote / issue / qualified validation) → Payments → overdue
