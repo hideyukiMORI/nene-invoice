@@ -51,6 +51,14 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                VoidPaymentUseCase::class,
+                static fn (ContainerInterface $c): VoidPaymentUseCase => new VoidPaymentUseCase(
+                    self::resolve($c, PaymentRepositoryInterface::class),
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, AuditRecorderInterface::class),
+                ),
+            )
+            ->set(
                 RecordPaymentHandler::class,
                 static fn (ContainerInterface $c): RecordPaymentHandler => new RecordPaymentHandler(
                     self::resolve($c, RecordPaymentUseCase::class),
@@ -73,6 +81,10 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
             ->set(
                 PaymentExceedsOutstandingExceptionHandler::class,
                 static fn (ContainerInterface $c): PaymentExceedsOutstandingExceptionHandler => new PaymentExceedsOutstandingExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
+                PaymentNotFoundExceptionHandler::class,
+                static fn (ContainerInterface $c): PaymentNotFoundExceptionHandler => new PaymentNotFoundExceptionHandler(self::problemDetails($c)),
             )
             ->set(
                 PaymentRouteRegistrar::class,

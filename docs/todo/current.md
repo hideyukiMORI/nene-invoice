@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #111)
+Last updated: 2026-05-30 (Issue #113)
 
 ## Recently merged
 
@@ -57,13 +57,14 @@ Last updated: 2026-05-30 (Issue #111)
 - **Issue #105 / PR #106** — `GET /api/invoices` に read フィルタ（status/overdue/client/due/outstanding）✅ merged
 - **Issue #107 / PR #108** — フロント: 取引先一覧画面 + ヘッダーナビ ✅ merged
 - **Issue #109 / PR #110** — payment external_reference / idempotency_key / void データ層 ✅ merged
-- **Issue #111** — `POST /api/invoices/{id}/payments`（冪等・external_reference・過入金422）⏳ this PR
+- **Issue #111 / PR #112** — `POST /api/invoices/{id}/payments`（冪等・external_reference・過入金422）✅ merged
+- **Issue #113** — `POST /api/invoices/{id}/payments/{paymentId}/void`（void-with-audit・冪等）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #111 | `feat/111-service-record-payment` | service 入金起票（idempotent + external_reference + 過入金422） | 🔄 PR pending |
+| #113 | `feat/113-service-void-payment` | service 入金 void（void-with-audit・冪等・status 再計算） | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -77,8 +78,8 @@ Last updated: 2026-05-30 (Issue #111)
   - ②後半 **税理士サインオフ済み（2026-05-30）→ gate 解除**。
     - W1 **済(#109)**: payments に `external_reference` / `idempotency_key`、`findById`/`findByIdempotencyKey`/`markVoided`（void=soft delete 流用）。
     - W2 **済(#111)**: `POST /api/invoices/{id}/payments`。RecordPaymentUseCase を拡張（冪等 replay / `external_reference` 保存 / 過入金→`PaymentExceedsOutstandingException`=422 `payment-exceeds-outstanding` + `outstanding_cents`）して operator/service 共用。`paid_at`=入金日。ライブ確認済み。
-    - W3 次: `POST /api/invoices/{id}/payments/{paymentId}/void`（void-with-audit, 冪等）。
-  - 運用フォロー: 複数 org スコープ、トークン発行/失効 UI。
+    - W3 **済(#113)**: `POST /api/invoices/{id}/payments/{paymentId}/void`。VoidPaymentUseCase（soft delete 流用の void-with-audit `payment.voided`、status 再計算 paid→partially_paid/issued、冪等）。`payment-not-found`(404) 追加。ライブ確認済み。
+  - **②（読み取り＋書き込み）= 契約 §2/§3 完了**。残りは契約テスト（Clear 側）、運用フォロー: 複数 org スコープ、トークン発行/失効 UI。
 - **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
 
 ### Frontend 画面の進め方（縦スライス）

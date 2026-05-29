@@ -143,6 +143,48 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/PaymentExceedsOutstanding'
+  /api/invoices/{id}/payments/{paymentId}/void:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+      - name: paymentId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    post:
+      tags: [ServicePayments]
+      summary: Void a payment (service)
+      description: >
+        Reverses a payment on a match reversal (ADR 0009 §3.2). Void-with-audit
+        (no hard delete); the invoice status is recomputed from the remaining
+        payments. Idempotent — voiding an already-voided payment is a no-op
+        success. Requires the `write:payments` scope.
+      operationId: voidPayment
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: [string, 'null'] }
+            example:
+              reason: operator reversal
+      responses:
+        '200':
+          description: Payment voided (or already void)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordPaymentResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     serviceToken:
