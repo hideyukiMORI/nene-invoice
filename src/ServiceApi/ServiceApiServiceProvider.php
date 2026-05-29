@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\GetInvoiceByIdUseCase;
 use NeneInvoice\Invoice\ListInvoicesUseCase;
 use NeneInvoice\Payment\ListPaymentsUseCase;
 use NeneInvoice\Payment\RecordPaymentUseCase;
+use NeneInvoice\Payment\VoidPaymentUseCase;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -54,17 +55,26 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
                 ),
             )
             ->set(
+                VoidServicePaymentHandler::class,
+                static fn (ContainerInterface $c): VoidServicePaymentHandler => new VoidServicePaymentHandler(
+                    self::resolve($c, VoidPaymentUseCase::class),
+                    self::json($c),
+                    self::problemDetails($c),
+                ),
+            )
+            ->set(
                 ServiceApiRouteRegistrar::class,
                 static function (ContainerInterface $c): ServiceApiRouteRegistrar {
                     $list = $c->get(ListServiceInvoicesHandler::class);
                     $get = $c->get(GetServiceInvoiceHandler::class);
                     $recordPayment = $c->get(RecordServicePaymentHandler::class);
+                    $voidPayment = $c->get(VoidServicePaymentHandler::class);
 
-                    if (!$list instanceof ListServiceInvoicesHandler || !$get instanceof GetServiceInvoiceHandler || !$recordPayment instanceof RecordServicePaymentHandler) {
+                    if (!$list instanceof ListServiceInvoicesHandler || !$get instanceof GetServiceInvoiceHandler || !$recordPayment instanceof RecordServicePaymentHandler || !$voidPayment instanceof VoidServicePaymentHandler) {
                         throw new LogicException('Service API handler services are invalid.');
                     }
 
-                    return new ServiceApiRouteRegistrar($list, $get, $recordPayment);
+                    return new ServiceApiRouteRegistrar($list, $get, $recordPayment, $voidPayment);
                 },
             );
     }

@@ -35,12 +35,15 @@ architecture: **ADR 0009**.
   the operator's `organization_id`(s) and to `read:invoices` + `write:payments`.
 - **Writes:** idempotent payment create (with `external_reference`) and
   void-with-audit; over-allocation rejected (`payment-exceeds-outstanding`).
-- **Status:** contract accepted (ADR 0009). **Read API shipped** (#101):
-  `GET /api/invoices` and `GET /api/invoices/{id}` (with `outstanding_cents` +
-  payment history) behind service-token auth; OpenAPI `docs/openapi/service-api.yaml`;
-  mint tokens with `php tools/issue-service-token.php --org=N --scopes=read:invoices`.
-  Write API (payment create / void) and read filters are sequenced follow-ups
-  (write API gated on 税理士 sign-off).
+- **Status:** contract accepted (ADR 0009); **read + write API shipped** (§2/§3).
+  Read: `GET /api/invoices` (+ filters: status/overdue/client/due/outstanding) and
+  `GET /api/invoices/{id}` (with `outstanding_cents` + payment history). Write
+  (税理士 sign-off given 2026-05-30): `POST /api/invoices/{id}/payments` (idempotent,
+  `external_reference`, over-allocation → `payment-exceeds-outstanding`) and
+  `POST …/payments/{paymentId}/void` (void-with-audit, idempotent). All behind
+  service-token auth; OpenAPI `docs/openapi/service-api.yaml`. Mint tokens:
+  `php tools/issue-service-token.php --org=N --scopes=read:invoices,write:payments`.
+  Remaining: Clear-side contract tests; ops (multi-org tokens, issuance/revocation UI).
 
 ## Environment variables (planned)
 

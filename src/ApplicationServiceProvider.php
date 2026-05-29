@@ -23,6 +23,7 @@ use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
 use NeneInvoice\Payment\PaymentExceedsOutstandingExceptionHandler;
+use NeneInvoice\Payment\PaymentNotFoundExceptionHandler;
 use NeneInvoice\Payment\PaymentRouteRegistrar;
 use NeneInvoice\Payment\PaymentValidationExceptionHandler;
 use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
@@ -130,6 +131,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
                     $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
+                    $paymentNotFound = $container->get(PaymentNotFoundExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -203,7 +205,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment exceeds-outstanding exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation, $paymentExceeds];
+                    if (!$paymentNotFound instanceof PaymentNotFoundExceptionHandler) {
+                        throw new LogicException('Payment not-found exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation, $paymentExceeds, $paymentNotFound];
                 },
             );
     }
