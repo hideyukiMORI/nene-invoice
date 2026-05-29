@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #63)
+Last updated: 2026-05-29 (Issue #65)
 
 ## Recently merged
 
@@ -32,13 +32,14 @@ Last updated: 2026-05-29 (Issue #63)
 - **Issue #57 / PR #58** — line_items 永続化（quote/invoice 共有）✅ merged
 - **Issue #59 / PR #60** — Quote 永続化レイヤ ✅ merged
 - **Issue #61 / PR #62** — Quote 作成/一覧/取得（結線）✅ merged
-- **Issue #63** — Quote 状態遷移 ⏳ this PR
+- **Issue #63 / PR #64** — Quote 状態遷移 ✅ merged
+- **Issue #65** — Invoice 永続化レイヤ ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #63 | `feat/63-quote-status` | Quote 状態遷移（draft→sent→accepted/rejected/expired） | 🔄 PR pending |
+| #65 | `feat/65-invoice-persistence` | Invoice 永続化（invoices テーブル・適格請求書フラグ・totals） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -167,7 +168,13 @@ Last updated: 2026-05-29 (Issue #63)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Quote status transitions: 🔄 in progress** (Issue #63)
+**Phase 1 — Invoice persistence: 🔄 in progress** (Issue #65)
+
+- `invoices` table (qualified flag, totals, soft delete, nullable invoice_number until issued, unique org+number) + `Invoice` entity + `InvoiceStatus` enum (draft/issued/partially_paid/paid) + `PdoInvoiceRepository`
+- Drafts have no number (multiple NULLs allowed); issue assigns number + qualified flag; org-scoped reads
+- Tested on SQLite (draft save, multi-null, issue, list/count, soft delete)
+
+**Phase 1 — Quote status transitions: ✅ complete** (Issue #63 / PR #64)
 
 - `QuoteStatus::canTransitionTo` (draft→sent→accepted/rejected/expired; terminal states blocked)
 - `PATCH /admin/quotes/{id}` {status} → 422 `invalid-state-transition` on illegal moves; draft→sent sets issued_at; `quote.status_changed` audit
@@ -224,6 +231,6 @@ Last updated: 2026-05-29 (Issue #63)
 
 ## Next steps
 
-1. Invoice persistence — `invoices` table + entity/repository (qualified fields, totals, soft delete)
-2. Invoice convert-from-quote / issue (qualified validation) / list / get
+1. Invoice convert-from-quote (accepted quote → draft invoice, copy lines/totals) + list/get
+2. Invoice issue — assign INV number + qualified-invoice field validation (issuer registration etc.)
 3. Payments → overdue (paid/partially_paid); audit read endpoint
