@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #26)
+Last updated: 2026-05-29 (Issue #30)
 
 ## Recently merged
 
@@ -15,12 +15,13 @@ Last updated: 2026-05-29 (Issue #26)
 - **Issue #20 / PR #21** — Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 ✅ merged
 - **Issue #22 / PR #23** — ランタイムに DB 接続（AppConfig）+ DatabaseHealthCheck を配線 ✅ merged
 - **Issue #24 / PR #25** — User 永続化 + Role/Capability(RBAC) ドメイン ✅ merged
+- **Issue #26 / PR #29** — JWT ログイン（POST /auth/login）+ トークン発行 ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #26 | `feat/26-jwt-login` | JWT ログイン（POST /auth/login）+ トークン発行 | 🔄 PR pending |
+| #30 | `feat/30-auth-gate-me` | Bearer トークンゲート（/admin/ 保護）+ GET /admin/me | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -96,11 +97,16 @@ Last updated: 2026-05-29 (Issue #26)
 - `users` table (Phinx + SQLite snapshot); `User` entity + `PdoUserRepository` (org-scoped queries)
 - Tested: role matrix + repository on SQLite `:memory:`
 
-**Phase 1 — JWT login: 🔄 in progress** (Issue #26)
+**Phase 1 — JWT login: ✅ complete** (Issue #26)
 
 - `POST /auth/login` (public): verifies email+password, issues HMAC bearer token (`LocalBearerTokenVerifier`)
-- Handler → `LoginUseCase` → `UserRepository`; token claims `sub`/`role`/`org`; `AuthServiceProvider` wiring; `ApplicationServiceProvider` aggregates route registrars
-- Verified live: valid → 200 + JWT; wrong → 401; missing → 422; `/health` still public. Token gate + `/me` + capability + org resolution next
+- Handler → `LoginUseCase` → `UserRepository`; token claims `sub`/`role`/`org`
+
+**Phase 1 — Auth gate + current user: 🔄 in progress** (Issue #30)
+
+- `BearerTokenMiddleware` (prefix `/admin/`) wired into the runtime authMiddleware; `/health`, `/auth/login`, `/` stay public
+- `GET /admin/me` returns the authenticated user from token claims (`sub`)
+- Verified live: no/invalid token → 401, valid → 200 + user; `/health` public. CapabilityMiddleware + org resolution next
 
 ## Handoff Notes
 
@@ -118,7 +124,7 @@ Last updated: 2026-05-29 (Issue #26)
 
 ## Next steps
 
-1. Merge Issue #26 PR (JWT login). Next auth PR: `BearerTokenMiddleware` gate (protect `/admin/`) + `GET /admin/me` + `CapabilityMiddleware` + org resolution middleware (`single`)
+1. Merge Issue #30 PR (auth gate + `/admin/me`). Next auth PR: `CapabilityMiddleware` (route → capability RBAC) + org resolution middleware (`single`) + `organization_id` request scoping
 2. Complete Phase 1 core: clients, quotes, invoices, payments
 3. Phase 2 admin UI + PDF (minimum for overdue list)
 4. **Expansion #1** — payment reconciliation & dunning ([`expansion-roadmap.md`](./explanation/expansion-roadmap.md))

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Http;
 
 use LogicException;
+use Nene2\Auth\BearerTokenMiddleware;
 use Nene2\Config\AppConfig;
 use Nene2\Config\ConfigLoader;
 use Nene2\Database\DatabaseConnectionFactoryInterface;
@@ -25,10 +26,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * Wires the NENE2 HTTP runtime for NeNe Invoice: configuration, database
- * connectivity, and the request handler.
+ * connectivity, bearer-token authentication, and the request handler.
  *
- * Tenant resolution, JWT auth, and RBAC middleware are added in following PRs by
- * extending {@see RuntimeApplicationFactory} construction here.
+ * Tenant resolution and capability (RBAC) middleware are added in following PRs
+ * by extending {@see RuntimeApplicationFactory} construction here.
  */
 final readonly class RuntimeServiceProvider implements ServiceProviderInterface
 {
@@ -122,6 +123,12 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database health check service is invalid.');
                     }
 
+                    $bearerTokenMiddleware = $container->get(BearerTokenMiddleware::class);
+
+                    if (!$bearerTokenMiddleware instanceof BearerTokenMiddleware) {
+                        throw new LogicException('Bearer token middleware service is invalid.');
+                    }
+
                     $routeRegistrars = $container->get(ApplicationServiceProvider::ROUTE_REGISTRARS);
 
                     if (!is_array($routeRegistrars) || !array_is_list($routeRegistrars)) {
@@ -143,6 +150,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
+                        authMiddleware: [$bearerTokenMiddleware],
                         healthChecks: [$databaseHealthCheck],
                         debug: $config->debug,
                     );

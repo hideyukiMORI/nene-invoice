@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use LogicException;
+use Nene2\Auth\BearerTokenMiddleware;
 use Nene2\Auth\LocalBearerTokenVerifier;
 use Nene2\Auth\TokenIssuerInterface;
 use Nene2\Auth\TokenVerifierInterface;
@@ -108,6 +109,29 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                BearerTokenMiddleware::class,
+                static function (ContainerInterface $container): BearerTokenMiddleware {
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+                    $verifier = $container->get(TokenVerifierInterface::class);
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    if (!$verifier instanceof TokenVerifierInterface) {
+                        throw new LogicException('Token verifier service is invalid.');
+                    }
+
+                    // Protect everything under /admin/. Public routes (/, /health,
+                    // /auth/login) are not matched by the prefix and pass through.
+                    return new BearerTokenMiddleware(
+                        $problemDetails,
+                        $verifier,
+                        protectedPathPrefixes: ['/admin/'],
+                    );
+                },
+            )
+            ->set(
                 LoginUseCaseInterface::class,
                 static function (ContainerInterface $container): LoginUseCaseInterface {
                     $users = $container->get(UserRepositoryInterface::class);
@@ -147,15 +171,54 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                GetCurrentUserUseCaseInterface::class,
+                static function (ContainerInterface $container): GetCurrentUserUseCaseInterface {
+                    $users = $container->get(UserRepositoryInterface::class);
+
+                    if (!$users instanceof UserRepositoryInterface) {
+                        throw new LogicException('User repository service is invalid.');
+                    }
+
+                    return new GetCurrentUserUseCase($users);
+                },
+            )
+            ->set(
+                GetCurrentUserHandler::class,
+                static function (ContainerInterface $container): GetCurrentUserHandler {
+                    $useCase = $container->get(GetCurrentUserUseCaseInterface::class);
+                    $json = $container->get(JsonResponseFactory::class);
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$useCase instanceof GetCurrentUserUseCaseInterface) {
+                        throw new LogicException('Get current user use case service is invalid.');
+                    }
+
+                    if (!$json instanceof JsonResponseFactory) {
+                        throw new LogicException('JSON response factory service is invalid.');
+                    }
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    return new GetCurrentUserHandler($useCase, $json, $problemDetails);
+                },
+            )
+            ->set(
                 AuthRouteRegistrar::class,
                 static function (ContainerInterface $container): AuthRouteRegistrar {
                     $loginHandler = $container->get(LoginHandler::class);
+                    $getCurrentUserHandler = $container->get(GetCurrentUserHandler::class);
 
                     if (!$loginHandler instanceof LoginHandler) {
                         throw new LogicException('Login handler service is invalid.');
                     }
 
-                    return new AuthRouteRegistrar($loginHandler);
+                    if (!$getCurrentUserHandler instanceof GetCurrentUserHandler) {
+                        throw new LogicException('Get current user handler service is invalid.');
+                    }
+
+                    return new AuthRouteRegistrar($loginHandler, $getCurrentUserHandler);
                 },
             );
     }
