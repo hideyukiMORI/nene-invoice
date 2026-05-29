@@ -40,6 +40,13 @@ export const jaMessages = {
     '取引先を作成できませんでした。入力内容（登録番号の形式など）を確認してください。',
   'admin.clients.create.nameRequired': '名称を入力してください。',
   'admin.clients.col.actions': '操作',
+  'admin.clients.editButton': '編集',
+  'admin.clients.edit.title': '取引先の編集',
+  'admin.clients.edit.submit': '保存する',
+  'admin.clients.edit.submitting': '保存中…',
+  'admin.clients.edit.error':
+    '保存できませんでした。入力内容（登録番号の形式など）を確認してください。',
+  'admin.clients.edit.loadError': '取引先を取得できませんでした。',
   'admin.clients.delete.action': '削除',
   'admin.clients.delete.title': '取引先を削除しますか？',
   'admin.clients.delete.message': '「{{name}}」を削除します。この操作は取り消せません。',

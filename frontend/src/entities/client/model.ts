@@ -6,6 +6,7 @@ export interface Client {
   name: string
   contact_name: string | null
   email: string | null
+  billing_address: string | null
   registration_number: string | null
 }
 
@@ -22,4 +23,8 @@ export interface CreateClientInput {
   email: string | null
   billing_address: string | null
   registration_number: string | null
+}
+
+export interface UpdateClientInput extends CreateClientInput {
+  id: ClientId
 }

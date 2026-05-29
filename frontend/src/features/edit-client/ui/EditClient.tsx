@@ -1,0 +1,84 @@
+import type { ClientId } from '@/entities/client'
+import { useTranslation } from '@/shared/i18n'
+import { Button, ErrorState, Field, Input, Spinner, Stack, Text } from '@/shared/ui'
+import { useEditClient } from '../hooks/use-edit-client'
+
+export interface EditClientProps {
+  clientId: ClientId
+}
+
+/** Edit-client screen: loads the client, prefills the form, saves the update. */
+export function EditClient({ clientId }: EditClientProps) {
+  const { t } = useTranslation()
+  const state = useEditClient(clientId)
+
+  if (state.kind === 'loading') {
+    return (
+      <Stack direction="row" gap="sm">
+        <Spinner label={t('admin.clients.loading')} />
+        <Text variant="muted">{t('admin.clients.loading')}</Text>
+      </Stack>
+    )
+  }
+
+  if (state.kind === 'error') {
+    return (
+      <ErrorState
+        message={t('admin.clients.edit.loadError')}
+        retryLabel={t('common.actions.retry')}
+        onRetry={state.retry}
+      />
+    )
+  }
+
+  const {
+    register,
+    formState: { errors },
+  } = state.form
+
+  return (
+    <form onSubmit={state.onSubmit} noValidate>
+      <Stack gap="md">
+        <Text as="h1" variant="heading-md">
+          {t('admin.clients.edit.title')}
+        </Text>
+
+        <Field
+          id="name"
+          label={t('admin.clients.create.name')}
+          error={errors.name ? t('admin.clients.create.nameRequired') : undefined}
+        >
+          <Input id="name" aria-invalid={errors.name ? true : undefined} {...register('name')} />
+        </Field>
+
+        <Field id="contact_name" label={t('admin.clients.create.contact')}>
+          <Input id="contact_name" {...register('contact_name')} />
+        </Field>
+
+        <Field id="email" label={t('admin.clients.create.email')}>
+          <Input id="email" type="email" {...register('email')} />
+        </Field>
+
+        <Field id="billing_address" label={t('admin.clients.create.billingAddress')}>
+          <Input id="billing_address" {...register('billing_address')} />
+        </Field>
+
+        <Field id="registration_number" label={t('admin.clients.create.registration')}>
+          <Input id="registration_number" {...register('registration_number')} />
+        </Field>
+
+        {state.errorMessage !== null && (
+          <Text variant="muted" role="alert">
+            {state.errorMessage}
+          </Text>
+        )}
+
+        <div>
+          <Button type="submit" disabled={state.isPending}>
+            {state.isPending ? t('admin.clients.edit.submitting') : t('admin.clients.edit.submit')}
+          </Button>
+        </div>
+      </Stack>
+    </form>
+  )
+}
