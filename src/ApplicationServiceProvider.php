@@ -16,6 +16,8 @@ use NeneInvoice\Company\CompanySettingsNotFoundExceptionHandler;
 use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInvalidRegistrationNumberExceptionHandler;
 use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
 use NeneInvoice\Invoice\InvoiceRouteRegistrar;
+use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
+use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
@@ -104,6 +106,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $quoteValidation = $container->get(QuoteValidationExceptionHandler::class);
                     $quoteInvalidTransition = $container->get(InvalidStateTransitionExceptionHandler::class);
                     $invoiceNotFound = $container->get(InvoiceNotFoundExceptionHandler::class);
+                    $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
+                    $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -161,7 +165,15 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Invoice not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound];
+                    if (!$invoiceValidation instanceof InvoiceValidationExceptionHandler) {
+                        throw new LogicException('Invoice validation exception handler service is invalid.');
+                    }
+
+                    if (!$qualifiedIncomplete instanceof QualifiedInvoiceIncompleteExceptionHandler) {
+                        throw new LogicException('Qualified invoice incomplete exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete];
                 },
             );
     }

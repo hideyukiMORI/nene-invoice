@@ -18,6 +18,7 @@ final readonly class InvoiceRouteRegistrar
         private ListInvoicesHandler $listHandler,
         private GetInvoiceByIdHandler $getHandler,
         private ConvertQuoteToInvoiceHandler $convertHandler,
+        private IssueInvoiceHandler $issueHandler,
     ) {
     }
 
@@ -26,9 +27,11 @@ final readonly class InvoiceRouteRegistrar
         $list = $this->listHandler;
         $get = $this->getHandler;
         $convert = $this->convertHandler;
+        $issue = $this->issueHandler;
 
         $router->get('/admin/invoices', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->get('/admin/invoices/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
+        $router->post('/admin/invoices/{id}/issue', static fn (ServerRequestInterface $r) => $issue->handle($r));
         $router->post('/admin/quotes/{id}/convert', static fn (ServerRequestInterface $r) => $convert->handle($r));
     }
 }
