@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #22)
+Last updated: 2026-05-29 (Issue #24)
 
 ## Recently merged
 
@@ -13,12 +13,13 @@ Last updated: 2026-05-29 (Issue #22)
 - **Issue #17 / PR #18** — マルチテナント基盤＋ロール階層を土台採用（ADR 0006） ✅ merged
 - **Issue #4 / PR #19** — ランタイム基盤: NENE2 consumer scaffold + `GET /health` ✅ merged
 - **Issue #20 / PR #21** — Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 ✅ merged
+- **Issue #22 / PR #23** — ランタイムに DB 接続（AppConfig）+ DatabaseHealthCheck を配線 ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #22 | `feat/22-runtime-db-healthcheck` | ランタイムに DB 接続（AppConfig）+ DatabaseHealthCheck を配線 | 🔄 PR pending |
+| #24 | `feat/24-user-rbac-domain` | User 永続化 + Role/Capability(RBAC) ドメイン | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -82,11 +83,17 @@ Last updated: 2026-05-29 (Issue #22)
 - Phinx wired (`phinx.php`, `composer migrations:*`); `suffix => ''` so SQLite migrate/app share one file
 - Repository tested on SQLite `:memory:`
 
-**Phase 1 — Runtime DB connectivity: 🔄 in progress** (Issue #22)
+**Phase 1 — Runtime DB connectivity: ✅ complete** (Issue #22)
 
 - `RuntimeServiceProvider` wires ConfigLoader → AppConfig → PdoConnectionFactory → PdoDatabaseQueryExecutor
 - `src/Http/DatabaseHealthCheck` (copied from NENE2 reference) registered on `GET /health`
-- Verified: DB reachable → 200 `checks.database=ok`; unreachable → 503 `degraded`. `debug` now from AppConfig (not getenv)
+- Verified: DB reachable → 200 `checks.database=ok`; unreachable → 503 `degraded`
+
+**Phase 1 — User identity & RBAC domain: 🔄 in progress** (Issue #24)
+
+- `Auth/Role` + `Auth/Capability` enums with capability matrix (superadmin/admin/member/viewer)
+- `users` table (Phinx + SQLite snapshot); `User` entity + `PdoUserRepository` (org-scoped queries)
+- Tested: role matrix + repository on SQLite `:memory:`. No HTTP pipeline change yet
 
 ## Handoff Notes
 
@@ -104,6 +111,6 @@ Last updated: 2026-05-29 (Issue #22)
 
 ## Next steps
 
-1. Merge Issue #22 PR (runtime DB connectivity + DatabaseHealthCheck)
-2. Next PR: JWT auth + `Role`/`Capability` RBAC + `users` table, paired with org resolution middleware (default `single`) + `organization_id` query scoping — these share the request pipeline and tenant/auth context
+1. Merge Issue #24 PR (User + RBAC domain)
+2. Next PR: HTTP auth pipeline — JWT login + token verifier, auth middleware, `CapabilityMiddleware` (route → capability), org resolution middleware (default `single`) + `organization_id` request scoping
 3. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)
