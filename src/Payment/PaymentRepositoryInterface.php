@@ -12,6 +12,14 @@ interface PaymentRepositoryInterface
 {
     public function save(Payment $payment): int;
 
+    public function findById(int $id): ?Payment;
+
+    /** Returns the payment previously recorded with this idempotency key, if any. */
+    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment;
+
+    /** Voids a payment (soft delete). Idempotent: voiding an already-voided one is a no-op. */
+    public function markVoided(int $id): void;
+
     /** @return list<Payment> */
     public function findByInvoice(int $invoiceId): array;
 

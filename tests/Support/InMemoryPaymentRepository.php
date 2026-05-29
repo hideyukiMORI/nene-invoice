@@ -26,6 +26,8 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
             paidAt: $payment->paidAt,
             method: $payment->method,
             note: $payment->note,
+            externalReference: $payment->externalReference,
+            idempotencyKey: $payment->idempotencyKey,
             isDeleted: $payment->isDeleted,
             id: $id,
             createdAt: '2026-05-29 00:00:00',
@@ -33,6 +35,45 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
         );
 
         return $id;
+    }
+
+    public function findById(int $id): ?Payment
+    {
+        return $this->byId[$id] ?? null;
+    }
+
+    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment
+    {
+        foreach ($this->byId as $payment) {
+            if ($payment->organizationId === $organizationId && $payment->idempotencyKey === $idempotencyKey) {
+                return $payment;
+            }
+        }
+
+        return null;
+    }
+
+    public function markVoided(int $id): void
+    {
+        $existing = $this->byId[$id] ?? null;
+        if ($existing === null || $existing->isDeleted) {
+            return;
+        }
+
+        $this->byId[$id] = new Payment(
+            organizationId: $existing->organizationId,
+            invoiceId: $existing->invoiceId,
+            amountCents: $existing->amountCents,
+            paidAt: $existing->paidAt,
+            method: $existing->method,
+            note: $existing->note,
+            externalReference: $existing->externalReference,
+            idempotencyKey: $existing->idempotencyKey,
+            isDeleted: true,
+            id: $existing->id,
+            createdAt: $existing->createdAt,
+            updatedAt: $existing->updatedAt,
+        );
     }
 
     /** @return list<Payment> */

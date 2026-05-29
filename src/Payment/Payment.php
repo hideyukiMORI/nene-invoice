@@ -18,6 +18,10 @@ final readonly class Payment
         public string $paidAt,
         public ?string $method = null,
         public ?string $note = null,
+        /** Originating system's reconciliation id (e.g. NeNe Clear) — ADR 0009. */
+        public ?string $externalReference = null,
+        /** Idempotency key for safe retried writes; null for manual payments. */
+        public ?string $idempotencyKey = null,
         public bool $isDeleted = false,
         public ?int $id = null,
         public ?string $createdAt = null,

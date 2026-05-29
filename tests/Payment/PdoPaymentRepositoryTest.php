@@ -95,4 +95,42 @@ final class PdoPaymentRepositoryTest extends TestCase
     {
         self::assertSame([], $this->repository->sumPaidForInvoices([]));
     }
+
+    public function test_stores_and_finds_by_external_reference_and_idempotency_key(): void
+    {
+        $id = $this->repository->save(new Payment(
+            organizationId: 1,
+            invoiceId: 42,
+            amountCents: 1000,
+            paidAt: '2026-05-29 10:00:00',
+            externalReference: 'clear:recon:777',
+            idempotencyKey: 'clear:recon:777:v1',
+        ));
+
+        $byKey = $this->repository->findByIdempotencyKey(1, 'clear:recon:777:v1');
+        self::assertNotNull($byKey);
+        self::assertSame($id, $byKey->id);
+        self::assertSame('clear:recon:777', $byKey->externalReference);
+
+        self::assertNull($this->repository->findByIdempotencyKey(1, 'unknown'));
+        self::assertNull($this->repository->findByIdempotencyKey(2, 'clear:recon:777:v1')); // other org
+    }
+
+    public function test_void_excludes_from_totals_and_is_idempotent(): void
+    {
+        $id = $this->repository->save(new Payment(organizationId: 1, invoiceId: 42, amountCents: 1000, paidAt: '2026-05-29 10:00:00'));
+        self::assertSame(1000, $this->repository->totalPaidForInvoice(42));
+
+        $this->repository->markVoided($id);
+        self::assertSame(0, $this->repository->totalPaidForInvoice(42));
+        self::assertCount(0, $this->repository->findByInvoice(42));
+
+        // idempotent: voiding again is a no-op
+        $this->repository->markVoided($id);
+        self::assertSame(0, $this->repository->totalPaidForInvoice(42));
+
+        $voided = $this->repository->findById($id);
+        self::assertNotNull($voided);
+        self::assertTrue($voided->isDeleted);
+    }
 }
