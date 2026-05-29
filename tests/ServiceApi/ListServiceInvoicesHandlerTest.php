@@ -73,4 +73,29 @@ final class ListServiceInvoicesHandlerTest extends TestCase
 
         self::assertSame(403, $handler->handle($request)->getStatusCode());
     }
+
+    public function test_status_query_filter_narrows_results(): void
+    {
+        $invoices = new InMemoryInvoiceRepository();
+        $invoices->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Paid, subtotalCents: 1000, taxCents: 0, totalCents: 1000, invoiceNumber: 'INV-PAID', issuedAt: '2026-01-01 00:00:00'));
+        $invoices->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Issued, subtotalCents: 2000, taxCents: 0, totalCents: 2000, invoiceNumber: 'INV-OPEN', issuedAt: '2026-02-01 00:00:00'));
+
+        $psr17 = new Psr17Factory();
+        $handler = new ListServiceInvoicesHandler(
+            new ListInvoicesUseCase($invoices, new InMemoryPaymentRepository()),
+            new JsonResponseFactory($psr17, $psr17),
+            new ProblemDetailsResponseFactory($psr17, $psr17, 'https://nene-invoice.dev/problems/'),
+        );
+
+        $request = $psr17->createServerRequest('GET', '/api/invoices', ['status' => 'issued'])
+            ->withQueryParams(['status' => 'issued'])
+            ->withAttribute('nene2.auth.claims', ['org' => 1, 'scopes' => ['read:invoices']]);
+
+        $body = json_decode((string) $handler->handle($request)->getBody(), true);
+        self::assertIsArray($body);
+        self::assertSame(1, $body['total']);
+        self::assertIsArray($body['items']);
+        self::assertCount(1, $body['items']);
+        self::assertSame('INV-OPEN', $body['items'][0]['invoice_number']);
+    }
 }

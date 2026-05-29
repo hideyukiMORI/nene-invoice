@@ -36,6 +36,38 @@ paths:
           in: query
           required: false
           schema: { type: integer, minimum: 0, default: 0 }
+        - name: status
+          in: query
+          required: false
+          description: Comma-separated subset of status values (e.g. `issued,partially_paid`).
+          schema: { type: string }
+        - name: client_id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: due_before
+          in: query
+          required: false
+          description: Only invoices with due_at strictly before this date.
+          schema: { type: string }
+        - name: due_after
+          in: query
+          required: false
+          description: Only invoices with due_at strictly after this date.
+          schema: { type: string }
+        - name: overdue
+          in: query
+          required: false
+          description: When `true`, only issued/partially_paid invoices past their due date.
+          schema: { type: boolean }
+        - name: outstanding_gt
+          in: query
+          required: false
+          description: >
+            Only invoices with a positive outstanding balance (open receivables).
+            The contract example is `0`; any numeric value selects outstanding > 0.
+            Arbitrary thresholds (> N) are a follow-up.
+          schema: { type: integer, minimum: 0 }
       responses:
         '200':
           description: Invoice page

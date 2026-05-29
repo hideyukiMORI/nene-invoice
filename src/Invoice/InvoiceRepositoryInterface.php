@@ -16,6 +16,16 @@ interface InvoiceRepositoryInterface
 
     public function countByOrganization(int $organizationId): int;
 
+    /** @return list<Invoice> */
+    public function findByOrganizationFiltered(
+        int $organizationId,
+        InvoiceListFilter $filter,
+        int $limit,
+        int $offset,
+    ): array;
+
+    public function countByOrganizationFiltered(int $organizationId, InvoiceListFilter $filter): int;
+
     public function save(Invoice $invoice): int;
 
     /** @throws InvoiceNotFoundException */

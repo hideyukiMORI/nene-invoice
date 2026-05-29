@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace NeneInvoice\Tests\Support;
 
 use NeneInvoice\Invoice\Invoice;
+use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Invoice\InvoiceStatus;
 
 /**
  * In-memory fake for use-case tests (no database).
@@ -41,6 +43,53 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
             $this->byId,
             static fn (Invoice $i): bool => $i->organizationId === $organizationId && !$i->isDeleted,
         ));
+    }
+
+    /** @return list<Invoice> */
+    public function findByOrganizationFiltered(
+        int $organizationId,
+        InvoiceListFilter $filter,
+        int $limit,
+        int $offset,
+    ): array {
+        return array_slice($this->filtered($organizationId, $filter), $offset, $limit);
+    }
+
+    public function countByOrganizationFiltered(int $organizationId, InvoiceListFilter $filter): int
+    {
+        return count($this->filtered($organizationId, $filter));
+    }
+
+    /** @return list<Invoice> */
+    private function filtered(int $organizationId, InvoiceListFilter $filter): array
+    {
+        $open = [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid];
+
+        return array_values(array_filter($this->byId, function (Invoice $i) use ($organizationId, $filter, $open): bool {
+            if ($i->organizationId !== $organizationId || $i->isDeleted) {
+                return false;
+            }
+            if ($filter->statuses !== [] && !in_array($i->status->value, $filter->statuses, true)) {
+                return false;
+            }
+            if ($filter->clientId !== null && $i->clientId !== $filter->clientId) {
+                return false;
+            }
+            if ($filter->dueBefore !== null && ($i->dueAt === null || $i->dueAt >= $filter->dueBefore)) {
+                return false;
+            }
+            if ($filter->dueAfter !== null && ($i->dueAt === null || $i->dueAt <= $filter->dueAfter)) {
+                return false;
+            }
+            if (($filter->outstandingOnly || $filter->overdueOnly) && !in_array($i->status, $open, true)) {
+                return false;
+            }
+            if ($filter->overdueOnly && ($i->dueAt === null || $i->dueAt >= $filter->todayOrNow())) {
+                return false;
+            }
+
+            return true;
+        }));
     }
 
     public function save(Invoice $invoice): int

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #103)
+Last updated: 2026-05-30 (Issue #105)
 
 ## Recently merged
 
@@ -53,13 +53,14 @@ Last updated: 2026-05-30 (Issue #103)
 - **Issue #97 / PR #98** — NeNe Clear 上流契約の受諾＋ガバナンス整備（ADR 0009 / sibling / 用語）✅ merged
 - **Issue #99 / PR #100** — 売掛金残高 `outstanding_cents` を read モデルに公開 ✅ merged
 - **Issue #101 / PR #102** — `/api/*` サービス面 + サービストークン認証 + 請求書 read（Clear 向け）✅ merged
-- **Issue #103** — フロント: 請求書の残高 `outstanding_cents` を一覧・詳細に表示 ⏳ this PR
+- **Issue #103 / PR #104** — フロント: 請求書の残高 `outstanding_cents` を一覧・詳細に表示 ✅ merged
+- **Issue #105** — `GET /api/invoices` に read フィルタ（status/overdue/client/due/outstanding）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #103 | `feat/103-frontend-outstanding` | フロント: 残高 outstanding_cents を一覧・詳細に表示 | 🔄 PR pending |
+| #105 | `feat/105-service-invoice-filters` | `GET /api/invoices` の read フィルタ（Clear ②前半） | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -69,7 +70,8 @@ Last updated: 2026-05-30 (Issue #103)
 - 後続（段階実装・別 Issue）: ①読み取りAPI（filters + `outstanding_cents` + payments 履歴）②書き込みAPI（idempotent payment create + `external_reference`、過入金→`payment-exceeds-outstanding`、void-with-audit）③サービストークン認証 ④`/api/*` OpenAPI + 契約テスト。
   - ①-a **済(#99)**: `outstanding_cents` を `/admin` の list/get read モデルに公開（PaymentRepo batch sum、純 read 派生・gate なし）。
   - ①-b **済(#101)**: `/api/*` サービス面 + サービストークン認証（`ServiceScope`/`ServiceAuthContext`/`ServiceScopeMiddleware`、BearerToken の保護 prefix に `/api/`）+ `GET /api/invoices` / `/api/invoices/{id}`（既存 UseCase 再利用、契約 read モデル + payments 履歴）。独立 OpenAPI `service-api.yaml`、`tools/issue-service-token.php`。ライブ確認: 401/403 分離・サービストークンで取得可。
-  - 次（②, 別 Issue）: read フィルタ（status/overdue/outstanding_gt/due/client）→ 書き込みAPI（payment create + `external_reference` + void、idempotency）← **税理士確認後**。複数 org スコープ・トークン発行/失効の運用。
+  - ②-前半 **済(#105)**: `GET /api/invoices` の read フィルタ（status 複数 / client_id / due_before・due_after / overdue / outstanding_gt=0＝未回収）。すべて invoices 表のみで完結（payment JOIN なし、ページング整合）。任意閾値 outstanding_gt=N は follow-up。
+  - 次（②後半・別 Issue）: 書き込みAPI（payment create + `external_reference` + void、idempotency）← **税理士確認後**。複数 org スコープ・トークン発行/失効の運用。
 - **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
 
 ### Frontend 画面の進め方（縦スライス）
