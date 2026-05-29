@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #20)
+Last updated: 2026-05-29 (Issue #22)
 
 ## Recently merged
 
@@ -12,12 +12,13 @@ Last updated: 2026-05-29 (Issue #20)
 - **Issue #15 / PR #16** — 命名規則の絶対順守・用語レジストリ（唯一の真実）・タイポ厳禁 ✅ merged
 - **Issue #17 / PR #18** — マルチテナント基盤＋ロール階層を土台採用（ADR 0006） ✅ merged
 - **Issue #4 / PR #19** — ランタイム基盤: NENE2 consumer scaffold + `GET /health` ✅ merged
+- **Issue #20 / PR #21** — Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #20 | `feat/20-organization-persistence` | Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 | 🔄 PR pending |
+| #22 | `feat/22-runtime-db-healthcheck` | ランタイムに DB 接続（AppConfig）+ DatabaseHealthCheck を配線 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -75,11 +76,17 @@ Last updated: 2026-05-29 (Issue #20)
 - NENE2 consumer bootstrap: `composer.json` (require `hideyukimori/nene2 ^1.5`), `public_html/index.php`, `RuntimeContainerFactory` → `RuntimeServiceProvider` → `ApplicationServiceProvider`
 - `GET /health` (framework built-in) verified end-to-end; `composer check` green (PHPUnit + PHPStan 8 + php-cs-fixer)
 
-**Phase 1 — Organization persistence: 🔄 in progress** (Issue #20)
+**Phase 1 — Organization persistence: ✅ complete** (Issue #20)
 
 - `organizations` table (Phinx migration + SQLite schema snapshot); `Organization` entity + `PdoOrganizationRepository`
 - Phinx wired (`phinx.php`, `composer migrations:*`); `suffix => ''` so SQLite migrate/app share one file
-- Repository tested on SQLite `:memory:`; HTTP runtime unchanged (org resolution + auth in next PRs)
+- Repository tested on SQLite `:memory:`
+
+**Phase 1 — Runtime DB connectivity: 🔄 in progress** (Issue #22)
+
+- `RuntimeServiceProvider` wires ConfigLoader → AppConfig → PdoConnectionFactory → PdoDatabaseQueryExecutor
+- `src/Http/DatabaseHealthCheck` (copied from NENE2 reference) registered on `GET /health`
+- Verified: DB reachable → 200 `checks.database=ok`; unreachable → 503 `degraded`. `debug` now from AppConfig (not getenv)
 
 ## Handoff Notes
 
@@ -97,7 +104,6 @@ Last updated: 2026-05-29 (Issue #20)
 
 ## Next steps
 
-1. Merge Issue #20 PR (Organization persistence layer)
-2. Next PR: organization resolution middleware (default `single`) + container wiring (ConfigLoader/AppConfig/DB executor/OrganizationRepository) + `organization_id` query scoping + DatabaseHealthCheck
-3. Then: JWT auth + `Role`/`Capability` RBAC wiring (`Auth/`), `users` migration
-4. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)
+1. Merge Issue #22 PR (runtime DB connectivity + DatabaseHealthCheck)
+2. Next PR: JWT auth + `Role`/`Capability` RBAC + `users` table, paired with org resolution middleware (default `single`) + `organization_id` query scoping — these share the request pipeline and tenant/auth context
+3. Then PR-C+: organization CRUD (superadmin), user CRUD (admin)

@@ -4,6 +4,11 @@
   colors="true"
   cacheDirectory=".phpunit.cache"
 >
+  <php>
+    <env name="APP_ENV" value="test" force="true"/>
+    <env name="DB_ADAPTER" value="sqlite" force="true"/>
+    <env name="DB_NAME" value=":memory:" force="true"/>
+  </php>
   <testsuites>
     <testsuite name="NeneInvoice">
       <directory>tests</directory>
