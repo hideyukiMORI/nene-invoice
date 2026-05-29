@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #33)
+Last updated: 2026-05-29 (Issue #35)
 
 ## Recently merged
 
@@ -17,12 +17,14 @@ Last updated: 2026-05-29 (Issue #33)
 - **Issue #24 / PR #25** — User 永続化 + Role/Capability(RBAC) ドメイン ✅ merged
 - **Issue #26 / PR #29** — JWT ログイン（POST /auth/login）+ トークン発行 ✅ merged
 - **Issue #30** — Bearer トークンゲート（/admin/ 保護）+ GET /admin/me ✅ merged（commit `f412a52`）
+- **Issue #33 / PR #34** — 並行 Cursor 由来 #27/#31 の revert（NeNe Clear 等を除去）✅ merged
+- **Issue #35** — CapabilityMiddleware + CapabilityResolver（RBAC 強制）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #33 | `fix/33-revert-cursor-merges` | 並行 Cursor エージェント由来 #27/#31 の revert（expansion-roadmap・ADR 0007 NeNe Clear・philosophy） | 🔄 PR pending |
+| #35 | `feat/35-capability-rbac` | CapabilityMiddleware + CapabilityResolver（ルート→capability RBAC） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -109,10 +111,17 @@ Last updated: 2026-05-29 (Issue #33)
 - `GET /admin/me` returns the authenticated user from token claims (`sub`)
 - Verified live: no/invalid token → 401, valid → 200 + user; `/health` public
 
-**Cleanup — revert parallel-agent merges: 🔄 in progress** (Issue #33)
+**Cleanup — revert parallel-agent merges: ✅ complete** (Issue #33 / PR #34)
 
-- Reverts Cursor-authored #27 (expansion-roadmap) and #31 (ADR 0007 NeNe Clear + philosophy); not part of the agreed plan
-- NeNe Clear rename / expansion roadmap can be re-adopted later via a proper Issue/ADR if wanted
+- Reverted Cursor-authored #27 (expansion-roadmap) and #31 (ADR 0007 NeNe Clear + philosophy)
+- NeNe Clear is a *separate* sibling product (入金消込/督促), not this repo — do not reintroduce here
+
+**Phase 1 — RBAC enforcement: 🔄 in progress** (Issue #35)
+
+- `CapabilityResolver` (path+method → Capability) + `CapabilityMiddleware` (after BearerTokenMiddleware)
+- authMiddleware = [BearerTokenMiddleware, CapabilityMiddleware]
+- Verified live: member → /admin/organizations 403, superadmin → passes (404, no route yet), /admin/me 200, no token 401
+- Org scoping (`organization_id`) added with org-resolution middleware when tenant-scoped routes land
 
 ## Handoff Notes
 
@@ -130,6 +139,7 @@ Last updated: 2026-05-29 (Issue #33)
 
 ## Next steps
 
-1. Next auth PR: `CapabilityMiddleware` (route → capability RBAC) + org resolution middleware (`single`) + `organization_id` request scoping
-2. Complete Phase 1 core: clients, quotes, invoices, payments
-3. Phase 2 admin UI + PDF (minimum for overdue list)
+1. Organization CRUD (superadmin, `/admin/organizations`) — exercises RBAC; cross-tenant so no org resolution needed
+2. User CRUD (admin, `/admin/users`) + org resolution middleware (`single`) + `organization_id` scoping
+3. Complete Phase 1 billing core: clients, quotes, invoices, payments
+4. Phase 2 admin UI + PDF (minimum for overdue list)
