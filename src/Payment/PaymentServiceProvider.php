@@ -71,6 +71,10 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): PaymentValidationExceptionHandler => new PaymentValidationExceptionHandler(self::problemDetails($c)),
             )
             ->set(
+                PaymentExceedsOutstandingExceptionHandler::class,
+                static fn (ContainerInterface $c): PaymentExceedsOutstandingExceptionHandler => new PaymentExceedsOutstandingExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
                 PaymentRouteRegistrar::class,
                 static function (ContainerInterface $c): PaymentRouteRegistrar {
                     $record = $c->get(RecordPaymentHandler::class);

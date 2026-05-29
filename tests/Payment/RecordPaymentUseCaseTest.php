@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\Payment;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceStatus;
+use NeneInvoice\Payment\PaymentExceedsOutstandingException;
 use NeneInvoice\Payment\PaymentValidationException;
 use NeneInvoice\Payment\RecordPaymentInput;
 use NeneInvoice\Payment\RecordPaymentUseCase;
@@ -81,8 +82,32 @@ final class RecordPaymentUseCaseTest extends TestCase
     {
         $id = $this->issuedInvoice(2200);
 
-        $this->expectException(PaymentValidationException::class);
+        $this->expectException(PaymentExceedsOutstandingException::class);
         $this->useCase->execute(1, 7, $id, new RecordPaymentInput(amountCents: 2201));
+    }
+
+    public function test_over_payment_exception_carries_outstanding(): void
+    {
+        $id = $this->issuedInvoice(2200);
+        $this->useCase->execute(1, 7, $id, new RecordPaymentInput(amountCents: 800));
+
+        try {
+            $this->useCase->execute(1, 7, $id, new RecordPaymentInput(amountCents: 2000));
+            self::fail('Expected PaymentExceedsOutstandingException');
+        } catch (PaymentExceedsOutstandingException $e) {
+            self::assertSame(1400, $e->outstandingCents); // 2200 − 800
+        }
+    }
+
+    public function test_idempotent_replay_returns_same_payment(): void
+    {
+        $id = $this->issuedInvoice(2200);
+        $first = $this->useCase->execute(1, 7, $id, new RecordPaymentInput(amountCents: 800, idempotencyKey: 'k1'));
+        $second = $this->useCase->execute(1, 7, $id, new RecordPaymentInput(amountCents: 800, idempotencyKey: 'k1'));
+
+        self::assertSame($first->payment->id, $second->payment->id);
+        // only one payment recorded despite two calls
+        self::assertSame(800, $this->payments->totalPaidForInvoice($id));
     }
 
     public function test_non_positive_amount_is_rejected(): void

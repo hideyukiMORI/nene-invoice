@@ -33,6 +33,7 @@ final readonly class RecordPaymentUseCase
     /**
      * @throws InvoiceNotFoundException
      * @throws PaymentValidationException
+     * @throws PaymentExceedsOutstandingException
      */
     public function execute(int $organizationId, ?int $actorUserId, int $invoiceId, RecordPaymentInput $input): RecordPaymentResult
     {
@@ -40,6 +41,15 @@ final readonly class RecordPaymentUseCase
 
         if ($invoice === null || $invoice->organizationId !== $organizationId) {
             throw new InvoiceNotFoundException($invoiceId);
+        }
+
+        // Idempotent replay: a retried write with the same key returns the existing
+        // payment instead of recording a duplicate (ADR 0009 §3.1.2).
+        if ($input->idempotencyKey !== null) {
+            $existing = $this->payments->findByIdempotencyKey($organizationId, $input->idempotencyKey);
+            if ($existing !== null) {
+                return new RecordPaymentResult($existing, $invoice, $this->payments->totalPaidForInvoice($invoiceId));
+            }
         }
 
         if ($input->amountCents <= 0) {
@@ -53,7 +63,7 @@ final readonly class RecordPaymentUseCase
         $alreadyPaid = $this->payments->totalPaidForInvoice($invoiceId);
 
         if ($alreadyPaid + $input->amountCents > $invoice->totalCents) {
-            throw new PaymentValidationException('The payment would exceed the invoice total (over-payment is not allowed).');
+            throw new PaymentExceedsOutstandingException(max(0, $invoice->totalCents - $alreadyPaid));
         }
 
         $before = InvoiceResponse::toArray($invoice);
@@ -67,6 +77,8 @@ final readonly class RecordPaymentUseCase
             paidAt: $paidAt,
             method: $input->method,
             note: $input->note,
+            externalReference: $input->externalReference,
+            idempotencyKey: $input->idempotencyKey,
         ));
 
         $totalPaid = $alreadyPaid + $input->amountCents;

@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #107)
+Last updated: 2026-05-30 (Issue #111)
 
 ## Recently merged
 
@@ -55,13 +55,15 @@ Last updated: 2026-05-30 (Issue #107)
 - **Issue #101 / PR #102** — `/api/*` サービス面 + サービストークン認証 + 請求書 read（Clear 向け）✅ merged
 - **Issue #103 / PR #104** — フロント: 請求書の残高 `outstanding_cents` を一覧・詳細に表示 ✅ merged
 - **Issue #105 / PR #106** — `GET /api/invoices` に read フィルタ（status/overdue/client/due/outstanding）✅ merged
-- **Issue #107** — フロント: 取引先一覧画面 + ヘッダーナビ ⏳ this PR
+- **Issue #107 / PR #108** — フロント: 取引先一覧画面 + ヘッダーナビ ✅ merged
+- **Issue #109 / PR #110** — payment external_reference / idempotency_key / void データ層 ✅ merged
+- **Issue #111** — `POST /api/invoices/{id}/payments`（冪等・external_reference・過入金422）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #107 | `feat/107-clients-list` | フロント: 取引先一覧 + ヘッダーナビ | 🔄 PR pending |
+| #111 | `feat/111-service-record-payment` | service 入金起票（idempotent + external_reference + 過入金422） | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -72,7 +74,11 @@ Last updated: 2026-05-30 (Issue #107)
   - ①-a **済(#99)**: `outstanding_cents` を `/admin` の list/get read モデルに公開（PaymentRepo batch sum、純 read 派生・gate なし）。
   - ①-b **済(#101)**: `/api/*` サービス面 + サービストークン認証（`ServiceScope`/`ServiceAuthContext`/`ServiceScopeMiddleware`、BearerToken の保護 prefix に `/api/`）+ `GET /api/invoices` / `/api/invoices/{id}`（既存 UseCase 再利用、契約 read モデル + payments 履歴）。独立 OpenAPI `service-api.yaml`、`tools/issue-service-token.php`。ライブ確認: 401/403 分離・サービストークンで取得可。
   - ②-前半 **済(#105)**: `GET /api/invoices` の read フィルタ（status 複数 / client_id / due_before・due_after / overdue / outstanding_gt=0＝未回収）。すべて invoices 表のみで完結（payment JOIN なし、ページング整合）。任意閾値 outstanding_gt=N は follow-up。
-  - 次（②後半・別 Issue）: 書き込みAPI（payment create + `external_reference` + void、idempotency）← **税理士確認後**。複数 org スコープ・トークン発行/失効の運用。
+  - ②後半 **税理士サインオフ済み（2026-05-30）→ gate 解除**。
+    - W1 **済(#109)**: payments に `external_reference` / `idempotency_key`、`findById`/`findByIdempotencyKey`/`markVoided`（void=soft delete 流用）。
+    - W2 **済(#111)**: `POST /api/invoices/{id}/payments`。RecordPaymentUseCase を拡張（冪等 replay / `external_reference` 保存 / 過入金→`PaymentExceedsOutstandingException`=422 `payment-exceeds-outstanding` + `outstanding_cents`）して operator/service 共用。`paid_at`=入金日。ライブ確認済み。
+    - W3 次: `POST /api/invoices/{id}/payments/{paymentId}/void`（void-with-audit, 冪等）。
+  - 運用フォロー: 複数 org スコープ、トークン発行/失効 UI。
 - **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
 
 ### Frontend 画面の進め方（縦スライス）

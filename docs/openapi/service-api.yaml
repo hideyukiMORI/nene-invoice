@@ -15,6 +15,8 @@ servers:
 tags:
   - name: ServiceInvoices
     description: Invoice reads for reconciliation (service scope).
+  - name: ServicePayments
+    description: Payment writes from reconciliation (service scope).
 security:
   - serviceToken: []
 paths:
@@ -103,6 +105,44 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+    post:
+      tags: [ServicePayments]
+      summary: Record a payment (service)
+      description: >
+        Records a payment on a confirmed bank match (ADR 0009 §3.1). Idempotent on
+        `idempotency_key`; `paid_at` is the bank value date and is stored as given;
+        `external_reference` ties the payment to the bank line. Over-allocation is
+        rejected with `payment-exceeds-outstanding` (the body carries the current
+        `outstanding_cents` so the caller can split into client credit). Requires
+        the `write:payments` scope.
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordPaymentRequest'
+            example:
+              amount_cents: 50000
+              paid_at: '2026-04-20'
+              method: bank_transfer
+              external_reference: clear:recon:777
+              idempotency_key: clear:recon:777:v1
+      responses:
+        '201':
+          description: Payment recorded (or idempotent replay of an existing one)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordPaymentResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/PaymentExceedsOutstanding'
 components:
   securitySchemes:
     serviceToken:
@@ -129,6 +169,18 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
+    PaymentExceedsOutstanding:
+      description: >
+        The payment would exceed the invoice's outstanding balance. The body
+        includes the current `outstanding_cents` so the caller can split.
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ProblemDetails'
+              - type: object
+                properties:
+                  outstanding_cents: { type: integer }
   schemas:
     ProblemDetails:
       type: object
@@ -188,3 +240,26 @@ components:
               items:
                 $ref: '#/components/schemas/ServicePayment'
           required: [payments]
+    RecordPaymentRequest:
+      type: object
+      properties:
+        amount_cents: { type: integer, minimum: 1, description: Integer cents (positive). }
+        paid_at: { type: string, description: Bank value date (入金日); stored as given. }
+        method: { type: [string, 'null'], enum: [bank_transfer, cash, other, null] }
+        note: { type: [string, 'null'] }
+        external_reference:
+          type: [string, 'null']
+          description: Reconciliation id tying the payment to the bank line.
+        idempotency_key:
+          type: string
+          description: Retried writes with the same key return the same payment.
+      required: [amount_cents, paid_at, idempotency_key]
+    RecordPaymentResult:
+      type: object
+      properties:
+        payment:
+          $ref: '#/components/schemas/ServicePayment'
+        invoice:
+          $ref: '#/components/schemas/ServiceInvoice'
+        total_paid_cents: { type: integer }
+      required: [payment, invoice, total_paid_cents]
