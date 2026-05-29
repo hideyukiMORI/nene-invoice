@@ -22,6 +22,7 @@ use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\Payment\PaymentExceedsOutstandingExceptionHandler;
 use NeneInvoice\Payment\PaymentRouteRegistrar;
 use NeneInvoice\Payment\PaymentValidationExceptionHandler;
 use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
@@ -128,6 +129,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
+                    $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -197,7 +199,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment validation exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation];
+                    if (!$paymentExceeds instanceof PaymentExceedsOutstandingExceptionHandler) {
+                        throw new LogicException('Payment exceeds-outstanding exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation, $paymentExceeds];
                 },
             );
     }

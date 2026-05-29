@@ -11,6 +11,10 @@ final readonly class RecordPaymentInput
         public ?string $paidAt = null,
         public ?string $method = null,
         public ?string $note = null,
+        /** Originating system's reconciliation id (NeNe Clear) — ADR 0009. */
+        public ?string $externalReference = null,
+        /** Idempotency key; a retried write with the same key returns the same payment. */
+        public ?string $idempotencyKey = null,
     ) {
     }
 }
