@@ -109,6 +109,8 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `client-not-found` | Client id not found |
 | `organization-not-found` | Organization id/slug not found |
 | `user-not-found` | User id not found |
+| `invalid-credentials` | Login failed — wrong email or password |
+| `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
 | `insufficient-capability` | Authenticated but lacks required capability |
 | `organization-not-resolved` | Tenant could not be resolved for the request |
 | `invalid-state-transition` | Disallowed status change |

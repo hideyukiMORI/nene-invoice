@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #24)
+Last updated: 2026-05-29 (Issue #26)
 
 ## Recently merged
 
@@ -14,12 +14,13 @@ Last updated: 2026-05-29 (Issue #24)
 - **Issue #4 / PR #19** — ランタイム基盤: NENE2 consumer scaffold + `GET /health` ✅ merged
 - **Issue #20 / PR #21** — Organization 永続化レイヤ（テナント）+ Phinx マイグレーション基盤 ✅ merged
 - **Issue #22 / PR #23** — ランタイムに DB 接続（AppConfig）+ DatabaseHealthCheck を配線 ✅ merged
+- **Issue #24 / PR #25** — User 永続化 + Role/Capability(RBAC) ドメイン ✅ merged
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #24 | `feat/24-user-rbac-domain` | User 永続化 + Role/Capability(RBAC) ドメイン | 🔄 PR pending |
+| #26 | `feat/26-jwt-login` | JWT ログイン（POST /auth/login）+ トークン発行 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -89,11 +90,17 @@ Last updated: 2026-05-29 (Issue #24)
 - `src/Http/DatabaseHealthCheck` (copied from NENE2 reference) registered on `GET /health`
 - Verified: DB reachable → 200 `checks.database=ok`; unreachable → 503 `degraded`
 
-**Phase 1 — User identity & RBAC domain: 🔄 in progress** (Issue #24)
+**Phase 1 — User identity & RBAC domain: ✅ complete** (Issue #24)
 
 - `Auth/Role` + `Auth/Capability` enums with capability matrix (superadmin/admin/member/viewer)
 - `users` table (Phinx + SQLite snapshot); `User` entity + `PdoUserRepository` (org-scoped queries)
-- Tested: role matrix + repository on SQLite `:memory:`. No HTTP pipeline change yet
+- Tested: role matrix + repository on SQLite `:memory:`
+
+**Phase 1 — JWT login: 🔄 in progress** (Issue #26)
+
+- `POST /auth/login` (public): verifies email+password, issues HMAC bearer token (`LocalBearerTokenVerifier`)
+- Handler → `LoginUseCase` → `UserRepository`; token claims `sub`/`role`/`org`; `AuthServiceProvider` wiring; `ApplicationServiceProvider` aggregates route registrars
+- Verified live: valid → 200 + JWT; wrong → 401; missing → 422; `/health` still public. Token gate + `/me` + capability + org resolution next
 
 ## Handoff Notes
 
@@ -111,7 +118,7 @@ Last updated: 2026-05-29 (Issue #24)
 
 ## Next steps
 
-1. Merge Issue #24 PR (User + RBAC domain) — or current auth pipeline work
+1. Merge Issue #26 PR (JWT login). Next auth PR: `BearerTokenMiddleware` gate (protect `/admin/`) + `GET /admin/me` + `CapabilityMiddleware` + org resolution middleware (`single`)
 2. Complete Phase 1 core: clients, quotes, invoices, payments
 3. Phase 2 admin UI + PDF (minimum for overdue list)
 4. **Expansion #1** — payment reconciliation & dunning ([`expansion-roadmap.md`](./explanation/expansion-roadmap.md))
