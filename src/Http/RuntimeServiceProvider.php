@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace NeneInvoice\Http;
 
 use LogicException;
+use Nene2\Config\AppConfig;
+use Nene2\Config\ConfigLoader;
+use Nene2\Database\DatabaseConnectionFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\PdoConnectionFactory;
+use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\DomainExceptionHandlerInterface;
@@ -17,11 +23,11 @@ use Psr\Container\ContainerInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Wires the minimal NENE2 HTTP runtime for NeNe Invoice.
+ * Wires the NENE2 HTTP runtime for NeNe Invoice: configuration, database
+ * connectivity, and the request handler.
  *
- * This scaffold registers only what `GET /health` (provided by the framework)
- * needs. Tenant resolution, JWT auth, and RBAC middleware are added in
- * following PRs by extending {@see RuntimeApplicationFactory} construction here.
+ * Tenant resolution, JWT auth, and RBAC middleware are added in following PRs by
+ * extending {@see RuntimeApplicationFactory} construction here.
  */
 final readonly class RuntimeServiceProvider implements ServiceProviderInterface
 {
@@ -34,12 +40,84 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder
             ->set(Psr17Factory::class, static fn (ContainerInterface $container): Psr17Factory => new Psr17Factory())
             ->set(
+                ConfigLoader::class,
+                static function (ContainerInterface $container): ConfigLoader {
+                    $projectRoot = $container->get(self::PROJECT_ROOT);
+
+                    if (!is_string($projectRoot) || $projectRoot === '') {
+                        throw new LogicException('Project root service is invalid.');
+                    }
+
+                    return new ConfigLoader($projectRoot);
+                },
+            )
+            ->set(
+                AppConfig::class,
+                static function (ContainerInterface $container): AppConfig {
+                    $loader = $container->get(ConfigLoader::class);
+
+                    if (!$loader instanceof ConfigLoader) {
+                        throw new LogicException('Config loader service is invalid.');
+                    }
+
+                    return $loader->load();
+                },
+            )
+            ->set(
+                DatabaseConnectionFactoryInterface::class,
+                static function (ContainerInterface $container): DatabaseConnectionFactoryInterface {
+                    $config = $container->get(AppConfig::class);
+
+                    if (!$config instanceof AppConfig) {
+                        throw new LogicException('Application config service is invalid.');
+                    }
+
+                    return new PdoConnectionFactory($config->database);
+                },
+            )
+            ->set(
+                DatabaseQueryExecutorInterface::class,
+                static function (ContainerInterface $container): DatabaseQueryExecutorInterface {
+                    $connectionFactory = $container->get(DatabaseConnectionFactoryInterface::class);
+
+                    if (!$connectionFactory instanceof DatabaseConnectionFactoryInterface) {
+                        throw new LogicException('Database connection factory service is invalid.');
+                    }
+
+                    return new PdoDatabaseQueryExecutor($connectionFactory);
+                },
+            )
+            ->set(
+                DatabaseHealthCheck::class,
+                static function (ContainerInterface $container): DatabaseHealthCheck {
+                    $connectionFactory = $container->get(DatabaseConnectionFactoryInterface::class);
+
+                    if (!$connectionFactory instanceof DatabaseConnectionFactoryInterface) {
+                        throw new LogicException('Database connection factory service is invalid.');
+                    }
+
+                    return new DatabaseHealthCheck($connectionFactory);
+                },
+            )
+            ->set(
                 RuntimeApplicationFactory::class,
                 static function (ContainerInterface $container): RuntimeApplicationFactory {
                     $psr17 = $container->get(Psr17Factory::class);
 
                     if (!$psr17 instanceof Psr17Factory) {
                         throw new LogicException('PSR-17 factory service is invalid.');
+                    }
+
+                    $config = $container->get(AppConfig::class);
+
+                    if (!$config instanceof AppConfig) {
+                        throw new LogicException('Application config service is invalid.');
+                    }
+
+                    $databaseHealthCheck = $container->get(DatabaseHealthCheck::class);
+
+                    if (!$databaseHealthCheck instanceof DatabaseHealthCheck) {
+                        throw new LogicException('Database health check service is invalid.');
                     }
 
                     $routeRegistrars = $container->get(ApplicationServiceProvider::ROUTE_REGISTRARS);
@@ -63,7 +141,8 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
-                        debug: getenv('APP_DEBUG') === 'true',
+                        healthChecks: [$databaseHealthCheck],
+                        debug: $config->debug,
                     );
                 },
             )
