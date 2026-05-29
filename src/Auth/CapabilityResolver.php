@@ -24,6 +24,12 @@ final class CapabilityResolver
             return Capability::ManageUsers;
         }
 
+        // Audit trail is admin oversight (read-only); gated at the admin level,
+        // not for billing operators (member / viewer).
+        if (str_starts_with($path, '/admin/audit-logs')) {
+            return Capability::ManageUsers;
+        }
+
         if (str_starts_with($path, '/admin/company-settings')) {
             return Capability::ManageCompanySettings;
         }
