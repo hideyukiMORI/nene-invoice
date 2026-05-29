@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #53)
+Last updated: 2026-05-29 (Issue #55)
 
 ## Recently merged
 
@@ -27,13 +27,14 @@ Last updated: 2026-05-29 (Issue #53)
 - **Issue #47 / PR #48** — 発行者プロフィール（company settings）+ 登録番号検証共有化 ✅ merged
 - **Issue #49 / PR #50** — 税計算エンジン（ADR 0004）✅ merged
 - **Issue #51 / PR #52** — 監査ログ基盤（ADR 0008）+ Client 統合 ✅ merged
-- **Issue #53** — 監査ログを Organization / User / CompanySettings に retrofit ⏳ this PR
+- **Issue #53 / PR #54** — 監査を Organization / User / CompanySettings に展開 ✅ merged
+- **Issue #55** — 文書採番（document_sequences）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #53 | `feat/53-audit-retrofit` | 監査を Organization / User / CompanySettings に展開 | 🔄 PR pending |
+| #55 | `feat/55-document-numbering` | 文書採番（EST-/INV-YYYY-NNN・org×種別×年） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -162,7 +163,14 @@ Last updated: 2026-05-29 (Issue #53)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Audit logging: ✅ foundation + full platform coverage** (Issue #51 / PR #52, Issue #53)
+**Phase 1 — Document numbering: 🔄 in progress** (Issue #55)
+
+- `document_sequences` (org × doc_type × year, unique) + `DocumentNumberGenerator` → `EST-2026-001` / `INV-2026-001`
+- Atomic allocation (UPDATE+1 / INSERT fallback on unique conflict); per-org/type/year isolation with yearly reset
+- Tested on SQLite; concurrency-safe locking is a documented follow-up (like audit transactionality)
+- Quotes/invoices will use this for numbers
+
+**Phase 1 — Audit logging: ✅ foundation + full platform coverage** (Issue #51 / PR #52, Issue #53 / PR #54)
 
 - `audit_logs` + `Audit\AuditRecorder` (ADR 0008): actor / org / action / entity / before & after sanitized snapshots
 - **Integrated into every mutating operation**: Client, Organization (create/delete), User (create/update/delete), CompanySettings (upsert → created/updated)
@@ -186,6 +194,6 @@ Last updated: 2026-05-29 (Issue #53)
 
 ## Next steps
 
-1. Quote persistence — `quotes` + `line_items`, `document_sequences` numbering (EST-YYYY-NNN); built with audit + `TaxCalculator` from the start
-2. Quote CRUD + status machine (draft→sent→accepted/rejected/expired)
-3. Invoices (convert/issue/qualified validation) → Payments → overdue; then audit read endpoint
+1. `line_items` table + repository (polymorphic quote/invoice)
+2. Quote persistence — `quotes` + entity/repository; create uses `DocumentNumberGenerator` + `TaxCalculator` + audit
+3. Quote CRUD + status machine → Invoices (convert/issue/qualified validation) → Payments → overdue
