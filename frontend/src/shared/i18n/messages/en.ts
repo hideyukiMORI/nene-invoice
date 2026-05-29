@@ -96,6 +96,9 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.issue.submitting': 'Issuing…',
   'admin.invoices.issue.error':
     'Could not issue. Check the registration number in company settings.',
+  'admin.invoices.issue.confirmTitle': 'Issue this invoice?',
+  'admin.invoices.issue.confirmMessage':
+    'Issuing allocates the invoice number and locks the contents (no further edits).',
   'admin.payments.title': 'Payments',
   'admin.payments.loading': 'Loading payments…',
   'admin.payments.empty': 'No payments yet.',
