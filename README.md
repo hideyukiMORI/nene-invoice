@@ -68,6 +68,7 @@ Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/p
 
 | Topic | Document |
 | --- | --- |
+| **Compliance (binding)** | [`docs/explanation/accounting-compliance.md`](./docs/explanation/accounting-compliance.md) |
 | **Product vision** | [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md) |
 | **Requirements** | [`docs/explanation/requirements.md`](./docs/explanation/requirements.md) |
 | **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |

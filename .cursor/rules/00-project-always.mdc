@@ -12,5 +12,6 @@ alwaysApply: true
 - 秘密情報、トークン、パスワード、ローカル `.env`、生成物をコミットしない。
 - 変更は依頼範囲と Issue の目的に留め、無関係な整形やリファクタを混ぜない。
 - NeNe Invoice はセルフホスト OSS の見積・請求・入金管理 — 適格請求書対応、Admin UI、PDF。
+- **会計・税務コンプライアンスは拘束ルール（非交渉）。** 請求・税・採番・PDF・保存の変更は `docs/explanation/accounting-compliance.md` 順守必須。逸脱は ADR ＋ 税理士確認なしに禁止。専門家がレビューしても逸脱ゼロを満たす。
 - 金額は **integer cents**（float 禁止）。実装は疎結合、型安全、OpenAPI/MCP 境界を優先（NENE2 継承）。
 - Cursor ルールと docs が食い違う場合は docs を先に更新し、このルールは短く保つ。

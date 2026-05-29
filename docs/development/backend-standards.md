@@ -75,9 +75,18 @@ Use `final readonly` classes and `declare(strict_types=1);` in every PHP file.
 
 ## 5. Money and tax
 
-- Store all amounts as **integer cents** (`subtotal_cents`, `tax_cents`, `total_cents`).
+> **Compliance is binding (non-negotiable).** All billing, tax, numbering, PDF,
+> and retention behavior **MUST** comply with
+> [`../explanation/accounting-compliance.md`](../explanation/accounting-compliance.md).
+> Where compliance conflicts with convenience, compliance wins. Deviations
+> require an ADR with tax-professional sign-off. Run
+> [`../review/compliance.md`](../review/compliance.md) for any change in this area.
+
+- Store all amounts as **integer cents** (`subtotal_cents`, `tax_cents`, `total_cents`). Float / DECIMAL for money is prohibited.
 - Tax rates: store as basis points or documented enum — never float percentages in persisted data.
-- Japan qualified invoice fields validated in UseCase layer before PDF generation.
+- Consumption tax is rounded **once per tax rate per document**, half-up — never per line (ADR 0004).
+- Japan qualified invoice fields validated in UseCase layer before PDF generation; missing required fields block issuance.
+- Issued documents are immutable; corrections via credit note, not edit/delete. No hard delete of billing records.
 - PDF totals must match API-calculated cents — single source of truth in UseCase.
 
 ---
@@ -108,4 +117,4 @@ composer openapi
 composer mcp
 ```
 
-Self-review: [`docs/review/backend-api.md`](../review/backend-api.md), [`docs/review/database.md`](../review/database.md).
+Self-review: [`docs/review/backend-api.md`](../review/backend-api.md), [`docs/review/database.md`](../review/database.md), [`docs/review/compliance.md`](../review/compliance.md).
