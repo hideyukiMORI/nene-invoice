@@ -2,6 +2,11 @@
 
 Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments.
 
+> This file defines the **meaning** of product concepts. The authoritative
+> **spelling** of every term and identifier (entities, fields, status values,
+> slugs) lives in the single source of truth
+> [`terminology.md`](./terminology.md) — spellings here MUST conform to it.
+
 | Term | Definition | Avoid |
 | --- | --- | --- |
 | **quote** | An estimate (見積書) sent to a client before work is confirmed; may convert to an invoice | "estimate" in code identifiers |

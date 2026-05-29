@@ -10,6 +10,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 - **Requirements:** `docs/explanation/requirements.md`
 - **Domain model:** `docs/explanation/domain-model.md`
 - **Glossary:** `docs/explanation/glossary.md`
+- **Terminology registry (canonical spellings — single source of truth):** `docs/explanation/terminology.md`
 - **Naming conventions:** `docs/development/naming-conventions.md`
 - Inheritance map: `docs/inheritance-from-nene2.md`
 - Human and AI collaboration: `docs/CONTRIBUTING.md`
@@ -34,6 +35,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 - Keep changes focused. Do not mix governance, feature work, and unrelated cleanup in one PR.
 - Do not commit secrets, credentials, local `.env` files, or generated build outputs.
 - Prefer explicit, typed, testable code over hidden framework behavior.
+- **Naming is absolute; zero typos.** Every identifier must match `docs/explanation/terminology.md` exactly. Spelling variants and unregistered terms block merge. Adding/renaming a term updates the registry in the same PR. Grep for stray variants before committing.
 - When docs and Cursor rules conflict, update the docs first and keep `.cursor/rules/` concise.
 
 ## Project Direction
