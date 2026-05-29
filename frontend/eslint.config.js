@@ -72,6 +72,9 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       ...jsxA11y.configs.recommended.rules,
+      // Numbers in template literals are safe (and React Hook Form's typed field
+      // paths require a numeric index, e.g. `line_items.${index}.description`).
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
       'import/no-restricted-paths': ['error', { zones: importZones }],
       'no-restricted-syntax': [
         'error',

@@ -6,6 +6,7 @@ import {
   type RenderResult,
 } from '@testing-library/react'
 import { useState, type ReactElement, type ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '@/shared/i18n'
 
 export function createTestQueryClient(): QueryClient {
@@ -21,7 +22,9 @@ function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createTestQueryClient)
   return (
     <I18nProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </QueryClientProvider>
     </I18nProvider>
   )
 }

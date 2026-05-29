@@ -1,5 +1,6 @@
 export { Button, type ButtonProps } from './primitives/Button'
 export { Input, type InputProps } from './primitives/Input'
+export { Select, type SelectProps } from './primitives/Select'
 export { Text, type TextProps } from './primitives/Text'
 export { Stack, type StackProps } from './primitives/Stack'
 export { Spinner, type SpinnerProps } from './primitives/Spinner'
