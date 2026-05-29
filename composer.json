@@ -25,10 +25,15 @@
         "migrations:status": "phinx status -c phinx.php",
         "migrations:migrate": "phinx migrate -c phinx.php",
         "migrations:rollback": "phinx rollback -c phinx.php",
+        "openapi": "php tools/validate-openapi.php",
+        "mcp": "php vendor/hideyukimori/nene2/tools/validate-mcp-tools.php --root=.",
+        "mcp:generate": "php tools/generate-mcp-tools.php",
         "check": [
             "@test",
             "@analyse",
-            "@cs"
+            "@cs",
+            "@openapi",
+            "@mcp"
         ]
     },
     "config": {
@@ -38,6 +43,7 @@
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^13.1",
-        "robmorgan/phinx": "^0.16.11"
+        "robmorgan/phinx": "^0.16.11",
+        "symfony/yaml": "^8.1"
     }
 }
