@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #65)
+Last updated: 2026-05-29 (Issue #67)
 
 ## Recently merged
 
@@ -33,13 +33,14 @@ Last updated: 2026-05-29 (Issue #65)
 - **Issue #59 / PR #60** — Quote 永続化レイヤ ✅ merged
 - **Issue #61 / PR #62** — Quote 作成/一覧/取得（結線）✅ merged
 - **Issue #63 / PR #64** — Quote 状態遷移 ✅ merged
-- **Issue #65** — Invoice 永続化レイヤ ⏳ this PR
+- **Issue #65 / PR #66** — Invoice 永続化レイヤ ✅ merged
+- **Issue #67** — 見積→請求書変換 + 請求書一覧/取得 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #65 | `feat/65-invoice-persistence` | Invoice 永続化（invoices テーブル・適格請求書フラグ・totals） | 🔄 PR pending |
+| #67 | `feat/67-invoice-convert-read` | 見積→請求書変換 + 請求書一覧/取得 | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -168,7 +169,14 @@ Last updated: 2026-05-29 (Issue #65)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Invoice persistence: 🔄 in progress** (Issue #65)
+**Phase 1 — Invoice convert + list/get: 🔄 in progress** (Issue #67)
+
+- `POST /admin/quotes/{id}/convert` (accepted quote → draft invoice; copies client/totals/line_items, links quote_id, `invoice.created` audit; non-accepted → 422)
+- `GET /admin/invoices`, `GET /admin/invoices/{id}` (org-scoped, +line_items)
+- Verified live: convert-before-accept 422, accepted→draft invoice (total 2180, 2 lines, no number yet), list/get, audit trail
+- Next: issue (assign INV number + qualified-invoice validation)
+
+**Phase 1 — Invoice persistence: ✅ complete** (Issue #65 / PR #66)
 
 - `invoices` table (qualified flag, totals, soft delete, nullable invoice_number until issued, unique org+number) + `Invoice` entity + `InvoiceStatus` enum (draft/issued/partially_paid/paid) + `PdoInvoiceRepository`
 - Drafts have no number (multiple NULLs allowed); issue assigns number + qualified flag; org-scoped reads
@@ -231,6 +239,6 @@ Last updated: 2026-05-29 (Issue #65)
 
 ## Next steps
 
-1. Invoice convert-from-quote (accepted quote → draft invoice, copy lines/totals) + list/get
-2. Invoice issue — assign INV number + qualified-invoice field validation (issuer registration etc.)
-3. Payments → overdue (paid/partially_paid); audit read endpoint
+1. Invoice issue — assign INV-YYYY-NNN + qualified-invoice field validation (issuer registration etc.) + status draft→issued
+2. Payments (record) → invoice paid/partially_paid; overdue computed
+3. Direct invoice create; audit read endpoint
