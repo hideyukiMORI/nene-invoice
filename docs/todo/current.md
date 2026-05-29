@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #72)
+Last updated: 2026-05-29 (Issue #74)
 
 ## Recently merged
 
@@ -36,13 +36,14 @@ Last updated: 2026-05-29 (Issue #72)
 - **Issue #65 / PR #66** — Invoice 永続化レイヤ ✅ merged
 - **Issue #67 / PR #68** — 見積→請求書変換 + 請求書一覧/取得 ✅ merged
 - **Issue #69 / PR #71** — 請求書の発行（INV 採番 + 適格請求書検証）✅ merged
-- **Issue #72** — 入金記録（payments）— paid/partially_paid 遷移 ⏳ this PR
+- **Issue #72 / PR #73** — 入金記録（payments）— paid/partially_paid 遷移 ✅ merged
+- **Issue #74** — 請求書の直接作成（POST /admin/invoices）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #72 | `feat/72-payments` | 入金記録（payments）— paid/partially_paid 遷移 | 🔄 PR pending |
+| #74 | `feat/74-invoice-create` | 請求書の直接作成（見積を介さない） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -171,7 +172,16 @@ Last updated: 2026-05-29 (Issue #72)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Payments (入金記録): 🔄 in progress** (Issue #72)
+**Phase 1 — Invoice direct create (見積を介さない請求書作成): 🔄 in progress** (Issue #74)
+
+- `POST /admin/invoices` {client_id, line_items[], notes?} — creates a draft invoice directly (no quote)
+- Same orchestration as quote create: client in-org validation + per-line checks + `TaxCalculator` (round once per rate, ADR 0004)
+- 税率は 10%/8% のみ（§3）; cross-org client / empty lines / bad rate → 422 `validation-failed`
+- status `draft`, `invoice_number` null（採番は発行時）, `quote_id` null; lines via `replaceForParent`; `invoice.created` audit
+- operationId `createInvoice`（既登録）; reuses `InvoiceValidationException`
+- Tested: create (subtotal 2000 / tax 200 / total 2200, 2 lines, no number) / cross-org client→422 / empty→422 / bad rate→422; full DI boot (HealthEndpointTest)
+
+**Phase 1 — Payments (入金記録): ✅ complete** (Issue #72 / PR #73)
 
 - `POST /admin/invoices/{id}/payments` {amount_cents, paid_at?, method?, note?} — records a payment, advances the invoice: partial → `partially_paid`, full → `paid`
 - `GET /admin/invoices/{id}/payments` — payment list + running `total_paid_cents`（org スコープ）
@@ -257,6 +267,6 @@ Last updated: 2026-05-29 (Issue #72)
 
 ## Next steps
 
-1. Direct invoice create（見積を介さない請求書作成）
-2. Audit read endpoint (`GET /admin/audit-logs`); overdue 表示（issued/partially_paid past due_at）
+1. Audit read endpoint (`GET /admin/audit-logs`)
+2. overdue 表示（issued/partially_paid past due_at）; 請求書 PDF / 帳票（後続フェーズ）
 3. OpenAPI stub (Issue #5); Backend CI (Issue #6); ADR 0003 dual deployment (Issue #7)
