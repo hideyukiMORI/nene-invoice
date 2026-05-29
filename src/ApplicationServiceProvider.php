@@ -28,6 +28,7 @@ use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
 use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
 use NeneInvoice\Quote\QuoteValidationExceptionHandler;
+use NeneInvoice\ServiceApi\ServiceApiRouteRegistrar;
 use NeneInvoice\User\CannotDeleteSelfExceptionHandler;
 use NeneInvoice\User\RoleNotAssignableExceptionHandler;
 use NeneInvoice\User\UserEmailConflictExceptionHandler;
@@ -62,6 +63,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $quoteRoutes = $container->get(QuoteRouteRegistrar::class);
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
+                    $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -99,7 +101,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes];
+                    if (!$serviceApiRoutes instanceof ServiceApiRouteRegistrar) {
+                        throw new LogicException('Service API route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes];
                 },
             )
             ->set(

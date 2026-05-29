@@ -122,12 +122,13 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Token verifier service is invalid.');
                     }
 
-                    // Protect everything under /admin/. Public routes (/, /health,
-                    // /auth/login) are not matched by the prefix and pass through.
+                    // Protect everything under /admin/ (operator) and /api/ (service
+                    // tokens — ADR 0009). Public routes (/, /health, /auth/login) are
+                    // not matched by the prefix and pass through.
                     return new BearerTokenMiddleware(
                         $problemDetails,
                         $verifier,
-                        protectedPathPrefixes: ['/admin/'],
+                        protectedPathPrefixes: ['/admin/', '/api/'],
                     );
                 },
             )
