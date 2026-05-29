@@ -28,7 +28,19 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 
 ---
 
-## 1. Domain entities
+## 0. Product identity (display names)
+
+| Concept | Canonical | Notes |
+| --- | --- | --- |
+| Public product name | **NeNe Clear** | ADR 0007; not "NeNe Invoice" in marketing copy |
+| Repository slug (provisional) | `nene-invoice` | Rename to `nene-clear` via future Issue |
+| PHP namespace (provisional) | `NeneInvoice\` | Rename via future ADR |
+| Problem Details base | `https://nene-invoice.dev/problems/` | Until branding domain Issue |
+
+Code identifiers (`NeneInvoice\`, table prefixes) stay as registered until a
+rename ADR; **prose** in README and philosophy uses **NeNe Clear**.
+
+---
 
 | Concept | PHP class / domain folder | Table | Primary FK in JSON/DB |
 | --- | --- | --- | --- |

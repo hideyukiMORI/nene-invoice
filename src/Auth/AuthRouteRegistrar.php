@@ -14,11 +14,13 @@ final readonly class AuthRouteRegistrar
 {
     public function __construct(
         private LoginHandler $loginHandler,
+        private GetCurrentUserHandler $getCurrentUserHandler,
     ) {
     }
 
     public function __invoke(Router $router): void
     {
         $router->post('/auth/login', fn ($request) => $this->loginHandler->handle($request));
+        $router->get('/admin/me', fn ($request) => $this->getCurrentUserHandler->handle($request));
     }
 }
