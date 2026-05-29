@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #101)
+Last updated: 2026-05-30 (Issue #103)
 
 ## Recently merged
 
@@ -52,13 +52,14 @@ Last updated: 2026-05-30 (Issue #101)
 - **Issue #95 / PR #96** — 入金記録（発行済み詳細で入金フォーム＋入金一覧）✅ merged
 - **Issue #97 / PR #98** — NeNe Clear 上流契約の受諾＋ガバナンス整備（ADR 0009 / sibling / 用語）✅ merged
 - **Issue #99 / PR #100** — 売掛金残高 `outstanding_cents` を read モデルに公開 ✅ merged
-- **Issue #101** — `/api/*` サービス面 + サービストークン認証 + 請求書 read（Clear 向け）⏳ this PR
+- **Issue #101 / PR #102** — `/api/*` サービス面 + サービストークン認証 + 請求書 read（Clear 向け）✅ merged
+- **Issue #103** — フロント: 請求書の残高 `outstanding_cents` を一覧・詳細に表示 ⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #101 | `feat/101-service-api-read` | `/api/*` サービス面 + サービストークン + 請求書 read | 🔄 PR pending |
+| #103 | `feat/103-frontend-outstanding` | フロント: 残高 outstanding_cents を一覧・詳細に表示 | 🔄 PR pending |
 
 ### NeNe Clear 連携（入金消込・督促、downstream consumer）
 
@@ -73,7 +74,7 @@ Last updated: 2026-05-30 (Issue #101)
 
 ### Frontend 画面の進め方（縦スライス）
 
-請求書 詳細(#89) ✅ → 作成(#91) ✅ → 発行(#93) ✅ → 入金(#95) ✅ ＝ quote-to-cash UI 一巡。
+請求書 詳細(#89) ✅ → 作成(#91) ✅ → 発行(#93) ✅ → 入金(#95) ✅ ＝ quote-to-cash UI 一巡。残高表示(#103) で一覧/詳細に `outstanding_cents` を追加（codegen 再生成で取り込み）。
 - entities: invoice（list/detail/create/issue）、client（list）、payment（list/record）、auth。
 - 詳細ページが ViewInvoice + IssueInvoice + ManagePayments をページ合成（feature 間 import なし、useInvoice 共有）。payment mutation は invoice 無効化をフィーチャ側で実施（sibling entity 直接 import 回避）。
 - 共有 UI: Button/Input/Select/Text/Stack/Spinner + Field/EmptyState/ErrorState（Storybook 必須）。

@@ -50,8 +50,11 @@ export function ListInvoices() {
               <th className="py-stack-sm pr-inline-md font-medium">
                 {t('admin.invoices.col.client')}
               </th>
-              <th className="py-stack-sm text-right font-medium">
+              <th className="py-stack-sm pr-inline-md text-right font-medium">
                 {t('admin.invoices.col.total')}
+              </th>
+              <th className="py-stack-sm text-right font-medium">
+                {t('admin.invoices.col.outstanding')}
               </th>
             </tr>
           </thead>
@@ -67,7 +70,12 @@ export function ListInvoices() {
                   {t(`admin.invoices.status.${invoice.status}`)}
                 </td>
                 <td className="py-stack-sm pr-inline-md">{invoice.client_id}</td>
-                <td className="py-stack-sm text-right">{formatYen(invoice.total_cents)}</td>
+                <td className="py-stack-sm pr-inline-md text-right">
+                  {formatYen(invoice.total_cents)}
+                </td>
+                <td className="py-stack-sm text-right">
+                  {invoice.outstanding_cents === null ? '—' : formatYen(invoice.outstanding_cents)}
+                </td>
               </tr>
             ))}
           </tbody>

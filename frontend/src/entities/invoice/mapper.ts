@@ -15,6 +15,7 @@ export function toInvoice(dto: InvoiceDto): Invoice {
     subtotal_cents: dto.subtotal_cents,
     tax_cents: dto.tax_cents,
     total_cents: dto.total_cents,
+    outstanding_cents: dto.outstanding_cents ?? null,
   }
 }
 
