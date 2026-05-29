@@ -1,5 +1,5 @@
 export { type ClientId, toClientId } from './ids'
-export type { Client, ClientPage, CreateClientInput } from './model'
+export type { Client, ClientPage, CreateClientInput, UpdateClientInput } from './model'
 export { clientKeys, type ClientListParams } from './query-keys'
-export { useClientList } from './queries'
-export { useCreateClient, useDeleteClient } from './mutations'
+export { useClientList, useClient } from './queries'
+export { useCreateClient, useUpdateClient, useDeleteClient } from './mutations'

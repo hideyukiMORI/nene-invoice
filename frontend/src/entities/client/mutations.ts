@@ -4,7 +4,7 @@ import type { AppError } from '@/shared/api/errors'
 import type { ClientDto } from './api-types'
 import type { ClientId } from './ids'
 import { toClient } from './mapper'
-import type { Client, CreateClientInput } from './model'
+import type { Client, CreateClientInput, UpdateClientInput } from './model'
 import { clientKeys } from './query-keys'
 
 /** POST /admin/clients — creates a client; invalidates the client lists on success. */
@@ -24,6 +24,28 @@ export function useCreateClient(): UseMutationResult<Client, AppError, CreateCli
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: clientKeys.lists() })
+    },
+  })
+}
+
+/** PATCH /admin/clients/{id} — updates a client; invalidates the lists and detail. */
+export function useUpdateClient(): UseMutationResult<Client, AppError, UpdateClientInput> {
+  const queryClient = useQueryClient()
+
+  return useMutation<Client, AppError, UpdateClientInput>({
+    mutationFn: async (input) => {
+      const dto = await apiClient.patch<ClientDto>(`/admin/clients/${String(input.id)}`, {
+        name: input.name,
+        contact_name: input.contact_name,
+        email: input.email,
+        billing_address: input.billing_address,
+        registration_number: input.registration_number,
+      })
+      return toClient(dto)
+    },
+    onSuccess: (client) => {
+      void queryClient.invalidateQueries({ queryKey: clientKeys.lists() })
+      void queryClient.invalidateQueries({ queryKey: clientKeys.detail(client.id) })
     },
   })
 }

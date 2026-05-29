@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { server } from '@tests/msw/server'
 import { renderHookWithProviders } from '@tests/render/render-with-providers'
 import { toClientId } from './ids'
-import { useCreateClient, useDeleteClient } from './mutations'
+import { useCreateClient, useDeleteClient, useUpdateClient } from './mutations'
 
 describe('useCreateClient', () => {
   it('posts and returns the mapped client', async () => {
@@ -83,5 +83,39 @@ describe('useDeleteClient', () => {
       expect(result.current.isSuccess).toBe(true)
     })
     expect(result.current.data).toBe(5)
+  })
+})
+
+describe('useUpdateClient', () => {
+  it('patches and returns the mapped client', async () => {
+    server.use(
+      http.patch('/admin/clients/:id', () =>
+        HttpResponse.json({
+          id: 5,
+          organization_id: 1,
+          name: '更新後',
+          contact_name: '佐藤',
+          email: null,
+          billing_address: null,
+          registration_number: null,
+        }),
+      ),
+    )
+
+    const { result } = renderHookWithProviders(() => useUpdateClient())
+    result.current.mutate({
+      id: toClientId(5),
+      name: '更新後',
+      contact_name: '佐藤',
+      email: null,
+      billing_address: null,
+      registration_number: null,
+    })
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+    expect(result.current.data?.name).toBe('更新後')
+    expect(result.current.data?.contact_name).toBe('佐藤')
   })
 })

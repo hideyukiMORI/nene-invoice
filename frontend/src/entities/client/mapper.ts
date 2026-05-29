@@ -8,6 +8,7 @@ export function toClient(dto: ClientDto): Client {
     name: dto.name,
     contact_name: dto.contact_name ?? null,
     email: dto.email ?? null,
+    billing_address: dto.billing_address ?? null,
     registration_number: dto.registration_number ?? null,
   }
 }

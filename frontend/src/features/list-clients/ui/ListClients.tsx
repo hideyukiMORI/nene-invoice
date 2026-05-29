@@ -78,15 +78,23 @@ export function ListClients() {
                 <td className="py-stack-sm pr-inline-md">{client.email ?? '—'}</td>
                 <td className="py-stack-sm pr-inline-md">{client.registration_number ?? '—'}</td>
                 <td className="py-stack-sm text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setPendingDelete(client)
-                    }}
-                  >
-                    {t('admin.clients.delete.action')}
-                  </Button>
+                  <Stack direction="row" gap="sm" className="justify-end">
+                    <Link
+                      to={`/clients/${String(client.id)}/edit`}
+                      className="text-body text-accent"
+                    >
+                      {t('admin.clients.editButton')}
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPendingDelete(client)
+                      }}
+                    >
+                      {t('admin.clients.delete.action')}
+                    </Button>
+                  </Stack>
                 </td>
               </tr>
             ))}

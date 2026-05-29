@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/pages/layout'
 import { ClientCreatePage } from '@/pages/client-create'
+import { ClientEditPage } from '@/pages/client-edit'
 import { ClientsPage } from '@/pages/clients'
 import { InvoiceCreatePage } from '@/pages/invoice-create'
 import { InvoiceDetailPage } from '@/pages/invoice-detail'
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: 'invoices/:id', element: <InvoiceDetailPage /> },
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/new', element: <ClientCreatePage /> },
+      { path: 'clients/:id/edit', element: <ClientEditPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/invoices" replace /> },
