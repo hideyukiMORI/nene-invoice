@@ -1,11 +1,15 @@
-# NeNe Invoice
+# NeNe Clear
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php)](https://www.php.net/)
 
-**Quote, invoice, and payment tracking for Japan SMB — self-hosted on your stack.**
+**Clear billing from quote to cash — self-hosted for Japan SMB.**
 
-NeNe Invoice is an open-source billing platform built on [NENE2](https://github.com/hideyukiMORI/NENE2). Create quotes, issue **qualified invoice** (適格請求書) PDFs, track payments, and run everything on shared hosting or Docker — without a monthly SaaS fee.
+**NeNe Clear** (*見積から入金まで、明快に。*) is an open-source billing platform on [NENE2](https://github.com/hideyukiMORI/NENE2): quotes, **qualified invoice** (適格請求書) PDFs, payment tracking, and (post-MVP) reconciliation and dunning — on shared hosting or Docker, without a monthly SaaS fee.
+
+> Repository slug: `nene-invoice` (rename to `nene-clear` planned — [ADR 0007](./docs/adr/0007-product-identity-nene-clear.md)).
+
+> **Philosophy:** [`docs/explanation/philosophy.md`](./docs/explanation/philosophy.md) — ideals, AI-era dual surface, what we refuse to become.
 
 > **Example operator:** an office manager on shared hosting issues invoice-compliant PDFs from admin UI instead of Excel + manual PDF — see [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md#primary-persona).
 
@@ -36,7 +40,7 @@ curl http://127.0.0.1:8080/health       # {"status":"ok",...}
 ## Architecture (planned)
 
 ```
-Admin UI (React)  ──→  NeNe Invoice API (NENE2)  ──→  MySQL
+Admin UI (React)  ──→  NeNe Clear API (NENE2)  ──→  MySQL
 Ops / MCP           ──→         │
                                 ↓ HTTP (optional)
                     NeNe Records / NeNe Concierge
@@ -74,6 +78,7 @@ Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/p
 | Topic | Document |
 | --- | --- |
 | **Compliance (binding)** | [`docs/explanation/accounting-compliance.md`](./docs/explanation/accounting-compliance.md) |
+| **Philosophy & product name** | [`docs/explanation/philosophy.md`](./docs/explanation/philosophy.md) · [ADR 0007](./docs/adr/0007-product-identity-nene-clear.md) |
 | **Product vision** | [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md) |
 | **Requirements** | [`docs/explanation/requirements.md`](./docs/explanation/requirements.md) |
 | **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |
@@ -92,7 +97,7 @@ Part of the [hideyukiMORI NeNe portfolio](https://github.com/hideyukiMORI):
 | [nene-records](https://github.com/hideyukiMORI/nene-records) | CMS · optional product catalog |
 | [nene-corpus](https://github.com/hideyukiMORI/nene-corpus) | Knowledge chat |
 | [nene-concierge](https://github.com/hideyukiMORI/nene-concierge) | Scenario chat · optional leads |
-| **nene-invoice** | Quote · invoice · payment (this repo) |
+| **NeNe Clear** (`nene-invoice`) | Quote · invoice · payment · clear (this repo) |
 
 ## Contributing
 

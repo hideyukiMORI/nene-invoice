@@ -1,11 +1,12 @@
 # Agent / AI Guide
 
-This file is the entry point for AI agents working on NeNe Invoice.
+This file is the entry point for AI agents working on **NeNe Clear** (repo: `nene-invoice`).
 
 ## Read First
 
 - **Current work & status:** `docs/todo/current.md`
 - **Accounting & tax compliance (binding):** `docs/explanation/accounting-compliance.md`
+- **Philosophy & name:** `docs/explanation/philosophy.md` — **NeNe Clear** ([ADR 0007](../adr/0007-product-identity-nene-clear.md))
 - **Product vision:** `docs/explanation/product-vision.md`
 - **Requirements:** `docs/explanation/requirements.md`
 - **Domain model:** `docs/explanation/domain-model.md`
