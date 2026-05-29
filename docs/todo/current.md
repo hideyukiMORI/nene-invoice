@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #6)
+Last updated: 2026-05-29 (Issue #7)
 
 ## Recently merged
 
@@ -40,19 +40,21 @@ Last updated: 2026-05-29 (Issue #6)
 - **Issue #74 / PR #75** — 請求書の直接作成（POST /admin/invoices）✅ merged
 - **Issue #76 / PR #77** — 監査ログ参照 API（GET /admin/audit-logs）✅ merged
 - **Issue #5 / PR #78** — OpenAPI stub + MCP カタログ ✅ merged
-- **Issue #6** — Backend CI workflow（GitHub Actions）⏳ this PR
+- **Issue #6 / PR #79** — Backend CI workflow（GitHub Actions）✅ merged
+- **Issue #80 / PR #81** — CI Actions を Node 24 対応版（checkout/cache @v5）へ更新 ✅ merged
+- **Issue #7** — ADR 0003 dual deployment（Tier A / Tier B）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #6 | `feat/6-backend-ci` | Backend CI workflow（GitHub Actions） | 🔄 PR pending |
+| #7 | `docs/7-adr-dual-deployment` | ADR 0003 dual deployment（Tier A / Tier B） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
 | Issue | Topic | Priority |
 | --- | --- | --- |
-| #7 | ADR 0003 dual deployment (Tier A / Tier B) | P1 |
+| — | Phase 3: Tier A web installer + release ZIP build + 運用ガイド（ADR 0003 フォロー） | P1 |
 | — | `public_html/openapi.php`（spec の HTTP 配信）/ ランタイム応答↔example 突合 | P2 |
 | — | overdue 表示 / 請求書 PDF・帳票 / 監査の transactional 記録 | P2 |
 
@@ -174,7 +176,17 @@ Last updated: 2026-05-29 (Issue #6)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 0+ — Backend CI: 🔄 in progress** (Issue #6)
+**Phase 0+ — ADR 0003 dual deployment: 🔄 in progress** (Issue #7)
+
+- `docs/adr/0003-dual-deployment-tiers.md`（status: accepted）— Tier A 共有ホスティング（ZIP + web installer、MySQL、same-origin admin、CLI/daemon/root 不可）と Tier B Docker Compose を**単一コードベース**で両立する決定を正式化
+- 共有不変条件: 本番は MySQL（SQLite はテストのみ）、env ベース設定、ドメインロジックに tier 分岐なし、PHP 8.4 floor
+- 制約: root/常駐/cron/特殊拡張に依存する機能は Tier B 限定かつ任意; ZIP は vendor/ と admin アセットを同梱; installer は Phinx 移行と歩調を合わせる
+- roadmap Phase 0 の ADR 0003 マーカーを ✅ に更新
+
+**Phase 0+ — Backend CI: ✅ complete** (Issue #6 / PR #79, Node 24 対応 #80 / PR #81)
+
+- `.github/workflows/backend-ci.yml` — push/PR to `main` で `composer check`（test + analyse + cs + openapi + mcp）を実行。初回ラン green 確認済み
+- PHP 8.4（`shivammathur/setup-php@v2`）、`actions/checkout@v5` / `actions/cache@v5`（Node 24 対応）、Composer キャッシュ、NENE2 は Packagist 取得（clone 不要）
 
 - `.github/workflows/backend-ci.yml` — push/PR to `main` で `composer check`（test + analyse + cs + openapi + mcp）を実行
 - PHP 8.4（`shivammathur/setup-php`, ext pdo/pdo_sqlite）、Composer キャッシュ、`composer install`（NENE2 は Packagist から取得）
@@ -296,6 +308,6 @@ Last updated: 2026-05-29 (Issue #6)
 
 ## Next steps
 
-1. `public_html/openapi.php`（spec の HTTP 配信）; overdue 表示（issued/partially_paid past due_at）
-2. ADR 0003 dual deployment (Issue #7); 監査の transactional 記録
-3. 請求書 PDF / 帳票（後続フェーズ）; ランタイム応答↔OpenAPI example 突合テスト
+1. Phase 2 機能: overdue 表示（issued/partially_paid past due_at）、請求書 PDF（日本様式）
+2. Phase 3（ADR 0003 フォロー）: Tier A web installer + release ZIP build + 運用ガイド（ja）
+3. `public_html/openapi.php`（spec の HTTP 配信）; 監査の transactional 記録
