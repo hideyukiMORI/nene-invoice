@@ -1,12 +1,11 @@
 # Agent / AI Guide
 
-This file is the entry point for AI agents working on **NeNe Clear** (repo: `nene-invoice`).
+This file is the entry point for AI agents working on NeNe Invoice.
 
 ## Read First
 
 - **Current work & status:** `docs/todo/current.md`
 - **Accounting & tax compliance (binding):** `docs/explanation/accounting-compliance.md`
-- **Philosophy & name:** `docs/explanation/philosophy.md` — **NeNe Clear** ([ADR 0007](../adr/0007-product-identity-nene-clear.md))
 - **Product vision:** `docs/explanation/product-vision.md`
 - **Requirements:** `docs/explanation/requirements.md`
 - **Domain model:** `docs/explanation/domain-model.md`
@@ -20,7 +19,7 @@ This file is the entry point for AI agents working on **NeNe Clear** (repo: `nen
 - Backend standards: `docs/development/backend-standards.md`
 - Commit messages: `docs/development/commit-conventions.md`
 - AI tool policy: `docs/integrations/ai-tools.md`
-- **Expansion roadmap (post-MVP):** `docs/explanation/expansion-roadmap.md`
+- Roadmap: `docs/roadmap.md`
 - Milestones: `docs/milestones/2026-05-governance-and-foundation.md`
 
 ## Operating Rules

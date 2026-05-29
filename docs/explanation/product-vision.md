@@ -1,16 +1,12 @@
 # Product Vision
 
-> **Product name:** **NeNe Clear** — see [`philosophy.md`](./philosophy.md) and
-> [ADR 0007](../adr/0007-product-identity-nene-clear.md). Repository slug
-> `nene-invoice` is provisional.
-
-NeNe Clear is a self-hosted quote and invoice platform built on [NENE2](https://github.com/hideyukiMORI/NENE2). This document records why the product exists, what it optimizes for, and how it relates to the NeNe ecosystem.
+NeNe Invoice is a self-hosted quote and invoice platform built on [NENE2](https://github.com/hideyukiMORI/NENE2). This document records why the product exists, what it optimizes for, and how it relates to the NeNe ecosystem.
 
 ## Origin
 
 Every Japan SMB must issue **qualified invoices** (適格請求書) under the invoice system (インボイス制度). SaaS accounting tools (freee, Money Forward, Yayoi) solve this well but charge recurring fees and hold financial data on vendor infrastructure. Many micro-businesses on **shared hosting** already run their website on the same server — they want billing documents without another monthly subscription.
 
-NeNe Clear offers an alternative: **run quote and invoice management on infrastructure you control**, with source code you can audit, and optional integration with sibling NeNe products for catalog and lead capture.
+NeNe Invoice offers an alternative: **run quote and invoice management on infrastructure you control**, with source code you can audit, and optional integration with sibling NeNe products for catalog and lead capture.
 
 The product showcases NENE2's strengths — OpenAPI-first APIs, Clean Architecture, MCP-ready ops boundaries, and field-trial-grade security — in a **back-office application** every SMB needs, not a demo endpoint.
 
