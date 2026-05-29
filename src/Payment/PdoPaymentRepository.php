@@ -8,7 +8,7 @@ use Nene2\Database\DatabaseQueryExecutorInterface;
 
 final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
 {
-    private const COLUMNS = 'id, organization_id, invoice_id, amount_cents, paid_at, method, note, is_deleted, created_at, updated_at';
+    private const COLUMNS = 'id, organization_id, invoice_id, amount_cents, paid_at, method, note, external_reference, idempotency_key, is_deleted, created_at, updated_at';
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
@@ -20,8 +20,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $this->query->execute(
-            'INSERT INTO payments (organization_id, invoice_id, amount_cents, paid_at, method, note, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
+            'INSERT INTO payments (organization_id, invoice_id, amount_cents, paid_at, method, note, external_reference, idempotency_key, is_deleted, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
             [
                 $payment->organizationId,
                 $payment->invoiceId,
@@ -29,12 +29,43 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
                 $payment->paidAt,
                 $payment->method,
                 $payment->note,
+                $payment->externalReference,
+                $payment->idempotencyKey,
                 $now,
                 $now,
             ],
         );
 
         return $this->query->lastInsertId();
+    }
+
+    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment
+    {
+        $row = $this->query->fetchOne(
+            'SELECT ' . self::COLUMNS . ' FROM payments WHERE organization_id = ? AND idempotency_key = ?',
+            [$organizationId, $idempotencyKey],
+        );
+
+        return $row !== null ? $this->mapRow($row) : null;
+    }
+
+    public function findById(int $id): ?Payment
+    {
+        $row = $this->query->fetchOne(
+            'SELECT ' . self::COLUMNS . ' FROM payments WHERE id = ?',
+            [$id],
+        );
+
+        return $row !== null ? $this->mapRow($row) : null;
+    }
+
+    /** Voids a payment (soft delete). Idempotent: already-voided is a no-op. */
+    public function markVoided(int $id): void
+    {
+        $this->query->execute(
+            'UPDATE payments SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND is_deleted = 0',
+            [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $id],
+        );
     }
 
     /** @return list<Payment> */
@@ -94,6 +125,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
             paidAt: (string) $row['paid_at'],
             method: isset($row['method']) && $row['method'] !== '' ? (string) $row['method'] : null,
             note: isset($row['note']) && $row['note'] !== '' ? (string) $row['note'] : null,
+            externalReference: isset($row['external_reference']) && $row['external_reference'] !== '' ? (string) $row['external_reference'] : null,
+            idempotencyKey: isset($row['idempotency_key']) && $row['idempotency_key'] !== '' ? (string) $row['idempotency_key'] : null,
             isDeleted: (bool) $row['is_deleted'],
             id: (int) $row['id'],
             createdAt: (string) $row['created_at'],
