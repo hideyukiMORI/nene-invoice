@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-29 (Issue #59)
+Last updated: 2026-05-29 (Issue #61)
 
 ## Recently merged
 
@@ -30,13 +30,14 @@ Last updated: 2026-05-29 (Issue #59)
 - **Issue #53 / PR #54** — 監査を Organization / User / CompanySettings に展開 ✅ merged
 - **Issue #55 / PR #56** — 文書採番（document_sequences）✅ merged
 - **Issue #57 / PR #58** — line_items 永続化（quote/invoice 共有）✅ merged
-- **Issue #59** — Quote 永続化レイヤ ⏳ this PR
+- **Issue #59 / PR #60** — Quote 永続化レイヤ ✅ merged
+- **Issue #61** — Quote 作成/一覧/取得（結線）⏳ this PR
 
 ## Active
 
 | Issue | Branch | Topic | Status |
 | --- | --- | --- | --- |
-| #59 | `feat/59-quote-persistence` | Quote 永続化（quotes テーブル・totals・ソフト削除） | 🔄 PR pending |
+| #61 | `feat/61-quote-create-read` | Quote 作成/一覧/取得（採番+税+明細+監査の結線） | 🔄 PR pending |
 
 ## Phase 0+ Backlog
 
@@ -165,7 +166,14 @@ Last updated: 2026-05-29 (Issue #59)
 
 - `LineItem\TaxCalculator` (pure, integer-only): round **once per rate** half-up (ADR 0004); subtotal/tax/total + per-rate breakdown
 
-**Phase 1 — Quote persistence: 🔄 in progress** (Issue #59)
+**Phase 1 — Quote create/list/get: 🔄 in progress** (Issue #61)
+
+- `POST/GET /admin/quotes`, `GET /admin/quotes/{id}` — create orchestrates client validation + `TaxCalculator` + `DocumentNumberGenerator` (EST-YYYY-NNN) + line items + `quote.created` audit
+- Allowed tax rates 10%/8% (accounting-compliance §3); cross-org client / empty lines / bad rate → 422
+- Verified live: create 201 (subtotal 2000 / tax 180 / total 2180, EST-2026-001, 2 lines), get/list, audit row
+- Next: status transitions (draft→sent→accepted/rejected/expired)
+
+**Phase 1 — Quote persistence: ✅ complete** (Issue #59 / PR #60)
 
 - `quotes` table (totals columns, soft delete, unique org+quote_number) + `Quote` entity + `QuoteStatus` enum + `PdoQuoteRepository`
 - Org-scoped reads exclude soft-deleted; tested on SQLite (save/list/count/update/soft-delete)
@@ -209,6 +217,6 @@ Last updated: 2026-05-29 (Issue #59)
 
 ## Next steps
 
-1. Quote create/list/get endpoints — create orchestrates `DocumentNumberGenerator` + `TaxCalculator` + `LineItemRepository` + audit
-2. Quote status transitions (draft→sent→accepted/rejected/expired) with rules
-3. Invoices (convert from quote / issue / qualified validation) → Payments → overdue
+1. Quote status transitions (draft→sent→accepted/rejected/expired) with rules + audit
+2. Invoices — convert from accepted quote, issue (number/qualified validation), line items
+3. Payments → overdue; audit read endpoint
