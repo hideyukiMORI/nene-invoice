@@ -1,0 +1,158 @@
+openapi: 3.1.0
+info:
+  title: NeNe Invoice — Service API (NeNe Clear)
+  version: 0.1.0
+  description: >
+    Machine-to-machine surface for the NeNe Clear reconciliation product
+    (ADR 0009). Authenticated with a service token (scope `read:invoices` /
+    `write:payments`), org-scoped. NeNe Invoice is the system of record for
+    billing figures and the authoritative outstanding balance; Clear never
+    recomputes them. This document is separate from the operator OpenAPI
+    (`openapi.yaml`); read-only operations land first, the write API follows.
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: ServiceInvoices
+    description: Invoice reads for reconciliation (service scope).
+security:
+  - serviceToken: []
+paths:
+  /api/invoices:
+    get:
+      tags: [ServiceInvoices]
+      summary: List invoices (service)
+      description: >
+        Lists invoices in the token's organization with the authoritative
+        outstanding balance. Filters (status / overdue / outstanding_gt / due /
+        client) are an additive follow-up.
+      operationId: listInvoices
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        '200':
+          description: Invoice page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInvoiceList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+  /api/invoices/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      tags: [ServiceInvoices]
+      summary: Get invoice (service)
+      description: One invoice with authoritative outstanding balance and payment history.
+      operationId: getInvoiceById
+      responses:
+        '200':
+          description: Invoice with payments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceInvoiceDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token issued by NeNe Invoice (scopes read:invoices / write:payments).
+  responses:
+    Unauthorized:
+      description: Missing or invalid service token.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InsufficientScope:
+      description: Token lacks the required scope or organization.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: Invoice not found (or not in the token's organization).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+  schemas:
+    ProblemDetails:
+      type: object
+      description: RFC 9457 problem details.
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+      required: [type, title, status]
+    ServiceInvoice:
+      type: object
+      properties:
+        invoice_id: { type: integer }
+        invoice_number: { type: [string, 'null'] }
+        client_id: { type: integer }
+        issued_at: { type: [string, 'null'] }
+        due_at: { type: [string, 'null'] }
+        total_cents: { type: integer, description: Integer cents (smallest unit). }
+        outstanding_cents:
+          type: integer
+          description: total_cents − Σ valid payments; authoritative, owned by Invoice.
+        status:
+          type: string
+          enum: [draft, issued, partially_paid, paid]
+        currency: { type: string, description: ISO 4217; JPY for Phase 1–3. }
+      required: [invoice_id, client_id, total_cents, outstanding_cents, status, currency]
+    ServiceInvoiceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceInvoice'
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+      required: [items, total, limit, offset]
+    ServicePayment:
+      type: object
+      properties:
+        payment_id: { type: [integer, 'null'] }
+        amount_cents: { type: integer }
+        paid_at: { type: string, description: Bank value date (入金日). }
+        method: { type: [string, 'null'] }
+        external_reference:
+          type: [string, 'null']
+          description: Clear reconciliation id; null until the write API stores it.
+      required: [amount_cents, paid_at]
+    ServiceInvoiceDetail:
+      allOf:
+        - $ref: '#/components/schemas/ServiceInvoice'
+        - type: object
+          properties:
+            payments:
+              type: array
+              items:
+                $ref: '#/components/schemas/ServicePayment'
+          required: [payments]

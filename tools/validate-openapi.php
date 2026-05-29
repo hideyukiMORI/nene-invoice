@@ -7,33 +7,43 @@ use Symfony\Component\Yaml\Yaml;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$path = dirname(__DIR__) . '/docs/openapi/openapi.yaml';
+// Validate every OpenAPI document under docs/openapi/ (operator + service surfaces).
+$paths = glob(dirname(__DIR__) . '/docs/openapi/*.yaml');
 
-try {
-    $document = Yaml::parseFile($path);
-} catch (ParseException $exception) {
-    fwrite(STDERR, sprintf("OpenAPI YAML parse error: %s\n", $exception->getMessage()));
-    exit(1);
-}
-
-if (!is_array($document)) {
-    fwrite(STDERR, "OpenAPI document must parse to a mapping.\n");
+if ($paths === false || $paths === []) {
+    fwrite(STDERR, "No OpenAPI documents found under docs/openapi/.\n");
     exit(1);
 }
 
 $errors = [];
 
-foreach (['openapi', 'info', 'paths', 'components'] as $requiredKey) {
-    if (!array_key_exists($requiredKey, $document)) {
-        $errors[] = sprintf('Missing required top-level key: %s', $requiredKey);
+foreach ($paths as $path) {
+    $name = basename($path);
+
+    try {
+        $document = Yaml::parseFile($path);
+    } catch (ParseException $exception) {
+        $errors[] = sprintf('%s: YAML parse error: %s', $name, $exception->getMessage());
+        continue;
     }
-}
 
-if (($document['openapi'] ?? null) !== '3.1.0') {
-    $errors[] = 'OpenAPI version must be 3.1.0.';
-}
+    if (!is_array($document)) {
+        $errors[] = sprintf('%s: document must parse to a mapping.', $name);
+        continue;
+    }
 
-validateInternalReferences($document, $document, '#', $errors);
+    foreach (['openapi', 'info', 'paths', 'components'] as $requiredKey) {
+        if (!array_key_exists($requiredKey, $document)) {
+            $errors[] = sprintf('%s: missing required top-level key: %s', $name, $requiredKey);
+        }
+    }
+
+    if (($document['openapi'] ?? null) !== '3.1.0') {
+        $errors[] = sprintf('%s: OpenAPI version must be 3.1.0.', $name);
+    }
+
+    validateInternalReferences($document, $document, '#', $errors);
+}
 
 if ($errors !== []) {
     foreach ($errors as $error) {
@@ -43,7 +53,7 @@ if ($errors !== []) {
     exit(1);
 }
 
-echo "OpenAPI contract is valid.\n";
+echo sprintf("OpenAPI contracts are valid (%d document(s)).\n", count($paths));
 
 /**
  * @param array<mixed> $node

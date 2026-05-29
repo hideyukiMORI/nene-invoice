@@ -30,6 +30,8 @@ use NeneInvoice\LineItem\LineItemServiceProvider;
 use NeneInvoice\Organization\OrganizationServiceProvider;
 use NeneInvoice\Payment\PaymentServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
+use NeneInvoice\ServiceApi\ServiceApiServiceProvider;
+use NeneInvoice\ServiceApi\ServiceScopeMiddleware;
 use NeneInvoice\User\UserServiceProvider;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
@@ -60,6 +62,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new QuoteServiceProvider());
         $builder->addProvider(new InvoiceServiceProvider());
         $builder->addProvider(new PaymentServiceProvider());
+        $builder->addProvider(new ServiceApiServiceProvider());
 
         $builder
             ->set(Psr17Factory::class, static fn (ContainerInterface $container): Psr17Factory => new Psr17Factory())
@@ -156,6 +159,12 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Capability middleware service is invalid.');
                     }
 
+                    $serviceScopeMiddleware = $container->get(ServiceScopeMiddleware::class);
+
+                    if (!$serviceScopeMiddleware instanceof ServiceScopeMiddleware) {
+                        throw new LogicException('Service scope middleware service is invalid.');
+                    }
+
                     $routeRegistrars = $container->get(ApplicationServiceProvider::ROUTE_REGISTRARS);
 
                     if (!is_array($routeRegistrars) || !array_is_list($routeRegistrars)) {
@@ -177,7 +186,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
-                        authMiddleware: [$bearerTokenMiddleware, $capabilityMiddleware],
+                        authMiddleware: [$bearerTokenMiddleware, $capabilityMiddleware, $serviceScopeMiddleware],
                         healthChecks: [$databaseHealthCheck],
                         debug: $config->debug,
                     );

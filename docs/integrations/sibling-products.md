@@ -35,9 +35,12 @@ architecture: **ADR 0009**.
   the operator's `organization_id`(s) and to `read:invoices` + `write:payments`.
 - **Writes:** idempotent payment create (with `external_reference`) and
   void-with-audit; over-allocation rejected (`payment-exceeds-outstanding`).
-- **Status:** contract accepted (ADR 0009); endpoints delivered in sequenced
-  follow-up Issues (tracking: #97). Until shipped, Clear runs against a fake
-  upstream in its contract tests.
+- **Status:** contract accepted (ADR 0009). **Read API shipped** (#101):
+  `GET /api/invoices` and `GET /api/invoices/{id}` (with `outstanding_cents` +
+  payment history) behind service-token auth; OpenAPI `docs/openapi/service-api.yaml`;
+  mint tokens with `php tools/issue-service-token.php --org=N --scopes=read:invoices`.
+  Write API (payment create / void) and read filters are sequenced follow-ups
+  (write API gated on 税理士 sign-off).
 
 ## Environment variables (planned)
 

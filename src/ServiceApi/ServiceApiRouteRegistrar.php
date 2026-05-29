@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NeneInvoice\ServiceApi;
+
+use Nene2\Routing\Router;
+use Psr\Http\Message\ServerRequestInterface;
+
+/**
+ * Registers the NeNe Clear service surface under `/api/*` (ADR 0009). Auth is the
+ * service token (`read:invoices` scope) enforced by ServiceScopeMiddleware;
+ * org scoping comes from the token. Read-only for now (write API is a follow-up).
+ */
+final readonly class ServiceApiRouteRegistrar
+{
+    public function __construct(
+        private ListServiceInvoicesHandler $listHandler,
+        private GetServiceInvoiceHandler $getHandler,
+    ) {
+    }
+
+    public function __invoke(Router $router): void
+    {
+        $list = $this->listHandler;
+        $get = $this->getHandler;
+
+        $router->get('/api/invoices', static fn (ServerRequestInterface $r) => $list->handle($r));
+        $router->get('/api/invoices/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
+    }
+}
