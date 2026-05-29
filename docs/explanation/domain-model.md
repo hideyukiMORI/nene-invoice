@@ -10,8 +10,12 @@ See also: [`requirements.md`](./requirements.md), [`glossary.md`](./glossary.md)
 
 ```mermaid
 erDiagram
-    company_settings ||--o{ quote : "issuer"
-    company_settings ||--o{ invoice : "issuer"
+    organization ||--o{ user : "has"
+    organization ||--|| company_settings : "issuer profile"
+    organization ||--o{ client : "owns"
+    organization ||--o{ quote : "owns"
+    organization ||--o{ invoice : "owns"
+    organization ||--o{ payment : "owns"
     client ||--o{ quote : "buyer"
     client ||--o{ invoice : "buyer"
     quote ||--o| invoice : "converts_to"
@@ -20,7 +24,9 @@ erDiagram
     invoice ||--o{ payment : "receives"
 ```
 
-- **company_settings**: singleton per organization (Phase 1 single-tenant; multi-tenant adds `organization_id`).
+- **organization**: the tenant (ADR 0006). Every tenant-scoped table carries `organization_id`. Default resolution mode `single`; agencies use path/subdomain/custom_domain.
+- **user**: operator account with a `role` (superadmin/admin/member/viewer). superadmin is cross-tenant (`organization_id` NULL); all others belong to one organization.
+- **company_settings**: one issuer profile **per organization** (each org issues its own qualified invoices under its own registration number).
 - **line_item**: polymorphic parent — `parent_type` + `parent_id` (`quote` or `invoice`).
 - **payment**: always linked to one invoice; partial payments sum to `amount_cents` on invoice.
 
@@ -141,15 +147,17 @@ UseCase never calls PDF library directly. Handler never recalculates tax.
 
 | Module | Responsibility |
 | --- | --- |
-| `Company/` | Issuer profile settings |
+| `Organization/` | Tenants + per-request resolution (`Organization/Resolution/`) — superadmin CRUD |
+| `Auth/` | JWT login, `Role` / `Capability`, capability middleware |
+| `User/` | Operator accounts within an organization — admin CRUD |
+| `Company/` | Issuer profile settings (per organization) |
 | `Client/` | Buyer master |
 | `Quote/` | Quote CRUD, status transitions |
 | `Invoice/` | Invoice CRUD, issue, convert from quote |
 | `LineItem/` | Shared line item attach/detach |
 | `Payment/` | Payment recording |
 | `Pdf/` | PDF rendering adapters |
-| `DocumentSequence/` | Auto-number generation |
-| `AdminAuth/` | JWT login |
+| `DocumentSequence/` | Auto-number generation (per organization) |
 | `Upstream/` | Optional Records / Concierge HTTP clients |
 
 ---

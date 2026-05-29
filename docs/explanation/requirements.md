@@ -6,23 +6,38 @@ See also: [`product-vision.md`](./product-vision.md), [`domain-model.md`](./doma
 
 ---
 
-## 1. User roles
+## 1. Tenancy and user roles
 
-| Role | Capabilities | Phase |
-| --- | --- | --- |
-| **admin** | Full CRUD on clients, quotes, invoices, payments, company settings | 1 |
-| **viewer** (optional) | Read-only access to documents and reports | 3+ |
-| **public client** | Download invoice PDF via time-limited token URL — no login | 2 |
+NeNe Invoice is **multi-tenant from the foundation** — see
+[ADR 0006](../adr/0006-multi-tenancy-and-roles.md). The **organization** is the
+tenant; every tenant-scoped table carries `organization_id`. A single install may
+run as one organization via the default `single` resolution mode; agencies use
+`path` / `subdomain` / `custom_domain`.
 
-Phase 1: single admin user (JWT). Multi-user RBAC is Phase 3+.
+| Role | Scope | Capabilities | Phase |
+| --- | --- | --- | --- |
+| **superadmin** | Cross-tenant | Everything, incl. `manage_organizations` (create/list/delete tenants). `organization_id` may be `NULL` | 1 |
+| **admin** | One organization | Everything except `manage_organizations` — manages the org's **users**, **company settings** (issuer profile), and billing | 1 |
+| **member** | One organization | Billing operator: create/edit/send quotes & invoices, record payments (`manage_billing`, `view_billing`). Cannot manage users/settings | 1 |
+| **viewer** (optional) | One organization | Read-only documents and reports (`view_billing`) | 3+ |
+| **public client** | — | Download invoice PDF via time-limited token URL — no login | 2 |
+
+Authorization: a `Role` enum + `Capability` enum resolved per route and enforced
+by capability middleware. Role/capability string values are registered in
+[`../development/naming-conventions.md`](../development/naming-conventions.md) and
+[`terminology.md`](./terminology.md) (binding). Admin JWT for mutating routes.
 
 ---
 
 ## 2. Core entities (MVP)
 
+All tenant-scoped entities below carry **`organization_id`** (ADR 0006).
+
 | Entity | Purpose | Key fields |
 | --- | --- | --- |
-| **company_settings** | Issuer (自社) profile | legal_name, address, phone, email, **registration_number**, bank_name, bank_branch, account_type, account_number, logo_url (optional) |
+| **organization** | Tenant | name, slug (unique), plan, is_active, custom_domain (optional), external_id (optional) |
+| **user** | Operator account | email (unique), password_hash, role (superadmin/admin/member/viewer), organization_id (NULL for superadmin), status (active/invited) |
+| **company_settings** | Issuer (自社) profile — **per organization** | organization_id, legal_name, address, phone, email, **registration_number**, bank_name, bank_branch, account_type, account_number, logo_url (optional) |
 | **client** | Buyer (取引先) | name, contact_name, email, billing_address, **registration_number** (optional for B2B qualified invoice) |
 | **quote** | Estimate (見積書) | client_id, quote_number, issued_at, valid_until, status, subtotal_cents, tax_cents, total_cents, notes |
 | **invoice** | Bill (請求書) | client_id, quote_id (optional), invoice_number, issued_at, due_at, status, subtotal_cents, tax_cents, total_cents, **is_qualified_invoice** |
@@ -98,13 +113,16 @@ Quote numbers and invoice numbers: auto-increment per organization with configur
 
 ### Phase 1 — API only
 
-- [ ] Company settings CRUD
+- [ ] Organization resolution middleware (default `single`; path/subdomain/custom_domain) + `organization_id` scoping on every query (ADR 0006)
+- [ ] Admin JWT auth + `Role`/`Capability` RBAC (capability middleware)
+- [ ] Organization CRUD — superadmin (`/admin/organizations`)
+- [ ] User CRUD — admin within organization (`/admin/users`)
+- [ ] Company settings CRUD (per organization)
 - [ ] Client CRUD + soft delete
 - [ ] Quote CRUD + line items + status transitions
 - [ ] Invoice CRUD + convert from quote + line items
 - [ ] Payment create + list by invoice
 - [ ] Qualified invoice field validation
-- [ ] Admin JWT auth
 - [ ] OpenAPI 3.1 + PHPUnit + PHPStan 8
 
 ### Phase 2 — Admin UI + PDF
@@ -147,7 +165,8 @@ Quote numbers and invoice numbers: auto-increment per organization with configur
 
 ## 7. Security requirements
 
-- Admin JWT for mutating routes
+- Admin JWT for mutating routes; `Capability` enforced per route (ADR 0006)
+- **Tenant isolation**: every query scoped by resolved `organization_id`; cross-tenant reads/writes prohibited. Only superadmin operates cross-tenant
 - PDF download tokens: random, time-limited, scoped to one invoice
 - No stack traces in production responses
 - Secrets in `.env` only — never committed

@@ -21,7 +21,8 @@ Goal: engineering discipline and product design before runtime code.
 
 - Governance docs, ADR 0001/0002, inheritance map ✅
 - Product vision, requirements, domain model ✅ (Issue #3)
-- NENE2 consumer scaffold, `GET /health`, OpenAPI, CI 🔲 Issues #4–#7
+- Multi-tenancy + role hierarchy adopted as foundational ✅ ADR 0006 (Issue #17)
+- NENE2 consumer scaffold (tenant resolution + JWT auth + RBAC + `GET /health`), OpenAPI, CI 🔲 Issues #4–#7
 - ADR 0003 dual deployment 🔲 Issue #7
 
 Tracked by `docs/milestones/2026-05-governance-and-foundation.md`.
@@ -30,12 +31,13 @@ Tracked by `docs/milestones/2026-05-governance-and-foundation.md`.
 
 ## Phase 1: Core Billing API
 
-Goal: client master, quotes, invoices, payments — API and DB only.
+Goal: tenancy, auth, client master, quotes, invoices, payments — API and DB only.
 
-- `company_settings`, `clients`, `quotes`, `invoices`, `line_items`, `payments`, `document_sequences`
+- `organizations`, `users`, `company_settings`, `clients`, `quotes`, `invoices`, `line_items`, `payments`, `document_sequences` — all tenant-scoped by `organization_id` (ADR 0006)
+- Organization resolution (default `single`) + JWT auth + `Role`/`Capability` RBAC
+- Organization CRUD (superadmin); user CRUD (admin)
 - Japan qualified invoice field validation in UseCases
 - Quote → invoice conversion
-- Admin JWT auth
 - OpenAPI + PHPUnit + PHPStan 8
 
 See [`docs/explanation/requirements.md#phase-1--api-only`](./explanation/requirements.md#phase-1--api-only).

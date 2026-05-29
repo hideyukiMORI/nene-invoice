@@ -6,7 +6,7 @@ Claude Code / AI エージェント向け実行ガイド。詳細ポリシーの
 
 ## プロダクト一言要約
 
-自己ホスト型 **見積・請求・入金管理** OSS（MIT）。日本 SMB 向け **適格請求書** 対応。NENE2 上の sibling product — Records / Corpus / Concierge と HTTP 連携のみ。
+自己ホスト型 **見積・請求・入金管理** OSS（MIT）。日本 SMB 向け **適格請求書** 対応。**マルチテナント前提**（組織＝テナント、superadmin が組織を / admin がユーザーを管理 — ADR 0006）。NENE2 上の sibling product — Records / Corpus / Concierge と HTTP 連携のみ。
 
 ```
 Admin UI (React)  ──→  NeNe Invoice API (NENE2/PHP 8.4)  ──→  MySQL
@@ -62,10 +62,11 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 ```
 
 - Namespace: `NeneInvoice\`
-- ドメイン別フォルダ（`Client/`, `Quote/`, `Invoice/`, `Payment/` 等）
+- ドメイン別フォルダ（`Organization/`, `Auth/`, `User/`, `Client/`, `Quote/`, `Invoice/`, `Payment/` 等）
 - レイヤー別フォルダ禁止（`src/Handlers/` 等）
 - JSON: **snake_case** 固定
 - 金額: **integer cents**（float 禁止）
+- **マルチテナント**: テナントスコープの全テーブル/クエリに `organization_id`。superadmin のみクロステナント（ADR 0006）
 - SQL: `Pdo*Repository` 内のみ
 
 詳細: `docs/development/backend-standards.md`, `docs/development/naming-conventions.md`, `docs/explanation/terminology.md`（用語レジストリ＝唯一の真実）

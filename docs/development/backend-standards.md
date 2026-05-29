@@ -32,8 +32,10 @@ Organize by **domain**, not technical layer:
 src/
   ApplicationServiceProvider.php
   Http/
-  AdminAuth/
-  Company/          # issuer profile, tax registration, bank info
+  Organization/     # tenants + per-request resolution (Organization/Resolution/)
+  Auth/             # JWT login, Role / Capability, capability middleware
+  User/             # operator accounts within an organization
+  Company/          # issuer profile, tax registration, bank info (per organization)
   Client/           # customer master
   Quote/            # estimates
   Invoice/          # issued invoices, qualified invoice fields
@@ -42,6 +44,9 @@ src/
   Pdf/              # server-side PDF generation
   Upstream/         # optional HTTP clients (Records, Concierge)
 ```
+
+Every tenant-scoped table and query carries `organization_id` (ADR 0006). Only
+superadmin operates cross-tenant.
 
 **Zero-tolerance placement:** handlers live in their domain folder (`Invoice/CreateInvoiceHandler.php`), not `src/Handlers/`.
 

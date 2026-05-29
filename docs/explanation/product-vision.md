@@ -45,9 +45,16 @@ and tax rules, but operate the admin UI more comfortably in English. NeNe
 Invoice serves them with an **English admin UI**, while statutory documents
 remain Japanese — see [ADR 0005](../adr/0005-bilingual-ja-en-scope.md).
 
-**Multi-tenant hosting operators (later)**
+**Multi-tenant hosting operators**
 
-Agencies running one NeNe Invoice instance for multiple client organizations — same pattern as NeNe Records / Concierge multi-tenancy.
+Agencies running one NeNe Invoice instance for multiple client organizations.
+Multi-tenancy is **foundational, not deferred** — every tenant-scoped table
+carries `organization_id` and a per-request resolver selects the tenant
+([ADR 0006](../adr/0006-multi-tenancy-and-roles.md)). A single-SMB install simply
+runs in the default `single` resolution mode. A **superadmin** manages
+organizations; an organization **admin** manages that organization's users and
+issuer settings; **members** operate billing. Same pattern as NeNe Records /
+Concierge multi-tenancy.
 
 ## Primary Persona
 

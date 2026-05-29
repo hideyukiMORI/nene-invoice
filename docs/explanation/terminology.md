@@ -32,7 +32,9 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 
 | Concept | PHP class / domain folder | Table | Primary FK in JSON/DB |
 | --- | --- | --- | --- |
-| Issuer profile | `Company` (folder); `CompanySettings` (entity) | `company_settings` | — (singleton) |
+| Tenant | `Organization` | `organizations` | `organization_id` |
+| Operator account | `User` | `users` | `user_id` |
+| Issuer profile | `Company` (folder); `CompanySettings` (entity) | `company_settings` | — (one per `organization_id`) |
 | Buyer | `Client` | `clients` | `client_id` |
 | Estimate | `Quote` | `quotes` | `quote_id` |
 | Bill | `Invoice` | `invoices` | `invoice_id` |
@@ -55,6 +57,10 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | invoice computed | `overdue` (computed flag, not a stored status in Phase 1) |
 | `payment.method` | `bank_transfer`, `cash`, `other` |
 | `line_item.parent_type` | `quote`, `invoice` |
+| `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
+| `user.status` | `active`, `invited` |
+| Capability (enum) | `manage_organizations`, `manage_users`, `manage_company_settings`, `manage_billing`, `view_billing` |
+| Org resolution mode | `single` (default), `path`, `subdomain`, `custom_domain` |
 
 Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering them here first.
 
@@ -64,6 +70,10 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 
 | Term | Canonical | Never |
 | --- | --- | --- |
+| Tenant foreign key | `organization_id` | `org_id`, `tenant_id`, `organizationId` |
+| Organization slug | `slug` | `org_slug`, `code` |
+| User role | `role` (values in §2) | `user_role`, `permission` |
+| User credential | `password_hash` | `password`, `pass_hash` |
 | Invoice registration number | `registration_number` | `tax_registration_number`, `invoice_registration_number`, `t_number` |
 | Qualified-invoice flag | `is_qualified_invoice` | `qualified`, `is_qualified` |
 | Soft-delete flag / time | `is_deleted`, `deleted_at` | `deleted`, `is_del` |
@@ -97,6 +107,10 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `invoice-not-found` | Invoice id/token not found |
 | `quote-not-found` | Quote id not found |
 | `client-not-found` | Client id not found |
+| `organization-not-found` | Organization id/slug not found |
+| `user-not-found` | User id not found |
+| `insufficient-capability` | Authenticated but lacks required capability |
+| `organization-not-resolved` | Tenant could not be resolved for the request |
 | `invalid-state-transition` | Disallowed status change |
 | `qualified-invoice-incomplete` | Missing required qualified-invoice field |
 
@@ -114,6 +128,9 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | operationId | Resource |
 | --- | --- |
 | `getHealth` | System |
+| `login`, `getCurrentUser` | Auth |
+| `listOrganizations`, `getOrganizationById`, `createOrganization`, `deleteOrganization` | Organization (superadmin) |
+| `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
 | `listQuotes`, `getQuoteById`, `createQuote`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |
