@@ -143,7 +143,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |
-| `listPayments`, `createPayment` | Payment |
+| `listPayments`, `recordPayment` | Payment |
 
 Extend this list (do not improvise) when adding operations.
 
