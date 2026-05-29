@@ -9,6 +9,11 @@ Canonical English terms for NeNe Invoice public docs, OpenAPI, and code comments
 
 | Term | Definition | Avoid |
 | --- | --- | --- |
+| **organization** | The tenant — an independent issuer with its own users, issuer profile, and billing data (ADR 0006) | "tenant" / "account" / "company" in code identifiers |
+| **superadmin** | Cross-tenant platform role; manages organizations (`manage_organizations`) | "root", "owner", "superuser" in code |
+| **admin** | Organization-scoped role; manages the org's users, issuer settings, and billing | "manager" |
+| **member** | Organization-scoped billing operator; creates/sends documents and records payments; no user/settings management | "user", "staff" in code identifiers |
+| **organization resolution** | Per-request selection of the tenant; modes `single` (default) / `path` / `subdomain` / `custom_domain` | "tenant detection" |
 | **quote** | An estimate (見積書) sent to a client before work is confirmed; may convert to an invoice | "estimate" in code identifiers |
 | **invoice** | A billing document (請求書) issued to a client | "bill" |
 | **qualified invoice** | Japan invoice system compliant document (適格請求書) with required issuer, tax, and registration fields | mixing Japanese in API field names |

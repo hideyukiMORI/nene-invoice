@@ -53,7 +53,7 @@ All application classes: `final` and `readonly` where applicable. Every PHP file
 
 Use only domain-grouped top-level folders. Do not add layer folders (`Handlers/`, `Repositories/`, `UseCases/`).
 
-Planned domains (Phase 1+): `Client/`, `Quote/`, `Invoice/`, `Payment/`, `Company/`, `LineItem/`, `Pdf/`, `AdminAuth/`, `Http/`.
+Planned domains (Phase 1+): `Organization/`, `Auth/`, `User/`, `Client/`, `Quote/`, `Invoice/`, `Payment/`, `Company/`, `LineItem/`, `Pdf/`, `Http/`.
 
 ### Methods and properties
 
