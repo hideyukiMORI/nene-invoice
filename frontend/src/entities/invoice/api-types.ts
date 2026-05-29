@@ -2,6 +2,8 @@ import type { components } from '@/shared/api/schema.gen'
 
 /** Wire shapes (snake_case) straight from the OpenAPI contract. */
 export type InvoiceDto = components['schemas']['Invoice']
+export type LineItemDto = components['schemas']['LineItem']
+export type InvoiceWithLinesDto = components['schemas']['InvoiceWithLines']
 
 /**
  * List envelope. The OpenAPI `InvoiceList` is the generic page envelope, so the

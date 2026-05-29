@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { buildInvoiceDto } from '@tests/factories/invoice'
+import { buildInvoiceDto, buildInvoiceWithLinesDto } from '@tests/factories/invoice'
 
 /** Default happy-path handlers mirroring the OpenAPI contract. */
 export const handlers = [
@@ -12,4 +12,6 @@ export const handlers = [
   http.get('/admin/invoices', () =>
     HttpResponse.json({ items: [buildInvoiceDto()], total: 1, limit: 20, offset: 0 }),
   ),
+
+  http.get('/admin/invoices/:id', () => HttpResponse.json(buildInvoiceWithLinesDto())),
 ]

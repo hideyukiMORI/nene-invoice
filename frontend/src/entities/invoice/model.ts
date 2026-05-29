@@ -24,3 +24,16 @@ export interface InvoicePage {
   limit: number
   offset: number
 }
+
+/** One invoice line. Money is integer cents; tax rate is basis points. */
+export interface LineItem {
+  description: string
+  quantity: number
+  unit_price_cents: number
+  tax_rate_bps: number
+  line_subtotal_cents: number
+}
+
+export interface InvoiceWithLines extends Invoice {
+  line_items: LineItem[]
+}
