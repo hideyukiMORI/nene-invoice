@@ -1,0 +1,94 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NeneInvoice\Tests\Quote;
+
+use NeneInvoice\Client\Client;
+use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
+use NeneInvoice\LineItem\LineItemInput;
+use NeneInvoice\LineItem\LineItemParent;
+use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Quote\CreateQuoteInput;
+use NeneInvoice\Quote\CreateQuoteUseCase;
+use NeneInvoice\Quote\QuoteStatus;
+use NeneInvoice\Quote\QuoteValidationException;
+use NeneInvoice\Tests\Support\InMemoryClientRepository;
+use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
+use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
+use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
+use NeneInvoice\Tests\Support\RecordingAuditRecorder;
+use PHPUnit\Framework\TestCase;
+
+final class CreateQuoteUseCaseTest extends TestCase
+{
+    private InMemoryQuoteRepository $quotes;
+    private InMemoryLineItemRepository $lineItems;
+    private InMemoryClientRepository $clients;
+    private RecordingAuditRecorder $audit;
+    private CreateQuoteUseCase $useCase;
+    private int $clientId;
+
+    protected function setUp(): void
+    {
+        $this->quotes = new InMemoryQuoteRepository();
+        $this->lineItems = new InMemoryLineItemRepository();
+        $this->clients = new InMemoryClientRepository();
+        $this->audit = new RecordingAuditRecorder();
+        $this->clientId = $this->clients->save(new Client(organizationId: 1, name: 'Acme'));
+
+        $this->useCase = new CreateQuoteUseCase(
+            $this->quotes,
+            $this->lineItems,
+            $this->clients,
+            new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
+            new TaxCalculator(),
+            $this->audit,
+        );
+    }
+
+    public function test_creates_quote_with_computed_totals_number_lines_and_audit(): void
+    {
+        $result = $this->useCase->execute(1, 42, new CreateQuoteInput(
+            clientId: $this->clientId,
+            lines: [
+                new LineItemInput('Standard', 1, 1000, 1000), // ¥1000 @10% → 100
+                new LineItemInput('Reduced', 1, 1000, 800),   // ¥1000 @8%  → 80
+            ],
+        ));
+
+        self::assertSame(QuoteStatus::Draft, $result->quote->status);
+        self::assertSame(2000, $result->quote->subtotalCents);
+        self::assertSame(180, $result->quote->taxCents);
+        self::assertSame(2180, $result->quote->totalCents);
+        self::assertStringStartsWith('EST-', $result->quote->quoteNumber);
+        self::assertStringEndsWith('-001', $result->quote->quoteNumber);
+
+        self::assertCount(2, $result->lines);
+        self::assertSame(LineItemParent::Quote, $result->lines[0]->parentType);
+
+        self::assertCount(1, $this->audit->records);
+        self::assertSame('quote.created', $this->audit->records[0]['action']);
+        self::assertSame(42, $this->audit->records[0]['actor_user_id']);
+    }
+
+    public function test_rejects_client_from_another_organization(): void
+    {
+        $otherClient = $this->clients->save(new Client(organizationId: 2, name: 'Other'));
+
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, 1, new CreateQuoteInput($otherClient, [new LineItemInput('X', 1, 1000, 1000)]));
+    }
+
+    public function test_rejects_empty_lines(): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, 1, new CreateQuoteInput($this->clientId, []));
+    }
+
+    public function test_rejects_disallowed_tax_rate(): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, 1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 1000, 500)]));
+    }
+}

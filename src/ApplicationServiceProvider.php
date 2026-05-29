@@ -17,6 +17,9 @@ use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInva
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
+use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
+use NeneInvoice\Quote\QuoteRouteRegistrar;
+use NeneInvoice\Quote\QuoteValidationExceptionHandler;
 use NeneInvoice\User\CannotDeleteSelfExceptionHandler;
 use NeneInvoice\User\RoleNotAssignableExceptionHandler;
 use NeneInvoice\User\UserEmailConflictExceptionHandler;
@@ -47,6 +50,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $userRoutes = $container->get(UserRouteRegistrar::class);
                     $clientRoutes = $container->get(ClientRouteRegistrar::class);
                     $companyRoutes = $container->get(CompanyRouteRegistrar::class);
+                    $quoteRoutes = $container->get(QuoteRouteRegistrar::class);
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -68,7 +72,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Company route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes];
+                    if (!$quoteRoutes instanceof QuoteRouteRegistrar) {
+                        throw new LogicException('Quote route registrar service is invalid.');
+                    }
+
+                    return [$authRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes];
                 },
             )
             ->set(
@@ -84,6 +92,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invalidRegNumber = $container->get(InvalidRegistrationNumberExceptionHandler::class);
                     $companySettingsNotFound = $container->get(CompanySettingsNotFoundExceptionHandler::class);
                     $companyInvalidRegNumber = $container->get(CompanyInvalidRegistrationNumberExceptionHandler::class);
+                    $quoteNotFound = $container->get(QuoteNotFoundExceptionHandler::class);
+                    $quoteValidation = $container->get(QuoteValidationExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -125,7 +135,15 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Company invalid registration number exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber];
+                    if (!$quoteNotFound instanceof QuoteNotFoundExceptionHandler) {
+                        throw new LogicException('Quote not-found exception handler service is invalid.');
+                    }
+
+                    if (!$quoteValidation instanceof QuoteValidationExceptionHandler) {
+                        throw new LogicException('Quote validation exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation];
                 },
             );
     }
