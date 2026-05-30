@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { env } from '@/shared/config/env'
+import { useTranslation } from '@/shared/i18n'
 import { Button, Stack, Text } from '@/shared/ui'
 
 interface RootErrorBoundaryProps {
@@ -8,6 +9,32 @@ interface RootErrorBoundaryProps {
 
 interface RootErrorBoundaryState {
   hasError: boolean
+}
+
+/**
+ * Fallback UI rendered when the boundary trips. Split into a function component
+ * so the translated copy can use {@link useTranslation} — the class boundary
+ * itself cannot call hooks. The boundary sits inside `I18nProvider`
+ * (see app/providers.tsx), so the i18n context is available here.
+ */
+function RootErrorFallback({ onReset }: { onReset: () => void }): ReactNode {
+  const { t } = useTranslation()
+
+  return (
+    <main className="mx-auto flex min-h-screen max-w-3xl items-center px-inline-md py-stack-xl">
+      <Stack gap="md">
+        <Text as="h1" variant="heading-md">
+          {t('admin.error.title')}
+        </Text>
+        <Text variant="muted">{t('admin.error.body')}</Text>
+        <div>
+          <Button variant="ghost" onClick={onReset}>
+            {t('admin.error.home')}
+          </Button>
+        </div>
+      </Stack>
+    </main>
+  )
 }
 
 /**
@@ -35,21 +62,7 @@ export class RootErrorBoundary extends Component<RootErrorBoundaryProps, RootErr
 
   override render(): ReactNode {
     if (this.state.hasError) {
-      return (
-        <main className="mx-auto flex min-h-screen max-w-3xl items-center px-inline-md py-stack-xl">
-          <Stack gap="md">
-            <Text as="h1" variant="heading-md">
-              予期しないエラーが発生しました
-            </Text>
-            <Text variant="muted">管理 UI でエラーが発生しました。</Text>
-            <div>
-              <Button variant="ghost" onClick={this.handleReset}>
-                ホームへ戻る
-              </Button>
-            </div>
-          </Stack>
-        </main>
-      )
+      return <RootErrorFallback onReset={this.handleReset} />
     }
 
     return this.props.children

@@ -210,4 +210,7 @@ export const enMessages: MessageCatalog = {
   'admin.settings.error': 'Could not save. Check your input.',
   'admin.settings.savedMessage': 'Saved successfully.',
   'admin.forbidden.title': 'You do not have access.',
+  'admin.error.title': 'An unexpected error occurred',
+  'admin.error.body': 'The admin UI encountered an error.',
+  'admin.error.home': 'Back to home',
 }
