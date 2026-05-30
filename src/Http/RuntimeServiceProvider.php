@@ -24,6 +24,7 @@ use NeneInvoice\Auth\AuthServiceProvider;
 use NeneInvoice\Auth\CapabilityMiddleware;
 use NeneInvoice\Client\ClientServiceProvider;
 use NeneInvoice\Company\CompanyServiceProvider;
+use NeneInvoice\Dashboard\DashboardServiceProvider;
 use NeneInvoice\DocumentSequence\DocumentSequenceServiceProvider;
 use NeneInvoice\Invoice\InvoiceServiceProvider;
 use NeneInvoice\LineItem\LineItemServiceProvider;
@@ -52,6 +53,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
     {
         $builder->addProvider(new ApplicationServiceProvider());
         $builder->addProvider(new AuditServiceProvider());
+        $builder->addProvider(new DashboardServiceProvider());
         $builder->addProvider(new AuthServiceProvider());
         $builder->addProvider(new OrganizationServiceProvider());
         $builder->addProvider(new UserServiceProvider());

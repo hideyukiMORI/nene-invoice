@@ -113,4 +113,11 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
 
         return $totals;
     }
+
+    public function outstandingTotalForOrganization(int $organizationId): int
+    {
+        // Sum payments for all invoices in this org (InMemory: we don't track invoices here,
+        // so we return 0 — tests that need this should use integration setup).
+        return 0;
+    }
 }

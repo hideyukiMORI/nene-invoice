@@ -92,6 +92,32 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         }));
     }
 
+    /**
+     * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
+     */
+    public function getDashboardData(int $organizationId, string $now): array
+    {
+        $unpaid = array_values(array_filter(
+            $this->byId,
+            static fn (Invoice $i): bool => $i->organizationId === $organizationId
+                && !$i->isDeleted
+                && in_array($i->status, [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid], true),
+        ));
+
+        $overdueCount = count(array_filter(
+            $unpaid,
+            static fn (Invoice $i): bool => $i->dueAt !== null && $i->dueAt < $now,
+        ));
+
+        $recent = array_slice(array_reverse($unpaid), 0, 5);
+
+        return [
+            'unpaid_count'  => count($unpaid),
+            'overdue_count' => $overdueCount,
+            'recent_unpaid' => $recent,
+        ];
+    }
+
     public function save(Invoice $invoice): int
     {
         $id = $this->nextId++;

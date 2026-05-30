@@ -36,4 +36,10 @@ interface PaymentRepositoryInterface
      * @return array<int, int> invoice_id => paid cents (invoices with no payments are omitted)
      */
     public function sumPaidForInvoices(array $invoiceIds): array;
+
+    /**
+     * Total outstanding balance across all issued / partially_paid invoices for the
+     * organization: sum(invoice.total_cents) - sum(non-void payments) for those invoices.
+     */
+    public function outstandingTotalForOrganization(int $organizationId): int;
 }

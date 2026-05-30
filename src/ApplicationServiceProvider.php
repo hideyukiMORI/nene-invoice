@@ -15,6 +15,7 @@ use NeneInvoice\Client\InvalidRegistrationNumberExceptionHandler;
 use NeneInvoice\Company\CompanyRouteRegistrar;
 use NeneInvoice\Company\CompanySettingsNotFoundExceptionHandler;
 use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInvalidRegistrationNumberExceptionHandler;
+use NeneInvoice\Dashboard\DashboardRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
 use NeneInvoice\Invoice\InvoiceRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
@@ -56,6 +57,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
             ->set(
                 self::ROUTE_REGISTRARS,
                 static function (ContainerInterface $container): array {
+                    $dashboardRoutes = $container->get(DashboardRouteRegistrar::class);
                     $authRoutes = $container->get(AuthRouteRegistrar::class);
                     $auditRoutes = $container->get(AuditRouteRegistrar::class);
                     $organizationRoutes = $container->get(OrganizationRouteRegistrar::class);
@@ -66,6 +68,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
+
+                    if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
+                        throw new LogicException('Dashboard route registrar service is invalid.');
+                    }
 
                     if (!$authRoutes instanceof AuthRouteRegistrar) {
                         throw new LogicException('Auth route registrar service is invalid.');
@@ -107,7 +113,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Service API route registrar service is invalid.');
                     }
 
-                    return [$authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes];
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes];
                 },
             )
             ->set(

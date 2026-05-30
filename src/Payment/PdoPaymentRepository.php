@@ -115,6 +115,20 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         return $totals;
     }
 
+    public function outstandingTotalForOrganization(int $organizationId): int
+    {
+        $row = $this->query->fetchOne(
+            'SELECT
+                COALESCE(SUM(i.total_cents), 0) - COALESCE(SUM(CASE WHEN p.is_deleted = 0 THEN p.amount_cents ELSE 0 END), 0) AS outstanding
+            FROM invoices i
+            LEFT JOIN payments p ON p.invoice_id = i.id
+            WHERE i.organization_id = ? AND i.is_deleted = 0 AND i.status IN (\'issued\', \'partially_paid\')',
+            [$organizationId],
+        );
+
+        return $row !== null ? (int) $row['outstanding'] : 0;
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): Payment
     {

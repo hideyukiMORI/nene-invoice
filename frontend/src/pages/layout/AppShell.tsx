@@ -17,6 +17,9 @@ export function AppShell() {
         <div className="flex items-center gap-inline-lg">
           <Text variant="heading-sm">{t('common.appName')}</Text>
           <nav className="flex gap-inline-md">
+            <NavLink to="/dashboard" className={navClass}>
+              {t('admin.nav.dashboard')}
+            </NavLink>
             <NavLink to="/invoices" className={navClass}>
               {t('admin.nav.invoices')}
             </NavLink>

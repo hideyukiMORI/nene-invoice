@@ -10,6 +10,15 @@ export const handlers = [
     HttpResponse.json({ id: 1, email: 'admin@example.com', role: 'admin', organization_id: 1 }),
   ),
 
+  http.get('/admin/dashboard', () =>
+    HttpResponse.json({
+      unpaid_count: 0,
+      overdue_count: 0,
+      outstanding_total_cents: 0,
+      recent_unpaid: [],
+    }),
+  ),
+
   http.get('/admin/company-settings', () =>
     HttpResponse.json({
       organization_id: 1,
