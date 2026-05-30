@@ -5,29 +5,35 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateClientUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private ClientRepositoryInterface $clients,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
     /**
-     * Updates a client within the caller's organization. A client from another
-     * organization (or soft-deleted) is reported as not found.
+     * Updates a client in the resolved organization. The repository scopes the
+     * read/write to the request org, so a client from another organization (or
+     * soft-deleted) surfaces as not found.
      *
      * @throws ClientNotFoundException
      * @throws InvalidRegistrationNumberException
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $id, UpdateClientInput $input): Client
+    public function execute(?int $actorUserId, int $id, UpdateClientInput $input): Client
     {
         $existing = $this->clients->findById($id);
 
-        if ($existing === null || $existing->organizationId !== $organizationId) {
+        if ($existing === null) {
             throw new ClientNotFoundException($id);
         }
 
@@ -54,7 +60,7 @@ final readonly class UpdateClientUseCase
             throw new LogicException('Client disappeared immediately after update.');
         }
 
-        $this->audit->record($actorUserId, $organizationId, 'client.updated', 'client', $id, ClientResponse::toArray($existing), ClientResponse::toArray($updated));
+        $this->audit->record($actorUserId, $this->orgId->get(), 'client.updated', 'client', $id, ClientResponse::toArray($existing), ClientResponse::toArray($updated));
 
         return $updated;
     }

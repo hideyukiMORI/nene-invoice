@@ -5,42 +5,35 @@ declare(strict_types=1);
 namespace NeneInvoice\Tests\ServiceApi;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ServiceApi\ServiceScopeMiddleware;
+use NeneInvoice\Tests\Support\RecordingRequestHandler;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 
 final class ServiceScopeMiddlewareTest extends TestCase
 {
     private const CLAIMS = 'nene2.auth.claims';
 
     private Psr17Factory $psr17;
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private ServiceScopeMiddleware $middleware;
 
     protected function setUp(): void
     {
         $this->psr17 = new Psr17Factory();
+        $this->holder = new RequestScopedHolder();
         $this->middleware = new ServiceScopeMiddleware(
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
+            $this->holder,
         );
     }
 
-    private function handler(): RequestHandlerInterface
+    private function handler(): RecordingRequestHandler
     {
-        $psr17 = $this->psr17;
-
-        return new class ($psr17) implements RequestHandlerInterface {
-            public function __construct(private readonly Psr17Factory $psr17)
-            {
-            }
-
-            public function handle(ServerRequestInterface $request): ResponseInterface
-            {
-                return $this->psr17->createResponse(200);
-            }
-        };
+        return new RecordingRequestHandler($this->psr17);
     }
 
     private function request(string $path, mixed $claims): ServerRequestInterface
@@ -53,11 +46,13 @@ final class ServiceScopeMiddlewareTest extends TestCase
     public function test_service_token_with_scope_passes(): void
     {
         $response = $this->middleware->process(
-            $this->request('/api/invoices', ['org' => 1, 'scopes' => ['read:invoices']]),
+            $this->request('/api/invoices', ['org' => 9, 'scopes' => ['read:invoices']]),
             $this->handler(),
         );
 
         self::assertSame(200, $response->getStatusCode());
+        // The service token's org is published to the holder for repositories.
+        self::assertSame(9, $this->holder->get());
     }
 
     public function test_operator_token_without_scopes_is_rejected(): void

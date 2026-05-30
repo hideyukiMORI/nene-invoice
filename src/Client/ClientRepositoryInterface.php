@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 /**
- * Persistence for clients. All reads exclude soft-deleted rows; `delete` is a
- * soft delete (sets `is_deleted`).
+ * Persistence for clients. Every query is scoped to the organization held in the
+ * request-scoped org holder (ADR 0006) — callers never pass an organization id,
+ * so cross-tenant access is impossible to express. Reads exclude soft-deleted
+ * rows; `delete` is a soft delete (sets `is_deleted`).
  */
 interface ClientRepositoryInterface
 {
     public function findById(int $id): ?Client;
 
     /** @return list<Client> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array;
+    public function findAll(int $limit, int $offset): array;
 
-    public function countByOrganization(int $organizationId): int;
+    public function count(): int;
 
     public function save(Client $client): int;
 
