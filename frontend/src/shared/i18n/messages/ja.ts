@@ -210,4 +210,7 @@ export const jaMessages = {
   'admin.settings.error': '保存できませんでした。入力内容を確認してください。',
   'admin.settings.savedMessage': '保存しました。',
   'admin.forbidden.title': 'アクセス権限がありません。',
+  'admin.error.title': '予期しないエラーが発生しました',
+  'admin.error.body': '管理 UI でエラーが発生しました。',
+  'admin.error.home': 'ホームへ戻る',
 } as const
