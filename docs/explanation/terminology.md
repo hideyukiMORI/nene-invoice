@@ -121,7 +121,9 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `invalid-credentials` | Login failed — wrong email or password |
 | `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
 | `insufficient-capability` | Authenticated but lacks required capability |
-| `organization-not-resolved` | Tenant could not be resolved for the request |
+| `organization-not-resolved` | Tenant could not be resolved for the request (404; OrgResolverMiddleware) |
+| `organization-inactive` | Resolved organization is inactive (403; OrgResolverMiddleware) |
+| `organization-mismatch` | Authenticated user's org does not match the URL-resolved org (403; OrgGuardMiddleware) |
 | `invalid-state-transition` | Disallowed status change |
 | `company-settings-not-found` | Issuer profile not configured for the organization (404) |
 | `qualified-invoice-incomplete` | Missing required qualified-invoice field |
