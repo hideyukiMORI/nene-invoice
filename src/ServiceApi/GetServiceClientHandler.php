@@ -43,7 +43,7 @@ final readonly class GetServiceClientHandler implements RequestHandlerInterface
         $client = $this->clients->findById($id);
 
         if ($client === null || $client->organizationId !== $organizationId || $client->isDeleted) {
-            return $this->problemDetails->create($request, 'invoice-not-found', 'Not Found', 404, 'Client not found.');
+            return $this->problemDetails->create($request, 'client-not-found', 'Not Found', 404, 'Client not found.');
         }
 
         return $this->json->create([

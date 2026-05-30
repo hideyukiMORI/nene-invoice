@@ -59,7 +59,7 @@ final class GetServiceClientHandlerTest extends TestCase
         self::assertSame('T1234567890123', $body['registration_number']);
     }
 
-    public function test_returns_404_for_cross_org_client(): void
+    public function test_returns_client_not_found_for_cross_org_client(): void
     {
         $id = $this->clients->save(new Client(organizationId: 2, name: '他社'));
 
@@ -69,9 +69,13 @@ final class GetServiceClientHandlerTest extends TestCase
 
         $response = $this->handler->handle($request);
         self::assertSame(404, $response->getStatusCode());
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('client-not-found', (string) ($body['type'] ?? ''));
     }
 
-    public function test_returns_404_for_nonexistent_client(): void
+    public function test_returns_client_not_found_for_nonexistent_client(): void
     {
         $request = $this->psr17->createServerRequest('GET', '/api/clients/999')
             ->withAttribute('nene2.auth.claims', ['org' => 1, 'scopes' => ['read:invoices']])
@@ -79,6 +83,10 @@ final class GetServiceClientHandlerTest extends TestCase
 
         $response = $this->handler->handle($request);
         self::assertSame(404, $response->getStatusCode());
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertStringContainsString('client-not-found', (string) ($body['type'] ?? ''));
     }
 
     public function test_returns_403_when_no_org_in_token(): void
