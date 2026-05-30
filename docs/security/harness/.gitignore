@@ -1,0 +1,6 @@
+# Local-only secrets and run artifacts — never commit.
+.env.app
+tokens.env
+pr.env
+*.log
+test-results/

@@ -1,0 +1,29 @@
+name: nene-invoice-sectest
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: nene_invoice
+      MYSQL_USER: nene
+      MYSQL_PASSWORD: nene_pw
+    ports: ["13309:3306"]
+    volumes:
+      - ../../../database/schema/mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpw"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ["18090:80"]
+    volumes:
+      - ../../..:/var/www/html
+      - ./.env.app:/var/www/html/.env:ro
+    depends_on:
+      db:
+        condition: service_healthy
