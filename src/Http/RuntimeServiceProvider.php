@@ -15,6 +15,8 @@ use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\DomainExceptionHandlerInterface;
+use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\ResponseEmitter;
 use Nene2\Http\RuntimeApplicationFactory;
 use Nene2\Routing\Router;
@@ -22,6 +24,7 @@ use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Auth\AuthServiceProvider;
 use NeneInvoice\Auth\CapabilityMiddleware;
+use NeneInvoice\Auth\OrgGuardMiddleware;
 use NeneInvoice\Client\ClientServiceProvider;
 use NeneInvoice\Company\CompanyServiceProvider;
 use NeneInvoice\Dashboard\DashboardServiceProvider;
@@ -29,7 +32,13 @@ use NeneInvoice\DocumentSequence\DocumentSequenceServiceProvider;
 use NeneInvoice\Invoice\InvoiceServiceProvider;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenServiceProvider;
 use NeneInvoice\LineItem\LineItemServiceProvider;
+use NeneInvoice\Organization\OrganizationRepositoryInterface;
 use NeneInvoice\Organization\OrganizationServiceProvider;
+use NeneInvoice\Organization\Resolution\CustomDomainResolutionStrategy;
+use NeneInvoice\Organization\Resolution\EnvResolutionStrategy;
+use NeneInvoice\Organization\Resolution\OrgResolverMiddleware;
+use NeneInvoice\Organization\Resolution\PathPrefixResolutionStrategy;
+use NeneInvoice\Organization\Resolution\SubdomainResolutionStrategy;
 use NeneInvoice\Payment\PaymentServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
 use NeneInvoice\ServiceApi\ServiceApiServiceProvider;
@@ -169,6 +178,45 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Service scope middleware service is invalid.');
                     }
 
+                    // --- Org resolution (ADR 0006): resolve tenant from the URL,
+                    // store in the shared holder, and guard token org == resolved org. ---
+                    $orgIdHolder = $container->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+                    if (!$orgIdHolder instanceof RequestScopedHolder) {
+                        throw new LogicException('Org id holder service is invalid.');
+                    }
+                    /** @var RequestScopedHolder<int> $orgIdHolder */
+
+                    $orgRepository = $container->get(OrganizationRepositoryInterface::class);
+
+                    if (!$orgRepository instanceof OrganizationRepositoryInterface) {
+                        throw new LogicException('Organization repository service is invalid.');
+                    }
+
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('ProblemDetailsResponseFactory service is invalid.');
+                    }
+
+                    $mode   = self::env('TENANT_RESOLUTION', 'single');
+                    $slug   = self::env('ORG_SLUG', '');
+                    $domain = self::env('BASE_DOMAIN', 'localhost');
+
+                    $strategy = match ($mode) {
+                        'subdomain'     => new SubdomainResolutionStrategy($domain),
+                        'path'          => new PathPrefixResolutionStrategy(),
+                        'custom_domain' => new CustomDomainResolutionStrategy(),
+                        default         => new EnvResolutionStrategy($slug),
+                    };
+
+                    // Sole-org fallback only in single (env) mode: a one-tenant
+                    // install needs no ORG_SLUG.
+                    $soleOrgFallback = !in_array($mode, ['subdomain', 'path', 'custom_domain'], true);
+
+                    $orgResolverMiddleware = new OrgResolverMiddleware($orgIdHolder, $orgRepository, $problemDetails, $strategy, $soleOrgFallback);
+                    $orgGuardMiddleware    = new OrgGuardMiddleware($problemDetails);
+
                     $routeRegistrars = $container->get(ApplicationServiceProvider::ROUTE_REGISTRARS);
 
                     if (!is_array($routeRegistrars) || !array_is_list($routeRegistrars)) {
@@ -190,7 +238,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
-                        authMiddleware: [$bearerTokenMiddleware, $capabilityMiddleware, $serviceScopeMiddleware],
+                        authMiddleware: [$orgResolverMiddleware, $bearerTokenMiddleware, $orgGuardMiddleware, $capabilityMiddleware, $serviceScopeMiddleware],
                         healthChecks: [$databaseHealthCheck],
                         debug: $config->debug,
                     );
@@ -209,5 +257,16 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(ResponseEmitter::class, static fn (ContainerInterface $container): ResponseEmitter => new ResponseEmitter());
+    }
+
+    /**
+     * Reads an environment variable loaded by the Dotenv ConfigLoader, falling
+     * back to a default. Tenant-resolution settings are env-driven (ADR 0006).
+     */
+    private static function env(string $key, string $default): string
+    {
+        $value = $_ENV[$key] ?? getenv($key);
+
+        return is_string($value) && $value !== '' ? $value : $default;
     }
 }

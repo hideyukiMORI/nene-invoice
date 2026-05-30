@@ -52,9 +52,23 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
     public const ROUTE_REGISTRARS = 'nene-invoice.route_registrars';
     public const EXCEPTION_HANDLERS = 'nene-invoice.exception_handlers';
 
+    /**
+     * Container key for the shared RequestScopedHolder<int> carrying the resolved
+     * organization id. OrgResolverMiddleware writes it; every Pdo*Repository reads
+     * it to scope queries. One instance per request (shared-nothing model).
+     */
+    public const ORG_ID_HOLDER = 'nene-invoice.org_id_holder';
+
     public function register(ContainerBuilder $builder): void
     {
         $builder
+            ->set(
+                self::ORG_ID_HOLDER,
+                static function (): \Nene2\Http\RequestScopedHolder {
+                    /** @var \Nene2\Http\RequestScopedHolder<int> */
+                    return new \Nene2\Http\RequestScopedHolder();
+                },
+            )
             ->set(
                 self::ROUTE_REGISTRARS,
                 static function (ContainerInterface $container): array {
