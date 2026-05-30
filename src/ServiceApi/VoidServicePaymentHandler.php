@@ -42,7 +42,7 @@ final readonly class VoidServicePaymentHandler implements RequestHandlerInterfac
         $reasonValue = is_array($decoded) ? ($decoded['reason'] ?? null) : null;
         $reason = is_string($reasonValue) && $reasonValue !== '' ? $reasonValue : null;
 
-        $result = $this->useCase->execute($organizationId, null, $invoiceId, $paymentId, $reason);
+        $result = $this->useCase->execute(null, $invoiceId, $paymentId, $reason);
 
         $outstanding = max(0, $result->invoice->totalCents - $result->totalPaidCents);
 

@@ -7,12 +7,15 @@ namespace NeneInvoice\Tests\Payment;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Payment\Payment;
 use NeneInvoice\Payment\PdoPaymentRepository;
 use PHPUnit\Framework\TestCase;
 
 final class PdoPaymentRepositoryTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
     private PdoPaymentRepository $repository;
 
     protected function setUp(): void
@@ -35,7 +38,9 @@ final class PdoPaymentRepositoryTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->repository = new PdoPaymentRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->orgId = new RequestScopedHolder();
+        $this->orgId->set(1);
+        $this->repository = new PdoPaymentRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
     }
 
     public function test_saves_and_reads_back_payments_for_invoice(): void
@@ -107,13 +112,15 @@ final class PdoPaymentRepositoryTest extends TestCase
             idempotencyKey: 'clear:recon:777:v1',
         ));
 
-        $byKey = $this->repository->findByIdempotencyKey(1, 'clear:recon:777:v1');
+        $byKey = $this->repository->findByIdempotencyKey('clear:recon:777:v1');
         self::assertNotNull($byKey);
         self::assertSame($id, $byKey->id);
         self::assertSame('clear:recon:777', $byKey->externalReference);
 
-        self::assertNull($this->repository->findByIdempotencyKey(1, 'unknown'));
-        self::assertNull($this->repository->findByIdempotencyKey(2, 'clear:recon:777:v1')); // other org
+        self::assertNull($this->repository->findByIdempotencyKey('unknown'));
+
+        $this->orgId->set(2);
+        self::assertNull($this->repository->findByIdempotencyKey('clear:recon:777:v1')); // other org
     }
 
     public function test_void_excludes_from_totals_and_is_idempotent(): void

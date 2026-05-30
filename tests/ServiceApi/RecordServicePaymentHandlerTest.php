@@ -30,8 +30,10 @@ final class RecordServicePaymentHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->psr17 = new Psr17Factory();
-        $this->invoices = new InMemoryInvoiceRepository();
-        $this->payments = new InMemoryPaymentRepository();
+        $holder = new \Nene2\Http\RequestScopedHolder();
+        $holder->set(1);
+        $this->invoices = new InMemoryInvoiceRepository($holder);
+        $this->payments = new InMemoryPaymentRepository($holder);
 
         $this->invoiceId = $this->invoices->save(new Invoice(
             organizationId: 1,
@@ -45,7 +47,7 @@ final class RecordServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new RecordServicePaymentHandler(
-            new RecordPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder()),
+            new RecordPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );

@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use Psr\Container\ContainerInterface;
@@ -32,7 +34,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoPaymentRepository($query);
+                    return new PdoPaymentRepository($query, self::orgHolder($c));
                 },
             )
             ->set(
@@ -41,6 +43,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -56,6 +59,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -63,7 +67,6 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): RecordPaymentHandler => new RecordPaymentHandler(
                     self::resolve($c, RecordPaymentUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -71,7 +74,6 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ListPaymentsHandler => new ListPaymentsHandler(
                     self::resolve($c, ListPaymentsUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -125,5 +127,17 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
     private static function problemDetails(ContainerInterface $c): ProblemDetailsResponseFactory
     {
         return self::resolve($c, ProblemDetailsResponseFactory::class);
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

@@ -56,7 +56,7 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"idempotency_key" is required.');
         }
 
-        $result = $this->useCase->execute($organizationId, null, $invoiceId, new RecordPaymentInput(
+        $result = $this->useCase->execute(null, $invoiceId, new RecordPaymentInput(
             amountCents: $amountCents,
             paidAt: $paidAt,
             method: $this->stringOrNull($decoded, 'method'),

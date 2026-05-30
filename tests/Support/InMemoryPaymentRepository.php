@@ -4,17 +4,34 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Payment\Payment;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 
 /**
- * In-memory fake for use-case tests (no database).
+ * In-memory fake for use-case tests (no database). Reads are scoped to the
+ * request-scoped org holder, mirroring {@see \NeneInvoice\Payment\PdoPaymentRepository}.
+ * The holder defaults to organization 1 for single-org tests.
  */
 final class InMemoryPaymentRepository implements PaymentRepositoryInterface
 {
     /** @var array<int, Payment> */
     private array $byId = [];
     private int $nextId = 1;
+
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
 
     public function save(Payment $payment): int
     {
@@ -39,13 +56,15 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
 
     public function findById(int $id): ?Payment
     {
-        return $this->byId[$id] ?? null;
+        $payment = $this->byId[$id] ?? null;
+
+        return $payment !== null && $payment->organizationId === $this->orgId->get() ? $payment : null;
     }
 
-    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment
+    public function findByIdempotencyKey(string $idempotencyKey): ?Payment
     {
         foreach ($this->byId as $payment) {
-            if ($payment->organizationId === $organizationId && $payment->idempotencyKey === $idempotencyKey) {
+            if ($payment->organizationId === $this->orgId->get() && $payment->idempotencyKey === $idempotencyKey) {
                 return $payment;
             }
         }
@@ -81,7 +100,7 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
     {
         return array_values(array_filter(
             $this->byId,
-            static fn (Payment $p): bool => $p->invoiceId === $invoiceId && !$p->isDeleted,
+            fn (Payment $p): bool => $p->invoiceId === $invoiceId && !$p->isDeleted && $p->organizationId === $this->orgId->get(),
         ));
     }
 
@@ -114,10 +133,10 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
         return $totals;
     }
 
-    public function outstandingTotalForOrganization(int $organizationId): int
+    public function outstandingTotal(): int
     {
-        // Sum payments for all invoices in this org (InMemory: we don't track invoices here,
-        // so we return 0 — tests that need this should use integration setup).
+        // InMemory: invoices are tracked separately, so this fake returns 0.
+        // Tests that need a real total use integration (Pdo) setup.
         return 0;
     }
 }

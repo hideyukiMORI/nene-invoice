@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -23,10 +24,14 @@ use NeneInvoice\Invoice\InvoiceStatus;
  */
 final readonly class RecordPaymentUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private PaymentRepositoryInterface $payments,
         private InvoiceRepositoryInterface $invoices,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -35,18 +40,20 @@ final readonly class RecordPaymentUseCase
      * @throws PaymentValidationException
      * @throws PaymentExceedsOutstandingException
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $invoiceId, RecordPaymentInput $input): RecordPaymentResult
+    public function execute(?int $actorUserId, int $invoiceId, RecordPaymentInput $input): RecordPaymentResult
     {
+        $organizationId = $this->orgId->get();
+
         $invoice = $this->invoices->findById($invoiceId);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($invoiceId);
         }
 
         // Idempotent replay: a retried write with the same key returns the existing
         // payment instead of recording a duplicate (ADR 0009 §3.1.2).
         if ($input->idempotencyKey !== null) {
-            $existing = $this->payments->findByIdempotencyKey($organizationId, $input->idempotencyKey);
+            $existing = $this->payments->findByIdempotencyKey($input->idempotencyKey);
             if ($existing !== null) {
                 return new RecordPaymentResult($existing, $invoice, $this->payments->totalPaidForInvoice($invoiceId));
             }

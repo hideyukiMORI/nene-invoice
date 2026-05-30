@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
 {
     private const COLUMNS = 'id, organization_id, invoice_id, amount_cents, paid_at, method, note, external_reference, idempotency_key, is_deleted, created_at, updated_at';
 
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -19,11 +24,12 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     {
         $now = date('Y-m-d H:i:s');
 
+        // The organization is forced from the request-scoped holder.
         $this->query->execute(
             'INSERT INTO payments (organization_id, invoice_id, amount_cents, paid_at, method, note, external_reference, idempotency_key, is_deleted, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
             [
-                $payment->organizationId,
+                $this->orgId->get(),
                 $payment->invoiceId,
                 $payment->amountCents,
                 $payment->paidAt,
@@ -39,11 +45,11 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         return $this->query->lastInsertId();
     }
 
-    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment
+    public function findByIdempotencyKey(string $idempotencyKey): ?Payment
     {
         $row = $this->query->fetchOne(
             'SELECT ' . self::COLUMNS . ' FROM payments WHERE organization_id = ? AND idempotency_key = ?',
-            [$organizationId, $idempotencyKey],
+            [$this->orgId->get(), $idempotencyKey],
         );
 
         return $row !== null ? $this->mapRow($row) : null;
@@ -52,8 +58,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function findById(int $id): ?Payment
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM payments WHERE id = ?',
-            [$id],
+            'SELECT ' . self::COLUMNS . ' FROM payments WHERE id = ? AND organization_id = ?',
+            [$id, $this->orgId->get()],
         );
 
         return $row !== null ? $this->mapRow($row) : null;
@@ -63,8 +69,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function markVoided(int $id): void
     {
         $this->query->execute(
-            'UPDATE payments SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND is_deleted = 0',
-            [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $id],
+            'UPDATE payments SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 
@@ -72,8 +78,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function findByInvoice(int $invoiceId): array
     {
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM payments WHERE invoice_id = ? AND is_deleted = 0 ORDER BY paid_at ASC, id ASC',
-            [$invoiceId],
+            'SELECT ' . self::COLUMNS . ' FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = 0 ORDER BY paid_at ASC, id ASC',
+            [$invoiceId, $this->orgId->get()],
         );
 
         return array_map(fn (array $row): Payment => $this->mapRow($row), $rows);
@@ -82,8 +88,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function totalPaidForInvoice(int $invoiceId): int
     {
         $row = $this->query->fetchOne(
-            'SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments WHERE invoice_id = ? AND is_deleted = 0',
-            [$invoiceId],
+            'SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = 0',
+            [$invoiceId, $this->orgId->get()],
         );
 
         return $row !== null ? (int) $row['total'] : 0;
@@ -102,9 +108,9 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         $placeholders = implode(', ', array_fill(0, count($invoiceIds), '?'));
         $rows = $this->query->fetchAll(
             'SELECT invoice_id, COALESCE(SUM(amount_cents), 0) AS total
-             FROM payments WHERE is_deleted = 0 AND invoice_id IN (' . $placeholders . ')
+             FROM payments WHERE is_deleted = 0 AND organization_id = ? AND invoice_id IN (' . $placeholders . ')
              GROUP BY invoice_id',
-            $invoiceIds,
+            [$this->orgId->get(), ...$invoiceIds],
         );
 
         $totals = [];
@@ -115,7 +121,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         return $totals;
     }
 
-    public function outstandingTotalForOrganization(int $organizationId): int
+    public function outstandingTotal(): int
     {
         $row = $this->query->fetchOne(
             'SELECT
@@ -123,7 +129,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
             FROM invoices i
             LEFT JOIN payments p ON p.invoice_id = i.id
             WHERE i.organization_id = ? AND i.is_deleted = 0 AND i.status IN (\'issued\', \'partially_paid\')',
-            [$organizationId],
+            [$this->orgId->get()],
         );
 
         return $row !== null ? (int) $row['outstanding'] : 0;
