@@ -117,6 +117,9 @@ export const enMessages: MessageCatalog = {
   'admin.payments.record.note': 'Note',
   'admin.payments.record.submit': 'Record',
   'admin.payments.record.submitting': 'Recording…',
+  'admin.payments.record.confirmTitle': 'Record {{amount}} as a payment?',
+  'admin.payments.record.confirmMessage':
+    'Recording will update the payment status of the invoice.',
   'admin.payments.record.error':
     'Could not record the payment. Check the amount (no over-payment).',
   'admin.payments.record.invalid': 'Enter a valid amount.',

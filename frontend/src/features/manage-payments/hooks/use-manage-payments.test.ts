@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react'
+import { act, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { toInvoiceId } from '@/entities/invoice'
@@ -34,5 +34,28 @@ describe('useManagePayments (feature)', () => {
 
     expect(result.current.visible).toBe(false)
     expect(result.current.canRecord).toBe(false)
+  })
+
+  it('opens the confirm dialog on valid submission and closes on cancel', async () => {
+    const { result } = renderHookWithProviders(() => useManagePayments(toInvoiceId(1)))
+
+    await waitFor(() => {
+      expect(result.current.canRecord).toBe(true)
+    })
+
+    act(() => {
+      result.current.form.setValue('amount_cents', 10000)
+      result.current.onSubmit({ preventDefault: () => {} } as unknown as React.SyntheticEvent)
+    })
+
+    await waitFor(() => {
+      expect(result.current.confirming).toBe(true)
+    })
+
+    act(() => {
+      result.current.onCancel()
+    })
+
+    expect(result.current.confirming).toBe(false)
   })
 })
