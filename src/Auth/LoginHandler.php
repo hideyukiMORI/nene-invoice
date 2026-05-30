@@ -37,8 +37,17 @@ final readonly class LoginHandler implements RequestHandlerInterface
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'Both "email" and "password" are required.');
         }
 
+        $serverParams = $request->getServerParams();
+        $ip = isset($serverParams['REMOTE_ADDR']) && is_string($serverParams['REMOTE_ADDR'])
+            ? $serverParams['REMOTE_ADDR']
+            : null;
+
         try {
-            $output = $this->useCase->execute(new LoginInput($email, $password));
+            $output = $this->useCase->execute(new LoginInput($email, $password, $ip));
+        } catch (TooManyLoginAttemptsException $e) {
+            return $this->problemDetails
+                ->create($request, 'too-many-requests', 'Too Many Requests', 429, $e->getMessage())
+                ->withHeader('Retry-After', (string) $e->retryAfterSeconds);
         } catch (InvalidCredentialsException $e) {
             return $this->problemDetails->create($request, 'invalid-credentials', 'Invalid Credentials', 401, $e->getMessage());
         }

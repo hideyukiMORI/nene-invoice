@@ -151,6 +151,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 static function (ContainerInterface $container): LoginUseCaseInterface {
                     $users = $container->get(UserRepositoryInterface::class);
                     $tokenIssuer = $container->get(TokenIssuerInterface::class);
+                    $query = $container->get(DatabaseQueryExecutorInterface::class);
 
                     if (!$users instanceof UserRepositoryInterface) {
                         throw new LogicException('User repository service is invalid.');
@@ -160,7 +161,11 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Token issuer service is invalid.');
                     }
 
-                    return new LoginUseCase($users, $tokenIssuer);
+                    if (!$query instanceof DatabaseQueryExecutorInterface) {
+                        throw new LogicException('Database query executor service is invalid.');
+                    }
+
+                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query));
                 },
             )
             ->set(

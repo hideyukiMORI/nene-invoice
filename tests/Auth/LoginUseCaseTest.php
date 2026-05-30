@@ -9,6 +9,8 @@ use NeneInvoice\Auth\InvalidCredentialsException;
 use NeneInvoice\Auth\LoginInput;
 use NeneInvoice\Auth\LoginUseCase;
 use NeneInvoice\Auth\Role;
+use NeneInvoice\Auth\TooManyLoginAttemptsException;
+use NeneInvoice\Tests\Support\InMemoryLoginThrottle;
 use NeneInvoice\User\User;
 use NeneInvoice\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +22,7 @@ final class LoginUseCaseTest extends TestCase
     public function test_issues_token_with_identity_claims_on_valid_credentials(): void
     {
         $verifier = new LocalBearerTokenVerifier(self::SECRET);
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), $verifier);
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), $verifier, new InMemoryLoginThrottle());
 
         $output = $useCase->execute(new LoginInput('admin@example.com', 'correct-horse'));
 
@@ -32,7 +34,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_rejects_wrong_password(): void
     {
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET));
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle());
 
         $this->expectException(InvalidCredentialsException::class);
         $useCase->execute(new LoginInput('admin@example.com', 'wrong'));
@@ -40,7 +42,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_rejects_unknown_email(): void
     {
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET));
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle());
 
         $this->expectException(InvalidCredentialsException::class);
         $useCase->execute(new LoginInput('nobody@example.com', 'correct-horse'));
@@ -51,6 +53,7 @@ final class LoginUseCaseTest extends TestCase
         $useCase = new LoginUseCase(
             $this->repositoryWithUser('correct-horse', 'disabled'),
             new LocalBearerTokenVerifier(self::SECRET),
+            new InMemoryLoginThrottle(),
         );
 
         $this->expectException(InvalidCredentialsException::class);
@@ -62,10 +65,63 @@ final class LoginUseCaseTest extends TestCase
         $useCase = new LoginUseCase(
             $this->repositoryWithUser('correct-horse', 'invited'),
             new LocalBearerTokenVerifier(self::SECRET),
+            new InMemoryLoginThrottle(),
         );
 
         $this->expectException(InvalidCredentialsException::class);
         $useCase->execute(new LoginInput('admin@example.com', 'correct-horse'));
+    }
+
+    public function test_throttles_after_too_many_failures_from_one_ip(): void
+    {
+        $throttle = new InMemoryLoginThrottle();
+        for ($i = 0; $i < 10; $i++) {
+            $throttle->recordFailure('203.0.113.7');
+        }
+
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse'),
+            new LocalBearerTokenVerifier(self::SECRET),
+            $throttle,
+        );
+
+        // Even with the correct password, the IP is over the failure ceiling.
+        $this->expectException(TooManyLoginAttemptsException::class);
+        $useCase->execute(new LoginInput('admin@example.com', 'correct-horse', '203.0.113.7'));
+    }
+
+    public function test_a_failed_attempt_is_recorded_against_the_ip(): void
+    {
+        $throttle = new InMemoryLoginThrottle();
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse'),
+            new LocalBearerTokenVerifier(self::SECRET),
+            $throttle,
+        );
+
+        try {
+            $useCase->execute(new LoginInput('admin@example.com', 'wrong', '203.0.113.8'));
+        } catch (InvalidCredentialsException) {
+            // expected
+        }
+
+        self::assertSame(1, $throttle->countFailuresSince('203.0.113.8', '1970-01-01 00:00:00'));
+    }
+
+    public function test_successful_login_clears_the_ip_failure_history(): void
+    {
+        $throttle = new InMemoryLoginThrottle();
+        $throttle->recordFailure('203.0.113.9');
+
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse'),
+            new LocalBearerTokenVerifier(self::SECRET),
+            $throttle,
+        );
+
+        $useCase->execute(new LoginInput('admin@example.com', 'correct-horse', '203.0.113.9'));
+
+        self::assertSame(0, $throttle->countFailuresSince('203.0.113.9', '1970-01-01 00:00:00'));
     }
 
     private function repositoryWithUser(string $plainPassword, string $status = 'active'): UserRepositoryInterface
