@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
-import type { InvoiceId } from '@/entities/invoice'
+import { useDownloadInvoicePdf, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
 import { useViewInvoice } from '../hooks/use-view-invoice'
 
 export interface ViewInvoiceProps {
@@ -13,6 +13,9 @@ export interface ViewInvoiceProps {
 export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
   const { t } = useTranslation()
   const state = useViewInvoice(invoiceId)
+  // Hooks must be called unconditionally — before any early return.
+  const invoiceNumber = state.kind === 'ready' ? state.invoice.invoice_number : null
+  const pdf = useDownloadInvoicePdf(invoiceId, invoiceNumber)
 
   if (state.kind === 'loading') {
     return (
@@ -41,9 +44,25 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         <Link to="/invoices" className="text-body text-accent">
           ← {t('admin.invoices.detail.backToList')}
         </Link>
-        <Text as="h1" variant="heading-md">
-          {invoice.invoice_number ?? t('admin.invoices.detail.notIssued')}
-        </Text>
+        <div className="flex items-start justify-between">
+          <Text as="h1" variant="heading-md">
+            {invoice.invoice_number ?? t('admin.invoices.detail.notIssued')}
+          </Text>
+          {pdf.canDownload && (
+            <Stack gap="sm">
+              <Button onClick={pdf.download} disabled={pdf.isDownloading}>
+                {pdf.isDownloading
+                  ? t('admin.invoices.detail.downloadingPdf')
+                  : t('admin.invoices.detail.downloadPdf')}
+              </Button>
+              {pdf.errorMessage !== null && (
+                <Text variant="muted" role="alert">
+                  {pdf.errorMessage}
+                </Text>
+              )}
+            </Stack>
+          )}
+        </div>
         <Stack direction="row" gap="md">
           <Text variant="muted">{t(`admin.invoices.status.${invoice.status}`)}</Text>
           {invoice.is_qualified_invoice && (
