@@ -44,10 +44,15 @@ final readonly class RecordPaymentHandler implements RequestHandlerInterface
         $noteValue = $decoded['note'] ?? null;
         $note = is_string($noteValue) && $noteValue !== '' ? $noteValue : null;
 
+        // Optional idempotency key: a retried submission with the same key returns
+        // the original payment instead of double-recording it (diagnostic R2-3).
+        $keyValue = $decoded['idempotency_key'] ?? null;
+        $idempotencyKey = is_string($keyValue) && $keyValue !== '' ? $keyValue : null;
+
         $result = $this->useCase->execute(
             AuthContext::userId($request),
             $invoiceId,
-            new RecordPaymentInput($amountCents, $paidAt, $method, $note),
+            new RecordPaymentInput($amountCents, $paidAt, $method, $note, idempotencyKey: $idempotencyKey),
         );
 
         return $this->json->create([

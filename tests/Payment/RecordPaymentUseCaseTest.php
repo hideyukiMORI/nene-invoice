@@ -123,6 +123,31 @@ final class RecordPaymentUseCaseTest extends TestCase
         $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 0));
     }
 
+    public function test_malformed_paid_at_is_rejected(): void
+    {
+        $id = $this->issuedInvoice(2200);
+
+        $this->expectException(PaymentValidationException::class);
+        $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000, paidAt: 'not-a-date'));
+    }
+
+    public function test_future_paid_at_is_rejected(): void
+    {
+        $id = $this->issuedInvoice(2200);
+
+        $this->expectException(PaymentValidationException::class);
+        $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000, paidAt: '2999-12-31'));
+    }
+
+    public function test_valid_backdated_paid_at_is_accepted(): void
+    {
+        $id = $this->issuedInvoice(2200);
+
+        $result = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000, paidAt: '2026-05-01'));
+
+        self::assertSame('2026-05-01', $result->payment->paidAt);
+    }
+
     public function test_payment_against_draft_is_rejected(): void
     {
         $id = $this->invoices->save(new Invoice(

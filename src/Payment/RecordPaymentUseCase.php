@@ -63,6 +63,22 @@ final readonly class RecordPaymentUseCase
             throw new PaymentValidationException('A payment amount must be a positive number of cents.');
         }
 
+        // Validate an explicit payment date: a malformed value must surface as a
+        // 422 (not a 500 from the DATETIME column), and a payment cannot be dated
+        // in the future (accounting integrity, diagnostic R2-4 / R2-5).
+        if ($input->paidAt !== null) {
+            $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $input->paidAt)
+                ?: \DateTimeImmutable::createFromFormat('!Y-m-d', $input->paidAt);
+
+            if ($parsed === false) {
+                throw new PaymentValidationException('A payment date must be a valid date (YYYY-MM-DD).');
+            }
+
+            if ($parsed > new \DateTimeImmutable('now')) {
+                throw new PaymentValidationException('A payment date cannot be in the future.');
+            }
+        }
+
         if (!in_array($invoice->status, [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid], true)) {
             throw new PaymentValidationException('Payments can only be recorded against an issued invoice.');
         }
