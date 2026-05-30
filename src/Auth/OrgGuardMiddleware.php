@@ -48,9 +48,21 @@ final readonly class OrgGuardMiddleware implements MiddlewareInterface
 
         $tokenOrg = $claims['org'] ?? null;
 
-        // Superadmin (org null) operates cross-tenant.
+        // Superadmin (org null) operates cross-tenant — but only when the role
+        // claim actually says superadmin. A null org paired with a non-superadmin
+        // role is an inconsistent token and must not bypass the org check.
         if ($tokenOrg === null) {
-            return $handler->handle($request);
+            if (($claims['role'] ?? null) === Role::Superadmin->value) {
+                return $handler->handle($request);
+            }
+
+            return $this->problemDetails->create(
+                $request,
+                'organization-mismatch',
+                'Forbidden',
+                403,
+                'Your account does not belong to this organization.',
+            );
         }
 
         if (!is_int($tokenOrg) || $tokenOrg !== $resolvedOrgId) {

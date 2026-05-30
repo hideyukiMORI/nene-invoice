@@ -57,6 +57,19 @@ final class OrgGuardMiddlewareTest extends TestCase
         self::assertSame(200, $this->middleware->process($request, $this->okHandler())->getStatusCode());
     }
 
+    public function test_rejects_null_org_with_non_superadmin_role(): void
+    {
+        // A null org is only legitimate for a superadmin; a null org paired with
+        // any other role is an inconsistent token and must not bypass the guard.
+        $request = $this->psr17->createServerRequest('GET', 'https://app.example.com/admin/invoices')
+            ->withAttribute('nene2.org.id', 7)
+            ->withAttribute('nene2.auth.claims', ['sub' => 1, 'role' => 'admin', 'org' => null]);
+
+        $response = $this->middleware->process($request, $this->okHandler());
+        self::assertSame(403, $response->getStatusCode());
+        self::assertStringContainsString('organization-mismatch', (string) $response->getBody());
+    }
+
     public function test_passes_when_no_resolved_org(): void
     {
         // Bypass route: no nene2.org.id attribute.
