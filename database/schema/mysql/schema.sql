@@ -176,3 +176,13 @@ CREATE TABLE IF NOT EXISTS `invoice_download_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET foreign_key_checks = 1;
+
+-- ---------------------------------------------------------------------------
+-- login_attempts — failed login throttling per source IP (security: F-2).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `login_attempts` (
+    `id`         INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `ip_address` VARCHAR(45) NOT NULL,
+    `created_at` DATETIME    NOT NULL,
+    KEY `idx_login_attempts_ip_time` (`ip_address`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

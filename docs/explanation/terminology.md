@@ -119,6 +119,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `role-not-assignable` | Role cannot be assigned via user management, e.g. superadmin (422) |
 | `cannot-delete-self` | A user cannot delete their own account (409) |
 | `invalid-credentials` | Login failed — wrong email or password |
+| `too-many-requests` | Too many failed login attempts from the source IP (429; login throttling) |
 | `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
 | `insufficient-capability` | Authenticated but lacks required capability |
 | `organization-not-resolved` | Tenant could not be resolved for the request (404; OrgResolverMiddleware) |
