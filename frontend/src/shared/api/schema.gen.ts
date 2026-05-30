@@ -379,6 +379,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/invoices/{id}/download-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate public download token
+         * @description Generates a time-limited (7 days) public URL for the invoice PDF. The URL requires no authentication — share it with the client. Requires ManageBilling capability.
+         */
+        post: operations["generateDownloadToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invoices/download/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Public PDF download
+         * @description Downloads the invoice PDF using a previously generated token. No authentication required. Returns 404 for missing or expired tokens.
+         */
+        get: operations["downloadInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invoices/{id}/issue": {
         parameters: {
             query?: never;
@@ -508,6 +553,12 @@ export interface components {
         CreateOrganizationRequest: {
             name: string;
             slug: string;
+        };
+        DownloadTokenResponse: {
+            /** @description Public PDF download URL (relative path, no auth required). */
+            url: string;
+            /** @description Token expiry timestamp (Y-m-d H:i:s). */
+            expires_at: string;
         };
         DashboardSummary: {
             /** @description Number of issued + partially_paid invoices. */
@@ -1688,6 +1739,55 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    generateDownloadToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Token generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DownloadTokenResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    downloadInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF binary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
             404: components["responses"]["NotFound"];
         };
     };

@@ -62,3 +62,20 @@ export function useIssueInvoice(): UseMutationResult<
     },
   })
 }
+
+export interface DownloadTokenResult {
+  url: string
+  expires_at: string
+}
+
+/** POST /admin/invoices/{id}/download-token — generates a public PDF download link. */
+export function useGenerateDownloadToken(): UseMutationResult<
+  DownloadTokenResult,
+  AppError,
+  number
+> {
+  return useMutation<DownloadTokenResult, AppError, number>({
+    mutationFn: (id) =>
+      apiClient.post<DownloadTokenResult>(`/admin/invoices/${String(id)}/download-token`),
+  })
+}

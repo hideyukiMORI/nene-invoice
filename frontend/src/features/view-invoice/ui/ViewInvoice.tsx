@@ -3,6 +3,7 @@ import { useDownloadInvoicePdf, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
 import { useViewInvoice } from '../hooks/use-view-invoice'
 
 export interface ViewInvoiceProps {
@@ -15,7 +16,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
   const state = useViewInvoice(invoiceId)
   // Hooks must be called unconditionally — before any early return.
   const invoiceNumber = state.kind === 'ready' ? state.invoice.invoice_number : null
+  const isIssued = state.kind === 'ready' && state.invoice.status !== 'draft'
   const pdf = useDownloadInvoicePdf(invoiceId, invoiceNumber)
+  const link = useGenerateDownloadLink(invoiceId, isIssued)
 
   if (state.kind === 'loading') {
     return (
@@ -58,6 +61,39 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
               {pdf.errorMessage !== null && (
                 <Text variant="muted" role="alert">
                   {pdf.errorMessage}
+                </Text>
+              )}
+            </Stack>
+          )}
+          {link.canGenerate && (
+            <Stack gap="sm">
+              <Button onClick={link.generate} disabled={link.isGenerating}>
+                {link.isGenerating
+                  ? t('admin.invoices.detail.generatingLink')
+                  : t('admin.invoices.detail.generateLink')}
+              </Button>
+              {link.downloadUrl !== null && (
+                <Stack gap="sm">
+                  <Text variant="muted" className="break-all text-caption">
+                    {`${window.location.origin}${link.downloadUrl}`}
+                  </Text>
+                  <Stack direction="row" gap="sm">
+                    <Button onClick={link.copy}>
+                      {link.copied
+                        ? t('admin.invoices.detail.linkCopied')
+                        : t('admin.invoices.detail.linkCopy')}
+                    </Button>
+                    {link.expiresAt !== null && (
+                      <Text variant="muted">
+                        {t('admin.invoices.detail.linkExpiry', { expiresAt: link.expiresAt })}
+                      </Text>
+                    )}
+                  </Stack>
+                </Stack>
+              )}
+              {link.errorMessage !== null && (
+                <Text variant="muted" role="alert">
+                  {link.errorMessage}
                 </Text>
               )}
             </Stack>

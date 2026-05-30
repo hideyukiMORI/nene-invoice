@@ -1,0 +1,85 @@
+<?php
+
+declare(strict_types=1);
+
+namespace NeneInvoice\InvoiceDownloadToken;
+
+use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\DependencyInjection\ContainerBuilder;
+use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
+use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Container\ContainerInterface;
+
+final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProviderInterface
+{
+    public function register(ContainerBuilder $builder): void
+    {
+        $builder
+            ->set(
+                InvoiceDownloadTokenRepositoryInterface::class,
+                static function (ContainerInterface $c): InvoiceDownloadTokenRepositoryInterface {
+                    $query = $c->get(DatabaseQueryExecutorInterface::class);
+
+                    if (!$query instanceof DatabaseQueryExecutorInterface) {
+                        throw new LogicException('Database query executor service is invalid.');
+                    }
+
+                    return new PdoInvoiceDownloadTokenRepository($query);
+                },
+            )
+            ->set(
+                GenerateDownloadTokenUseCase::class,
+                static fn (ContainerInterface $c): GenerateDownloadTokenUseCase => new GenerateDownloadTokenUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
+                ),
+            )
+            ->set(
+                GenerateDownloadTokenHandler::class,
+                static fn (ContainerInterface $c): GenerateDownloadTokenHandler => new GenerateDownloadTokenHandler(
+                    self::resolve($c, GenerateDownloadTokenUseCase::class),
+                    self::resolve($c, JsonResponseFactory::class),
+                    self::resolve($c, ProblemDetailsResponseFactory::class),
+                ),
+            )
+            ->set(
+                DownloadInvoicePdfHandler::class,
+                static fn (ContainerInterface $c): DownloadInvoicePdfHandler => new DownloadInvoicePdfHandler(
+                    self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
+                    self::resolve($c, GenerateInvoicePdfUseCase::class),
+                    self::resolve($c, InvoicePdfGenerator::class),
+                    self::resolve($c, Psr17Factory::class),
+                    self::resolve($c, ProblemDetailsResponseFactory::class),
+                ),
+            )
+            ->set(
+                InvoiceDownloadTokenRouteRegistrar::class,
+                static fn (ContainerInterface $c): InvoiceDownloadTokenRouteRegistrar => new InvoiceDownloadTokenRouteRegistrar(
+                    self::resolve($c, GenerateDownloadTokenHandler::class),
+                    self::resolve($c, DownloadInvoicePdfHandler::class),
+                ),
+            );
+    }
+
+    /**
+     * @template T of object
+     * @param class-string<T> $id
+     * @return T
+     */
+    private static function resolve(ContainerInterface $c, string $id): object
+    {
+        $service = $c->get($id);
+
+        if (!$service instanceof $id) {
+            throw new LogicException(sprintf('Service %s is invalid.', $id));
+        }
+
+        return $service;
+    }
+}
