@@ -23,6 +23,9 @@ export function AppShell() {
             <NavLink to="/clients" className={navClass}>
               {t('admin.nav.clients')}
             </NavLink>
+            <NavLink to="/settings" className={navClass}>
+              {t('admin.nav.settings')}
+            </NavLink>
           </nav>
         </div>
         <AccountMenu />

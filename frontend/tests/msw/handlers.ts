@@ -10,6 +10,36 @@ export const handlers = [
     HttpResponse.json({ id: 1, email: 'admin@example.com', role: 'admin', organization_id: 1 }),
   ),
 
+  http.get('/admin/company-settings', () =>
+    HttpResponse.json({
+      organization_id: 1,
+      legal_name: 'テスト株式会社',
+      address: null,
+      phone: null,
+      email: null,
+      registration_number: null,
+      bank_name: null,
+      bank_branch: null,
+      account_type: null,
+      account_number: null,
+    }),
+  ),
+
+  http.put('/admin/company-settings', () =>
+    HttpResponse.json({
+      organization_id: 1,
+      legal_name: 'テスト株式会社',
+      address: null,
+      phone: null,
+      email: null,
+      registration_number: null,
+      bank_name: null,
+      bank_branch: null,
+      account_type: null,
+      account_number: null,
+    }),
+  ),
+
   http.get('/admin/clients', () =>
     HttpResponse.json({ items: [buildClientDto()], total: 1, limit: 100, offset: 0 }),
   ),
