@@ -31,11 +31,27 @@ const EMPTY_DASHBOARD = {
  * `/admin/dashboard`) and waits for the authenticated app shell. After this the
  * in-memory token is set; reach features by clicking nav links, never by
  * `page.goto` (a full reload clears the token).
+ *
+ * The landing dashboard is stubbed empty by default; pass `dashboard` to render
+ * a populated summary, or `dashboardStatus` to exercise its error state.
  */
-export async function login(page: Page): Promise<void> {
+export async function login(
+  page: Page,
+  options: { dashboard?: unknown; dashboardStatus?: number } = {},
+): Promise<void> {
   await page.route('**/auth/login', (route) => route.fulfill(json({ token: 'e2e-token' })))
   await page.route('**/admin/me', (route) => route.fulfill(json(CURRENT_USER)))
-  await page.route('**/admin/dashboard', (route) => route.fulfill(json(EMPTY_DASHBOARD)))
+  await page.route('**/admin/dashboard', (route) => {
+    if (options.dashboardStatus !== undefined && options.dashboardStatus >= 400) {
+      route.fulfill({
+        status: options.dashboardStatus,
+        contentType: 'application/json',
+        body: '{}',
+      })
+    } else {
+      route.fulfill(json(options.dashboard ?? EMPTY_DASHBOARD))
+    }
+  })
 
   await page.goto('/')
   await page.locator('#email').fill('admin@example.com')
