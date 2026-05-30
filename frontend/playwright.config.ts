@@ -16,6 +16,11 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'list' : 'html',
+  // The dev server compiles routes on first navigation, so the very first
+  // login / route transition can be slow. Generous per-test and assertion
+  // timeouts absorb that cold-compile cost and keep the suite non-flaky.
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   use: {
     baseURL: `http://localhost:${String(PORT)}`,
     // The app picks its locale from navigator.language; pin it to Japanese (the
