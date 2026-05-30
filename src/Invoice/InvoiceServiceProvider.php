@@ -14,10 +14,12 @@ use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
+use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -138,19 +140,45 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): QualifiedInvoiceIncompleteExceptionHandler => new QualifiedInvoiceIncompleteExceptionHandler(self::problemDetails($c)),
             )
             ->set(
+                InvoicePdfGenerator::class,
+                static fn (ContainerInterface $c): InvoicePdfGenerator => new InvoicePdfGenerator(
+                    self::resolve($c, TaxCalculator::class),
+                ),
+            )
+            ->set(
+                GenerateInvoicePdfUseCase::class,
+                static fn (ContainerInterface $c): GenerateInvoicePdfUseCase => new GenerateInvoicePdfUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, PaymentRepositoryInterface::class),
+                    self::resolve($c, CompanySettingsRepositoryInterface::class),
+                    self::resolve($c, ClientRepositoryInterface::class),
+                ),
+            )
+            ->set(
+                GetInvoicePdfHandler::class,
+                static fn (ContainerInterface $c): GetInvoicePdfHandler => new GetInvoicePdfHandler(
+                    self::resolve($c, GenerateInvoicePdfUseCase::class),
+                    self::resolve($c, InvoicePdfGenerator::class),
+                    self::resolve($c, Psr17Factory::class),
+                    self::resolve($c, ProblemDetailsResponseFactory::class),
+                ),
+            )
+            ->set(
                 InvoiceRouteRegistrar::class,
                 static function (ContainerInterface $c): InvoiceRouteRegistrar {
-                    $list = $c->get(ListInvoicesHandler::class);
-                    $get = $c->get(GetInvoiceByIdHandler::class);
-                    $create = $c->get(CreateInvoiceHandler::class);
+                    $list    = $c->get(ListInvoicesHandler::class);
+                    $get     = $c->get(GetInvoiceByIdHandler::class);
+                    $create  = $c->get(CreateInvoiceHandler::class);
                     $convert = $c->get(ConvertQuoteToInvoiceHandler::class);
-                    $issue = $c->get(IssueInvoiceHandler::class);
+                    $issue   = $c->get(IssueInvoiceHandler::class);
+                    $pdf     = $c->get(GetInvoicePdfHandler::class);
 
-                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler) {
+                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler || !$pdf instanceof GetInvoicePdfHandler) {
                         throw new LogicException('Invoice handler services are invalid.');
                     }
 
-                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue);
+                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue, $pdf);
                 },
             );
     }

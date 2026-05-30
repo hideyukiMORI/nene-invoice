@@ -647,6 +647,33 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '404':
           $ref: '#/components/responses/NotFound'
+  /admin/invoices/{id}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Invoices]
+      summary: Download invoice PDF
+      description: >
+        Generates and streams the invoice as a PDF (適格請求書 layout when
+        is_qualified_invoice is true). Requires ViewBilling capability.
+        Returns application/pdf with Content-Disposition: attachment.
+      operationId: getInvoicePdf
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: PDF binary
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /admin/invoices/{id}/issue:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'

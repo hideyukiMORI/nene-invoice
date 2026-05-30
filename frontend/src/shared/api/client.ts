@@ -67,10 +67,31 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
+/** Fetches a binary resource and returns it as a Blob. Sends the Bearer token. */
+async function requestBlob(path: string): Promise<Blob> {
+  const headers: Record<string, string> = {}
+  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+
+  let response: Response
+  try {
+    response = await fetch(path, { method: 'GET', headers })
+  } catch {
+    throw AppError.transport('Network request failed')
+  }
+
+  if (!response.ok) {
+    const text = await response.text()
+    throw AppError.fromProblem(response.status, text === '' ? null : safeJsonParse(text))
+  }
+
+  return response.blob()
+}
+
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>('GET', path),
   post: <T>(path: string, body?: Json): Promise<T> => request<T>('POST', path, body),
   put: <T>(path: string, body?: Json): Promise<T> => request<T>('PUT', path, body),
   patch: <T>(path: string, body?: Json): Promise<T> => request<T>('PATCH', path, body),
   delete: <T>(path: string): Promise<T> => request<T>('DELETE', path),
+  getBlob: (path: string): Promise<Blob> => requestBlob(path),
 } as const

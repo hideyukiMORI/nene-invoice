@@ -5,7 +5,8 @@
     "license": "MIT",
     "require": {
         "php": ">=8.4.1 <9.0",
-        "hideyukimori/nene2": "^1.5"
+        "hideyukimori/nene2": "^1.5",
+        "mpdf/mpdf": "^8.3"
     },
     "autoload": {
         "psr-4": {

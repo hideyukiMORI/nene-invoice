@@ -20,20 +20,23 @@ final readonly class InvoiceRouteRegistrar
         private CreateInvoiceHandler $createHandler,
         private ConvertQuoteToInvoiceHandler $convertHandler,
         private IssueInvoiceHandler $issueHandler,
+        private GetInvoicePdfHandler $pdfHandler,
     ) {
     }
 
     public function __invoke(Router $router): void
     {
-        $list = $this->listHandler;
-        $get = $this->getHandler;
-        $create = $this->createHandler;
+        $list    = $this->listHandler;
+        $get     = $this->getHandler;
+        $create  = $this->createHandler;
         $convert = $this->convertHandler;
-        $issue = $this->issueHandler;
+        $issue   = $this->issueHandler;
+        $pdf     = $this->pdfHandler;
 
         $router->get('/admin/invoices', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/invoices', static fn (ServerRequestInterface $r) => $create->handle($r));
         $router->get('/admin/invoices/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
+        $router->get('/admin/invoices/{id}/pdf', static fn (ServerRequestInterface $r) => $pdf->handle($r));
         $router->post('/admin/invoices/{id}/issue', static fn (ServerRequestInterface $r) => $issue->handle($r));
         $router->post('/admin/quotes/{id}/convert', static fn (ServerRequestInterface $r) => $convert->handle($r));
     }
