@@ -37,6 +37,18 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         $this->orgId = $orgId;
     }
 
+    public function existsForQuote(int $quoteId): bool
+    {
+        $orgId = $this->orgId->get();
+        foreach ($this->byId as $invoice) {
+            if ($invoice->quoteId === $quoteId && $invoice->organizationId === $orgId && !$invoice->isDeleted) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function findById(int $id): ?Invoice
     {
         $invoice = $this->byId[$id] ?? null;
