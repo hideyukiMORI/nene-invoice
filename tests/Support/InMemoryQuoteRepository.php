@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Quote\Quote;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
 
 /**
- * In-memory fake for use-case tests (no database).
+ * In-memory fake for use-case tests (no database). Reads are scoped to the
+ * request-scoped org holder, mirroring {@see \NeneInvoice\Quote\PdoQuoteRepository}.
+ * `save` keeps the entity's org so tests can seed cross-tenant fixtures. The
+ * holder defaults to organization 1 for single-org tests.
  */
 final class InMemoryQuoteRepository implements QuoteRepositoryInterface
 {
@@ -17,29 +21,45 @@ final class InMemoryQuoteRepository implements QuoteRepositoryInterface
     private array $byId = [];
     private int $nextId = 1;
 
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
+
     public function findById(int $id): ?Quote
     {
         $quote = $this->byId[$id] ?? null;
 
-        return $quote !== null && !$quote->isDeleted ? $quote : null;
+        return $quote !== null && !$quote->isDeleted && $quote->organizationId === $this->orgId->get()
+            ? $quote
+            : null;
     }
 
     /** @return list<Quote> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array
+    public function findAll(int $limit, int $offset): array
     {
         $matches = array_values(array_filter(
             $this->byId,
-            static fn (Quote $q): bool => $q->organizationId === $organizationId && !$q->isDeleted,
+            fn (Quote $q): bool => $q->organizationId === $this->orgId->get() && !$q->isDeleted,
         ));
 
         return array_slice($matches, $offset, $limit);
     }
 
-    public function countByOrganization(int $organizationId): int
+    public function count(): int
     {
         return count(array_filter(
             $this->byId,
-            static fn (Quote $q): bool => $q->organizationId === $organizationId && !$q->isDeleted,
+            fn (Quote $q): bool => $q->organizationId === $this->orgId->get() && !$q->isDeleted,
         ));
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -24,6 +25,9 @@ final readonly class CreateQuoteUseCase
     /** Allowed consumption tax rates in basis points (accounting-compliance §3). */
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];
 
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private QuoteRepositoryInterface $quotes,
         private LineItemRepositoryInterface $lineItems,
@@ -31,15 +35,19 @@ final readonly class CreateQuoteUseCase
         private DocumentNumberGenerator $numbers,
         private TaxCalculator $taxCalculator,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
     /** @throws QuoteValidationException */
-    public function execute(int $organizationId, ?int $actorUserId, CreateQuoteInput $input): QuoteWithLines
+    public function execute(?int $actorUserId, CreateQuoteInput $input): QuoteWithLines
     {
+        $organizationId = $this->orgId->get();
+
+        // The client repo is org-scoped, so a cross-org client surfaces as null.
         $client = $this->clients->findById($input->clientId);
 
-        if ($client === null || $client->organizationId !== $organizationId) {
+        if ($client === null) {
             throw new QuoteValidationException('The selected client does not exist in your organization.');
         }
 

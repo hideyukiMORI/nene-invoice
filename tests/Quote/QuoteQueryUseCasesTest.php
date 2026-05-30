@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Quote;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemInput;
@@ -22,32 +23,40 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for GetQuoteByIdUseCase and ListQuotesUseCase:
- * org-scope isolation, line-item inclusion, and pagination.
+ * org-scope isolation (holder-based), line-item inclusion, and pagination.
  */
 final class QuoteQueryUseCasesTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private InMemoryQuoteRepository $quotes;
     private InMemoryLineItemRepository $lineItems;
+    private InMemoryClientRepository $clients;
+    private CreateQuoteUseCase $create;
+    private int $clientId;
     private ?int $quoteId;
 
     protected function setUp(): void
     {
-        $this->quotes    = new InMemoryQuoteRepository();
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->quotes    = new InMemoryQuoteRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
-        $clients         = new InMemoryClientRepository();
-        $clientId        = $clients->save(new Client(organizationId: 1, name: 'Acme'));
+        $this->clients   = new InMemoryClientRepository($this->holder);
+        $this->clientId  = $this->clients->save(new Client(organizationId: 1, name: 'Acme'));
 
-        $createUseCase = new CreateQuoteUseCase(
+        $this->create = new CreateQuoteUseCase(
             $this->quotes,
             $this->lineItems,
-            $clients,
+            $this->clients,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             new RecordingAuditRecorder(),
+            $this->holder,
         );
 
-        $this->quoteId = $createUseCase->execute(1, null, new CreateQuoteInput(
-            clientId: $clientId,
+        $this->quoteId = $this->create->execute(null, new CreateQuoteInput(
+            clientId: $this->clientId,
             lines: [new LineItemInput('コンサル', 1, 50000, 1000)],
             validUntil: null,
             notes: null,
@@ -59,8 +68,7 @@ final class QuoteQueryUseCasesTest extends TestCase
     public function test_get_returns_quote_with_line_items(): void
     {
         self::assertNotNull($this->quoteId);
-        $useCase = new GetQuoteByIdUseCase($this->quotes, $this->lineItems);
-        $result  = $useCase->execute(1, $this->quoteId);
+        $result = (new GetQuoteByIdUseCase($this->quotes, $this->lineItems))->execute($this->quoteId);
 
         self::assertSame($this->quoteId, $result->quote->id);
         self::assertCount(1, $result->lines);
@@ -70,68 +78,37 @@ final class QuoteQueryUseCasesTest extends TestCase
     public function test_get_hides_quote_from_another_organization(): void
     {
         self::assertNotNull($this->quoteId);
-        $useCase = new GetQuoteByIdUseCase($this->quotes, $this->lineItems);
+        $this->holder->set(2);
 
         $this->expectException(QuoteNotFoundException::class);
-        $useCase->execute(2, $this->quoteId);
+        (new GetQuoteByIdUseCase($this->quotes, $this->lineItems))->execute($this->quoteId);
     }
 
     public function test_get_throws_for_nonexistent_id(): void
     {
-        $useCase = new GetQuoteByIdUseCase($this->quotes, $this->lineItems);
-
         $this->expectException(QuoteNotFoundException::class);
-        $useCase->execute(1, 9999);
+        (new GetQuoteByIdUseCase($this->quotes, $this->lineItems))->execute(9999);
     }
 
     // ------------------------------ ListQuotes ------------------------------
 
     public function test_list_is_scoped_to_organization(): void
     {
-        $org2      = new \Nene2\Http\RequestScopedHolder();
-        $org2->set(2);
-        $clients2  = new InMemoryClientRepository($org2);
-        $client2Id = $clients2->save(new Client(organizationId: 2, name: 'OtherOrg'));
-        $quotes2   = new InMemoryQuoteRepository();
-
-        (new CreateQuoteUseCase(
-            $quotes2,
-            new InMemoryLineItemRepository(),
-            $clients2,
-            new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
-            new TaxCalculator(),
-            new RecordingAuditRecorder(),
-        ))->execute(2, null, new CreateQuoteInput(
-            clientId: $client2Id,
-            lines: [new LineItemInput('Other', 1, 10000, 1000)],
-            validUntil: null,
-            notes: null,
-        ));
-
         $useCase = new ListQuotesUseCase($this->quotes);
 
-        // org 1 sees 1 quote, org 2 sees its own separately
-        self::assertSame(1, $useCase->execute(1, 20, 0)->total);
-        self::assertSame(0, $useCase->execute(2, 20, 0)->total);
+        // org 1 has the quote from setUp; org 2 sees none (holder-scoped)
+        self::assertSame(1, $useCase->execute(20, 0)->total);
+
+        $this->holder->set(2);
+        self::assertSame(0, $useCase->execute(20, 0)->total);
     }
 
     public function test_list_pagination_limit_and_offset(): void
     {
-        $clients = new InMemoryClientRepository();
-        $cid     = $clients->save(new Client(organizationId: 1, name: 'Acme'));
-        $create  = new CreateQuoteUseCase(
-            $this->quotes,
-            $this->lineItems,
-            $clients,
-            new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
-            new TaxCalculator(),
-            new RecordingAuditRecorder(),
-        );
-
         // setUp already has 1 quote; add 4 more
         for ($i = 0; $i < 4; $i++) {
-            $create->execute(1, null, new CreateQuoteInput(
-                clientId: $cid,
+            $this->create->execute(null, new CreateQuoteInput(
+                clientId: $this->clientId,
                 lines: [new LineItemInput("Item {$i}", 1, 1000, 1000)],
                 validUntil: null,
                 notes: null,
@@ -139,11 +116,11 @@ final class QuoteQueryUseCasesTest extends TestCase
         }
 
         $useCase = new ListQuotesUseCase($this->quotes);
-        $page    = $useCase->execute(1, 3, 0);
+        $page    = $useCase->execute(3, 0);
         self::assertSame(5, $page->total);
         self::assertCount(3, $page->items);
 
-        $page2 = $useCase->execute(1, 3, 3);
+        $page2 = $useCase->execute(3, 3);
         self::assertCount(2, $page2->items);
     }
 }

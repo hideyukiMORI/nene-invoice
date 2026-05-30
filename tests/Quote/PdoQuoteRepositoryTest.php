@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\Quote;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Quote\PdoQuoteRepository;
 use NeneInvoice\Quote\Quote;
 use NeneInvoice\Quote\QuoteNotFoundException;
@@ -15,6 +16,8 @@ use PHPUnit\Framework\TestCase;
 
 final class PdoQuoteRepositoryTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
     private PdoQuoteRepository $repository;
 
     protected function setUp(): void
@@ -37,7 +40,9 @@ final class PdoQuoteRepositoryTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->repository = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->orgId = new RequestScopedHolder();
+        $this->orgId->set(1);
+        $this->repository = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
     }
 
     private function draft(int $org, int $client, string $number): Quote
@@ -67,13 +72,20 @@ final class PdoQuoteRepositoryTest extends TestCase
 
     public function test_list_and_count_scoped_to_organization(): void
     {
-        $this->repository->save($this->draft(1, 5, 'EST-2026-001'));
+        $org1QuoteId = $this->repository->save($this->draft(1, 5, 'EST-2026-001'));
         $this->repository->save($this->draft(1, 5, 'EST-2026-002'));
+
+        $this->orgId->set(2);
         $this->repository->save($this->draft(2, 9, 'EST-2026-001'));
 
-        self::assertSame(2, $this->repository->countByOrganization(1));
-        self::assertCount(2, $this->repository->findAllByOrganization(1, 10, 0));
-        self::assertSame(1, $this->repository->countByOrganization(2));
+        $this->orgId->set(1);
+        self::assertSame(2, $this->repository->count());
+        self::assertCount(2, $this->repository->findAll(10, 0));
+
+        $this->orgId->set(2);
+        self::assertSame(1, $this->repository->count());
+        // A caller in another org must not read the row even by direct id.
+        self::assertNull($this->repository->findById($org1QuoteId));
     }
 
     public function test_update_changes_status_and_totals(): void
@@ -106,7 +118,7 @@ final class PdoQuoteRepositoryTest extends TestCase
         $this->repository->delete($id);
 
         self::assertNull($this->repository->findById($id));
-        self::assertSame(0, $this->repository->countByOrganization(1));
+        self::assertSame(0, $this->repository->count());
     }
 
     public function test_delete_throws_for_unknown_quote(): void

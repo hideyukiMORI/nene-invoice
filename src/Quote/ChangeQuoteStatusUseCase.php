@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class ChangeQuoteStatusUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private QuoteRepositoryInterface $quotes,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -19,11 +24,11 @@ final readonly class ChangeQuoteStatusUseCase
      * @throws QuoteNotFoundException
      * @throws InvalidStateTransitionException
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $id, QuoteStatus $target): Quote
+    public function execute(?int $actorUserId, int $id, QuoteStatus $target): Quote
     {
         $quote = $this->quotes->findById($id);
 
-        if ($quote === null || $quote->organizationId !== $organizationId) {
+        if ($quote === null) {
             throw new QuoteNotFoundException($id);
         }
 
@@ -60,7 +65,7 @@ final readonly class ChangeQuoteStatusUseCase
 
         $this->audit->record(
             $actorUserId,
-            $organizationId,
+            $this->orgId->get(),
             'quote.status_changed',
             'quote',
             $id,

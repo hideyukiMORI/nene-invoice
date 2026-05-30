@@ -41,10 +41,10 @@ final readonly class ConvertQuoteToInvoiceUseCase
     {
         $organizationId = $this->orgId->get();
 
-        // The quote repo is not yet org-scoped, so guard the org here.
+        // The quote repo is org-scoped via the holder; cross-org → null.
         $quote = $this->quotes->findById($quoteId);
 
-        if ($quote === null || $quote->organizationId !== $organizationId) {
+        if ($quote === null) {
             throw new QuoteNotFoundException($quoteId);
         }
 
