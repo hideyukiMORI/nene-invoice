@@ -68,7 +68,12 @@ export function ListInvoices() {
                     </Link>
                   </td>
                   <td className="py-stack-sm pr-inline-md">
-                    {t(`admin.invoices.status.${invoice.status}`)}
+                    <span>{t(`admin.invoices.status.${invoice.status}`)}</span>
+                    {invoice.is_overdue && (
+                      <span className="ml-inline-sm text-error text-caption font-medium">
+                        {t('admin.invoices.status.overdue')}
+                      </span>
+                    )}
                   </td>
                   <td className="py-stack-sm pr-inline-md">{invoice.client_id}</td>
                   <td className="py-stack-sm pr-inline-md text-right">

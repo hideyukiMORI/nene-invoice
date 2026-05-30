@@ -8,7 +8,7 @@ export function toInvoice(dto: InvoiceDto): Invoice {
     id: toInvoiceId(dto.id),
     invoice_number: dto.invoice_number ?? null,
     status: dto.status,
-    client_id: dto.client_id,
+    is_overdue: dto.is_overdue,
     is_qualified_invoice: dto.is_qualified_invoice,
     issued_at: dto.issued_at ?? null,
     due_at: dto.due_at ?? null,

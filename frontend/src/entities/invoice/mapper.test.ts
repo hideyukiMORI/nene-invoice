@@ -7,6 +7,7 @@ const dto: InvoiceDto = {
   organization_id: 1,
   client_id: 5,
   status: 'issued',
+  is_overdue: false,
   is_qualified_invoice: true,
   invoice_number: 'INV-2026-001',
   subtotal_cents: 106000,
@@ -32,6 +33,11 @@ describe('toInvoice', () => {
   it('maps outstanding_cents when present and null when absent', () => {
     expect(toInvoice({ ...dto, outstanding_cents: 1400 }).outstanding_cents).toBe(1400)
     expect(toInvoice(dto).outstanding_cents).toBeNull()
+  })
+
+  it('maps is_overdue from the DTO', () => {
+    expect(toInvoice({ ...dto, is_overdue: true }).is_overdue).toBe(true)
+    expect(toInvoice({ ...dto, is_overdue: false }).is_overdue).toBe(false)
   })
 })
 

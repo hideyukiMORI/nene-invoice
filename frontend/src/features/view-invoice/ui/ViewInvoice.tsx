@@ -65,6 +65,11 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         </div>
         <Stack direction="row" gap="md">
           <Text variant="muted">{t(`admin.invoices.status.${invoice.status}`)}</Text>
+          {invoice.is_overdue && (
+            <Text variant="muted" className="text-error font-medium">
+              {t('admin.invoices.status.overdue')}
+            </Text>
+          )}
           {invoice.is_qualified_invoice && (
             <Text variant="muted">{t('admin.invoices.detail.qualified')}</Text>
           )}

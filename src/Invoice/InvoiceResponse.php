@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use DateTimeImmutable;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemResponse;
 
@@ -29,6 +30,7 @@ final class InvoiceResponse
             'quote_id' => $invoice->quoteId,
             'invoice_number' => $invoice->invoiceNumber,
             'status' => $invoice->status->value,
+            'is_overdue' => self::computeIsOverdue($invoice),
             'is_qualified_invoice' => $invoice->isQualifiedInvoice,
             'issued_at' => $invoice->issuedAt,
             'due_at' => $invoice->dueAt,
@@ -49,5 +51,18 @@ final class InvoiceResponse
         }
 
         return $data;
+    }
+
+    private static function computeIsOverdue(Invoice $invoice): bool
+    {
+        if ($invoice->status !== InvoiceStatus::Issued && $invoice->status !== InvoiceStatus::PartiallyPaid) {
+            return false;
+        }
+
+        if ($invoice->dueAt === null) {
+            return false;
+        }
+
+        return $invoice->dueAt < (new DateTimeImmutable())->format('Y-m-d H:i:s');
     }
 }
