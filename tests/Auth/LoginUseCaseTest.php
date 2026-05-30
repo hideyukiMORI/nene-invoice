@@ -46,14 +46,36 @@ final class LoginUseCaseTest extends TestCase
         $useCase->execute(new LoginInput('nobody@example.com', 'correct-horse'));
     }
 
-    private function repositoryWithUser(string $plainPassword): UserRepositoryInterface
+    public function test_rejects_non_active_user_even_with_valid_password(): void
+    {
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse', 'disabled'),
+            new LocalBearerTokenVerifier(self::SECRET),
+        );
+
+        $this->expectException(InvalidCredentialsException::class);
+        $useCase->execute(new LoginInput('admin@example.com', 'correct-horse'));
+    }
+
+    public function test_rejects_invited_user(): void
+    {
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse', 'invited'),
+            new LocalBearerTokenVerifier(self::SECRET),
+        );
+
+        $this->expectException(InvalidCredentialsException::class);
+        $useCase->execute(new LoginInput('admin@example.com', 'correct-horse'));
+    }
+
+    private function repositoryWithUser(string $plainPassword, string $status = 'active'): UserRepositoryInterface
     {
         $user = new User(
             email: 'admin@example.com',
             passwordHash: password_hash($plainPassword, PASSWORD_DEFAULT),
             role: Role::Admin,
             organizationId: 1,
-            status: 'active',
+            status: $status,
             id: 7,
         );
 
