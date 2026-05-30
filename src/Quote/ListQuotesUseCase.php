@@ -11,11 +11,11 @@ final readonly class ListQuotesUseCase
     ) {
     }
 
-    public function execute(int $organizationId, int $limit, int $offset): ListQuotesResult
+    public function execute(int $limit, int $offset): ListQuotesResult
     {
         return new ListQuotesResult(
-            $this->quotes->findAllByOrganization($organizationId, $limit, $offset),
-            $this->quotes->countByOrganization($organizationId),
+            $this->quotes->findAll($limit, $offset),
+            $this->quotes->count(),
         );
     }
 }

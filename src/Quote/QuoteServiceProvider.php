@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -35,7 +37,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoQuoteRepository($query);
+                    return new PdoQuoteRepository($query, self::orgHolder($c));
                 },
             )
             ->set(TaxCalculator::class, static fn (ContainerInterface $c): TaxCalculator => new TaxCalculator())
@@ -48,6 +50,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     self::resolve($c, DocumentNumberGenerator::class),
                     self::resolve($c, TaxCalculator::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -55,6 +58,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ChangeQuoteStatusUseCase => new ChangeQuoteStatusUseCase(
                     self::quotes($c),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(ListQuotesUseCase::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
@@ -78,7 +82,6 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ListQuotesHandler => new ListQuotesHandler(
                     self::resolve($c, ListQuotesUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -86,7 +89,6 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): GetQuoteByIdHandler => new GetQuoteByIdHandler(
                     self::resolve($c, GetQuoteByIdUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -135,6 +137,18 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
         }
 
         return $repo;
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 
     /**

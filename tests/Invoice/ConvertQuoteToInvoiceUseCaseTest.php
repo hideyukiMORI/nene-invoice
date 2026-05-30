@@ -33,7 +33,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
     {
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->quotes = new InMemoryQuoteRepository();
+        $this->quotes = new InMemoryQuoteRepository($this->holder);
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->audit = new RecordingAuditRecorder();

@@ -21,11 +21,11 @@ final readonly class GetQuoteByIdUseCase
      *
      * @throws QuoteNotFoundException
      */
-    public function execute(int $organizationId, int $id): QuoteWithLines
+    public function execute(int $id): QuoteWithLines
     {
         $quote = $this->quotes->findById($id);
 
-        if ($quote === null || $quote->organizationId !== $organizationId) {
+        if ($quote === null) {
             throw new QuoteNotFoundException($id);
         }
 

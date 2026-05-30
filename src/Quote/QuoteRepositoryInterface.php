@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 /**
- * Persistence for quotes. Reads exclude soft-deleted rows; `delete` is soft.
+ * Persistence for quotes. Every query is scoped to the organization held in the
+ * request-scoped org holder (ADR 0006). Reads exclude soft-deleted rows;
+ * `delete` is soft.
  */
 interface QuoteRepositoryInterface
 {
     public function findById(int $id): ?Quote;
 
     /** @return list<Quote> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array;
+    public function findAll(int $limit, int $offset): array;
 
-    public function countByOrganization(int $organizationId): int;
+    public function count(): int;
 
     public function save(Quote $quote): int;
 
