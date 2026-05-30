@@ -32,6 +32,13 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
             throw new InvalidCredentialsException();
         }
 
+        // Only active users may authenticate. A deactivated / not-yet-activated
+        // account must not obtain a token. The same generic error is returned so
+        // account status is not disclosed (no enumeration of disabled accounts).
+        if ($user->status !== 'active') {
+            throw new InvalidCredentialsException();
+        }
+
         $now = time();
 
         $token = $this->tokenIssuer->issue([
