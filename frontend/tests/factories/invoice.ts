@@ -10,6 +10,7 @@ export function buildInvoiceDto(overrides: Partial<InvoiceDto> = {}): InvoiceDto
     organization_id: 1,
     client_id: 5,
     status: 'issued',
+    is_overdue: false,
     is_qualified_invoice: true,
     invoice_number: 'INV-2026-001',
     subtotal_cents: 106000,

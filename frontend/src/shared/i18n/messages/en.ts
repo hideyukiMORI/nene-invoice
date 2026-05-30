@@ -64,6 +64,7 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.status.issued': 'Issued',
   'admin.invoices.status.partially_paid': 'Partially paid',
   'admin.invoices.status.paid': 'Paid',
+  'admin.invoices.status.overdue': 'Overdue',
   'admin.invoices.pagination.prev': 'Previous',
   'admin.invoices.pagination.next': 'Next',
   'admin.invoices.pagination.info': 'Page {{page}} of {{total}}',

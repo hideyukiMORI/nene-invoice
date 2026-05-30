@@ -66,6 +66,7 @@ export const jaMessages = {
   'admin.invoices.status.issued': '発行済み',
   'admin.invoices.status.partially_paid': '一部入金',
   'admin.invoices.status.paid': '入金済み',
+  'admin.invoices.status.overdue': '期限超過',
   'admin.invoices.pagination.prev': '前のページ',
   'admin.invoices.pagination.next': '次のページ',
   'admin.invoices.pagination.info': '{{page}} / {{total}} ページ',

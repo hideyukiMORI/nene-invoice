@@ -336,6 +336,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/invoices/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Download invoice PDF
+         * @description Generates and streams the invoice as a PDF (適格請求書 layout when is_qualified_invoice is true). Requires ViewBilling capability. Returns application/pdf with Content-Disposition: attachment.
+         */
+        get: operations["getInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invoices/{id}/issue": {
         parameters: {
             query?: never;
@@ -580,6 +603,8 @@ export interface components {
             invoice_number?: string | null;
             /** @enum {string} */
             status: "draft" | "issued" | "partially_paid" | "paid";
+            /** @description Computed read-only field. True when status is issued or partially_paid and due_at is in the past. Always false for draft and paid invoices. */
+            is_overdue: boolean;
             is_qualified_invoice: boolean;
             issued_at?: string | null;
             due_at?: string | null;
@@ -1581,6 +1606,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InvoiceWithLines"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF binary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             401: components["responses"]["Unauthorized"];

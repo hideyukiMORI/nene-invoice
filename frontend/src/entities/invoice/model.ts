@@ -9,7 +9,8 @@ export interface Invoice {
   id: InvoiceId
   invoice_number: string | null
   status: InvoiceStatus
-  client_id: number
+  /** Computed: issued/partially_paid and due_at is in the past. */
+  is_overdue: boolean
   is_qualified_invoice: boolean
   issued_at: string | null
   due_at: string | null

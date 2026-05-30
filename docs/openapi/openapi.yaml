@@ -1217,6 +1217,11 @@ components:
         status:
           type: string
           enum: [draft, issued, partially_paid, paid]
+        is_overdue:
+          type: boolean
+          description: >
+            Computed read-only field. True when status is issued or partially_paid
+            and due_at is in the past. Always false for draft and paid invoices.
         is_qualified_invoice:
           type: boolean
         issued_at:
@@ -1240,7 +1245,7 @@ components:
           type: [string, 'null']
         updated_at:
           type: [string, 'null']
-      required: [id, organization_id, client_id, status, is_qualified_invoice, subtotal_cents, tax_cents, total_cents]
+      required: [id, organization_id, client_id, status, is_overdue, is_qualified_invoice, subtotal_cents, tax_cents, total_cents]
     InvoiceWithLines:
       allOf:
         - $ref: '#/components/schemas/Invoice'
