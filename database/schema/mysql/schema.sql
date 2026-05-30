@@ -1,0 +1,178 @@
+-- NeNe Invoice — MySQL schema (generated from Phinx migrations)
+-- Used by the Tier A web installer (public_html/install.php).
+-- Must be kept in sync with database/migrations/ after any schema change.
+-- Encoding: utf8mb4
+
+SET NAMES utf8mb4;
+SET foreign_key_checks = 0;
+
+CREATE TABLE IF NOT EXISTS `organizations` (
+    `id`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `name`          VARCHAR(255) NOT NULL,
+    `slug`          VARCHAR(100) NOT NULL,
+    `external_id`   VARCHAR(255) DEFAULT NULL,
+    `custom_domain` VARCHAR(255) DEFAULT NULL,
+    `plan`          VARCHAR(32)  NOT NULL DEFAULT 'free',
+    `is_active`     TINYINT(1)   NOT NULL DEFAULT 1,
+    `created_at`    DATETIME     NOT NULL,
+    `updated_at`    DATETIME     NOT NULL,
+    UNIQUE KEY `uniq_organizations_slug` (`slug`),
+    UNIQUE KEY `uniq_organizations_external_id` (`external_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `users` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `email`           VARCHAR(255) NOT NULL,
+    `password_hash`   VARCHAR(255) NOT NULL,
+    `role`            VARCHAR(32)  NOT NULL DEFAULT 'admin',
+    `organization_id` INT          DEFAULT NULL,
+    `status`          VARCHAR(16)  NOT NULL DEFAULT 'active',
+    `created_at`      DATETIME     NOT NULL,
+    `updated_at`      DATETIME     NOT NULL,
+    UNIQUE KEY `uniq_users_email` (`email`),
+    KEY `idx_users_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `clients` (
+    `id`                  INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`     INT          NOT NULL,
+    `name`                VARCHAR(255) NOT NULL,
+    `contact_name`        VARCHAR(255) DEFAULT NULL,
+    `email`               VARCHAR(255) DEFAULT NULL,
+    `billing_address`     TEXT         DEFAULT NULL,
+    `registration_number` VARCHAR(14)  DEFAULT NULL,
+    `is_deleted`          TINYINT(1)   NOT NULL DEFAULT 0,
+    `deleted_at`          DATETIME     DEFAULT NULL,
+    `created_at`          DATETIME     NOT NULL,
+    `updated_at`          DATETIME     NOT NULL,
+    KEY `idx_clients_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `company_settings` (
+    `id`                  INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`     INT           NOT NULL,
+    `legal_name`          VARCHAR(255)  NOT NULL,
+    `address`             TEXT          DEFAULT NULL,
+    `phone`               VARCHAR(32)   DEFAULT NULL,
+    `email`               VARCHAR(255)  DEFAULT NULL,
+    `registration_number` VARCHAR(14)   DEFAULT NULL,
+    `bank_name`           VARCHAR(255)  DEFAULT NULL,
+    `bank_branch`         VARCHAR(255)  DEFAULT NULL,
+    `account_type`        VARCHAR(32)   DEFAULT NULL,
+    `account_number`      VARCHAR(64)   DEFAULT NULL,
+    `logo_url`            VARCHAR(1024) DEFAULT NULL,
+    `created_at`          DATETIME      NOT NULL,
+    `updated_at`          DATETIME      NOT NULL,
+    UNIQUE KEY `uniq_company_settings_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `audit_logs` (
+    `id`           INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `actor_user_id` INT        DEFAULT NULL,
+    `organization_id` INT      DEFAULT NULL,
+    `action`       VARCHAR(64) NOT NULL,
+    `entity_type`  VARCHAR(64) NOT NULL,
+    `entity_id`    INT         DEFAULT NULL,
+    `before_json`  TEXT        DEFAULT NULL,
+    `after_json`   TEXT        DEFAULT NULL,
+    `created_at`   DATETIME    NOT NULL,
+    KEY `idx_audit_logs_organization_id` (`organization_id`),
+    KEY `idx_audit_logs_entity` (`entity_type`, `entity_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `document_sequences` (
+    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT         NOT NULL,
+    `doc_type`        VARCHAR(32) NOT NULL,
+    `year`            INT         NOT NULL,
+    `last_number`     INT         NOT NULL DEFAULT 0,
+    UNIQUE KEY `uniq_document_sequences_scope` (`organization_id`, `doc_type`, `year`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `line_items` (
+    `id`               INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `parent_type`      VARCHAR(16)   NOT NULL,
+    `parent_id`        INT           NOT NULL,
+    `description`      VARCHAR(1024) NOT NULL,
+    `quantity`         INT           NOT NULL,
+    `unit_price_cents` INT           NOT NULL,
+    `tax_rate_bps`     INT           NOT NULL,
+    `sort_order`       INT           NOT NULL DEFAULT 0,
+    `created_at`       DATETIME      NOT NULL,
+    `updated_at`       DATETIME      NOT NULL,
+    KEY `idx_line_items_parent` (`parent_type`, `parent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `quotes` (
+    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT         NOT NULL,
+    `client_id`       INT         NOT NULL,
+    `quote_number`    VARCHAR(32) NOT NULL,
+    `status`          VARCHAR(16) NOT NULL DEFAULT 'draft',
+    `issued_at`       DATETIME    DEFAULT NULL,
+    `valid_until`     DATETIME    DEFAULT NULL,
+    `subtotal_cents`  INT         NOT NULL DEFAULT 0,
+    `tax_cents`       INT         NOT NULL DEFAULT 0,
+    `total_cents`     INT         NOT NULL DEFAULT 0,
+    `notes`           TEXT        DEFAULT NULL,
+    `is_deleted`      TINYINT(1)  NOT NULL DEFAULT 0,
+    `deleted_at`      DATETIME    DEFAULT NULL,
+    `created_at`      DATETIME    NOT NULL,
+    `updated_at`      DATETIME    NOT NULL,
+    KEY `idx_quotes_organization_id` (`organization_id`),
+    UNIQUE KEY `uniq_quotes_org_number` (`organization_id`, `quote_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `invoices` (
+    `id`                   INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`      INT         NOT NULL,
+    `client_id`            INT         NOT NULL,
+    `quote_id`             INT         DEFAULT NULL,
+    `invoice_number`       VARCHAR(32) DEFAULT NULL,
+    `status`               VARCHAR(16) NOT NULL DEFAULT 'draft',
+    `is_qualified_invoice` TINYINT(1)  NOT NULL DEFAULT 0,
+    `issued_at`            DATETIME    DEFAULT NULL,
+    `due_at`               DATETIME    DEFAULT NULL,
+    `subtotal_cents`       INT         NOT NULL DEFAULT 0,
+    `tax_cents`            INT         NOT NULL DEFAULT 0,
+    `total_cents`          INT         NOT NULL DEFAULT 0,
+    `notes`                TEXT        DEFAULT NULL,
+    `is_deleted`           TINYINT(1)  NOT NULL DEFAULT 0,
+    `deleted_at`           DATETIME    DEFAULT NULL,
+    `created_at`           DATETIME    NOT NULL,
+    `updated_at`           DATETIME    NOT NULL,
+    KEY `idx_invoices_organization_id` (`organization_id`),
+    UNIQUE KEY `uniq_invoices_org_number` (`organization_id`, `invoice_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `payments` (
+    `id`                  INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`     INT          NOT NULL,
+    `invoice_id`          INT          NOT NULL,
+    `amount_cents`        INT          NOT NULL,
+    `paid_at`             DATETIME     NOT NULL,
+    `method`              VARCHAR(32)  DEFAULT NULL,
+    `note`                TEXT         DEFAULT NULL,
+    `external_reference`  VARCHAR(255) DEFAULT NULL,
+    `idempotency_key`     VARCHAR(255) DEFAULT NULL,
+    `is_deleted`          TINYINT(1)   NOT NULL DEFAULT 0,
+    `deleted_at`          DATETIME     DEFAULT NULL,
+    `created_at`          DATETIME     NOT NULL,
+    `updated_at`          DATETIME     NOT NULL,
+    KEY `idx_payments_organization_id` (`organization_id`),
+    KEY `idx_payments_invoice_id` (`invoice_id`),
+    UNIQUE KEY `uniq_payments_idempotency_key` (`idempotency_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `invoice_download_tokens` (
+    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `invoice_id`      INT         NOT NULL,
+    `organization_id` INT         NOT NULL,
+    `token_hash`      VARCHAR(64) NOT NULL,
+    `expires_at`      DATETIME    NOT NULL,
+    `created_at`      DATETIME    NOT NULL,
+    UNIQUE KEY `uniq_download_tokens_hash` (`token_hash`),
+    KEY `idx_download_tokens_invoice_id` (`invoice_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET foreign_key_checks = 1;
