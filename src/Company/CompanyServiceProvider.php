@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
@@ -31,17 +33,16 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoCompanySettingsRepository($query);
+                    return new PdoCompanySettingsRepository($query, self::orgHolder($c));
                 },
             )
-            ->set(GetCompanySettingsUseCase::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c)))
-            ->set(UpdateCompanySettingsUseCase::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c)))
+            ->set(GetCompanySettingsUseCase::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c), self::orgHolder($c)))
+            ->set(UpdateCompanySettingsUseCase::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 GetCompanySettingsHandler::class,
                 static fn (ContainerInterface $c): GetCompanySettingsHandler => new GetCompanySettingsHandler(
                     self::getUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -139,5 +140,17 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
         }
 
         return $p;
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

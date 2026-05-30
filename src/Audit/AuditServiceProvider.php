@@ -8,8 +8,9 @@ use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -29,7 +30,7 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoAuditLogRepository($query);
+                    return new PdoAuditLogRepository($query, self::orgHolder($c));
                 },
             )
             ->set(
@@ -53,7 +54,6 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ListAuditLogsHandler => new ListAuditLogsHandler(
                     self::resolve($c, ListAuditLogsUseCase::class),
                     self::resolve($c, JsonResponseFactory::class),
-                    self::resolve($c, ProblemDetailsResponseFactory::class),
                 ),
             )
             ->set(
@@ -84,5 +84,17 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
         }
 
         return $service;
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

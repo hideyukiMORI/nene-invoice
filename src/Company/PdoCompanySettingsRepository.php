@@ -5,21 +5,26 @@ declare(strict_types=1);
 namespace NeneInvoice\Company;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoCompanySettingsRepository implements CompanySettingsRepositoryInterface
 {
     private const COLUMNS = 'organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, created_at, updated_at';
 
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
-    public function findByOrganization(int $organizationId): ?CompanySettings
+    public function find(): ?CompanySettings
     {
         $row = $this->query->fetchOne(
             'SELECT ' . self::COLUMNS . ' FROM company_settings WHERE organization_id = ?',
-            [$organizationId],
+            [$this->orgId->get()],
         );
 
         return $row !== null ? $this->mapRow($row) : null;
@@ -28,7 +33,9 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
     public function save(CompanySettings $settings): void
     {
         $now = date('Y-m-d H:i:s');
-        $exists = $this->findByOrganization($settings->organizationId) !== null;
+        // The organization is forced from the request-scoped holder.
+        $organizationId = $this->orgId->get();
+        $exists = $this->find() !== null;
 
         if ($exists) {
             $this->query->execute(
@@ -45,7 +52,7 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
                     $settings->accountNumber,
                     $settings->logoUrl,
                     $now,
-                    $settings->organizationId,
+                    $organizationId,
                 ],
             );
 
@@ -56,7 +63,7 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
             'INSERT INTO company_settings (organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                $settings->organizationId,
+                $organizationId,
                 $settings->legalName,
                 $settings->address,
                 $settings->phone,

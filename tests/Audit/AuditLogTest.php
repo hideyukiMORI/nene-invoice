@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\Audit;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorder;
 use NeneInvoice\Audit\PdoAuditLogRepository;
 use PHPUnit\Framework\TestCase;
@@ -14,6 +15,8 @@ use PHPUnit\Framework\TestCase;
 final class AuditLogTest extends TestCase
 {
     private PdoAuditLogRepository $repository;
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
 
     protected function setUp(): void
     {
@@ -35,7 +38,9 @@ final class AuditLogTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->repository = new PdoAuditLogRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->repository = new PdoAuditLogRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
     }
 
     public function test_recorder_persists_before_and_after_snapshots(): void
@@ -44,7 +49,7 @@ final class AuditLogTest extends TestCase
 
         $recorder->record(7, 1, 'client.updated', 'client', 42, ['name' => '前'], ['name' => '後']);
 
-        $logs = $this->repository->findByOrganization(1, 10, 0);
+        $logs = $this->repository->findAll(10, 0);
         self::assertCount(1, $logs);
         self::assertSame('client.updated', $logs[0]->action);
         self::assertSame(7, $logs[0]->actorUserId);
@@ -55,16 +60,21 @@ final class AuditLogTest extends TestCase
 
     public function test_logs_are_scoped_and_counted_per_organization(): void
     {
+        // append keeps the organization on the log itself, so it is recorded
+        // with an explicit org regardless of the read-side holder.
         $recorder = new AuditRecorder($this->repository);
         $recorder->record(1, 1, 'client.created', 'client', 1, null, ['name' => 'A']);
         $recorder->record(1, 1, 'client.deleted', 'client', 1, ['name' => 'A'], null);
         $recorder->record(1, 2, 'client.created', 'client', 9, null, ['name' => 'B']);
 
-        self::assertSame(2, $this->repository->countByOrganization(1));
-        self::assertSame(1, $this->repository->countByOrganization(2));
+        $this->holder->set(1);
+        self::assertSame(2, $this->repository->count());
+        $this->holder->set(2);
+        self::assertSame(1, $this->repository->count());
 
-        // Most recent first.
-        $logs = $this->repository->findByOrganization(1, 10, 0);
+        // Most recent first (org 1).
+        $this->holder->set(1);
+        $logs = $this->repository->findAll(10, 0);
         self::assertSame('client.deleted', $logs[0]->action);
     }
 }

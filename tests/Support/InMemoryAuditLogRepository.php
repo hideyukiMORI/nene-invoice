@@ -4,18 +4,35 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditLog;
 use NeneInvoice\Audit\AuditLogRepositoryInterface;
 
 /**
  * In-memory fake for use-case tests (no database). Returns logs most-recent-first
- * (descending id), mirroring PdoAuditLogRepository.
+ * (descending id), mirroring PdoAuditLogRepository. Reads are scoped to the
+ * request-scoped org holder (defaulting to organization 1); {@see append()}
+ * keeps the organization on the log itself, like the Pdo repository.
  */
 final class InMemoryAuditLogRepository implements AuditLogRepositoryInterface
 {
     /** @var array<int, AuditLog> */
     private array $byId = [];
     private int $nextId = 1;
+
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
 
     public function append(AuditLog $log): int
     {
@@ -36,8 +53,9 @@ final class InMemoryAuditLogRepository implements AuditLogRepositoryInterface
     }
 
     /** @return list<AuditLog> */
-    public function findByOrganization(int $organizationId, int $limit, int $offset): array
+    public function findAll(int $limit, int $offset): array
     {
+        $organizationId = $this->orgId->get();
         $matches = array_values(array_filter(
             $this->byId,
             static fn (AuditLog $log): bool => $log->organizationId === $organizationId,
@@ -48,8 +66,10 @@ final class InMemoryAuditLogRepository implements AuditLogRepositoryInterface
         return array_slice($matches, $offset, $limit);
     }
 
-    public function countByOrganization(int $organizationId): int
+    public function count(): int
     {
+        $organizationId = $this->orgId->get();
+
         return count(array_filter(
             $this->byId,
             static fn (AuditLog $log): bool => $log->organizationId === $organizationId,

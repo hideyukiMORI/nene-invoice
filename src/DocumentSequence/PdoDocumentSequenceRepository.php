@@ -6,17 +6,24 @@ namespace NeneInvoice\DocumentSequence;
 
 use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\RequestScopedHolder;
 use RuntimeException;
 
 final readonly class PdoDocumentSequenceRepository implements DocumentSequenceRepositoryInterface
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
-    public function nextNumber(int $organizationId, string $docType, int $year): int
+    public function nextNumber(string $docType, int $year): int
     {
+        $organizationId = $this->orgId->get();
+
         // Increment the existing counter; if there is no row yet for this
         // org/type/year, create it. A concurrent INSERT (unique conflict) means
         // another caller created the row first, so we increment instead.

@@ -60,14 +60,14 @@ final readonly class IssueInvoiceUseCase
         }
 
         if ($input->qualified) {
-            $settings = $this->companySettings->findByOrganization($organizationId);
+            $settings = $this->companySettings->find();
 
             if ($settings === null || $settings->registrationNumber === null) {
                 throw new QualifiedInvoiceIncompleteException('A qualified invoice requires the issuer registration number to be configured in company settings.');
             }
         }
 
-        $number = $this->numbers->next($organizationId, DocumentType::Invoice, (int) date('Y'));
+        $number = $this->numbers->next(DocumentType::Invoice, (int) date('Y'));
 
         $this->invoices->update(new Invoice(
             organizationId: $invoice->organizationId,
