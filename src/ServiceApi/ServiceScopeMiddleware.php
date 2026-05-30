@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\ServiceApi;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -16,11 +17,19 @@ use Psr\Http\Server\RequestHandlerInterface;
  * protected `/api/` prefix). Here we additionally require the token to be a
  * **service principal** carrying the required scope — a human/operator token
  * (no `scopes` claim) is rejected from the service surface.
+ *
+ * `/api/*` bypasses OrgResolverMiddleware (org comes from the service token, not
+ * the URL), so this middleware sets the request-scoped org holder from the
+ * token's `org` claim — the same holder org-scoped repositories read (ADR 0006).
  */
 final readonly class ServiceScopeMiddleware implements MiddlewareInterface
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId
+     */
     public function __construct(
         private ProblemDetailsResponseFactory $problemDetails,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -42,7 +51,9 @@ final readonly class ServiceScopeMiddleware implements MiddlewareInterface
             );
         }
 
-        if (ServiceAuthContext::organizationId($request) === null) {
+        $organizationId = ServiceAuthContext::organizationId($request);
+
+        if ($organizationId === null) {
             return $this->problemDetails->create(
                 $request,
                 'insufficient-scope',
@@ -51,6 +62,9 @@ final readonly class ServiceScopeMiddleware implements MiddlewareInterface
                 'The service token is not scoped to an organization.',
             );
         }
+
+        // Make the service token's org available to org-scoped repositories.
+        $this->orgId->set($organizationId);
 
         return $handler->handle($request);
     }

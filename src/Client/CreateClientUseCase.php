@@ -5,28 +5,35 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class CreateClientUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private ClientRepositoryInterface $clients,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
     /**
-     * Creates a client in the caller's organization. The organization is taken
-     * from the authenticated caller, never from request input.
+     * Creates a client in the resolved organization (the repository forces the
+     * org from the request-scoped holder, never from request input).
      *
      * @throws InvalidRegistrationNumberException
      */
-    public function execute(int $organizationId, ?int $actorUserId, CreateClientInput $input): Client
+    public function execute(?int $actorUserId, CreateClientInput $input): Client
     {
         if ($input->registrationNumber !== null && !RegistrationNumber::isValid($input->registrationNumber)) {
             throw new InvalidRegistrationNumberException($input->registrationNumber);
         }
+
+        $organizationId = $this->orgId->get();
 
         $id = $this->clients->save(new Client(
             organizationId: $organizationId,

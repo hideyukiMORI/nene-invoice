@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use Psr\Container\ContainerInterface;
 
@@ -31,20 +33,19 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoClientRepository($query);
+                    return new PdoClientRepository($query, self::orgHolder($c));
                 },
             )
             ->set(ListClientsUseCase::class, static fn (ContainerInterface $c): ListClientsUseCase => new ListClientsUseCase(self::repository($c)))
             ->set(GetClientByIdUseCase::class, static fn (ContainerInterface $c): GetClientByIdUseCase => new GetClientByIdUseCase(self::repository($c)))
-            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c), self::audit($c)))
-            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::audit($c)))
-            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::audit($c)))
+            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
                     self::listUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -52,7 +53,6 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): GetClientByIdHandler => new GetClientByIdHandler(
                     self::getUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -76,7 +76,6 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): DeleteClientHandler => new DeleteClientHandler(
                     self::deleteUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -152,6 +151,18 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
         }
 
         return $repo;
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 
     private static function audit(ContainerInterface $c): AuditRecorderInterface

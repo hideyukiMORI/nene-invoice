@@ -88,7 +88,9 @@ final class QuoteQueryUseCasesTest extends TestCase
 
     public function test_list_is_scoped_to_organization(): void
     {
-        $clients2  = new InMemoryClientRepository();
+        $org2      = new \Nene2\Http\RequestScopedHolder();
+        $org2->set(2);
+        $clients2  = new InMemoryClientRepository($org2);
         $client2Id = $clients2->save(new Client(organizationId: 2, name: 'OtherOrg'));
         $quotes2   = new InMemoryQuoteRepository();
 

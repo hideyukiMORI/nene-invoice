@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Client;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientNotFoundException;
 use NeneInvoice\Client\CreateClientInput;
@@ -18,18 +19,25 @@ use PHPUnit\Framework\TestCase;
 
 final class ClientWriteUseCasesTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private InMemoryClientRepository $repo;
     private RecordingAuditRecorder $audit;
 
     protected function setUp(): void
     {
-        $this->repo = new InMemoryClientRepository();
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->repo = new InMemoryClientRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
     }
 
-    public function test_create_forces_caller_organization_and_audits(): void
+    public function test_create_forces_resolved_organization_and_audits(): void
     {
-        $client = (new CreateClientUseCase($this->repo, $this->audit))->execute(7, 42, new CreateClientInput(name: 'Acme'));
+        // The org comes from the request-scoped holder, never from input.
+        $this->holder->set(7);
+
+        $client = (new CreateClientUseCase($this->repo, $this->audit, $this->holder))->execute(42, new CreateClientInput(name: 'Acme'));
 
         self::assertSame(7, $client->organizationId);
 
@@ -46,14 +54,14 @@ final class ClientWriteUseCasesTest extends TestCase
     public function test_create_rejects_malformed_registration_number(): void
     {
         $this->expectException(InvalidRegistrationNumberException::class);
-        (new CreateClientUseCase($this->repo, $this->audit))->execute(1, 1, new CreateClientInput(name: 'Acme', registrationNumber: '12345'));
+        (new CreateClientUseCase($this->repo, $this->audit, $this->holder))->execute(1, new CreateClientInput(name: 'Acme', registrationNumber: '12345'));
     }
 
     public function test_update_records_before_and_after(): void
     {
         $id = $this->repo->save(new Client(organizationId: 1, name: 'Before'));
 
-        (new UpdateClientUseCase($this->repo, $this->audit))->execute(1, 9, $id, new UpdateClientInput(name: 'After'));
+        (new UpdateClientUseCase($this->repo, $this->audit, $this->holder))->execute(9, $id, new UpdateClientInput(name: 'After'));
 
         self::assertCount(1, $this->audit->records);
         $record = $this->audit->records[0];
@@ -67,14 +75,14 @@ final class ClientWriteUseCasesTest extends TestCase
         $otherOrg = $this->repo->save(new Client(organizationId: 2, name: 'Other'));
 
         $this->expectException(ClientNotFoundException::class);
-        (new UpdateClientUseCase($this->repo, $this->audit))->execute(1, 1, $otherOrg, new UpdateClientInput(name: 'Hacked'));
+        (new UpdateClientUseCase($this->repo, $this->audit, $this->holder))->execute(1, $otherOrg, new UpdateClientInput(name: 'Hacked'));
     }
 
     public function test_delete_soft_deletes_and_records_before_only(): void
     {
         $id = $this->repo->save(new Client(organizationId: 1, name: 'Temp'));
 
-        (new DeleteClientUseCase($this->repo, $this->audit))->execute(1, 5, $id);
+        (new DeleteClientUseCase($this->repo, $this->audit, $this->holder))->execute(5, $id);
 
         self::assertNull($this->repo->findById($id));
 
@@ -89,6 +97,6 @@ final class ClientWriteUseCasesTest extends TestCase
         $otherOrg = $this->repo->save(new Client(organizationId: 2, name: 'Other'));
 
         $this->expectException(ClientNotFoundException::class);
-        (new DeleteClientUseCase($this->repo, $this->audit))->execute(1, 1, $otherOrg);
+        (new DeleteClientUseCase($this->repo, $this->audit, $this->holder))->execute(1, $otherOrg);
     }
 }

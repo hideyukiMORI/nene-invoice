@@ -9,6 +9,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Invoice\GetInvoiceByIdUseCase;
 use NeneInvoice\Invoice\ListInvoicesUseCase;
@@ -28,7 +30,7 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
         $builder
             ->set(
                 ServiceScopeMiddleware::class,
-                static fn (ContainerInterface $c): ServiceScopeMiddleware => new ServiceScopeMiddleware(self::problemDetails($c)),
+                static fn (ContainerInterface $c): ServiceScopeMiddleware => new ServiceScopeMiddleware(self::problemDetails($c), self::orgHolder($c)),
             )
             ->set(
                 ListServiceInvoicesHandler::class,
@@ -113,5 +115,17 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
     private static function problemDetails(ContainerInterface $c): ProblemDetailsResponseFactory
     {
         return self::resolve($c, ProblemDetailsResponseFactory::class);
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

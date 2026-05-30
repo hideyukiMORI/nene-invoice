@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientNotFoundException;
 use NeneInvoice\Client\ClientRepositoryInterface;
 
 /**
- * In-memory fake for use-case tests (no database). Soft-deleted clients are
- * excluded from reads, matching the PDO implementation.
+ * In-memory fake for use-case tests (no database). Reads are scoped to the
+ * request-scoped org holder, mirroring {@see \NeneInvoice\Client\PdoClientRepository}.
+ * `save` keeps the entity's org so tests can seed cross-tenant fixtures; reads
+ * then prove the holder-based isolation. Soft-deleted clients are excluded.
+ *
+ * The holder defaults to organization 1 so existing single-org tests keep
+ * working without wiring; pass a preset holder to test other organizations.
  */
 final class InMemoryClientRepository implements ClientRepositoryInterface
 {
@@ -18,29 +24,45 @@ final class InMemoryClientRepository implements ClientRepositoryInterface
     private array $byId = [];
     private int $nextId = 1;
 
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
+
     public function findById(int $id): ?Client
     {
         $client = $this->byId[$id] ?? null;
 
-        return $client !== null && !$client->isDeleted ? $client : null;
+        return $client !== null && !$client->isDeleted && $client->organizationId === $this->orgId->get()
+            ? $client
+            : null;
     }
 
     /** @return list<Client> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array
+    public function findAll(int $limit, int $offset): array
     {
         $matches = array_values(array_filter(
             $this->byId,
-            static fn (Client $c): bool => $c->organizationId === $organizationId && !$c->isDeleted,
+            fn (Client $c): bool => $c->organizationId === $this->orgId->get() && !$c->isDeleted,
         ));
 
         return array_slice($matches, $offset, $limit);
     }
 
-    public function countByOrganization(int $organizationId): int
+    public function count(): int
     {
         return count(array_filter(
             $this->byId,
-            static fn (Client $c): bool => $c->organizationId === $organizationId && !$c->isDeleted,
+            fn (Client $c): bool => $c->organizationId === $this->orgId->get() && !$c->isDeleted,
         ));
     }
 
