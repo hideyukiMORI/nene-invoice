@@ -27,17 +27,16 @@ final readonly class DeleteUserHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::organizationId($request);
         $callerUserId = AuthContext::userId($request);
 
-        if ($organizationId === null || $callerUserId === null) {
+        if ($callerUserId === null) {
             return $this->problemDetails->create($request, 'organization-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
         }
 
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $this->useCase->execute($organizationId, $callerUserId, $id);
+        $this->useCase->execute($callerUserId, $id);
 
         return $this->json->createEmpty(204);
     }

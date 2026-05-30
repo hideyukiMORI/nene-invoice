@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace NeneInvoice\User;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Auth\Role;
 
 final readonly class UpdateUserUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private UserRepositoryInterface $users,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -24,11 +29,11 @@ final readonly class UpdateUserUseCase
      * @throws UserNotFoundException        when the user is missing or in another org
      * @throws RoleNotAssignableException   when attempting to assign superadmin
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $userId, UpdateUserInput $input): User
+    public function execute(?int $actorUserId, int $userId, UpdateUserInput $input): User
     {
-        $existing = $this->users->findById($userId);
+        $existing = $this->users->findInOrganization($userId);
 
-        if ($existing === null || $existing->organizationId !== $organizationId) {
+        if ($existing === null) {
             throw new UserNotFoundException($userId);
         }
 
@@ -53,7 +58,7 @@ final readonly class UpdateUserUseCase
             throw new LogicException('User disappeared immediately after update.');
         }
 
-        $this->audit->record($actorUserId, $organizationId, 'user.updated', 'user', $userId, UserResponse::toArray($existing), UserResponse::toArray($updated));
+        $this->audit->record($actorUserId, $this->orgId->get(), 'user.updated', 'user', $userId, UserResponse::toArray($existing), UserResponse::toArray($updated));
 
         return $updated;
     }

@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace NeneInvoice\User;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class DeleteUserUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private UserRepositoryInterface $users,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -21,20 +26,20 @@ final readonly class DeleteUserUseCase
      * @throws CannotDeleteSelfException
      * @throws UserNotFoundException
      */
-    public function execute(int $organizationId, int $callerUserId, int $userId): void
+    public function execute(int $callerUserId, int $userId): void
     {
         if ($userId === $callerUserId) {
             throw new CannotDeleteSelfException();
         }
 
-        $existing = $this->users->findById($userId);
+        $existing = $this->users->findInOrganization($userId);
 
-        if ($existing === null || $existing->organizationId !== $organizationId) {
+        if ($existing === null) {
             throw new UserNotFoundException($userId);
         }
 
         $this->users->delete($userId);
 
-        $this->audit->record($callerUserId, $organizationId, 'user.deleted', 'user', $userId, UserResponse::toArray($existing), null);
+        $this->audit->record($callerUserId, $this->orgId->get(), 'user.deleted', 'user', $userId, UserResponse::toArray($existing), null);
     }
 }

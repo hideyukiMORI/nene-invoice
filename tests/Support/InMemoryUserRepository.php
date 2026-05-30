@@ -4,19 +4,39 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\User\User;
 use NeneInvoice\User\UserEmailConflictException;
 use NeneInvoice\User\UserNotFoundException;
 use NeneInvoice\User\UserRepositoryInterface;
 
 /**
- * In-memory fake for use-case tests (no database).
+ * In-memory fake for use-case tests (no database). Identity lookups
+ * ({@see findById()}, {@see findByEmail()}) are global, mirroring the
+ * holder-less login / current-user paths. Org-scoped operations read the
+ * request-scoped holder (defaulting to organization 1). {@see save()} keeps the
+ * entity's organization so cross-org fixtures can be seeded while reads prove
+ * isolation.
  */
 final class InMemoryUserRepository implements UserRepositoryInterface
 {
     /** @var array<int, User> */
     private array $byId = [];
     private int $nextId = 1;
+
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
 
     public function findById(int $id): ?User
     {
@@ -34,9 +54,17 @@ final class InMemoryUserRepository implements UserRepositoryInterface
         return null;
     }
 
-    /** @return list<User> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array
+    public function findInOrganization(int $id): ?User
     {
+        $user = $this->byId[$id] ?? null;
+
+        return $user !== null && $user->organizationId === $this->orgId->get() ? $user : null;
+    }
+
+    /** @return list<User> */
+    public function findAll(int $limit, int $offset): array
+    {
+        $organizationId = $this->orgId->get();
         $matches = array_values(array_filter(
             $this->byId,
             static fn (User $u): bool => $u->organizationId === $organizationId,
@@ -45,8 +73,10 @@ final class InMemoryUserRepository implements UserRepositoryInterface
         return array_slice($matches, $offset, $limit);
     }
 
-    public function countByOrganization(int $organizationId): int
+    public function count(): int
     {
+        $organizationId = $this->orgId->get();
+
         return count(array_filter(
             $this->byId,
             static fn (User $u): bool => $u->organizationId === $organizationId,
@@ -78,7 +108,7 @@ final class InMemoryUserRepository implements UserRepositoryInterface
 
     public function update(User $user): void
     {
-        if ($user->id === null || !isset($this->byId[$user->id])) {
+        if ($user->id === null || $this->findInOrganization($user->id) === null) {
             throw new UserNotFoundException($user->id ?? 0);
         }
 
@@ -87,7 +117,7 @@ final class InMemoryUserRepository implements UserRepositoryInterface
 
     public function delete(int $id): void
     {
-        if (!isset($this->byId[$id])) {
+        if ($this->findInOrganization($id) === null) {
             throw new UserNotFoundException($id);
         }
 
