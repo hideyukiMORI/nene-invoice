@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Dashboard;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Dashboard\GetDashboardHandler;
 use NeneInvoice\Dashboard\GetDashboardSummaryUseCase;
 use NeneInvoice\Invoice\Invoice;
@@ -25,14 +25,15 @@ final class GetDashboardHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->psr17    = new Psr17Factory();
-        $this->invoices = new InMemoryInvoiceRepository();
+        $holder         = new RequestScopedHolder();
+        $holder->set(1);
+        $this->invoices = new InMemoryInvoiceRepository($holder);
         $this->payments = new InMemoryPaymentRepository();
 
         $this->handler = new GetDashboardHandler(
-            new GetDashboardSummaryUseCase($this->invoices, $this->payments),
+            new GetDashboardSummaryUseCase($this->invoices, $this->payments, $holder),
             $this->payments,
             new JsonResponseFactory($this->psr17, $this->psr17),
-            new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );
     }
 
@@ -97,11 +98,6 @@ final class GetDashboardHandlerTest extends TestCase
         self::assertCount(2, $body['recent_unpaid']);
     }
 
-    public function test_returns_400_without_org_context(): void
-    {
-        $request = $this->psr17->createServerRequest('GET', '/admin/dashboard');
-
-        $response = $this->handler->handle($request);
-        self::assertSame(400, $response->getStatusCode());
-    }
+    // Note: the "no org context" case is now handled upstream by
+    // OrgResolverMiddleware (404), not by this handler (ADR 0006).
 }

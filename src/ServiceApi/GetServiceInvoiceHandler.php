@@ -39,7 +39,9 @@ final readonly class GetServiceInvoiceHandler implements RequestHandlerInterface
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $invoice = $this->getInvoice->execute($organizationId, $id);
+        // Invoice repo is org-scoped via the holder (set by ServiceScopeMiddleware);
+        // the Payment use case is not yet migrated and still takes the org.
+        $invoice = $this->getInvoice->execute($id);
         $payments = $this->listPayments->execute($organizationId, $id);
 
         return $this->json->create(

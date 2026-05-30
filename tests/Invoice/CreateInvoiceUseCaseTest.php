@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Invoice;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Invoice\CreateInvoiceInput;
 use NeneInvoice\Invoice\CreateInvoiceUseCase;
@@ -20,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 
 final class CreateInvoiceUseCaseTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private InMemoryInvoiceRepository $invoices;
     private InMemoryLineItemRepository $lineItems;
     private InMemoryClientRepository $clients;
@@ -28,9 +31,11 @@ final class CreateInvoiceUseCaseTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->invoices = new InMemoryInvoiceRepository();
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
-        $this->clients = new InMemoryClientRepository();
+        $this->clients = new InMemoryClientRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
         $this->useCase = new CreateInvoiceUseCase(
             $this->invoices,
@@ -38,6 +43,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
             $this->clients,
             new TaxCalculator(),
             $this->audit,
+            $this->holder,
         );
     }
 
@@ -50,7 +56,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
     {
         $clientId = $this->client();
 
-        $result = $this->useCase->execute(1, 7, new CreateInvoiceInput(
+        $result = $this->useCase->execute(7, new CreateInvoiceInput(
             clientId: $clientId,
             lines: [
                 new LineItemInput('Std', 1, 1000, 1000),
@@ -74,7 +80,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
         $clientId = $this->client(2);
 
         $this->expectException(InvoiceValidationException::class);
-        $this->useCase->execute(1, 7, new CreateInvoiceInput(
+        $this->useCase->execute(7, new CreateInvoiceInput(
             clientId: $clientId,
             lines: [new LineItemInput('Std', 1, 1000, 1000)],
         ));
@@ -85,7 +91,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
         $clientId = $this->client();
 
         $this->expectException(InvoiceValidationException::class);
-        $this->useCase->execute(1, 7, new CreateInvoiceInput(clientId: $clientId, lines: []));
+        $this->useCase->execute(7, new CreateInvoiceInput(clientId: $clientId, lines: []));
     }
 
     public function test_disallowed_tax_rate_rejected(): void
@@ -93,7 +99,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
         $clientId = $this->client();
 
         $this->expectException(InvoiceValidationException::class);
-        $this->useCase->execute(1, 7, new CreateInvoiceInput(
+        $this->useCase->execute(7, new CreateInvoiceInput(
             clientId: $clientId,
             lines: [new LineItemInput('Std', 1, 1000, 500)],
         ));

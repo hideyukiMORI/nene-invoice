@@ -15,17 +15,16 @@ final readonly class ListInvoicesUseCase
     }
 
     public function execute(
-        int $organizationId,
         int $limit,
         int $offset,
         ?InvoiceListFilter $filter = null,
     ): ListInvoicesResult {
         if ($filter !== null && !$filter->isEmpty()) {
-            $items = $this->invoices->findByOrganizationFiltered($organizationId, $filter, $limit, $offset);
-            $total = $this->invoices->countByOrganizationFiltered($organizationId, $filter);
+            $items = $this->invoices->findFiltered($filter, $limit, $offset);
+            $total = $this->invoices->countFiltered($filter);
         } else {
-            $items = $this->invoices->findAllByOrganization($organizationId, $limit, $offset);
-            $total = $this->invoices->countByOrganization($organizationId);
+            $items = $this->invoices->findAll($limit, $offset);
+            $total = $this->invoices->count();
         }
 
         $ids = [];

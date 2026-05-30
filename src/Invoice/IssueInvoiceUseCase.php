@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -20,12 +21,16 @@ use NeneInvoice\LineItem\LineItemRepositoryInterface;
  */
 final readonly class IssueInvoiceUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private LineItemRepositoryInterface $lineItems,
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -34,11 +39,13 @@ final readonly class IssueInvoiceUseCase
      * @throws InvoiceValidationException
      * @throws QualifiedInvoiceIncompleteException
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $id, IssueInvoiceInput $input): InvoiceWithLines
+    public function execute(?int $actorUserId, int $id, IssueInvoiceInput $input): InvoiceWithLines
     {
+        $organizationId = $this->orgId->get();
+
         $invoice = $this->invoices->findById($id);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($id);
         }
 

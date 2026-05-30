@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\Invoice\Pdf\InvoicePdfData;
@@ -17,21 +18,27 @@ use NeneInvoice\Payment\PaymentRepositoryInterface;
  */
 final readonly class GenerateInvoicePdfUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private LineItemRepositoryInterface $lineItems,
         private PaymentRepositoryInterface $payments,
         private CompanySettingsRepositoryInterface $companySettings,
         private ClientRepositoryInterface $clients,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
     /** @throws InvoiceNotFoundException */
-    public function execute(int $organizationId, int $invoiceId): InvoicePdfData
+    public function execute(int $invoiceId): InvoicePdfData
     {
+        $organizationId = $this->orgId->get();
+
         $invoice = $this->invoices->findById($invoiceId);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($invoiceId);
         }
 

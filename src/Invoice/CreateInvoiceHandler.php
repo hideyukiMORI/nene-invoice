@@ -27,12 +27,6 @@ final readonly class CreateInvoiceHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::organizationId($request);
-
-        if ($organizationId === null) {
-            return $this->problemDetails->create($request, 'organization-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
-        }
-
         $decoded = json_decode((string) $request->getBody(), true);
 
         if (!is_array($decoded)) {
@@ -70,7 +64,6 @@ final readonly class CreateInvoiceHandler implements RequestHandlerInterface
         }
 
         $result = $this->useCase->execute(
-            $organizationId,
             AuthContext::userId($request),
             new CreateInvoiceInput(
                 clientId: (int) $clientId,

@@ -35,10 +35,12 @@ final class DownloadInvoicePdfHandlerTest extends TestCase
     {
         $this->psr17 = new Psr17Factory();
 
-        $invoices    = new InMemoryInvoiceRepository();
+        // The handler sets this holder from the validated token record's org.
+        $holder      = new \Nene2\Http\RequestScopedHolder();
+        $invoices    = new InMemoryInvoiceRepository($holder);
         $lineItems   = new InMemoryLineItemRepository();
         $payments    = new InMemoryPaymentRepository();
-        $clients     = new InMemoryClientRepository();
+        $clients     = new InMemoryClientRepository($holder);
         $company     = new InMemoryCompanySettingsRepository();
         $this->tokens = new InMemoryInvoiceDownloadTokenRepository();
 
@@ -57,10 +59,11 @@ final class DownloadInvoicePdfHandlerTest extends TestCase
 
         $this->handler = new DownloadInvoicePdfHandler(
             $this->tokens,
-            new GenerateInvoicePdfUseCase($invoices, $lineItems, $payments, $company, $clients),
+            new GenerateInvoicePdfUseCase($invoices, $lineItems, $payments, $company, $clients, $holder),
             new InvoicePdfGenerator(new TaxCalculator()),
             $this->psr17,
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
+            $holder,
         );
     }
 

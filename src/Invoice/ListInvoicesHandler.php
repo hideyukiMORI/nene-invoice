@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * `GET /admin/invoices` — lists invoice headers in the caller's organization.
+ * `GET /admin/invoices` — lists invoice headers in the resolved organization
+ * (scoped by the repository via the org holder).
  */
 final readonly class ListInvoicesHandler implements RequestHandlerInterface
 {
@@ -22,18 +21,11 @@ final readonly class ListInvoicesHandler implements RequestHandlerInterface
     public function __construct(
         private ListInvoicesUseCase $useCase,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::organizationId($request);
-
-        if ($organizationId === null) {
-            return $this->problemDetails->create($request, 'organization-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
-        }
-
         $query = $request->getQueryParams();
 
         $limit = isset($query['limit']) && is_numeric($query['limit']) ? (int) $query['limit'] : self::DEFAULT_LIMIT;
@@ -42,7 +34,7 @@ final readonly class ListInvoicesHandler implements RequestHandlerInterface
         $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
         $offset = max(0, $offset);
 
-        $result = $this->useCase->execute($organizationId, $limit, $offset);
+        $result = $this->useCase->execute($limit, $offset);
         $outstanding = $result->outstandingByInvoiceId;
 
         return $this->json->create([

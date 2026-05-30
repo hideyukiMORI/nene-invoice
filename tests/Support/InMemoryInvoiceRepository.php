@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -11,7 +12,10 @@ use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Invoice\InvoiceStatus;
 
 /**
- * In-memory fake for use-case tests (no database).
+ * In-memory fake for use-case tests (no database). Reads are scoped to the
+ * request-scoped org holder, mirroring {@see \NeneInvoice\Invoice\PdoInvoiceRepository}.
+ * `save` keeps the entity's org so tests can seed cross-tenant fixtures. The
+ * holder defaults to organization 1 for single-org tests.
  */
 final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
 {
@@ -19,54 +23,67 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     private array $byId = [];
     private int $nextId = 1;
 
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
+
+    /** @param RequestScopedHolder<int>|null $orgId */
+    public function __construct(?RequestScopedHolder $orgId = null)
+    {
+        if ($orgId === null) {
+            $orgId = new RequestScopedHolder();
+            $orgId->set(1);
+        }
+
+        $this->orgId = $orgId;
+    }
+
     public function findById(int $id): ?Invoice
     {
         $invoice = $this->byId[$id] ?? null;
 
-        return $invoice !== null && !$invoice->isDeleted ? $invoice : null;
+        return $invoice !== null && !$invoice->isDeleted && $invoice->organizationId === $this->orgId->get()
+            ? $invoice
+            : null;
     }
 
     /** @return list<Invoice> */
-    public function findAllByOrganization(int $organizationId, int $limit, int $offset): array
+    public function findAll(int $limit, int $offset): array
     {
         $matches = array_values(array_filter(
             $this->byId,
-            static fn (Invoice $i): bool => $i->organizationId === $organizationId && !$i->isDeleted,
+            fn (Invoice $i): bool => $i->organizationId === $this->orgId->get() && !$i->isDeleted,
         ));
 
         return array_slice($matches, $offset, $limit);
     }
 
-    public function countByOrganization(int $organizationId): int
+    public function count(): int
     {
         return count(array_filter(
             $this->byId,
-            static fn (Invoice $i): bool => $i->organizationId === $organizationId && !$i->isDeleted,
+            fn (Invoice $i): bool => $i->organizationId === $this->orgId->get() && !$i->isDeleted,
         ));
     }
 
     /** @return list<Invoice> */
-    public function findByOrganizationFiltered(
-        int $organizationId,
-        InvoiceListFilter $filter,
-        int $limit,
-        int $offset,
-    ): array {
-        return array_slice($this->filtered($organizationId, $filter), $offset, $limit);
+    public function findFiltered(InvoiceListFilter $filter, int $limit, int $offset): array
+    {
+        return array_slice($this->filtered($filter), $offset, $limit);
     }
 
-    public function countByOrganizationFiltered(int $organizationId, InvoiceListFilter $filter): int
+    public function countFiltered(InvoiceListFilter $filter): int
     {
-        return count($this->filtered($organizationId, $filter));
+        return count($this->filtered($filter));
     }
 
     /** @return list<Invoice> */
-    private function filtered(int $organizationId, InvoiceListFilter $filter): array
+    private function filtered(InvoiceListFilter $filter): array
     {
-        $open = [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid];
+        $open  = [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid];
+        $orgId = $this->orgId->get();
 
-        return array_values(array_filter($this->byId, function (Invoice $i) use ($organizationId, $filter, $open): bool {
-            if ($i->organizationId !== $organizationId || $i->isDeleted) {
+        return array_values(array_filter($this->byId, function (Invoice $i) use ($orgId, $filter, $open): bool {
+            if ($i->organizationId !== $orgId || $i->isDeleted) {
                 return false;
             }
             if ($filter->statuses !== [] && !in_array($i->status->value, $filter->statuses, true)) {
@@ -95,11 +112,12 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     /**
      * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
      */
-    public function getDashboardData(int $organizationId, string $now): array
+    public function getDashboardData(string $now): array
     {
+        $orgId  = $this->orgId->get();
         $unpaid = array_values(array_filter(
             $this->byId,
-            static fn (Invoice $i): bool => $i->organizationId === $organizationId
+            static fn (Invoice $i): bool => $i->organizationId === $orgId
                 && !$i->isDeleted
                 && in_array($i->status, [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid], true),
         ));

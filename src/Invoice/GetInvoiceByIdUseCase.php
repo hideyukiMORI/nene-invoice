@@ -18,11 +18,11 @@ final readonly class GetInvoiceByIdUseCase
     }
 
     /** @throws InvoiceNotFoundException */
-    public function execute(int $organizationId, int $id): InvoiceWithLines
+    public function execute(int $id): InvoiceWithLines
     {
         $invoice = $this->invoices->findById($id);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($id);
         }
 

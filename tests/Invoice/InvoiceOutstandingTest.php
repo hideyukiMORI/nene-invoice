@@ -47,7 +47,7 @@ final class InvoiceOutstandingTest extends TestCase
         $this->payments->save(new Payment(organizationId: 1, invoiceId: $id, amountCents: 800, paidAt: '2026-05-30 10:00:00'));
 
         $useCase = new GetInvoiceByIdUseCase($this->invoices, $this->lineItems, $this->payments);
-        $result = $useCase->execute(1, $id);
+        $result = $useCase->execute($id);
 
         self::assertSame(1400, $result->outstandingCents);
     }
@@ -58,7 +58,7 @@ final class InvoiceOutstandingTest extends TestCase
         $this->payments->save(new Payment(organizationId: 1, invoiceId: $id, amountCents: 1000, paidAt: '2026-05-30 10:00:00'));
 
         $useCase = new GetInvoiceByIdUseCase($this->invoices, $this->lineItems, $this->payments);
-        self::assertSame(0, $useCase->execute(1, $id)->outstandingCents);
+        self::assertSame(0, $useCase->execute($id)->outstandingCents);
     }
 
     public function test_list_returns_outstanding_per_invoice(): void
@@ -68,7 +68,7 @@ final class InvoiceOutstandingTest extends TestCase
         $unpaidId = $this->issuedInvoice(5000);
 
         $useCase = new ListInvoicesUseCase($this->invoices, $this->payments);
-        $result = $useCase->execute(1, 20, 0);
+        $result = $useCase->execute(20, 0);
 
         self::assertSame(0, $result->outstandingByInvoiceId[$paidId] ?? null);
         self::assertSame(5000, $result->outstandingByInvoiceId[$unpaidId] ?? null);

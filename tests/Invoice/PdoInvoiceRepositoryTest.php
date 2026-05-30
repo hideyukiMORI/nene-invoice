@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\Invoice;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -16,6 +17,8 @@ use PHPUnit\Framework\TestCase;
 
 final class PdoInvoiceRepositoryTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $orgId;
     private PdoInvoiceRepository $repository;
 
     protected function setUp(): void
@@ -38,7 +41,9 @@ final class PdoInvoiceRepositoryTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->repository = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->orgId = new RequestScopedHolder();
+        $this->orgId->set(1);
+        $this->repository = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
     }
 
     public function test_saves_draft_without_number_then_reads_back(): void
@@ -67,7 +72,7 @@ final class PdoInvoiceRepositoryTest extends TestCase
         $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Draft, subtotalCents: 0, taxCents: 0, totalCents: 0));
         $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Draft, subtotalCents: 0, taxCents: 0, totalCents: 0));
 
-        self::assertSame(2, $this->repository->countByOrganization(1));
+        self::assertSame(2, $this->repository->count());
     }
 
     public function test_issue_assigns_number_and_qualified_flag(): void
@@ -94,13 +99,20 @@ final class PdoInvoiceRepositoryTest extends TestCase
         self::assertTrue($issued->isQualifiedInvoice);
     }
 
-    public function test_list_and_count_scoped_to_organization(): void
+    public function test_list_count_and_find_by_id_scoped_to_organization(): void
     {
-        $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Draft, subtotalCents: 0, taxCents: 0, totalCents: 0));
+        $org1Id = $this->repository->save(new Invoice(organizationId: 1, clientId: 5, status: InvoiceStatus::Draft, subtotalCents: 0, taxCents: 0, totalCents: 0));
+
+        $this->orgId->set(2);
         $this->repository->save(new Invoice(organizationId: 2, clientId: 9, status: InvoiceStatus::Draft, subtotalCents: 0, taxCents: 0, totalCents: 0));
 
-        self::assertSame(1, $this->repository->countByOrganization(1));
-        self::assertCount(1, $this->repository->findAllByOrganization(1, 10, 0));
+        $this->orgId->set(1);
+        self::assertSame(1, $this->repository->count());
+        self::assertCount(1, $this->repository->findAll(10, 0));
+
+        // A caller in another org must not read the row even by direct id.
+        $this->orgId->set(2);
+        self::assertNull($this->repository->findById($org1Id));
     }
 
     public function test_soft_delete_and_unknown_delete_throws(): void
@@ -122,24 +134,24 @@ final class PdoInvoiceRepositoryTest extends TestCase
 
         // status filter
         $issued = new InvoiceListFilter(statuses: ['issued']);
-        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $issued));
+        self::assertSame(2, $this->repository->countFiltered($issued));
 
         // client filter
         $client5 = new InvoiceListFilter(clientId: 5);
-        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $client5));
+        self::assertSame(2, $this->repository->countFiltered($client5));
 
         // outstanding only (open = issued/partially_paid) excludes the paid one
         $open = new InvoiceListFilter(outstandingOnly: true);
-        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $open));
+        self::assertSame(2, $this->repository->countFiltered($open));
 
         // overdue as of 2026-06-01: INV-2 (due 02-28) is overdue, INV-3 (due 12-31) is not
         $overdue = new InvoiceListFilter(overdueOnly: true, today: '2026-06-01');
-        $rows = $this->repository->findByOrganizationFiltered(1, $overdue, 10, 0);
+        $rows = $this->repository->findFiltered($overdue, 10, 0);
         self::assertCount(1, $rows);
         self::assertSame('INV-2', $rows[0]->invoiceNumber);
 
         // due_before
         $dueBeforeMarch = new InvoiceListFilter(dueBefore: '2026-03-01');
-        self::assertSame(2, $this->repository->countByOrganizationFiltered(1, $dueBeforeMarch)); // 01-31 and 02-28
+        self::assertSame(2, $this->repository->countFiltered($dueBeforeMarch)); // 01-31 and 02-28
     }
 }
