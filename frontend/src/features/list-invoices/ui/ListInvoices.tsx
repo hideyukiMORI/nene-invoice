@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
 import { useListInvoices } from '../hooks/use-list-invoices'
 
 /** Invoice list screen. Renders exactly one of loading / error / empty / ready. */
@@ -38,48 +38,68 @@ export function ListInvoices() {
       {state.kind === 'empty' && <EmptyState message={t('admin.invoices.empty')} />}
 
       {state.kind === 'ready' && (
-        <table className="w-full border-collapse text-body">
-          <thead>
-            <tr className="border-b border-border text-left">
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.invoices.col.number')}
-              </th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.invoices.col.status')}
-              </th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.invoices.col.client')}
-              </th>
-              <th className="py-stack-sm pr-inline-md text-right font-medium">
-                {t('admin.invoices.col.total')}
-              </th>
-              <th className="py-stack-sm text-right font-medium">
-                {t('admin.invoices.col.outstanding')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.invoices.map((invoice) => (
-              <tr key={invoice.id} className="border-b border-border">
-                <td className="py-stack-sm pr-inline-md">
-                  <Link to={`/invoices/${String(invoice.id)}`} className="text-accent">
-                    {invoice.invoice_number ?? '—'}
-                  </Link>
-                </td>
-                <td className="py-stack-sm pr-inline-md">
-                  {t(`admin.invoices.status.${invoice.status}`)}
-                </td>
-                <td className="py-stack-sm pr-inline-md">{invoice.client_id}</td>
-                <td className="py-stack-sm pr-inline-md text-right">
-                  {formatYen(invoice.total_cents)}
-                </td>
-                <td className="py-stack-sm text-right">
-                  {invoice.outstanding_cents === null ? '—' : formatYen(invoice.outstanding_cents)}
-                </td>
+        <>
+          <table className="w-full border-collapse text-body">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="py-stack-sm pr-inline-md font-medium">
+                  {t('admin.invoices.col.number')}
+                </th>
+                <th className="py-stack-sm pr-inline-md font-medium">
+                  {t('admin.invoices.col.status')}
+                </th>
+                <th className="py-stack-sm pr-inline-md font-medium">
+                  {t('admin.invoices.col.client')}
+                </th>
+                <th className="py-stack-sm pr-inline-md text-right font-medium">
+                  {t('admin.invoices.col.total')}
+                </th>
+                <th className="py-stack-sm text-right font-medium">
+                  {t('admin.invoices.col.outstanding')}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {state.invoices.map((invoice) => (
+                <tr key={invoice.id} className="border-b border-border">
+                  <td className="py-stack-sm pr-inline-md">
+                    <Link to={`/invoices/${String(invoice.id)}`} className="text-accent">
+                      {invoice.invoice_number ?? '—'}
+                    </Link>
+                  </td>
+                  <td className="py-stack-sm pr-inline-md">
+                    {t(`admin.invoices.status.${invoice.status}`)}
+                  </td>
+                  <td className="py-stack-sm pr-inline-md">{invoice.client_id}</td>
+                  <td className="py-stack-sm pr-inline-md text-right">
+                    {formatYen(invoice.total_cents)}
+                  </td>
+                  <td className="py-stack-sm text-right">
+                    {invoice.outstanding_cents === null
+                      ? '—'
+                      : formatYen(invoice.outstanding_cents)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {state.pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <Button onClick={state.pagination.prevPage} disabled={!state.pagination.hasPrev}>
+                {t('admin.invoices.pagination.prev')}
+              </Button>
+              <Text variant="muted">
+                {t('admin.invoices.pagination.info', {
+                  page: state.pagination.page,
+                  total: state.pagination.totalPages,
+                })}
+              </Text>
+              <Button onClick={state.pagination.nextPage} disabled={!state.pagination.hasNext}>
+                {t('admin.invoices.pagination.next')}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </Stack>
   )
