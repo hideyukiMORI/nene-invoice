@@ -26,6 +26,14 @@ interface InvoiceRepositoryInterface
 
     public function countByOrganizationFiltered(int $organizationId, InvoiceListFilter $filter): int;
 
+    /**
+     * Returns counts and recent unpaid invoices for the dashboard in a single query.
+     * `$now` is a comparable datetime string (e.g. `Y-m-d H:i:s`); defaults to now().
+     *
+     * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
+     */
+    public function getDashboardData(int $organizationId, string $now): array;
+
     public function save(Invoice $invoice): int;
 
     /** @throws InvoiceNotFoundException */

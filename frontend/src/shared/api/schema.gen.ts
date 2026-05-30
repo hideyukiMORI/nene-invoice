@@ -64,6 +64,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Dashboard summary
+         * @description Returns aggregated counts and the 5 most recent unpaid invoices for the caller's organization. Requires ViewBilling capability.
+         */
+        get: operations["getDashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/audit-logs": {
         parameters: {
             query?: never;
@@ -489,6 +509,16 @@ export interface components {
             name: string;
             slug: string;
         };
+        DashboardSummary: {
+            /** @description Number of issued + partially_paid invoices. */
+            unpaid_count: number;
+            /** @description Number of invoices where is_overdue is true. */
+            overdue_count: number;
+            /** @description Sum of outstanding balance across all unpaid invoices, in cents. */
+            outstanding_total_cents: number;
+            /** @description Up to 5 most recent unpaid invoices, newest first. */
+            recent_unpaid: components["schemas"]["Invoice"][];
+        };
         /** @description Issuer (自社) profile. registration_number is `T` + 13 digits. */
         CompanySettings: {
             organization_id: number;
@@ -882,6 +912,28 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getDashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dashboard summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
         };
     };
     listAuditLogs: {

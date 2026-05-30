@@ -117,6 +117,39 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         return [implode(' AND ', $clauses), $params];
     }
 
+    /**
+     * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
+     */
+    public function getDashboardData(int $organizationId, string $now): array
+    {
+        $countsRow = $this->query->fetchOne(
+            'SELECT
+                SUM(CASE WHEN status IN (\'issued\', \'partially_paid\') THEN 1 ELSE 0 END) AS unpaid_count,
+                SUM(CASE WHEN status IN (\'issued\', \'partially_paid\') AND due_at IS NOT NULL AND due_at < ? THEN 1 ELSE 0 END) AS overdue_count
+            FROM invoices
+            WHERE organization_id = ? AND is_deleted = 0',
+            [$now, $organizationId],
+        );
+
+        $unpaidCount  = $countsRow !== null ? (int) ($countsRow['unpaid_count'] ?? 0) : 0;
+        $overdueCount = $countsRow !== null ? (int) ($countsRow['overdue_count'] ?? 0) : 0;
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . '
+            FROM invoices
+            WHERE organization_id = ? AND is_deleted = 0 AND status IN (\'issued\', \'partially_paid\')
+            ORDER BY id DESC
+            LIMIT 5',
+            [$organizationId],
+        );
+
+        return [
+            'unpaid_count'  => $unpaidCount,
+            'overdue_count' => $overdueCount,
+            'recent_unpaid' => array_map($this->mapRow(...), $rows),
+        ];
+    }
+
     public function save(Invoice $invoice): int
     {
         $now = date('Y-m-d H:i:s');
