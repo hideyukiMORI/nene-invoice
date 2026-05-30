@@ -29,6 +29,50 @@ if (file_exists(INSTALLED_MARKER)) {
 }
 
 // -------------------------------------------------------------------
+// Guard (defense in depth): マーカーが失われていても、DB に既存ユーザが
+// いれば「未インストール」と誤判定して再セットアップ（.env 上書き・管理者
+// 作成）されるのを防ぐ。ephemeral な var/ で .installed が消えるデプロイ対策。
+// -------------------------------------------------------------------
+function databaseAlreadyProvisioned(): bool
+{
+    if (!is_file(ENV_FILE)) {
+        return false;
+    }
+
+    $env = parse_ini_file(ENV_FILE) ?: [];
+
+    if (($env['DB_ADAPTER'] ?? 'mysql') !== 'mysql' || empty($env['DB_NAME'])) {
+        return false;
+    }
+
+    try {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+            $env['DB_HOST'] ?? '127.0.0.1',
+            $env['DB_PORT'] ?? '3306',
+            $env['DB_NAME'],
+            $env['DB_CHARSET'] ?? 'utf8mb4',
+        );
+        $pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASSWORD'] ?? '', [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => 3,
+        ]);
+        $count = (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
+
+        return $count > 0;
+    } catch (\Throwable) {
+        // No env / unreachable DB / no schema yet → genuinely not provisioned.
+        return false;
+    }
+}
+
+if (databaseAlreadyProvisioned()) {
+    http_response_code(403);
+    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。</p>';
+    exit;
+}
+
+// -------------------------------------------------------------------
 // ヘルパー
 // -------------------------------------------------------------------
 function h(string $s): string
