@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\InvoiceDownloadToken;
 
 use DateTimeImmutable;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 
@@ -17,9 +18,13 @@ final readonly class GenerateDownloadTokenUseCase
 {
     private const TTL_DAYS = 7;
 
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private InvoiceDownloadTokenRepositoryInterface $tokens,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -27,13 +32,17 @@ final readonly class GenerateDownloadTokenUseCase
      * @return array{rawToken: string, expiresAt: string}
      * @throws InvoiceNotFoundException
      */
-    public function execute(int $organizationId, int $invoiceId): array
+    public function execute(int $invoiceId): array
     {
+        // The invoice repository is org-scoped (holder), so a foreign invoice
+        // is already invisible here.
         $invoice = $this->invoices->findById($invoiceId);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($invoiceId);
         }
+
+        $organizationId = $this->orgId->get();
 
         $rawToken  = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $tokenHash = hash('sha256', $rawToken);

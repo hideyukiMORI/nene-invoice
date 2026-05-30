@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\InvoiceDownloadToken;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use Nene2\Routing\Router;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceStatus;
@@ -22,11 +22,15 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
     private InMemoryInvoiceRepository $invoices;
     private GenerateDownloadTokenHandler $handler;
     private int $invoiceId;
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
 
     protected function setUp(): void
     {
         $this->psr17    = new Psr17Factory();
-        $this->invoices = new InMemoryInvoiceRepository();
+        $this->holder   = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $tokens         = new InMemoryInvoiceDownloadTokenRepository();
 
         $this->invoiceId = $this->invoices->save(new Invoice(
@@ -39,9 +43,8 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
         ));
 
         $this->handler = new GenerateDownloadTokenHandler(
-            new GenerateDownloadTokenUseCase($this->invoices, $tokens),
+            new GenerateDownloadTokenUseCase($this->invoices, $tokens, $this->holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
-            new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );
     }
 
@@ -60,24 +63,21 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
         self::assertNotEmpty($body['expires_at']);
     }
 
-    public function test_returns_400_without_org_context(): void
-    {
-        $request = $this->psr17->createServerRequest('POST', '/admin/invoices/1/download-token')
-            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => '1']);
-
-        self::assertSame(400, $this->handler->handle($request)->getStatusCode());
-    }
-
     public function test_throws_invoice_not_found_for_cross_org_invoice(): void
     {
-        // InvoiceNotFoundException propagates to InvoiceNotFoundExceptionHandler in production.
-        // Unit tests exercise the handler in isolation, so we assert the exception directly.
+        // The holder resolves a different organization than the invoice's, so the
+        // org-scoped invoice repository hides it (InvoiceNotFoundException, which
+        // propagates to InvoiceNotFoundExceptionHandler in production).
+        $this->holder->set(2);
+
         $this->expectException(\NeneInvoice\Invoice\InvoiceNotFoundException::class);
 
         $request = $this->psr17->createServerRequest('POST', "/admin/invoices/{$this->invoiceId}/download-token")
-            ->withAttribute('nene2.auth.claims', ['sub' => 1, 'role' => 'admin', 'org' => 2])
             ->withAttribute(Router::PARAMETERS_ATTRIBUTE, ['id' => (string) $this->invoiceId]);
 
         $this->handler->handle($request);
     }
+
+    // Note: the "no org context" case is now handled upstream by
+    // OrgResolverMiddleware (404), not by this handler (ADR 0006).
 }

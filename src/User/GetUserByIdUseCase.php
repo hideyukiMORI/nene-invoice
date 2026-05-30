@@ -12,17 +12,17 @@ final readonly class GetUserByIdUseCase
     }
 
     /**
-     * Fetches a user that belongs to the given organization. A user from another
-     * organization (or a missing id) is reported as not found so cross-tenant
-     * existence is not leaked.
+     * Fetches a user that belongs to the resolved organization. A user from
+     * another organization (or a missing id) is reported as not found so
+     * cross-tenant existence is not leaked.
      *
      * @throws UserNotFoundException
      */
-    public function execute(int $organizationId, int $id): User
+    public function execute(int $id): User
     {
-        $user = $this->users->findById($id);
+        $user = $this->users->findInOrganization($id);
 
-        if ($user === null || $user->organizationId !== $organizationId) {
+        if ($user === null) {
             throw new UserNotFoundException($id);
         }
 

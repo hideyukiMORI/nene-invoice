@@ -15,6 +15,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\User\PdoUserRepository;
 use NeneInvoice\User\UserRepositoryInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -76,7 +78,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoUserRepository($query);
+                    return new PdoUserRepository($query, self::orgHolder($container));
                 },
             )
             ->set(
@@ -234,5 +236,17 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                     return new AuthRouteRegistrar($loginHandler, $getCurrentUserHandler);
                 },
             );
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

@@ -40,6 +40,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                 static fn (ContainerInterface $c): GenerateDownloadTokenUseCase => new GenerateDownloadTokenUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -47,7 +48,6 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                 static fn (ContainerInterface $c): GenerateDownloadTokenHandler => new GenerateDownloadTokenHandler(
                     self::resolve($c, GenerateDownloadTokenUseCase::class),
                     self::resolve($c, JsonResponseFactory::class),
-                    self::resolve($c, ProblemDetailsResponseFactory::class),
                 ),
             )
             ->set(

@@ -56,13 +56,18 @@ final class GetCurrentUserUseCaseTest extends TestCase
                 return $this->user->email === $email ? $this->user : null;
             }
 
+            public function findInOrganization(int $id): ?User
+            {
+                return $this->user->id === $id ? $this->user : null;
+            }
+
             /** @return list<User> */
-            public function findAllByOrganization(int $organizationId, int $limit, int $offset): array
+            public function findAll(int $limit, int $offset): array
             {
                 return [];
             }
 
-            public function countByOrganization(int $organizationId): int
+            public function count(): int
             {
                 return 0;
             }

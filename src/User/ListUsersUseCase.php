@@ -11,11 +11,11 @@ final readonly class ListUsersUseCase
     ) {
     }
 
-    public function execute(int $organizationId, int $limit, int $offset): ListUsersResult
+    public function execute(int $limit, int $offset): ListUsersResult
     {
         return new ListUsersResult(
-            $this->users->findAllByOrganization($organizationId, $limit, $offset),
-            $this->users->countByOrganization($organizationId),
+            $this->users->findAll($limit, $offset),
+            $this->users->count(),
         );
     }
 }
