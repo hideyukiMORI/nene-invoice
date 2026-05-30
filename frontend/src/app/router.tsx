@@ -6,6 +6,9 @@ import { ClientsPage } from '@/pages/clients'
 import { CompanySettingsPage } from '@/pages/company-settings'
 import { DashboardPage } from '@/pages/dashboard'
 import { InvoiceCreatePage } from '@/pages/invoice-create'
+import { QuoteCreatePage } from '@/pages/quote-create'
+import { QuoteDetailPage } from '@/pages/quote-detail'
+import { QuotesPage } from '@/pages/quotes'
 import { InvoiceDetailPage } from '@/pages/invoice-detail'
 import { InvoicesPage } from '@/pages/invoices'
 
@@ -22,6 +25,9 @@ const router = createBrowserRouter([
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/new', element: <ClientCreatePage /> },
       { path: 'clients/:id/edit', element: <ClientEditPage /> },
+      { path: 'quotes', element: <QuotesPage /> },
+      { path: 'quotes/new', element: <QuoteCreatePage /> },
+      { path: 'quotes/:id', element: <QuoteDetailPage /> },
       { path: 'settings', element: <CompanySettingsPage /> },
     ],
   },
