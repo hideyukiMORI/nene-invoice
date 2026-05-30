@@ -84,6 +84,18 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         $this->useCase->execute(7, $quoteId);
     }
 
+    public function test_rejects_re_conversion_of_already_converted_quote(): void
+    {
+        $quoteId = $this->quote(QuoteStatus::Accepted);
+
+        // First conversion succeeds.
+        $this->useCase->execute(7, $quoteId);
+
+        // A second conversion must be rejected (one invoice per quote).
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(7, $quoteId);
+    }
+
     public function test_cross_organization_quote_not_found(): void
     {
         $quoteId = $this->quote(QuoteStatus::Accepted);

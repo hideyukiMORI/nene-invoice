@@ -13,6 +13,12 @@ interface InvoiceRepositoryInterface
 {
     public function findById(int $id): ?Invoice;
 
+    /**
+     * Whether an invoice already exists for the given quote in the resolved
+     * organization. Used to enforce one-invoice-per-quote on conversion.
+     */
+    public function existsForQuote(int $quoteId): bool;
+
     /** @return list<Invoice> */
     public function findAll(int $limit, int $offset): array;
 

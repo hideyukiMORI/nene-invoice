@@ -52,6 +52,12 @@ final readonly class ConvertQuoteToInvoiceUseCase
             throw new QuoteValidationException('Only an accepted quote can be converted to an invoice.');
         }
 
+        // One invoice per quote: re-converting an already-converted quote would
+        // create duplicate invoices (accounting integrity, diagnostic R2-2).
+        if ($this->invoices->existsForQuote($quoteId)) {
+            throw new QuoteValidationException('This quote has already been converted to an invoice.');
+        }
+
         $invoiceId = $this->invoices->save(new Invoice(
             organizationId: $organizationId,
             clientId: $quote->clientId,

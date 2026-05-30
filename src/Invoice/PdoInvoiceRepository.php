@@ -30,6 +30,16 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         return $row !== null ? $this->mapRow($row) : null;
     }
 
+    public function existsForQuote(int $quoteId): bool
+    {
+        $row = $this->query->fetchOne(
+            'SELECT 1 AS hit FROM invoices WHERE quote_id = ? AND organization_id = ? AND is_deleted = 0 LIMIT 1',
+            [$quoteId, $this->orgId->get()],
+        );
+
+        return $row !== null;
+    }
+
     /** @return list<Invoice> */
     public function findAll(int $limit, int $offset): array
     {
