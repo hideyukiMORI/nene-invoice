@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 final class VoidServicePaymentHandlerTest extends TestCase
 {
     private Psr17Factory $psr17;
+    /** @var \Nene2\Http\RequestScopedHolder<int> */
+    private \Nene2\Http\RequestScopedHolder $holder;
     private InMemoryInvoiceRepository $invoices;
     private InMemoryPaymentRepository $payments;
     private VoidServicePaymentHandler $handler;
@@ -30,8 +32,11 @@ final class VoidServicePaymentHandlerTest extends TestCase
     protected function setUp(): void
     {
         $this->psr17    = new Psr17Factory();
-        $this->invoices = new InMemoryInvoiceRepository();
-        $this->payments = new InMemoryPaymentRepository();
+        $this->holder = new \Nene2\Http\RequestScopedHolder();
+        $this->holder->set(1);
+        $holder = $this->holder;
+        $this->invoices = new InMemoryInvoiceRepository($holder);
+        $this->payments = new InMemoryPaymentRepository($holder);
 
         $this->invoiceId = $this->invoices->save(new Invoice(
             organizationId: 1,
@@ -52,7 +57,7 @@ final class VoidServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new VoidServicePaymentHandler(
-            new VoidPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder()),
+            new VoidPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );
@@ -97,8 +102,10 @@ final class VoidServicePaymentHandlerTest extends TestCase
     public function test_throws_payment_not_found_for_cross_org(): void
     {
         // VoidPaymentUseCase throws PaymentNotFoundException for cross-org access.
-        // In production this is handled by PaymentNotFoundExceptionHandler.
+        // In production this is handled by PaymentNotFoundExceptionHandler. The
+        // holder is set by ServiceScopeMiddleware from the token org (here: 2).
         $this->expectException(\NeneInvoice\Payment\PaymentNotFoundException::class);
+        $this->holder->set(2);
 
         $request = $this->psr17->createServerRequest('POST', "/api/invoices/{$this->invoiceId}/payments/{$this->paymentId}/void")
             ->withAttribute('nene2.auth.claims', ['org' => 2, 'scopes' => ['write:payments']])

@@ -22,7 +22,7 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         $holder = new \Nene2\Http\RequestScopedHolder();
         $holder->set(1);
         $this->invoices = new InMemoryInvoiceRepository($holder);
-        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, new InMemoryPaymentRepository(), $holder);
+        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, new InMemoryPaymentRepository($holder));
     }
 
     public function test_empty_organization_returns_zeros(): void

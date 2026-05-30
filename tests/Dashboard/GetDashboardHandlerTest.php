@@ -28,10 +28,10 @@ final class GetDashboardHandlerTest extends TestCase
         $holder         = new RequestScopedHolder();
         $holder->set(1);
         $this->invoices = new InMemoryInvoiceRepository($holder);
-        $this->payments = new InMemoryPaymentRepository();
+        $this->payments = new InMemoryPaymentRepository($holder);
 
         $this->handler = new GetDashboardHandler(
-            new GetDashboardSummaryUseCase($this->invoices, $this->payments, $holder),
+            new GetDashboardSummaryUseCase($this->invoices, $this->payments),
             $this->payments,
             new JsonResponseFactory($this->psr17, $this->psr17),
         );

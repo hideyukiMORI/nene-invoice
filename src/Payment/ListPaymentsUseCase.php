@@ -24,11 +24,11 @@ final readonly class ListPaymentsUseCase
      *
      * @throws InvoiceNotFoundException
      */
-    public function execute(int $organizationId, int $invoiceId): array
+    public function execute(int $invoiceId): array
     {
         $invoice = $this->invoices->findById($invoiceId);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($invoiceId);
         }
 

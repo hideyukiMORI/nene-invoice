@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 /**
- * Persistence for payments. Payments are immaterial of their own lifecycle — a
- * correction is a separate (future) refund operation, not an in-place edit.
+ * Persistence for payments. Every query is scoped to the organization held in
+ * the request-scoped org holder (ADR 0006). Payments are immaterial of their own
+ * lifecycle — a correction is a separate (future) refund operation.
  */
 interface PaymentRepositoryInterface
 {
@@ -15,7 +16,7 @@ interface PaymentRepositoryInterface
     public function findById(int $id): ?Payment;
 
     /** Returns the payment previously recorded with this idempotency key, if any. */
-    public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?Payment;
+    public function findByIdempotencyKey(string $idempotencyKey): ?Payment;
 
     /** Voids a payment (soft delete). Idempotent: voiding an already-voided one is a no-op. */
     public function markVoided(int $id): void;
@@ -39,7 +40,7 @@ interface PaymentRepositoryInterface
 
     /**
      * Total outstanding balance across all issued / partially_paid invoices for the
-     * organization: sum(invoice.total_cents) - sum(non-void payments) for those invoices.
+     * resolved organization: sum(invoice.total_cents) - sum(non-void payments).
      */
-    public function outstandingTotalForOrganization(int $organizationId): int;
+    public function outstandingTotal(): int;
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -20,10 +21,14 @@ use NeneInvoice\Invoice\InvoiceStatus;
  */
 final readonly class VoidPaymentUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private PaymentRepositoryInterface $payments,
         private InvoiceRepositoryInterface $invoices,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -32,7 +37,6 @@ final readonly class VoidPaymentUseCase
      * @throws PaymentNotFoundException
      */
     public function execute(
-        int $organizationId,
         ?int $actorUserId,
         int $invoiceId,
         int $paymentId,
@@ -42,7 +46,6 @@ final readonly class VoidPaymentUseCase
 
         if (
             $payment === null
-            || $payment->organizationId !== $organizationId
             || $payment->invoiceId !== $invoiceId
         ) {
             throw new PaymentNotFoundException($paymentId);
@@ -50,7 +53,7 @@ final readonly class VoidPaymentUseCase
 
         $invoice = $this->invoices->findById($invoiceId);
 
-        if ($invoice === null || $invoice->organizationId !== $organizationId) {
+        if ($invoice === null) {
             throw new InvoiceNotFoundException($invoiceId);
         }
 
@@ -90,7 +93,7 @@ final readonly class VoidPaymentUseCase
         $after['voided_payment_id'] = $paymentId;
         $after['void_reason'] = $reason;
 
-        $this->audit->record($actorUserId, $organizationId, 'payment.voided', 'invoice', $invoiceId, $before, $after);
+        $this->audit->record($actorUserId, $this->orgId->get(), 'payment.voided', 'invoice', $invoiceId, $before, $after);
 
         $voided = $this->payments->findById($paymentId) ?? $payment;
 

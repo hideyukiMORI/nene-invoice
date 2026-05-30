@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
 use NeneInvoice\Auth\AuthContext;
@@ -22,18 +21,11 @@ final readonly class RecordPaymentHandler implements RequestHandlerInterface
     public function __construct(
         private RecordPaymentUseCase $useCase,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::organizationId($request);
-
-        if ($organizationId === null) {
-            return $this->problemDetails->create($request, 'organization-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
-        }
-
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $invoiceId = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
@@ -53,7 +45,6 @@ final readonly class RecordPaymentHandler implements RequestHandlerInterface
         $note = is_string($noteValue) && $noteValue !== '' ? $noteValue : null;
 
         $result = $this->useCase->execute(
-            $organizationId,
             AuthContext::userId($request),
             $invoiceId,
             new RecordPaymentInput($amountCents, $paidAt, $method, $note),
