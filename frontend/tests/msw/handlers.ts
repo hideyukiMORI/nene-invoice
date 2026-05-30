@@ -53,6 +53,72 @@ export const handlers = [
     HttpResponse.json({ items: [buildClientDto()], total: 1, limit: 100, offset: 0 }),
   ),
 
+  http.get('/admin/quotes', () => HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 })),
+
+  http.post('/admin/quotes', () =>
+    HttpResponse.json(
+      {
+        id: 1,
+        organization_id: 1,
+        client_id: 5,
+        quote_number: 'EST-2026-001',
+        status: 'draft',
+        subtotal_cents: 100000,
+        tax_cents: 10000,
+        total_cents: 110000,
+        line_items: [],
+      },
+      { status: 201 },
+    ),
+  ),
+
+  http.get('/admin/quotes/:id', () =>
+    HttpResponse.json({
+      id: 1,
+      organization_id: 1,
+      client_id: 5,
+      quote_number: 'EST-2026-001',
+      status: 'draft',
+      subtotal_cents: 100000,
+      tax_cents: 10000,
+      total_cents: 110000,
+      line_items: [],
+    }),
+  ),
+
+  http.patch('/admin/quotes/:id', () =>
+    HttpResponse.json({
+      id: 1,
+      organization_id: 1,
+      client_id: 5,
+      quote_number: 'EST-2026-001',
+      status: 'sent',
+      subtotal_cents: 100000,
+      tax_cents: 10000,
+      total_cents: 110000,
+      line_items: [],
+    }),
+  ),
+
+  http.post('/admin/quotes/:id/convert', () =>
+    HttpResponse.json(
+      {
+        id: 10,
+        organization_id: 1,
+        client_id: 5,
+        is_overdue: false,
+        status: 'draft',
+        is_qualified_invoice: false,
+        invoice_number: null,
+        subtotal_cents: 100000,
+        tax_cents: 10000,
+        total_cents: 110000,
+        line_items: [],
+      },
+      { status: 201 },
+    ),
+  ),
+
   http.get('/admin/invoices', () =>
     HttpResponse.json({ items: [buildInvoiceDto()], total: 1, limit: 20, offset: 0 }),
   ),

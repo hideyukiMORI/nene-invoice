@@ -20,6 +20,9 @@ export function AppShell() {
             <NavLink to="/dashboard" className={navClass}>
               {t('admin.nav.dashboard')}
             </NavLink>
+            <NavLink to="/quotes" className={navClass}>
+              {t('admin.nav.quotes')}
+            </NavLink>
             <NavLink to="/invoices" className={navClass}>
               {t('admin.nav.invoices')}
             </NavLink>
