@@ -52,6 +52,8 @@ final class OpenApiContractTest extends TestCase
         'getInvoiceById',
         'createInvoice',
         'getInvoicePdf',
+        'generateDownloadToken',
+        'downloadInvoicePdf',
         'issueInvoice',
         'listPayments',
         'recordPayment',

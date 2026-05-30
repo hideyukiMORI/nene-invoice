@@ -20,6 +20,7 @@ use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
 use NeneInvoice\Invoice\InvoiceRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
 use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
+use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
@@ -68,6 +69,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
+                    $downloadTokenRoutes = $container->get(InvoiceDownloadTokenRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -113,7 +115,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Service API route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes];
+                    if (!$downloadTokenRoutes instanceof InvoiceDownloadTokenRouteRegistrar) {
+                        throw new LogicException('Invoice download token route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes];
                 },
             )
             ->set(

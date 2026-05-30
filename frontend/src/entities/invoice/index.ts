@@ -11,5 +11,6 @@ export type {
 export { INVOICE_STATUSES, type InvoiceStatus } from './enum'
 export { invoiceKeys, type InvoiceListParams } from './query-keys'
 export { useInvoiceList, useInvoice } from './queries'
-export { useCreateInvoice, useIssueInvoice } from './mutations'
+export { useCreateInvoice, useIssueInvoice, useGenerateDownloadToken } from './mutations'
+export type { DownloadTokenResult } from './mutations'
 export { useDownloadInvoicePdf } from './download'

@@ -695,6 +695,53 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '404':
           $ref: '#/components/responses/NotFound'
+  /admin/invoices/{id}/download-token:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Invoices]
+      summary: Generate public download token
+      description: >
+        Generates a time-limited (7 days) public URL for the invoice PDF.
+        The URL requires no authentication — share it with the client.
+        Requires ManageBilling capability.
+      operationId: generateDownloadToken
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Token generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /invoices/download/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Invoices]
+      summary: Public PDF download
+      description: >
+        Downloads the invoice PDF using a previously generated token. No
+        authentication required. Returns 404 for missing or expired tokens.
+      operationId: downloadInvoicePdf
+      responses:
+        '200':
+          description: PDF binary
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '404':
+          $ref: '#/components/responses/NotFound'
   /admin/invoices/{id}/issue:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
@@ -1013,6 +1060,16 @@ components:
         slug:
           type: string
       required: [name, slug]
+    DownloadTokenResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Public PDF download URL (relative path, no auth required).
+        expires_at:
+          type: string
+          description: Token expiry timestamp (Y-m-d H:i:s).
+      required: [url, expires_at]
     DashboardSummary:
       type: object
       properties:
