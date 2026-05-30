@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
@@ -40,7 +42,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoInvoiceRepository($query);
+                    return new PdoInvoiceRepository($query, self::orgHolder($c));
                 },
             )
             ->set(
@@ -50,6 +52,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -60,6 +63,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, ClientRepositoryInterface::class),
                     self::resolve($c, TaxCalculator::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -70,6 +74,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, DocumentNumberGenerator::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -92,7 +97,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ConvertQuoteToInvoiceHandler => new ConvertQuoteToInvoiceHandler(
                     self::resolve($c, ConvertQuoteToInvoiceUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -100,7 +104,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ListInvoicesHandler => new ListInvoicesHandler(
                     self::resolve($c, ListInvoicesUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -108,7 +111,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): GetInvoiceByIdHandler => new GetInvoiceByIdHandler(
                     self::resolve($c, GetInvoiceByIdUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -124,7 +126,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): IssueInvoiceHandler => new IssueInvoiceHandler(
                     self::resolve($c, IssueInvoiceUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -153,6 +154,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, ClientRepositoryInterface::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -161,7 +163,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, GenerateInvoicePdfUseCase::class),
                     self::resolve($c, InvoicePdfGenerator::class),
                     self::resolve($c, Psr17Factory::class),
-                    self::resolve($c, ProblemDetailsResponseFactory::class),
                 ),
             )
             ->set(
@@ -207,5 +208,17 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
     private static function problemDetails(ContainerInterface $c): ProblemDetailsResponseFactory
     {
         return self::resolve($c, ProblemDetailsResponseFactory::class);
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

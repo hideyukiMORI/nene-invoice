@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Invoice;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\Invoice\Invoice;
@@ -24,6 +25,8 @@ use PHPUnit\Framework\TestCase;
 
 final class IssueInvoiceUseCaseTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private InMemoryInvoiceRepository $invoices;
     private InMemoryLineItemRepository $lineItems;
     private InMemoryCompanySettingsRepository $companySettings;
@@ -32,7 +35,9 @@ final class IssueInvoiceUseCaseTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->invoices = new InMemoryInvoiceRepository();
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->companySettings = new InMemoryCompanySettingsRepository();
         $this->audit = new RecordingAuditRecorder();
@@ -42,6 +47,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
             $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             $this->audit,
+            $this->holder,
         );
     }
 
@@ -79,7 +85,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $this->registerIssuer();
         $id = $this->draftInvoice();
 
-        $result = $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: true));
+        $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
 
         self::assertSame(InvoiceStatus::Issued, $result->invoice->status);
         self::assertTrue($result->invoice->isQualifiedInvoice);
@@ -92,7 +98,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
     {
         $id = $this->draftInvoice();
 
-        $result = $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: false));
+        $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: false));
 
         self::assertSame(InvoiceStatus::Issued, $result->invoice->status);
         self::assertFalse($result->invoice->isQualifiedInvoice);
@@ -104,17 +110,17 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $id = $this->draftInvoice();
 
         $this->expectException(QualifiedInvoiceIncompleteException::class);
-        $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: true));
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
     }
 
     public function test_only_draft_invoice_can_be_issued(): void
     {
         $this->registerIssuer();
         $id = $this->draftInvoice();
-        $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: true));
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
 
         $this->expectException(InvoiceValidationException::class);
-        $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: true));
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
     }
 
     public function test_invoice_without_line_items_cannot_be_issued(): void
@@ -123,7 +129,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $id = $this->draftInvoice(withLines: false);
 
         $this->expectException(InvoiceValidationException::class);
-        $this->useCase->execute(1, 7, $id, new IssueInvoiceInput(qualified: true));
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
     }
 
     public function test_cross_organization_invoice_not_found(): void
@@ -132,6 +138,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $id = $this->draftInvoice();
 
         $this->expectException(InvoiceNotFoundException::class);
-        $this->useCase->execute(2, 7, $id, new IssueInvoiceInput(qualified: true));
+        $this->holder->set(2);
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
     }
 }

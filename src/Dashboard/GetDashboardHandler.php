@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Dashboard;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceResponse;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
@@ -15,12 +13,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * `GET /admin/dashboard` — returns the admin dashboard summary.
- * Capability: ViewBilling (GET on /admin/invoices path prefix in CapabilityResolver).
- *
- * Note: the path `/admin/dashboard` is NOT under `/admin/invoices` so we need
- * to ensure CapabilityResolver handles it. We gate it at ViewBilling by listing
- * it explicitly in CapabilityResolver.
+ * `GET /admin/dashboard` — returns the admin dashboard summary for the resolved
+ * organization (scoped by the repository via the org holder).
+ * Capability: ViewBilling (listed explicitly in CapabilityResolver).
  */
 final readonly class GetDashboardHandler implements RequestHandlerInterface
 {
@@ -28,19 +23,12 @@ final readonly class GetDashboardHandler implements RequestHandlerInterface
         private GetDashboardSummaryUseCase $useCase,
         private PaymentRepositoryInterface $payments,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $organizationId = AuthContext::organizationId($request);
-
-        if ($organizationId === null) {
-            return $this->problemDetails->create($request, 'organization-not-resolved', 'Organization Required', 400, 'This action requires an organization context.');
-        }
-
-        $summary = $this->useCase->execute($organizationId);
+        $summary = $this->useCase->execute();
 
         $invoiceIds  = array_filter(
             array_map(static fn (Invoice $i): ?int => $i->id, $summary->recentUnpaid),

@@ -6,6 +6,7 @@ namespace NeneInvoice\InvoiceDownloadToken;
 
 use DateTimeImmutable;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\RequestScopedHolder;
 use Nene2\Routing\Router;
 use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -19,15 +20,23 @@ use Psr\Http\Server\RequestHandlerInterface;
  * `GET /invoices/download/{token}` — public PDF download, no authentication.
  * Validates the token (existence + expiry + invoice not deleted), then streams
  * the PDF. Expired or invalid tokens yield 404 to avoid oracle attacks.
+ *
+ * This route bypasses OrgResolverMiddleware, so the org holder is unset on entry.
+ * The validated token record carries the organization; this handler sets the
+ * holder from it before invoking the (org-scoped) PDF use case (ADR 0006).
  */
 final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterface
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId
+     */
     public function __construct(
         private InvoiceDownloadTokenRepositoryInterface $tokens,
         private GenerateInvoicePdfUseCase $pdfData,
         private InvoicePdfGenerator $pdfGenerator,
         private Psr17Factory $psr17,
         private ProblemDetailsResponseFactory $problemDetails,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -45,8 +54,11 @@ final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterfac
             return $this->problemDetails->create($request, 'invoice-not-found', 'Not Found', 404, 'Download link not found or expired.');
         }
 
+        // Public route (no OrgResolver): scope the org from the validated token.
+        $this->orgId->set($record->organizationId);
+
         try {
-            $pdfData = $this->pdfData->execute($record->organizationId, $record->invoiceId);
+            $pdfData = $this->pdfData->execute($record->invoiceId);
         } catch (InvoiceNotFoundException) {
             return $this->problemDetails->create($request, 'invoice-not-found', 'Not Found', 404, 'Invoice not found.');
         }

@@ -10,6 +10,8 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
@@ -56,6 +58,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                     self::resolve($c, InvoicePdfGenerator::class),
                     self::resolve($c, Psr17Factory::class),
                     self::resolve($c, ProblemDetailsResponseFactory::class),
+                    self::orgHolder($c),
                 ),
             )
             ->set(
@@ -81,5 +84,17 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
         }
 
         return $service;
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

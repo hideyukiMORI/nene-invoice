@@ -46,7 +46,7 @@ final readonly class ListServiceInvoicesHandler implements RequestHandlerInterfa
         $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
         $offset = max(0, $offset);
 
-        $result = $this->useCase->execute($organizationId, $limit, $offset, $this->filterFrom($query));
+        $result = $this->useCase->execute($limit, $offset, $this->filterFrom($query));
         $outstanding = $result->outstandingByInvoiceId;
 
         return $this->json->create([

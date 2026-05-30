@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\LineItem\LineItem;
@@ -25,21 +26,28 @@ final readonly class CreateInvoiceUseCase
     /** Allowed consumption tax rates in basis points (accounting-compliance §3). */
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];
 
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private LineItemRepositoryInterface $lineItems,
         private ClientRepositoryInterface $clients,
         private TaxCalculator $taxCalculator,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
     /** @throws InvoiceValidationException */
-    public function execute(int $organizationId, ?int $actorUserId, CreateInvoiceInput $input): InvoiceWithLines
+    public function execute(?int $actorUserId, CreateInvoiceInput $input): InvoiceWithLines
     {
+        $organizationId = $this->orgId->get();
+
+        // The client repo is org-scoped, so a cross-org client surfaces as null.
         $client = $this->clients->findById($input->clientId);
 
-        if ($client === null || $client->organizationId !== $organizationId) {
+        if ($client === null) {
             throw new InvoiceValidationException('The selected client does not exist in your organization.');
         }
 

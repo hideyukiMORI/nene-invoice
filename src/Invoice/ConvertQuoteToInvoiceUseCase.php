@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
@@ -20,11 +21,15 @@ use NeneInvoice\Quote\QuoteValidationException;
  */
 final readonly class ConvertQuoteToInvoiceUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private QuoteRepositoryInterface $quotes,
         private InvoiceRepositoryInterface $invoices,
         private LineItemRepositoryInterface $lineItems,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -32,8 +37,11 @@ final readonly class ConvertQuoteToInvoiceUseCase
      * @throws QuoteNotFoundException
      * @throws QuoteValidationException
      */
-    public function execute(int $organizationId, ?int $actorUserId, int $quoteId): InvoiceWithLines
+    public function execute(?int $actorUserId, int $quoteId): InvoiceWithLines
     {
+        $organizationId = $this->orgId->get();
+
+        // The quote repo is not yet org-scoped, so guard the org here.
         $quote = $this->quotes->findById($quoteId);
 
         if ($quote === null || $quote->organizationId !== $organizationId) {

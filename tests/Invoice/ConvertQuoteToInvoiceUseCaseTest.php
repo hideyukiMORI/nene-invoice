@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Invoice;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Invoice\ConvertQuoteToInvoiceUseCase;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\LineItem\LineItem;
@@ -20,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 
 final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
 {
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
     private InMemoryQuoteRepository $quotes;
     private InMemoryInvoiceRepository $invoices;
     private InMemoryLineItemRepository $lineItems;
@@ -28,11 +31,13 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
 
     protected function setUp(): void
     {
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
         $this->quotes = new InMemoryQuoteRepository();
-        $this->invoices = new InMemoryInvoiceRepository();
+        $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, $this->invoices, $this->lineItems, $this->audit);
+        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, $this->invoices, $this->lineItems, $this->audit, $this->holder);
     }
 
     private function quote(QuoteStatus $status): int
@@ -59,7 +64,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
     {
         $quoteId = $this->quote(QuoteStatus::Accepted);
 
-        $result = $this->useCase->execute(1, 7, $quoteId);
+        $result = $this->useCase->execute(7, $quoteId);
 
         self::assertSame(InvoiceStatus::Draft, $result->invoice->status);
         self::assertSame($quoteId, $result->invoice->quoteId);
@@ -76,7 +81,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         $quoteId = $this->quote(QuoteStatus::Sent);
 
         $this->expectException(QuoteValidationException::class);
-        $this->useCase->execute(1, 7, $quoteId);
+        $this->useCase->execute(7, $quoteId);
     }
 
     public function test_cross_organization_quote_not_found(): void
@@ -84,6 +89,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         $quoteId = $this->quote(QuoteStatus::Accepted);
 
         $this->expectException(QuoteNotFoundException::class);
-        $this->useCase->execute(2, 7, $quoteId);
+        $this->holder->set(2);
+        $this->useCase->execute(7, $quoteId);
     }
 }
