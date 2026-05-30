@@ -10,6 +10,9 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+// Do not advertise the PHP version (defense in depth; `expose_php` may be On).
+header_remove('X-Powered-By');
+
 $container = (new RuntimeContainerFactory(dirname(__DIR__)))->create();
 
 $psr17Factory = $container->get(Psr17Factory::class);

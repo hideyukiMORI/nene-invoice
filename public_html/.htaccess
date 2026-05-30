@@ -3,3 +3,13 @@ RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
+
+# Hardening (Apache + mod_headers). The Server version and TLS-level HSTS are
+# ultimately the web server / TLS-terminating proxy's responsibility.
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+    # HSTS only takes effect over HTTPS; harmless over plain HTTP.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+ServerSignature Off
