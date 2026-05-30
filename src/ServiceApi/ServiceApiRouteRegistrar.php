@@ -19,6 +19,7 @@ final readonly class ServiceApiRouteRegistrar
         private GetServiceInvoiceHandler $getHandler,
         private RecordServicePaymentHandler $recordPaymentHandler,
         private VoidServicePaymentHandler $voidPaymentHandler,
+        private GetServiceClientHandler $getClientHandler,
     ) {
     }
 
@@ -28,10 +29,12 @@ final readonly class ServiceApiRouteRegistrar
         $get = $this->getHandler;
         $recordPayment = $this->recordPaymentHandler;
         $voidPayment = $this->voidPaymentHandler;
+        $getClient = $this->getClientHandler;
 
         $router->get('/api/invoices', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->get('/api/invoices/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->post('/api/invoices/{id}/payments', static fn (ServerRequestInterface $r) => $recordPayment->handle($r));
         $router->post('/api/invoices/{id}/payments/{paymentId}/void', static fn (ServerRequestInterface $r) => $voidPayment->handle($r));
+        $router->get('/api/clients/{id}', static fn (ServerRequestInterface $r) => $getClient->handle($r));
     }
 }

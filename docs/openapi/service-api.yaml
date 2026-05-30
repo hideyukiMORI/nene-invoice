@@ -185,6 +185,34 @@ paths:
           $ref: '#/components/responses/InsufficientScope'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/clients/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [ServiceInvoices]
+      summary: Get client (service)
+      description: >
+        Returns the client's contact information scoped to the service token's
+        organization. Used by NeNe Clear for dunning (督促): resolves
+        `contact_name` and `recipient_email` from an invoice's `client_id`
+        (contract §2.3).
+      operationId: getServiceClient
+      responses:
+        '200':
+          description: Client contact data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceClient'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   securitySchemes:
     serviceToken:
@@ -233,6 +261,29 @@ components:
         status: { type: integer }
         detail: { type: string }
       required: [type, title, status]
+    ServiceClient:
+      type: object
+      description: >
+        Client (取引先) contact data for dunning. `recipient_email` maps to the
+        client's billing email in NeNe Invoice.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          description: Client company name.
+        contact_name:
+          type: [string, 'null']
+          description: Primary contact person name.
+        recipient_email:
+          type: [string, 'null']
+          description: Billing / dunning email address (maps to `clients.email`).
+        billing_address:
+          type: [string, 'null']
+        registration_number:
+          type: [string, 'null']
+          description: Buyer's invoice registration number (T + 13 digits), if set.
+      required: [id, name]
     ServiceInvoice:
       type: object
       properties:
