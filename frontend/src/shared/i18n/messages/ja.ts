@@ -118,6 +118,8 @@ export const jaMessages = {
   'admin.payments.record.note': '備考',
   'admin.payments.record.submit': '記録する',
   'admin.payments.record.submitting': '記録中…',
+  'admin.payments.record.confirmTitle': '{{amount}} を入金として記録しますか？',
+  'admin.payments.record.confirmMessage': '記録すると請求書の入金状態が更新されます。',
   'admin.payments.record.error':
     '入金を記録できませんでした。金額（過入金でないか）を確認してください。',
   'admin.payments.record.invalid': '金額を正しく入力してください。',

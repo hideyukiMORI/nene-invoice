@@ -1,7 +1,17 @@
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, EmptyState, Field, Input, Select, Spinner, Stack, Text } from '@/shared/ui'
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  Spinner,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { PAYMENT_METHODS, useManagePayments } from '../hooks/use-manage-payments'
 
 export interface ManagePaymentsProps {
@@ -19,6 +29,10 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
     paymentsLoading,
     form,
     onSubmit,
+    confirming,
+    confirmTitle,
+    onConfirm,
+    onCancel,
     isRecording,
     errorMessage,
   } = useManagePayments(invoiceId)
@@ -132,6 +146,18 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
             </div>
           </Stack>
         </form>
+      )}
+      {confirming && (
+        <ConfirmDialog
+          title={confirmTitle}
+          message={t('admin.payments.record.confirmMessage')}
+          confirmLabel={t('admin.payments.record.submit')}
+          cancelLabel={t('common.actions.cancel')}
+          destructive={false}
+          pending={isRecording}
+          onConfirm={onConfirm}
+          onCancel={onCancel}
+        />
       )}
     </Stack>
   )

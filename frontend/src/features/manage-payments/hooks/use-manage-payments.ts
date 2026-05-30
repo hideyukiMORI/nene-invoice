@@ -1,11 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import type { SyntheticEvent } from 'react'
+import { useState } from 'react'
 import { useForm, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { invoiceKeys, useInvoice, type InvoiceId } from '@/entities/invoice'
 import { usePaymentList, useRecordPayment, type Payment } from '@/entities/payment'
 import { useTranslation } from '@/shared/i18n'
+import { formatYen } from '@/shared/lib/format-money'
 
 export const PAYMENT_METHODS = ['bank_transfer', 'cash', 'other'] as const
 
@@ -28,6 +30,11 @@ export interface UseManagePayments {
   paymentsError: boolean
   form: UseFormReturn<RecordPaymentFormValues>
   onSubmit: (event: SyntheticEvent) => void
+  /** Truthy while the confirm dialog is open. */
+  confirming: boolean
+  confirmTitle: string
+  onConfirm: () => void
+  onCancel: () => void
   isRecording: boolean
   errorMessage: string | null
 }
@@ -44,9 +51,18 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
     defaultValues: { amount_cents: 0, method: '', note: '' },
   })
 
+  const [pending, setPending] = useState<RecordPaymentFormValues | null>(null)
+
   const status = invoice.data?.status
 
   const submit = form.handleSubmit((values) => {
+    setPending(values)
+  })
+
+  const onConfirm = (): void => {
+    if (!pending) return
+    const values = pending
+    setPending(null)
     record.mutate(
       {
         invoice_id: invoiceId,
@@ -62,6 +78,14 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
         },
       },
     )
+  }
+
+  const onCancel = (): void => {
+    setPending(null)
+  }
+
+  const confirmTitle = t('admin.payments.record.confirmTitle', {
+    amount: formatYen(pending?.amount_cents ?? 0),
   })
 
   return {
@@ -75,6 +99,10 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
     onSubmit: (event) => {
       void submit(event)
     },
+    confirming: pending !== null,
+    confirmTitle,
+    onConfirm,
+    onCancel,
     isRecording: record.isPending,
     errorMessage: record.isError ? t('admin.payments.record.error') : null,
   }
