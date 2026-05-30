@@ -105,6 +105,16 @@ export default tseslint.config(
       globals: { ...globals.browser, ...globals.node },
     },
   },
+  {
+    // Browser E2E specs run under the Playwright (node) runner, not the typed
+    // app project, so they use the untyped recommended rules.
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2023,
+      globals: { ...globals.node },
+    },
+  },
   ...storybook.configs['flat/recommended'],
   eslintConfigPrettier,
 )
