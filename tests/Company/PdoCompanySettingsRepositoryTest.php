@@ -7,17 +7,21 @@ namespace NeneInvoice\Tests\Company;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\Company\PdoCompanySettingsRepository;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Tests for PdoCompanySettingsRepository: upsert logic (save on empty → insert,
- * save again → update), org isolation, and field round-trip.
+ * save again → update), org isolation, and field round-trip. The organization is
+ * read from the request-scoped holder; save() forces it.
  */
 final class PdoCompanySettingsRepositoryTest extends TestCase
 {
     private PdoCompanySettingsRepository $repo;
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
 
     protected function setUp(): void
     {
@@ -39,12 +43,14 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->repo = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->repo = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
     }
 
     public function test_find_returns_null_when_not_set(): void
     {
-        self::assertNull($this->repo->findByOrganization(1));
+        self::assertNull($this->repo->find());
     }
 
     public function test_save_inserts_and_read_back(): void
@@ -64,7 +70,7 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
 
         $this->repo->save($settings);
 
-        $found = $this->repo->findByOrganization(1);
+        $found = $this->repo->find();
         self::assertNotNull($found);
         self::assertSame('株式会社テスト', $found->legalName);
         self::assertSame('T1234567890123', $found->registrationNumber);
@@ -77,7 +83,7 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
         $this->repo->save(new CompanySettings(organizationId: 1, legalName: '旧社名'));
         $this->repo->save(new CompanySettings(organizationId: 1, legalName: '新社名', registrationNumber: 'T9999999999999'));
 
-        $found = $this->repo->findByOrganization(1);
+        $found = $this->repo->find();
         self::assertNotNull($found);
         self::assertSame('新社名', $found->legalName);
         self::assertSame('T9999999999999', $found->registrationNumber);
@@ -85,19 +91,30 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
 
     public function test_orgs_are_isolated(): void
     {
+        $this->holder->set(1);
         $this->repo->save(new CompanySettings(organizationId: 1, legalName: 'Org 1'));
+        $this->holder->set(2);
         $this->repo->save(new CompanySettings(organizationId: 2, legalName: 'Org 2'));
 
-        self::assertSame('Org 1', $this->repo->findByOrganization(1)?->legalName);
-        self::assertSame('Org 2', $this->repo->findByOrganization(2)?->legalName);
-        self::assertNull($this->repo->findByOrganization(3));
+        $this->holder->set(1);
+        $orgOne = $this->repo->find();
+        self::assertNotNull($orgOne);
+        self::assertSame('Org 1', $orgOne->legalName);
+
+        $this->holder->set(2);
+        $orgTwo = $this->repo->find();
+        self::assertNotNull($orgTwo);
+        self::assertSame('Org 2', $orgTwo->legalName);
+
+        $this->holder->set(3);
+        self::assertNull($this->repo->find());
     }
 
     public function test_optional_fields_are_nullable(): void
     {
         $this->repo->save(new CompanySettings(organizationId: 1, legalName: 'Minimal'));
 
-        $found = $this->repo->findByOrganization(1);
+        $found = $this->repo->find();
         self::assertNotNull($found);
         self::assertNull($found->address);
         self::assertNull($found->registrationNumber);

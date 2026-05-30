@@ -46,7 +46,7 @@ final readonly class GenerateInvoicePdfUseCase
         $outstanding = max(0, $invoice->totalCents - $this->payments->totalPaidForInvoice($invoiceId));
         $withLines   = new InvoiceWithLines($invoice, $lines, $outstanding);
 
-        $company = $this->companySettings->findByOrganization($organizationId)
+        $company = $this->companySettings->find()
             ?? new \NeneInvoice\Company\CompanySettings(
                 organizationId: $organizationId,
                 legalName: '（会社情報未設定）',

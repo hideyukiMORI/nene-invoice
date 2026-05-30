@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace NeneInvoice\Company;
 
 use LogicException;
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateCompanySettingsUseCase
 {
+    /**
+     * @param RequestScopedHolder<int> $orgId resolved organization for this request
+     */
     public function __construct(
         private CompanySettingsRepositoryInterface $repository,
         private AuditRecorderInterface $audit,
+        private RequestScopedHolder $orgId,
     ) {
     }
 
@@ -21,13 +26,14 @@ final readonly class UpdateCompanySettingsUseCase
      *
      * @throws InvalidRegistrationNumberException
      */
-    public function execute(int $organizationId, ?int $actorUserId, UpdateCompanySettingsInput $input): CompanySettings
+    public function execute(?int $actorUserId, UpdateCompanySettingsInput $input): CompanySettings
     {
         if ($input->registrationNumber !== null && !RegistrationNumber::isValid($input->registrationNumber)) {
             throw new InvalidRegistrationNumberException($input->registrationNumber);
         }
 
-        $existing = $this->repository->findByOrganization($organizationId);
+        $organizationId = $this->orgId->get();
+        $existing = $this->repository->find();
 
         $this->repository->save(new CompanySettings(
             organizationId: $organizationId,
@@ -43,7 +49,7 @@ final readonly class UpdateCompanySettingsUseCase
             logoUrl: $input->logoUrl,
         ));
 
-        $saved = $this->repository->findByOrganization($organizationId);
+        $saved = $this->repository->find();
 
         if ($saved === null) {
             throw new LogicException('Company settings disappeared immediately after save.');

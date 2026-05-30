@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Audit;
 
+use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditLog;
 use NeneInvoice\Audit\ListAuditLogsUseCase;
 use NeneInvoice\Tests\Support\InMemoryAuditLogRepository;
@@ -13,10 +14,14 @@ final class ListAuditLogsUseCaseTest extends TestCase
 {
     private InMemoryAuditLogRepository $logs;
     private ListAuditLogsUseCase $useCase;
+    /** @var RequestScopedHolder<int> */
+    private RequestScopedHolder $holder;
 
     protected function setUp(): void
     {
-        $this->logs = new InMemoryAuditLogRepository();
+        $this->holder = new RequestScopedHolder();
+        $this->holder->set(1);
+        $this->logs = new InMemoryAuditLogRepository($this->holder);
         $this->useCase = new ListAuditLogsUseCase($this->logs);
     }
 
@@ -26,7 +31,7 @@ final class ListAuditLogsUseCaseTest extends TestCase
         $this->logs->append(new AuditLog(action: 'invoice.issued', entityType: 'invoice', organizationId: 1, entityId: 10));
         $this->logs->append(new AuditLog(action: 'client.created', entityType: 'client', organizationId: 2, entityId: 99));
 
-        $result = $this->useCase->execute(1, 20, 0);
+        $result = $this->useCase->execute(20, 0);
 
         self::assertSame(2, $result->total);
         self::assertCount(2, $result->items);
@@ -40,7 +45,7 @@ final class ListAuditLogsUseCaseTest extends TestCase
             $this->logs->append(new AuditLog(action: 'invoice.created', entityType: 'invoice', organizationId: 1, entityId: $i));
         }
 
-        $page = $this->useCase->execute(1, 2, 2);
+        $page = $this->useCase->execute(2, 2);
 
         self::assertSame(5, $page->total);
         self::assertCount(2, $page->items);
@@ -48,7 +53,8 @@ final class ListAuditLogsUseCaseTest extends TestCase
 
     public function test_empty_for_organization_with_no_logs(): void
     {
-        $result = $this->useCase->execute(7, 20, 0);
+        $this->holder->set(7);
+        $result = $this->useCase->execute(20, 0);
 
         self::assertSame(0, $result->total);
         self::assertSame([], $result->items);

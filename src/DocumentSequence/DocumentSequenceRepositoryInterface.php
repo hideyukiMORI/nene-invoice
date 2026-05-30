@@ -8,7 +8,8 @@ interface DocumentSequenceRepositoryInterface
 {
     /**
      * Atomically allocates and returns the next sequence number for the given
-     * organization, document type, and year (starting at 1 each year).
+     * document type and year (starting at 1 each year). The organization is read
+     * from the request-scoped org holder (ADR 0006).
      */
-    public function nextNumber(int $organizationId, string $docType, int $year): int;
+    public function nextNumber(string $docType, int $year): int;
 }

@@ -8,6 +8,8 @@ use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ApplicationServiceProvider;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -27,7 +29,7 @@ final readonly class DocumentSequenceServiceProvider implements ServiceProviderI
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoDocumentSequenceRepository($query);
+                    return new PdoDocumentSequenceRepository($query, self::orgHolder($c));
                 },
             )
             ->set(
@@ -42,5 +44,17 @@ final readonly class DocumentSequenceServiceProvider implements ServiceProviderI
                     return new DocumentNumberGenerator($repo);
                 },
             );
+    }
+
+    /** @return RequestScopedHolder<int> */
+    private static function orgHolder(ContainerInterface $c): RequestScopedHolder
+    {
+        $holder = $c->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+
+        if (!$holder instanceof RequestScopedHolder) {
+            throw new LogicException('Org id holder service is invalid.');
+        }
+
+        return $holder;
     }
 }

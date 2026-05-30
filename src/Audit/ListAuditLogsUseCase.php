@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace NeneInvoice\Audit;
 
 /**
- * Lists the audit trail for an organization, most recent first.
+ * Lists the audit trail for the resolved organization, most recent first. The
+ * organization is read from the request-scoped org holder by the repository.
  */
 final readonly class ListAuditLogsUseCase
 {
@@ -14,11 +15,11 @@ final readonly class ListAuditLogsUseCase
     ) {
     }
 
-    public function execute(int $organizationId, int $limit, int $offset): ListAuditLogsResult
+    public function execute(int $limit, int $offset): ListAuditLogsResult
     {
         return new ListAuditLogsResult(
-            $this->logs->findByOrganization($organizationId, $limit, $offset),
-            $this->logs->countByOrganization($organizationId),
+            $this->logs->findAll($limit, $offset),
+            $this->logs->count(),
         );
     }
 }

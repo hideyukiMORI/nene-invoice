@@ -70,7 +70,7 @@ final readonly class CreateQuoteUseCase
         }
 
         $totals = $this->taxCalculator->calculate($input->lines);
-        $number = $this->numbers->next($organizationId, DocumentType::Quote, (int) date('Y'));
+        $number = $this->numbers->next(DocumentType::Quote, (int) date('Y'));
 
         $quoteId = $this->quotes->save(new Quote(
             organizationId: $organizationId,
