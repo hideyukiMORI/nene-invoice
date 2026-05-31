@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import type { QuoteId } from '@/entities/quote'
+import { useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
@@ -12,6 +12,8 @@ export interface ViewQuoteProps {
 export function ViewQuote({ quoteId }: ViewQuoteProps) {
   const { t } = useTranslation()
   const state = useViewQuote(quoteId)
+  const quoteNumber = state.kind === 'ready' ? state.quote.quote_number : ''
+  const pdf = useDownloadQuotePdf(quoteId, quoteNumber)
 
   if (state.kind === 'loading') {
     return (
@@ -46,6 +48,18 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             {quote.quote_number}
           </Text>
           <Stack direction="row" gap="sm">
+            <Stack gap="sm">
+              <Button onClick={pdf.download} disabled={pdf.isDownloading}>
+                {pdf.isDownloading
+                  ? t('admin.quotes.detail.downloadingPdf')
+                  : t('admin.quotes.detail.downloadPdf')}
+              </Button>
+              {pdf.errorMessage !== null && (
+                <Text variant="muted" role="alert">
+                  {pdf.errorMessage}
+                </Text>
+              )}
+            </Stack>
             {state.canSend && (
               <Button
                 onClick={() => {

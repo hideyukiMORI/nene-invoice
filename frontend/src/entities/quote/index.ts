@@ -3,3 +3,4 @@ export type { Quote, QuotePage, QuoteStatus, QuoteWithLines, CreateQuoteInput } 
 export { quoteKeys } from './query-keys'
 export { useQuoteList, useQuote } from './queries'
 export { useCreateQuote, useChangeQuoteStatus, useConvertQuote } from './mutations'
+export { useDownloadQuotePdf } from './download'

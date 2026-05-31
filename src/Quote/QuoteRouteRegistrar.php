@@ -18,19 +18,22 @@ final readonly class QuoteRouteRegistrar
         private GetQuoteByIdHandler $getHandler,
         private CreateQuoteHandler $createHandler,
         private ChangeQuoteStatusHandler $changeStatusHandler,
+        private GetQuotePdfHandler $getPdfHandler,
     ) {
     }
 
     public function __invoke(Router $router): void
     {
-        $list = $this->listHandler;
-        $get = $this->getHandler;
-        $create = $this->createHandler;
+        $list        = $this->listHandler;
+        $get         = $this->getHandler;
+        $create      = $this->createHandler;
         $changeStatus = $this->changeStatusHandler;
+        $pdf         = $this->getPdfHandler;
 
         $router->get('/admin/quotes', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/quotes', static fn (ServerRequestInterface $r) => $create->handle($r));
         $router->get('/admin/quotes/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->patch('/admin/quotes/{id}', static fn (ServerRequestInterface $r) => $changeStatus->handle($r));
+        $router->get('/admin/quotes/{id}/pdf', static fn (ServerRequestInterface $r) => $pdf->handle($r));
     }
 }

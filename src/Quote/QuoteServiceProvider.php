@@ -14,9 +14,12 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
+use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Quote\Pdf\QuotePdfGenerator;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -100,6 +103,30 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                GenerateQuotePdfUseCase::class,
+                static fn (ContainerInterface $c): GenerateQuotePdfUseCase => new GenerateQuotePdfUseCase(
+                    self::quotes($c),
+                    self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, CompanySettingsRepositoryInterface::class),
+                    self::resolve($c, ClientRepositoryInterface::class),
+                    self::orgHolder($c),
+                ),
+            )
+            ->set(
+                QuotePdfGenerator::class,
+                static fn (ContainerInterface $c): QuotePdfGenerator => new QuotePdfGenerator(
+                    self::resolve($c, TaxCalculator::class),
+                ),
+            )
+            ->set(
+                GetQuotePdfHandler::class,
+                static fn (ContainerInterface $c): GetQuotePdfHandler => new GetQuotePdfHandler(
+                    self::resolve($c, GenerateQuotePdfUseCase::class),
+                    self::resolve($c, QuotePdfGenerator::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 QuoteNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): QuoteNotFoundExceptionHandler => new QuoteNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -114,16 +141,17 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             ->set(
                 QuoteRouteRegistrar::class,
                 static function (ContainerInterface $c): QuoteRouteRegistrar {
-                    $list = $c->get(ListQuotesHandler::class);
-                    $get = $c->get(GetQuoteByIdHandler::class);
-                    $create = $c->get(CreateQuoteHandler::class);
+                    $list         = $c->get(ListQuotesHandler::class);
+                    $get          = $c->get(GetQuoteByIdHandler::class);
+                    $create       = $c->get(CreateQuoteHandler::class);
                     $changeStatus = $c->get(ChangeQuoteStatusHandler::class);
+                    $pdf          = $c->get(GetQuotePdfHandler::class);
 
-                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler || !$changeStatus instanceof ChangeQuoteStatusHandler) {
+                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler || !$changeStatus instanceof ChangeQuoteStatusHandler || !$pdf instanceof GetQuotePdfHandler) {
                         throw new LogicException('Quote handler services are invalid.');
                     }
 
-                    return new QuoteRouteRegistrar($list, $get, $create, $changeStatus);
+                    return new QuoteRouteRegistrar($list, $get, $create, $changeStatus, $pdf);
                 },
             );
     }

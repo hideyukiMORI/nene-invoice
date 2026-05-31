@@ -577,6 +577,33 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/InvalidStateTransition'
+  /admin/quotes/{id}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Quotes]
+      summary: Download quote PDF
+      description: >
+        Generates and streams the quote as a PDF (見積書 layout).
+        Requires ViewBilling capability.
+        Returns application/pdf with Content-Disposition: attachment.
+      operationId: getQuotePdf
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: PDF binary
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /admin/quotes/{id}/convert:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
