@@ -79,3 +79,10 @@ export function useGenerateDownloadToken(): UseMutationResult<
       apiClient.post<DownloadTokenResult>(`/admin/invoices/${String(id)}/download-token`),
   })
 }
+
+/** POST /admin/invoices/{id}/send-email — sends the invoice PDF to the client. */
+export function useSendInvoiceEmail(): UseMutationResult<void, AppError, number> {
+  return useMutation<void, AppError, number>({
+    mutationFn: (id) => apiClient.post(`/admin/invoices/${String(id)}/send-email`),
+  })
+}

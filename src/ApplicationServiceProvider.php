@@ -16,6 +16,7 @@ use NeneInvoice\Company\CompanyRouteRegistrar;
 use NeneInvoice\Company\CompanySettingsNotFoundExceptionHandler;
 use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInvalidRegistrationNumberExceptionHandler;
 use NeneInvoice\Dashboard\DashboardRouteRegistrar;
+use NeneInvoice\Invoice\InvoiceEmailExceptionHandler;
 use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
 use NeneInvoice\Invoice\InvoiceRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
@@ -155,6 +156,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceNotFound = $container->get(InvoiceNotFoundExceptionHandler::class);
                     $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
+                    $invoiceEmail = $container->get(InvoiceEmailExceptionHandler::class);
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
                     $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
                     $paymentNotFound = $container->get(PaymentNotFoundExceptionHandler::class);
@@ -223,6 +225,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Qualified invoice incomplete exception handler service is invalid.');
                     }
 
+                    if (!$invoiceEmail instanceof InvoiceEmailExceptionHandler) {
+                        throw new LogicException('Invoice email exception handler service is invalid.');
+                    }
+
                     if (!$paymentValidation instanceof PaymentValidationExceptionHandler) {
                         throw new LogicException('Payment validation exception handler service is invalid.');
                     }
@@ -235,7 +241,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $paymentValidation, $paymentExceeds, $paymentNotFound];
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound];
                 },
             );
     }
