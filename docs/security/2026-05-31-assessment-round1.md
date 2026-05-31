@@ -3,7 +3,7 @@
 - **対象**: NeNe Invoice API（自己ホスト型 見積・請求・入金管理 / NENE2 PHP 8.4 + MySQL）
 - **実施日**: 2026-05-31
 - **手法**: 認可されたブラックボックス + グレーボックス手動診断（自己所有アプリ・ローカル Docker）
-- **対象環境**: ローカル Docker（`app` = php:8.4-apache, `db` = mysql:8.0）。`http://localhost:18090`、MySQL `13309`
+- **対象環境**: ローカル Docker（`app` = php:8.4-apache, `db` = mysql:8.0）。`http://localhost:8590`、MySQL `3385`
 - **テナント構成**: `TENANT_RESOLUTION=single`, `ORG_SLUG=org-a`（解決 org = org-a/id 1）
 - **シードデータ**: org-a(1) / org-b(2)、ユーザ admin/member/viewer/superadmin、各 org に client・invoice・company_settings
 
@@ -164,7 +164,7 @@ SQL レベルで `organization_id` が強制され、組織間アクセスはす
 ```
 docs/security/harness/
 ├── Dockerfile           # php:8.4-apache + pdo_mysql + rewrite
-├── docker-compose.yml   # app:18090 / db:13309（既存コンテナと非衝突）
+├── docker-compose.yml   # app:8590 / db:3385（既存コンテナと非衝突）
 ├── .env.app.example     # mysql 接続 + ORG_SLUG=org-a の雛形（実体は .gitignore）
 └── seed.sql             # 2 組織・5 ユーザ・client/invoice/company_settings
 ```

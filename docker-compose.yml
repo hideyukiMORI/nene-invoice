@@ -3,8 +3,8 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI — http://localhost:8025
+      - "1585:1025"   # SMTP (NeNe Invoice 固定: 1585)
+      - "8585:8025"   # Web UI — http://localhost:8585
     environment:
       MP_MAX_MESSAGES: 200
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
