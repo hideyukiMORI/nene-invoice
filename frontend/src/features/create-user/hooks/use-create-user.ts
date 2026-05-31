@@ -7,7 +7,7 @@ import { useCreateUser as useCreateUserMutation } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   password: z.string().min(8),
   role: z.enum(['admin', 'member', 'viewer']),
 })

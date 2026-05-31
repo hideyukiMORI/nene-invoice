@@ -2,7 +2,16 @@ import { Link } from 'react-router-dom'
 import { useDownloadInvoicePdf, useSendInvoiceEmail, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, ErrorState, LineItemsTable, LoadingState, MutationError, Stack, Text, TotalRow } from '@/shared/ui'
+import {
+  Button,
+  ErrorState,
+  LineItemsTable,
+  LoadingState,
+  MutationError,
+  Stack,
+  Text,
+  TotalRow,
+} from '@/shared/ui'
 import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
 import { useViewInvoice } from '../hooks/use-view-invoice'
 
@@ -74,7 +83,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                   {t('admin.invoices.detail.emailSent')}
                 </Text>
               )}
-              <MutationError message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null} />
+              <MutationError
+                message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null}
+              />
             </Stack>
           )}
           {link.canGenerate && (

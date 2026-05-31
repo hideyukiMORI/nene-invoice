@@ -17,10 +17,12 @@ describe('useDownloadQuotePdf', () => {
 
   it('downloads and clears error on success', async () => {
     server.use(
-      http.get('/admin/quotes/:id/pdf', () =>
-        new HttpResponse('%PDF-1.4 fake', {
-          headers: { 'Content-Type': 'application/pdf' },
-        }),
+      http.get(
+        '/admin/quotes/:id/pdf',
+        () =>
+          new HttpResponse('%PDF-1.4 fake', {
+            headers: { 'Content-Type': 'application/pdf' },
+          }),
       ),
     )
 
@@ -42,9 +44,7 @@ describe('useDownloadQuotePdf', () => {
   })
 
   it('sets errorMessage on server error', async () => {
-    server.use(
-      http.get('/admin/quotes/:id/pdf', () => new HttpResponse(null, { status: 404 })),
-    )
+    server.use(http.get('/admin/quotes/:id/pdf', () => new HttpResponse(null, { status: 404 })))
 
     const { result } = renderHookWithProviders(() =>
       useDownloadQuotePdf(toQuoteId(1), 'EST-2026-001'),
@@ -73,8 +73,12 @@ describe('useDownloadQuotePdf', () => {
       useDownloadQuotePdf(toQuoteId(1), 'EST-2026-001'),
     )
 
-    act(() => { result.current.download() })
-    act(() => { result.current.download() }) // second call ignored
+    act(() => {
+      result.current.download()
+    })
+    act(() => {
+      result.current.download()
+    }) // second call ignored
 
     await waitFor(() => {
       expect(result.current.isDownloading).toBe(false)

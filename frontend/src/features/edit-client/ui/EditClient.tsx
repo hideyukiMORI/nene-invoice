@@ -13,9 +13,7 @@ export function EditClient({ clientId }: EditClientProps) {
   const state = useEditClient(clientId)
 
   if (state.kind === 'loading') {
-    return (
-      <LoadingState message={t('admin.clients.loading')} />
-    )
+    return <LoadingState message={t('admin.clients.loading')} />
   }
 
   if (state.kind === 'error') {

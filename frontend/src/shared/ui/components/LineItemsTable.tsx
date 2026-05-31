@@ -1,11 +1,21 @@
-import type { LineItem } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { Stack } from '../primitives/Stack'
 import { Text } from '../primitives/Text'
 
+/**
+ * Minimal row shape a document line must provide. Kept local so the shared UI
+ * layer stays independent of the entities layer (FSD import boundary).
+ */
+export interface LineItemRow {
+  description: string
+  quantity: number
+  unit_price_cents: number
+  tax_rate_bps: number
+  line_subtotal_cents: number
+}
+
 /** Line-item table shared by invoice and quote detail screens. */
-export function LineItemsTable({ items }: { items: LineItem[] }) {
+export function LineItemsTable({ items }: { items: LineItemRow[] }) {
   const { t } = useTranslation()
   return (
     <table className="w-full border-collapse text-body">

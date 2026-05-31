@@ -19,9 +19,7 @@ export function ListQuotes() {
         </Link>
       </div>
 
-      {state.kind === 'loading' && (
-        <LoadingState message={t('admin.quotes.loading')} />
-      )}
+      {state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}
 
       {state.kind === 'error' && (
         <ErrorState

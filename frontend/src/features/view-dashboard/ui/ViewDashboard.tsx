@@ -10,9 +10,7 @@ export function ViewDashboard() {
   const state = useViewDashboard()
 
   if (state.kind === 'loading') {
-    return (
-      <LoadingState message={t('admin.dashboard.loading')} />
-    )
+    return <LoadingState message={t('admin.dashboard.loading')} />
   }
 
   if (state.kind === 'error') {

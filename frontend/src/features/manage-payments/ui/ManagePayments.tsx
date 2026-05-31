@@ -1,7 +1,18 @@
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, ConfirmDialog, EmptyState, Field, Input, LoadingState, MutationError, Select, Stack, Text } from '@/shared/ui'
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  Input,
+  LoadingState,
+  MutationError,
+  Select,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { PAYMENT_METHODS, useManagePayments } from '../hooks/use-manage-payments'
 
 export interface ManagePaymentsProps {
@@ -41,9 +52,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
         {t('admin.payments.title')}
       </Text>
 
-      {paymentsLoading && (
-        <LoadingState message={t('admin.payments.loading')} />
-      )}
+      {paymentsLoading && <LoadingState message={t('admin.payments.loading')} />}
 
       {!paymentsLoading && payments.length === 0 && (
         <EmptyState message={t('admin.payments.empty')} />

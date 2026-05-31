@@ -2,7 +2,16 @@ import { Link } from 'react-router-dom'
 import { useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, ErrorState, LineItemsTable, LoadingState, MutationError, Stack, Text, TotalRow } from '@/shared/ui'
+import {
+  Button,
+  ErrorState,
+  LineItemsTable,
+  LoadingState,
+  MutationError,
+  Stack,
+  Text,
+  TotalRow,
+} from '@/shared/ui'
 import { useViewQuote } from '../hooks/use-view-quote'
 
 export interface ViewQuoteProps {

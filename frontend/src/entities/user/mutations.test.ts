@@ -18,9 +18,7 @@ const USER_DTO = {
 
 describe('useCreateUser', () => {
   it('posts and returns the mapped user', async () => {
-    server.use(
-      http.post('/admin/users', () => HttpResponse.json(USER_DTO, { status: 201 })),
-    )
+    server.use(http.post('/admin/users', () => HttpResponse.json(USER_DTO, { status: 201 })))
 
     const { result } = renderHookWithProviders(() => useCreateUser())
     act(() => {
@@ -82,9 +80,7 @@ describe('useUpdateUser', () => {
 
 describe('useDeleteUser', () => {
   it('deletes and returns the id', async () => {
-    server.use(
-      http.delete('/admin/users/:id', () => new HttpResponse(null, { status: 204 })),
-    )
+    server.use(http.delete('/admin/users/:id', () => new HttpResponse(null, { status: 204 })))
 
     const { result } = renderHookWithProviders(() => useDeleteUser())
     act(() => {

@@ -14,10 +14,12 @@ describe('useExportInvoicesCsv', () => {
 
   it('clears error and triggers download on success', async () => {
     server.use(
-      http.get('/admin/invoices/export', () =>
-        new HttpResponse('\xEF\xBB\xBF請求書番号\n', {
-          headers: { 'Content-Type': 'text/csv; charset=UTF-8' },
-        }),
+      http.get(
+        '/admin/invoices/export',
+        () =>
+          new HttpResponse('\xEF\xBB\xBF請求書番号\n', {
+            headers: { 'Content-Type': 'text/csv; charset=UTF-8' },
+          }),
       ),
     )
 
@@ -37,9 +39,7 @@ describe('useExportInvoicesCsv', () => {
   })
 
   it('sets errorMessage on server error', async () => {
-    server.use(
-      http.get('/admin/invoices/export', () => new HttpResponse(null, { status: 500 })),
-    )
+    server.use(http.get('/admin/invoices/export', () => new HttpResponse(null, { status: 500 })))
 
     const { result } = renderHookWithProviders(() => useExportInvoicesCsv())
 
@@ -62,10 +62,12 @@ describe('useExportPaymentsCsv', () => {
 
   it('clears error and downloads on success', async () => {
     server.use(
-      http.get('/admin/payments/export', () =>
-        new HttpResponse('\xEF\xBB\xBF請求書番号\n', {
-          headers: { 'Content-Type': 'text/csv; charset=UTF-8' },
-        }),
+      http.get(
+        '/admin/payments/export',
+        () =>
+          new HttpResponse('\xEF\xBB\xBF請求書番号\n', {
+            headers: { 'Content-Type': 'text/csv; charset=UTF-8' },
+          }),
       ),
     )
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, MutationError, Stack, Text } from '@/shared/ui'
+import { Button, ConfirmDialog, MutationError, Stack } from '@/shared/ui'
 import { useIssueInvoice } from '../hooks/use-issue-invoice'
 
 export interface IssueInvoiceProps {

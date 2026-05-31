@@ -13,9 +13,7 @@ export function EditUser({ userId }: EditUserProps) {
   const state = useEditUser(userId)
 
   if (state.kind === 'loading') {
-    return (
-      <LoadingState message={t('admin.users.loading')} />
-    )
+    return <LoadingState message={t('admin.users.loading')} />
   }
 
   if (state.kind === 'error') {
@@ -53,10 +51,7 @@ export function EditUser({ userId }: EditUserProps) {
           />
         </Field>
 
-        <Field
-          id="password"
-          label={t('admin.users.edit.newPassword')}
-        >
+        <Field id="password" label={t('admin.users.edit.newPassword')}>
           <Input id="password" type="password" {...register('password')} />
         </Field>
 

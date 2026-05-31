@@ -8,9 +8,7 @@ export function EditCompanySettings() {
   const state = useEditCompanySettings()
 
   if (state.kind === 'loading') {
-    return (
-      <LoadingState message={t('admin.settings.loading')} />
-    )
+    return <LoadingState message={t('admin.settings.loading')} />
   }
 
   if (state.kind === 'error') {

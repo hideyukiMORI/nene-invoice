@@ -1,14 +1,14 @@
 import type { UserDto, UserListDto } from './api-types'
 import { toUserId } from './ids'
-import type { User, UserPage, UserRole, UserStatus } from './model'
+import type { User, UserPage } from './model'
 
 export function toUser(dto: UserDto): User {
   return {
     id: toUserId(dto.id),
     email: dto.email,
-    role: (dto.role as UserRole),
+    role: dto.role,
     organization_id: dto.organization_id ?? null,
-    status: (dto.status ?? 'active') as UserStatus,
+    status: dto.status ?? 'active',
     created_at: dto.created_at ?? null,
     updated_at: dto.updated_at ?? null,
   }

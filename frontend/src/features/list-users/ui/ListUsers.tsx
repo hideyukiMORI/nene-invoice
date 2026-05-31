@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDeleteUser, type User } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { useListUsers } from '../hooks/use-list-users'
 
 /** User list screen with per-row delete (confirmed). */
@@ -32,9 +40,7 @@ export function ListUsers() {
         </Link>
       </div>
 
-      {state.kind === 'loading' && (
-        <LoadingState message={t('admin.users.loading')} />
-      )}
+      {state.kind === 'loading' && <LoadingState message={t('admin.users.loading')} />}
 
       {state.kind === 'error' && (
         <ErrorState
@@ -50,36 +56,25 @@ export function ListUsers() {
         <table className="w-full border-collapse text-body">
           <thead>
             <tr className="border-b border-border text-left">
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.users.col.email')}
-              </th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.users.col.role')}
-              </th>
+              <th className="py-stack-sm pr-inline-md font-medium">{t('admin.users.col.email')}</th>
+              <th className="py-stack-sm pr-inline-md font-medium">{t('admin.users.col.role')}</th>
               <th className="py-stack-sm pr-inline-md font-medium">
                 {t('admin.users.col.status')}
               </th>
-              <th className="py-stack-sm text-right font-medium">
-                {t('admin.users.col.actions')}
-              </th>
+              <th className="py-stack-sm text-right font-medium">{t('admin.users.col.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {state.users.map((user) => (
               <tr key={user.id} className="border-b border-border">
                 <td className="py-stack-sm pr-inline-md">{user.email}</td>
-                <td className="py-stack-sm pr-inline-md">
-                  {t(`admin.users.role.${user.role}`)}
-                </td>
+                <td className="py-stack-sm pr-inline-md">{t(`admin.users.role.${user.role}`)}</td>
                 <td className="py-stack-sm pr-inline-md">
                   {t(`admin.users.status.${user.status}`)}
                 </td>
                 <td className="py-stack-sm text-right">
                   <Stack direction="row" gap="sm" className="justify-end">
-                    <Link
-                      to={`/users/${String(user.id)}/edit`}
-                      className="text-body text-accent"
-                    >
+                    <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
                       {t('admin.users.editButton')}
                     </Link>
                     <Button

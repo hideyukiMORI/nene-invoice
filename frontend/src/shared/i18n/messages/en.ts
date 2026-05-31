@@ -49,7 +49,8 @@ export const enMessages: MessageCatalog = {
   'admin.users.create.role': 'Role',
   'admin.users.create.submit': 'Create',
   'admin.users.create.submitting': 'Creating…',
-  'admin.users.create.error': 'Could not create the user. Check for duplicate email or password format.',
+  'admin.users.create.error':
+    'Could not create the user. Check for duplicate email or password format.',
   'admin.users.edit.title': 'Edit user',
   'admin.users.edit.newPassword': 'New password (leave blank to keep unchanged)',
   'admin.users.edit.submit': 'Save',
@@ -171,7 +172,7 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.detail.sendEmail': 'Send by email',
   'admin.invoices.detail.sendingEmail': 'Sending…',
   'admin.invoices.detail.emailSent': 'Email sent.',
-  'admin.invoices.detail.emailError': 'Could not send the email. Check the client\'s email address.',
+  'admin.invoices.detail.emailError': "Could not send the email. Check the client's email address.",
   'admin.invoices.detail.generateLink': 'Generate client link',
   'admin.invoices.detail.generatingLink': 'Generating link…',
   'admin.invoices.detail.generateLinkError': 'Could not generate link.',

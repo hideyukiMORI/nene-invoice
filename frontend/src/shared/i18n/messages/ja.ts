@@ -50,7 +50,8 @@ export const jaMessages = {
   'admin.users.create.role': 'ロール',
   'admin.users.create.submit': '作成する',
   'admin.users.create.submitting': '作成中…',
-  'admin.users.create.error': 'ユーザーを作成できませんでした。メールアドレスの重複やパスワード形式を確認してください。',
+  'admin.users.create.error':
+    'ユーザーを作成できませんでした。メールアドレスの重複やパスワード形式を確認してください。',
   'admin.users.edit.title': 'ユーザーの編集',
   'admin.users.edit.newPassword': '新しいパスワード（変更しない場合は空白）',
   'admin.users.edit.submit': '保存する',
@@ -173,7 +174,8 @@ export const jaMessages = {
   'admin.invoices.detail.sendEmail': 'メールで送信',
   'admin.invoices.detail.sendingEmail': '送信中…',
   'admin.invoices.detail.emailSent': 'メールを送信しました。',
-  'admin.invoices.detail.emailError': 'メールの送信に失敗しました。取引先のメールアドレスを確認してください。',
+  'admin.invoices.detail.emailError':
+    'メールの送信に失敗しました。取引先のメールアドレスを確認してください。',
   'admin.invoices.detail.generateLink': 'クライアント向けリンクを生成',
   'admin.invoices.detail.generatingLink': 'リンクを生成中…',
   'admin.invoices.detail.generateLinkError': 'リンクの生成に失敗しました。',

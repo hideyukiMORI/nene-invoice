@@ -51,9 +51,7 @@ export function ListInvoices() {
         </Text>
       )}
 
-      {state.kind === 'loading' && (
-        <LoadingState message={t('admin.invoices.loading')} />
-      )}
+      {state.kind === 'loading' && <LoadingState message={t('admin.invoices.loading')} />}
 
       {state.kind === 'error' && (
         <ErrorState
