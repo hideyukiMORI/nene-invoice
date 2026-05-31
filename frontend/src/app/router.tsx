@@ -11,6 +11,9 @@ import { QuoteDetailPage } from '@/pages/quote-detail'
 import { QuotesPage } from '@/pages/quotes'
 import { InvoiceDetailPage } from '@/pages/invoice-detail'
 import { InvoicesPage } from '@/pages/invoices'
+import { UsersPage } from '@/pages/users'
+import { UserCreatePage } from '@/pages/user-create'
+import { UserEditPage } from '@/pages/user-edit'
 
 const router = createBrowserRouter([
   {
@@ -29,6 +32,9 @@ const router = createBrowserRouter([
       { path: 'quotes/new', element: <QuoteCreatePage /> },
       { path: 'quotes/:id', element: <QuoteDetailPage /> },
       { path: 'settings', element: <CompanySettingsPage /> },
+      { path: 'users', element: <UsersPage /> },
+      { path: 'users/new', element: <UserCreatePage /> },
+      { path: 'users/:id/edit', element: <UserEditPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/invoices" replace /> },
