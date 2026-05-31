@@ -19,6 +19,7 @@ use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Mailer\MailerInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -166,20 +167,45 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                SendInvoiceEmailUseCase::class,
+                static fn (ContainerInterface $c): SendInvoiceEmailUseCase => new SendInvoiceEmailUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, ClientRepositoryInterface::class),
+                    self::resolve($c, CompanySettingsRepositoryInterface::class),
+                    self::resolve($c, InvoicePdfGenerator::class),
+                    self::resolve($c, MailerInterface::class),
+                    self::orgHolder($c),
+                    (string) (getenv('MAIL_FROM_NAME') ?: 'NeNe Invoice'),
+                ),
+            )
+            ->set(
+                SendInvoiceEmailHandler::class,
+                static fn (ContainerInterface $c): SendInvoiceEmailHandler => new SendInvoiceEmailHandler(
+                    self::resolve($c, SendInvoiceEmailUseCase::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
+                InvoiceEmailExceptionHandler::class,
+                static fn (ContainerInterface $c): InvoiceEmailExceptionHandler => new InvoiceEmailExceptionHandler(self::problemDetails($c)),
+            )
+            ->set(
                 InvoiceRouteRegistrar::class,
                 static function (ContainerInterface $c): InvoiceRouteRegistrar {
-                    $list    = $c->get(ListInvoicesHandler::class);
-                    $get     = $c->get(GetInvoiceByIdHandler::class);
-                    $create  = $c->get(CreateInvoiceHandler::class);
-                    $convert = $c->get(ConvertQuoteToInvoiceHandler::class);
-                    $issue   = $c->get(IssueInvoiceHandler::class);
-                    $pdf     = $c->get(GetInvoicePdfHandler::class);
+                    $list      = $c->get(ListInvoicesHandler::class);
+                    $get       = $c->get(GetInvoiceByIdHandler::class);
+                    $create    = $c->get(CreateInvoiceHandler::class);
+                    $convert   = $c->get(ConvertQuoteToInvoiceHandler::class);
+                    $issue     = $c->get(IssueInvoiceHandler::class);
+                    $pdf       = $c->get(GetInvoicePdfHandler::class);
+                    $sendEmail = $c->get(SendInvoiceEmailHandler::class);
 
-                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler || !$pdf instanceof GetInvoicePdfHandler) {
+                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler || !$pdf instanceof GetInvoicePdfHandler || !$sendEmail instanceof SendInvoiceEmailHandler) {
                         throw new LogicException('Invoice handler services are invalid.');
                     }
 
-                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue, $pdf);
+                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue, $pdf, $sendEmail);
                 },
             );
     }

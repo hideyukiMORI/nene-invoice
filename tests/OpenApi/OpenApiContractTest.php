@@ -58,6 +58,7 @@ final class OpenApiContractTest extends TestCase
         'issueInvoice',
         'listPayments',
         'recordPayment',
+        'sendInvoiceEmail',
     ];
 
     /** @var array<string, mixed> */

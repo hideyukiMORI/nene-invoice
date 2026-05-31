@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useDownloadInvoicePdf, type InvoiceId } from '@/entities/invoice'
+import { useDownloadInvoicePdf, useSendInvoiceEmail, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
@@ -18,6 +19,8 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
   const invoiceNumber = state.kind === 'ready' ? state.invoice.invoice_number : null
   const isIssued = state.kind === 'ready' && state.invoice.status !== 'draft'
   const pdf = useDownloadInvoicePdf(invoiceId, invoiceNumber)
+  const sendEmail = useSendInvoiceEmail()
+  const [emailSent, setEmailSent] = useState(false)
   const link = useGenerateDownloadLink(invoiceId, isIssued)
 
   if (state.kind === 'loading') {
@@ -61,6 +64,35 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
               {pdf.errorMessage !== null && (
                 <Text variant="muted" role="alert">
                   {pdf.errorMessage}
+                </Text>
+              )}
+            </Stack>
+          )}
+          {isIssued && (
+            <Stack gap="sm">
+              <Button
+                onClick={() => {
+                  setEmailSent(false)
+                  sendEmail.mutate(invoiceId, {
+                    onSuccess: () => {
+                      setEmailSent(true)
+                    },
+                  })
+                }}
+                disabled={sendEmail.isPending}
+              >
+                {sendEmail.isPending
+                  ? t('admin.invoices.detail.sendingEmail')
+                  : t('admin.invoices.detail.sendEmail')}
+              </Button>
+              {emailSent && (
+                <Text variant="muted" role="status">
+                  {t('admin.invoices.detail.emailSent')}
+                </Text>
+              )}
+              {sendEmail.isError && (
+                <Text variant="muted" role="alert">
+                  {t('admin.invoices.detail.emailError')}
                 </Text>
               )}
             </Stack>

@@ -804,6 +804,30 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/QualifiedInvoiceIncomplete'
+  /admin/invoices/{id}/send-email:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Invoices]
+      summary: Send invoice by email
+      description: >
+        Generates the invoice PDF and sends it to the client's email address.
+        Requires the invoice to be in issued, partially_paid, or paid status
+        and the client to have an email address. Requires ManageBilling capability.
+      operationId: sendInvoiceEmail
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Email sent
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
   /admin/invoices/{id}/payments:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
