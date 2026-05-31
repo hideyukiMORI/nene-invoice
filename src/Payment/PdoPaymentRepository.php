@@ -135,6 +135,30 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         return $row !== null ? (int) $row['outstanding'] : 0;
     }
 
+    public function findValidForExport(): array
+    {
+        $rows = $this->query->fetchAll(
+            'SELECT p.paid_at, p.amount_cents, p.method, p.note,
+                    COALESCE(i.invoice_number, \'\') AS invoice_number,
+                    COALESCE(c.name, \'\') AS client_name
+             FROM payments p
+             LEFT JOIN invoices i ON i.id = p.invoice_id
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             WHERE p.organization_id = ? AND p.is_deleted = 0
+             ORDER BY p.paid_at DESC, p.id DESC',
+            [$this->orgId->get()],
+        );
+
+        return array_map(static fn (array $row): array => [
+            'invoice_number' => (string) ($row['invoice_number'] ?? ''),
+            'client_name'    => (string) ($row['client_name'] ?? ''),
+            'paid_at'        => substr((string) ($row['paid_at'] ?? ''), 0, 10),
+            'amount_cents'   => (int) $row['amount_cents'],
+            'method'         => (string) ($row['method'] ?? ''),
+            'note'           => (string) ($row['note'] ?? ''),
+        ], $rows);
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): Payment
     {

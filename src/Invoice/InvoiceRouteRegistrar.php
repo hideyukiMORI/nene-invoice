@@ -22,6 +22,7 @@ final readonly class InvoiceRouteRegistrar
         private IssueInvoiceHandler $issueHandler,
         private GetInvoicePdfHandler $pdfHandler,
         private SendInvoiceEmailHandler $sendEmailHandler,
+        private ExportInvoicesCsvHandler $exportCsvHandler,
     ) {
     }
 
@@ -34,9 +35,12 @@ final readonly class InvoiceRouteRegistrar
         $issue     = $this->issueHandler;
         $pdf       = $this->pdfHandler;
         $sendEmail = $this->sendEmailHandler;
+        $exportCsv = $this->exportCsvHandler;
 
         $router->get('/admin/invoices', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/invoices', static fn (ServerRequestInterface $r) => $create->handle($r));
+        // Static segment 'export' takes priority over {id} per Router spec.
+        $router->get('/admin/invoices/export', static fn (ServerRequestInterface $r) => $exportCsv->handle($r));
         $router->get('/admin/invoices/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->get('/admin/invoices/{id}/pdf', static fn (ServerRequestInterface $r) => $pdf->handle($r));
         $router->post('/admin/invoices/{id}/issue', static fn (ServerRequestInterface $r) => $issue->handle($r));

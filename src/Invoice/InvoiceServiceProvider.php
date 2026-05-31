@@ -167,6 +167,19 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ExportInvoicesCsvUseCase::class,
+                static fn (ContainerInterface $c): ExportInvoicesCsvUseCase => new ExportInvoicesCsvUseCase(
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                ),
+            )
+            ->set(
+                ExportInvoicesCsvHandler::class,
+                static fn (ContainerInterface $c): ExportInvoicesCsvHandler => new ExportInvoicesCsvHandler(
+                    self::resolve($c, ExportInvoicesCsvUseCase::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 SendInvoiceEmailUseCase::class,
                 static fn (ContainerInterface $c): SendInvoiceEmailUseCase => new SendInvoiceEmailUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
@@ -200,12 +213,13 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     $issue     = $c->get(IssueInvoiceHandler::class);
                     $pdf       = $c->get(GetInvoicePdfHandler::class);
                     $sendEmail = $c->get(SendInvoiceEmailHandler::class);
+                    $exportCsv = $c->get(ExportInvoicesCsvHandler::class);
 
-                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler || !$pdf instanceof GetInvoicePdfHandler || !$sendEmail instanceof SendInvoiceEmailHandler) {
+                    if (!$list instanceof ListInvoicesHandler || !$get instanceof GetInvoiceByIdHandler || !$create instanceof CreateInvoiceHandler || !$convert instanceof ConvertQuoteToInvoiceHandler || !$issue instanceof IssueInvoiceHandler || !$pdf instanceof GetInvoicePdfHandler || !$sendEmail instanceof SendInvoiceEmailHandler || !$exportCsv instanceof ExportInvoicesCsvHandler) {
                         throw new LogicException('Invoice handler services are invalid.');
                     }
 
-                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue, $pdf, $sendEmail);
+                    return new InvoiceRouteRegistrar($list, $get, $create, $convert, $issue, $pdf, $sendEmail, $exportCsv);
                 },
             );
     }

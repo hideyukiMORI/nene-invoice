@@ -17,15 +17,18 @@ final readonly class PaymentRouteRegistrar
     public function __construct(
         private RecordPaymentHandler $recordHandler,
         private ListPaymentsHandler $listHandler,
+        private ExportPaymentsCsvHandler $exportCsvHandler,
     ) {
     }
 
     public function __invoke(Router $router): void
     {
-        $record = $this->recordHandler;
-        $list = $this->listHandler;
+        $record    = $this->recordHandler;
+        $list      = $this->listHandler;
+        $exportCsv = $this->exportCsvHandler;
 
         $router->get('/admin/invoices/{id}/payments', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/invoices/{id}/payments', static fn (ServerRequestInterface $r) => $record->handle($r));
+        $router->get('/admin/payments/export', static fn (ServerRequestInterface $r) => $exportCsv->handle($r));
     }
 }
