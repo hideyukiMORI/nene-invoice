@@ -9,9 +9,10 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 // The PHP API runs same-origin in production (Tier A). In dev, Vite serves the
 // SPA and proxies API paths to the running PHP app. Override the target with
 // VITE_API_TARGET when the app listens elsewhere (e.g. the php -S dev port).
+// NeNe Invoice fixed dev port: 8510 (php -S localhost:8510 -t public_html)
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, dirname, 'VITE_')
-  const target = env['VITE_API_TARGET'] ?? 'http://127.0.0.1:8080'
+  const target = env['VITE_API_TARGET'] ?? 'http://127.0.0.1:8510'
 
   return {
     plugins: [react(), tailwindcss()],
@@ -30,6 +31,7 @@ export default defineConfig(({ command, mode }) => {
       emptyOutDir: true,
     },
     server: {
+      port: 5185, // NeNe Invoice 固定: 5185
       proxy: {
         '/auth': { target, changeOrigin: true },
         '/admin': { target, changeOrigin: true },

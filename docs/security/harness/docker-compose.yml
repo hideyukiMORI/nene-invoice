@@ -7,7 +7,7 @@ services:
       MYSQL_DATABASE: nene_invoice
       MYSQL_USER: nene
       MYSQL_PASSWORD: nene_pw
-    ports: ["13309:3306"]
+    ports: ["3385:3306"]   # NeNe Invoice 固定: 3385
     volumes:
       - ../../../database/schema/mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
@@ -20,7 +20,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports: ["18090:80"]
+    ports: ["8590:80"]   # NeNe Invoice 固定: 8590
     volumes:
       - ../../..:/var/www/html
       - ./.env.app:/var/www/html/.env:ro

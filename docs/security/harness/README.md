@@ -10,7 +10,7 @@
 | ファイル | 役割 |
 | --- | --- |
 | `Dockerfile` | `php:8.4-apache` + `pdo_mysql` + rewrite、docroot=`public_html` |
-| `docker-compose.yml` | `app`(:18090) と `db`(:13309)。リポジトリをマウントし `.env.app` を上書き |
+| `docker-compose.yml` | `app`(:8590) と `db`(:3385)。リポジトリをマウントし `.env.app` を上書き |
 | `seed.sql` | 2 組織 / admin・member・viewer・superadmin / client・invoice・company_settings |
 | `.env.app.example` | アプリ設定の雛形（**JWT シークレットは要生成**） |
 | `mint.php` | HMAC 署名の JWT 生成（`php mint.php '<payload-json>' '<secret>'`） |
@@ -23,13 +23,13 @@
 cp .env.app.example .env.app
 php -r "echo bin2hex(random_bytes(32));"   # → .env.app の NENE2_LOCAL_JWT_SECRET に設定
 docker compose up -d --build
-curl -s localhost:18090/health
+curl -s localhost:8590/health
 ```
 
 ## 例: ログインしてトークン取得
 
 ```bash
-curl -s -X POST localhost:18090/auth/login \
+curl -s -X POST localhost:8590/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin-a@a.test","password":"Passw0rd!23"}'
 ```
@@ -44,4 +44,4 @@ docker compose -p nene-invoice-sectest down -v
 
 - `docker-compose.yml` / `seed.sql` 内の DB パスワード等は**ローカル使い捨て**。本番値ではありません。
 - `.env.app`（実シークレット）・`tokens.env`・`*.log` は `.gitignore` 済み。
-- ポート 18090 / 13309 は診断時の空きポート。衝突する場合は compose を調整してください。
+- ポート 8590 / 3385 は NeNe Invoice 固定レンジ（85**）に統一済み。CLAUDE.md 参照。

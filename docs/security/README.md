@@ -24,10 +24,10 @@ cd docs/security/harness
 cp .env.app.example .env.app
 # .env.app の NENE2_LOCAL_JWT_SECRET を生成して設定:
 #   php -r "echo bin2hex(random_bytes(32));"
-docker compose up -d --build      # app:18090 / db:13309（既存コンテナと非衝突ポート）
+docker compose up -d --build      # app:8590 / db:3385（既存コンテナと非衝突ポート）
 
 # 動作確認
-curl -s localhost:18090/health
+curl -s localhost:8590/health
 
 # 解体
 docker compose -p nene-invoice-sectest down -v

@@ -73,6 +73,24 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 
 ---
 
+## ローカル開発ポート（固定）
+
+複数アプリ並行開発によるポート競合を防ぐため、**NeNe Invoice は 85** レンジに固定**する。
+他プロダクトのレンジ（NENE2: 82**、NeNe Clear: 83**、NeNe Profile: 84**、NeNe Records: 180**）と重複させてはならない。
+
+| サービス | ホストポート | 用途 |
+| --- | --- | --- |
+| PHP dev server | **8510** | `php -S localhost:8510 -t public_html` |
+| Vite dev server | **5185** | `npm run dev`（frontend/） |
+| Mailpit SMTP | **1585** | `docker compose up -d mailpit` |
+| Mailpit Web UI | **8585** | メール受信確認 http://localhost:8585 |
+| セキュリティ診断 App | **8590** | `docs/security/harness/` |
+| セキュリティ診断 MySQL | **3385** | 同上 |
+
+**絶対禁止:** 上記以外のポートを `docker-compose.yml` / `vite.config.ts` / `.env.example` に記載しない。新規コンテナを追加する場合も 85** 内から選ぶ。
+
+---
+
 ## Source of Truth
 
 | 目的 | ドキュメント |
