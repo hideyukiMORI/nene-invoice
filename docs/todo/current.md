@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-05-30 (Issue #121)
+Last updated: 2026-05-31 (Issue #199)
 
 ## Recently merged
 
@@ -370,8 +370,36 @@ Last updated: 2026-05-30 (Issue #121)
 - UI locale: ja + en only — ADR 0005 (not multilingual)
 - Sibling boundary: ADR 0002 — HTTP only
 
-## Next steps
+## Phase 2 — Admin UI + PDF: ✅ complete (Issue #193–#195 / PR #196–#198)
 
-1. Phase 2 機能: overdue 表示（issued/partially_paid past due_at）、請求書 PDF（日本様式）
-2. Phase 3（ADR 0003 フォロー）: Tier A web installer + release ZIP build + 運用ガイド（ja）
-3. `public_html/openapi.php`（spec の HTTP 配信）; 監査の transactional 記録
+- **見積書 PDF** (`GET /admin/quotes/{id}/pdf`) — mPDF 日本様式レイアウト、ViewQuote にダウンロードボタン
+- **ユーザー管理 UI** — `/users` 一覧・作成・編集・削除（フロントエンド、バックエンド API は既存）
+- **請求書メール送信** (`POST /admin/invoices/{id}/send-email`) — PHPMailer + SMTP、クライアントへ PDF 添付送信
+- **Mailpit 開発コンテナ** (`docker-compose.yml`) — SMTP :1025 / Web UI :8025
+
+## Phase 3 — Tier A 共有ホスティング: ✅ complete
+
+- Web インストーラー (`public_html/install.php`) — DB 既存データ二重ガード済み（セキュリティ診断 F-1 対応）
+- リリース ZIP ビルドスクリプト (`tools/build-release.sh`)
+- 運用ガイド日本語 (`docs/operator-guide-ja.md`)
+- 同一オリジン SPA 配信 (`public_html/admin/`)、`openapi.php` HTTP 配信
+
+## セキュリティ診断: ✅ complete (2026-05-31)
+
+- Round 1 + Round 2 実施済み (`docs/security/`)
+- アプリ層の全指摘（F-1〜F-6, R2-1〜R2-6）を修正マージ済み（PR #178〜#190）
+- 残件はフレームワーク/インフラ責務として文書化（JWT verifier exp 必須化、鍵分離等）
+
+## Next steps（Phase 4 以降）
+
+Phase 1–3 とセキュリティ診断はすべて完了。残りは Phase 4 スコープ：
+
+- **NeNe Records 商品カタログ連携** — 明細行への商品インポート
+- **NeNe Concierge webhook** — リード → 取引先/見積下書き自動生成
+- **CSV エクスポート** — 会計ソフト向けデータ出力
+- **決済ゲートウェイ連携** — Stripe 等（任意）
+
+### 技術的負債（既知・低優先）
+
+- **AuditRecorder のトランザクション外記録** (ADR 0008): ミューテーションの DB トランザクションに監査を統合。NENE2 フレームワーク側のトランザクション API 整備が前提。
+- **JWT `exp` 必須化・人/サービス鍵分離**: `nene2` vendor 責務。OrgGuard 側の多層防御は強化済み。
