@@ -1,6 +1,6 @@
 import type { UserId } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ErrorState, Field, Input, Select, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ErrorState, Field, Input, LoadingState, Select, Stack, Text } from '@/shared/ui'
 import { useEditUser } from '../hooks/use-edit-user'
 
 export interface EditUserProps {
@@ -13,12 +13,7 @@ export function EditUser({ userId }: EditUserProps) {
   const state = useEditUser(userId)
 
   if (state.kind === 'loading') {
-    return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.users.loading')} />
-        <Text variant="muted">{t('admin.users.loading')}</Text>
-      </Stack>
-    )
+    return <LoadingState message={t('admin.users.loading')} />
   }
 
   if (state.kind === 'error') {
@@ -56,10 +51,7 @@ export function EditUser({ userId }: EditUserProps) {
           />
         </Field>
 
-        <Field
-          id="password"
-          label={t('admin.users.edit.newPassword')}
-        >
+        <Field id="password" label={t('admin.users.edit.newPassword')}>
           <Input id="password" type="password" {...register('password')} />
         </Field>
 

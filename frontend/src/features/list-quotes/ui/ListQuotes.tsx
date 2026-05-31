@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useListQuotes } from '../hooks/use-list-quotes'
 
 export function ListQuotes() {
@@ -19,12 +19,7 @@ export function ListQuotes() {
         </Link>
       </div>
 
-      {state.kind === 'loading' && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.quotes.loading')} />
-          <Text variant="muted">{t('admin.quotes.loading')}</Text>
-        </Stack>
-      )}
+      {state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}
 
       {state.kind === 'error' && (
         <ErrorState
@@ -75,16 +70,16 @@ export function ListQuotes() {
           {state.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
               <Button onClick={state.pagination.prevPage} disabled={!state.pagination.hasPrev}>
-                {t('admin.invoices.pagination.prev')}
+                {t('common.pagination.prev')}
               </Button>
               <Text variant="muted">
-                {t('admin.invoices.pagination.info', {
+                {t('common.pagination.info', {
                   page: state.pagination.page,
                   total: state.pagination.totalPages,
                 })}
               </Text>
               <Button onClick={state.pagination.nextPage} disabled={!state.pagination.hasNext}>
-                {t('admin.invoices.pagination.next')}
+                {t('common.pagination.next')}
               </Button>
             </div>
           )}

@@ -23,9 +23,7 @@ describe('useCreateUser hook', () => {
   })
 
   it('navigates to /users on success', async () => {
-    server.use(
-      http.post('/admin/users', () => HttpResponse.json(CREATED_USER, { status: 201 })),
-    )
+    server.use(http.post('/admin/users', () => HttpResponse.json(CREATED_USER, { status: 201 })))
 
     const { result } = renderHookWithProviders(() => useCreateUser())
 
@@ -50,7 +48,10 @@ describe('useCreateUser hook', () => {
         '/admin/users',
         () =>
           new HttpResponse(
-            JSON.stringify({ type: 'https://nene-invoice.dev/problems/email-conflict', status: 409 }),
+            JSON.stringify({
+              type: 'https://nene-invoice.dev/problems/email-conflict',
+              status: 409,
+            }),
             { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
           ),
       ),

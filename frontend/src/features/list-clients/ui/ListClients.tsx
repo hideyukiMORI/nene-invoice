@@ -2,7 +2,15 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDeleteClient, type Client } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { useListClients } from '../hooks/use-list-clients'
 
 /** Client (取引先) list screen with per-row delete (confirmed). */
@@ -32,12 +40,7 @@ export function ListClients() {
         </Link>
       </div>
 
-      {state.kind === 'loading' && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.clients.loading')} />
-          <Text variant="muted">{t('admin.clients.loading')}</Text>
-        </Stack>
-      )}
+      {state.kind === 'loading' && <LoadingState message={t('admin.clients.loading')} />}
 
       {state.kind === 'error' && (
         <ErrorState

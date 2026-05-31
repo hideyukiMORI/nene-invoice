@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiClient } from '@/shared/api/client'
 import { useTranslation } from '@/shared/i18n'
+import type { MessageKey } from '@/shared/i18n'
 
 export interface UseExportCsv {
   download: () => void
@@ -8,7 +9,7 @@ export interface UseExportCsv {
   errorMessage: string | null
 }
 
-function useExportCsvBase(path: string, filename: string, errorKey: string): UseExportCsv {
+function useExportCsvBase(path: string, filename: string, errorKey: MessageKey): UseExportCsv {
   const { t } = useTranslation()
   const [isDownloading, setIsDownloading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -31,7 +32,7 @@ function useExportCsvBase(path: string, filename: string, errorKey: string): Use
         URL.revokeObjectURL(url)
       })
       .catch(() => {
-        setErrorMessage(t(errorKey as Parameters<typeof t>[0]))
+        setErrorMessage(t(errorKey))
       })
       .finally(() => {
         setIsDownloading(false)

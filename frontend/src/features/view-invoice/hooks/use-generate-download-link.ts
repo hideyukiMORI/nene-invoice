@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGenerateDownloadToken, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 
@@ -20,6 +20,14 @@ export function useGenerateDownloadLink(
   const { t } = useTranslation()
   const mutation = useGenerateDownloadToken()
   const [copied, setCopied] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
+    },
+    [],
+  )
 
   const downloadUrl = mutation.data?.url ?? null
   const expiresAt = mutation.data?.expires_at ?? null
@@ -29,7 +37,8 @@ export function useGenerateDownloadLink(
     const absolute = `${window.location.origin}${downloadUrl}`
     void navigator.clipboard.writeText(absolute).then(() => {
       setCopied(true)
-      setTimeout(() => {
+      if (timeoutRef.current !== null) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => {
         setCopied(false)
       }, 2000)
     })

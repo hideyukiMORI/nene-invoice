@@ -18,9 +18,7 @@ const USER_DTO = {
 
 describe('useEditUser', () => {
   it('returns loading then prefills form with user data', async () => {
-    server.use(
-      http.get('/admin/users/:id', () => HttpResponse.json(USER_DTO)),
-    )
+    server.use(http.get('/admin/users/:id', () => HttpResponse.json(USER_DTO)))
 
     const { result } = renderHookWithProviders(() => useEditUser(toUserId(7)))
 
@@ -50,9 +48,7 @@ describe('useEditUser', () => {
 
   it('downgrades superadmin role to admin in the form', async () => {
     server.use(
-      http.get('/admin/users/:id', () =>
-        HttpResponse.json({ ...USER_DTO, role: 'superadmin' }),
-      ),
+      http.get('/admin/users/:id', () => HttpResponse.json({ ...USER_DTO, role: 'superadmin' })),
     )
 
     const { result } = renderHookWithProviders(() => useEditUser(toUserId(7)))

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useClient, useUpdateClient, type ClientId } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
+import { emptyToNull } from '@/shared/lib/form-utils'
 
 const schema = z.object({
   name: z.string().min(1),
@@ -26,8 +27,6 @@ export type EditClientState =
       isPending: boolean
       errorMessage: string | null
     }
-
-const emptyToNull = (value: string): string | null => (value === '' ? null : value)
 
 export function useEditClient(clientId: ClientId): EditClientState {
   const { t } = useTranslation()

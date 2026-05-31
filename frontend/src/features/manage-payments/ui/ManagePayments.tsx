@@ -7,8 +7,9 @@ import {
   EmptyState,
   Field,
   Input,
+  LoadingState,
+  MutationError,
   Select,
-  Spinner,
   Stack,
   Text,
 } from '@/shared/ui'
@@ -51,12 +52,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
         {t('admin.payments.title')}
       </Text>
 
-      {paymentsLoading && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.payments.loading')} />
-          <Text variant="muted">{t('admin.payments.loading')}</Text>
-        </Stack>
-      )}
+      {paymentsLoading && <LoadingState message={t('admin.payments.loading')} />}
 
       {!paymentsLoading && payments.length === 0 && (
         <EmptyState message={t('admin.payments.empty')} />
@@ -132,11 +128,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
                 <Input id="payment-note" {...register('note')} />
               </Field>
             </Stack>
-            {errorMessage !== null && (
-              <Text variant="muted" role="alert">
-                {errorMessage}
-              </Text>
-            )}
+            <MutationError message={errorMessage} />
             <div>
               <Button type="submit" disabled={isRecording}>
                 {isRecording

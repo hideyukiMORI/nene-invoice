@@ -1,6 +1,6 @@
 import type { ClientId } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ErrorState, Field, Input, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ErrorState, Field, Input, LoadingState, Stack, Text } from '@/shared/ui'
 import { useEditClient } from '../hooks/use-edit-client'
 
 export interface EditClientProps {
@@ -13,12 +13,7 @@ export function EditClient({ clientId }: EditClientProps) {
   const state = useEditClient(clientId)
 
   if (state.kind === 'loading') {
-    return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.clients.loading')} />
-        <Text variant="muted">{t('admin.clients.loading')}</Text>
-      </Stack>
-    )
+    return <LoadingState message={t('admin.clients.loading')} />
   }
 
   if (state.kind === 'error') {

@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, ErrorState, Field, Input, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ErrorState, Field, Input, LoadingState, Stack, Text } from '@/shared/ui'
 import { useEditCompanySettings } from '../hooks/use-edit-company-settings'
 
 /** Company settings (自社情報) edit form — upserts on submit, stays on page. */
@@ -8,12 +8,7 @@ export function EditCompanySettings() {
   const state = useEditCompanySettings()
 
   if (state.kind === 'loading') {
-    return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.settings.loading')} />
-        <Text variant="muted">{t('admin.settings.loading')}</Text>
-      </Stack>
-    )
+    return <LoadingState message={t('admin.settings.loading')} />
   }
 
   if (state.kind === 'error') {

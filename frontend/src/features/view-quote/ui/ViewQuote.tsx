@@ -1,8 +1,17 @@
 import { Link } from 'react-router-dom'
 import { useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
-import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { formatYen } from '@/shared/lib/format-money'
+import {
+  Button,
+  ErrorState,
+  LineItemsTable,
+  LoadingState,
+  MutationError,
+  Stack,
+  Text,
+  TotalRow,
+} from '@/shared/ui'
 import { useViewQuote } from '../hooks/use-view-quote'
 
 export interface ViewQuoteProps {
@@ -16,12 +25,7 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
   const pdf = useDownloadQuotePdf(quoteId, quoteNumber)
 
   if (state.kind === 'loading') {
-    return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.quotes.loading')} />
-        <Text variant="muted">{t('admin.quotes.loading')}</Text>
-      </Stack>
-    )
+    return <LoadingState message={t('admin.quotes.loading')} />
   }
 
   if (state.kind === 'error') {
@@ -54,11 +58,7 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
                   ? t('admin.quotes.detail.downloadingPdf')
                   : t('admin.quotes.detail.downloadPdf')}
               </Button>
-              {pdf.errorMessage !== null && (
-                <Text variant="muted" role="alert">
-                  {pdf.errorMessage}
-                </Text>
-              )}
+              <MutationError message={pdf.errorMessage} />
             </Stack>
             {state.canSend && (
               <Button
@@ -122,49 +122,10 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             </Text>
           )}
         </Stack>
-        {state.actionError !== null && (
-          <Text variant="muted" role="alert">
-            {state.actionError}
-          </Text>
-        )}
+        <MutationError message={state.actionError} />
       </Stack>
 
-      <table className="w-full border-collapse text-body">
-        <thead>
-          <tr className="border-b border-border text-left">
-            <th className="py-stack-sm pr-inline-md font-medium">
-              {t('admin.invoices.line.description')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.quantity')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.unitPrice')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.taxRate')}
-            </th>
-            <th className="py-stack-sm text-right font-medium">
-              {t('admin.invoices.line.lineSubtotal')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {quote.line_items.map((line, index) => (
-            <tr key={index} className="border-b border-border">
-              <td className="py-stack-sm pr-inline-md">{line.description}</td>
-              <td className="py-stack-sm pr-inline-md text-right">{line.quantity}</td>
-              <td className="py-stack-sm pr-inline-md text-right">
-                {formatYen(line.unit_price_cents)}
-              </td>
-              <td className="py-stack-sm pr-inline-md text-right">
-                {formatTaxRate(line.tax_rate_bps)}
-              </td>
-              <td className="py-stack-sm text-right">{formatYen(line.line_subtotal_cents)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <LineItemsTable items={quote.line_items} />
 
       <Stack gap="sm" className="ml-auto w-64">
         <TotalRow
@@ -175,14 +136,5 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
         <TotalRow label={t('admin.quotes.detail.total')} value={formatYen(quote.total_cents)} />
       </Stack>
     </Stack>
-  )
-}
-
-function TotalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <Text variant="muted">{label}</Text>
-      <Text>{value}</Text>
-    </div>
   )
 }

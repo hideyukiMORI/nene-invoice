@@ -1,4 +1,4 @@
-import { Button, Field, Input, Stack, Text } from '@/shared/ui'
+import { Button, Field, Input, MutationError, Stack, Text } from '@/shared/ui'
 import { useTranslation } from '@/shared/i18n'
 import { useSignIn } from '../hooks/use-sign-in'
 
@@ -43,11 +43,7 @@ export function SignInForm() {
           />
         </Field>
 
-        {errorMessage !== null && (
-          <Text variant="muted" role="alert">
-            {errorMessage}
-          </Text>
-        )}
+        <MutationError message={errorMessage} />
 
         <Button type="submit" disabled={isPending}>
           {t('admin.auth.submit')}

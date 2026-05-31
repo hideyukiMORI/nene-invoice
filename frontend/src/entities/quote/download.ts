@@ -10,10 +10,7 @@ export interface UseDownloadQuotePdf {
 }
 
 /** Downloads the quote PDF via Bearer-authenticated fetch and triggers a save dialog. */
-export function useDownloadQuotePdf(
-  quoteId: QuoteId,
-  quoteNumber: string,
-): UseDownloadQuotePdf {
+export function useDownloadQuotePdf(quoteId: QuoteId, quoteNumber: string): UseDownloadQuotePdf {
   const { t } = useTranslation()
   const [isDownloading, setIsDownloading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
