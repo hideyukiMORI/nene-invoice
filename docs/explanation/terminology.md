@@ -152,8 +152,9 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
-| `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `convertQuoteToInvoice` | Quote |
-| `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice` | Invoice |
+| `getDashboard` | Dashboard (unpaid / overdue summary) |
+| `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice` | Quote |
+| `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |
 | `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
 
 ### Service API (`/api/*`, NeNe Clear — ADR 0009)
