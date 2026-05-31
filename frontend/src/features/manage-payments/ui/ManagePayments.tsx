@@ -1,17 +1,7 @@
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import {
-  Button,
-  ConfirmDialog,
-  EmptyState,
-  Field,
-  Input,
-  Select,
-  Spinner,
-  Stack,
-  Text,
-} from '@/shared/ui'
+import { Button, ConfirmDialog, EmptyState, Field, Input, LoadingState, MutationError, Select, Stack, Text } from '@/shared/ui'
 import { PAYMENT_METHODS, useManagePayments } from '../hooks/use-manage-payments'
 
 export interface ManagePaymentsProps {
@@ -52,10 +42,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
       </Text>
 
       {paymentsLoading && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.payments.loading')} />
-          <Text variant="muted">{t('admin.payments.loading')}</Text>
-        </Stack>
+        <LoadingState message={t('admin.payments.loading')} />
       )}
 
       {!paymentsLoading && payments.length === 0 && (
@@ -132,11 +119,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
                 <Input id="payment-note" {...register('note')} />
               </Field>
             </Stack>
-            {errorMessage !== null && (
-              <Text variant="muted" role="alert">
-                {errorMessage}
-              </Text>
-            )}
+            <MutationError message={errorMessage} />
             <div>
               <Button type="submit" disabled={isRecording}>
                 {isRecording

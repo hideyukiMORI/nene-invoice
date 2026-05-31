@@ -1,9 +1,8 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDownloadInvoicePdf, useSendInvoiceEmail, type InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { Button, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { formatYen } from '@/shared/lib/format-money'
+import { Button, ErrorState, LineItemsTable, LoadingState, MutationError, Stack, Text, TotalRow } from '@/shared/ui'
 import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
 import { useViewInvoice } from '../hooks/use-view-invoice'
 
@@ -20,16 +19,10 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
   const isIssued = state.kind === 'ready' && state.invoice.status !== 'draft'
   const pdf = useDownloadInvoicePdf(invoiceId, invoiceNumber)
   const sendEmail = useSendInvoiceEmail()
-  const [emailSent, setEmailSent] = useState(false)
   const link = useGenerateDownloadLink(invoiceId, isIssued)
 
   if (state.kind === 'loading') {
-    return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.invoices.loading')} />
-        <Text variant="muted">{t('admin.invoices.loading')}</Text>
-      </Stack>
-    )
+    return <LoadingState message={t('admin.invoices.loading')} />
   }
 
   if (state.kind === 'error') {
@@ -61,23 +54,14 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                   ? t('admin.invoices.detail.downloadingPdf')
                   : t('admin.invoices.detail.downloadPdf')}
               </Button>
-              {pdf.errorMessage !== null && (
-                <Text variant="muted" role="alert">
-                  {pdf.errorMessage}
-                </Text>
-              )}
+              <MutationError message={pdf.errorMessage} />
             </Stack>
           )}
           {isIssued && (
             <Stack gap="sm">
               <Button
                 onClick={() => {
-                  setEmailSent(false)
-                  sendEmail.mutate(invoiceId, {
-                    onSuccess: () => {
-                      setEmailSent(true)
-                    },
-                  })
+                  sendEmail.mutate(invoiceId)
                 }}
                 disabled={sendEmail.isPending}
               >
@@ -85,16 +69,12 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                   ? t('admin.invoices.detail.sendingEmail')
                   : t('admin.invoices.detail.sendEmail')}
               </Button>
-              {emailSent && (
+              {sendEmail.isSuccess && (
                 <Text variant="muted" role="status">
                   {t('admin.invoices.detail.emailSent')}
                 </Text>
               )}
-              {sendEmail.isError && (
-                <Text variant="muted" role="alert">
-                  {t('admin.invoices.detail.emailError')}
-                </Text>
-              )}
+              <MutationError message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null} />
             </Stack>
           )}
           {link.canGenerate && (
@@ -123,11 +103,7 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                   </Stack>
                 </Stack>
               )}
-              {link.errorMessage !== null && (
-                <Text variant="muted" role="alert">
-                  {link.errorMessage}
-                </Text>
-              )}
+              <MutationError message={link.errorMessage} />
             </Stack>
           )}
         </div>
@@ -154,42 +130,7 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         </Stack>
       </Stack>
 
-      <table className="w-full border-collapse text-body">
-        <thead>
-          <tr className="border-b border-border text-left">
-            <th className="py-stack-sm pr-inline-md font-medium">
-              {t('admin.invoices.line.description')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.quantity')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.unitPrice')}
-            </th>
-            <th className="py-stack-sm pr-inline-md text-right font-medium">
-              {t('admin.invoices.line.taxRate')}
-            </th>
-            <th className="py-stack-sm text-right font-medium">
-              {t('admin.invoices.line.lineSubtotal')}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.line_items.map((line, index) => (
-            <tr key={index} className="border-b border-border">
-              <td className="py-stack-sm pr-inline-md">{line.description}</td>
-              <td className="py-stack-sm pr-inline-md text-right">{line.quantity}</td>
-              <td className="py-stack-sm pr-inline-md text-right">
-                {formatYen(line.unit_price_cents)}
-              </td>
-              <td className="py-stack-sm pr-inline-md text-right">
-                {formatTaxRate(line.tax_rate_bps)}
-              </td>
-              <td className="py-stack-sm text-right">{formatYen(line.line_subtotal_cents)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <LineItemsTable items={invoice.line_items} />
 
       <Stack gap="sm" className="ml-auto w-64">
         <TotalRow
@@ -206,14 +147,5 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         )}
       </Stack>
     </Stack>
-  )
-}
-
-function TotalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <Text variant="muted">{label}</Text>
-      <Text>{value}</Text>
-    </div>
   )
 }

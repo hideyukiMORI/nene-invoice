@@ -4,6 +4,7 @@ import { useTranslation } from '@/shared/i18n'
 import type { InvoiceId } from './ids'
 
 export interface UseDownloadInvoicePdf {
+  /** True only when the invoice has a number (i.e. is issued). Drafts return false. */
   canDownload: boolean
   download: () => void
   isDownloading: boolean
@@ -45,5 +46,5 @@ export function useDownloadInvoicePdf(
       })
   }
 
-  return { canDownload: true, download, isDownloading, errorMessage }
+  return { canDownload: invoiceNumber !== null, download, isDownloading, errorMessage }
 }

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
 
 /** Admin dashboard: summary cards + recent unpaid invoice list. */
@@ -11,10 +11,7 @@ export function ViewDashboard() {
 
   if (state.kind === 'loading') {
     return (
-      <Stack direction="row" gap="sm">
-        <Spinner label={t('admin.dashboard.loading')} />
-        <Text variant="muted">{t('admin.dashboard.loading')}</Text>
-      </Stack>
+      <LoadingState message={t('admin.dashboard.loading')} />
     )
   }
 

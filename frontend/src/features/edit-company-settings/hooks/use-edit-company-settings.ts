@@ -4,6 +4,7 @@ import { useForm, type UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { useCompanySettings, useUpdateCompanySettings } from '@/entities/company-settings'
 import { useTranslation } from '@/shared/i18n'
+import { emptyToNull } from '@/shared/lib/form-utils'
 
 const schema = z.object({
   legal_name: z.string().min(1),

@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input, Stack, Text } from '@/shared/ui'
+import { Button, Field, Input, MutationError, Stack, Text } from '@/shared/ui'
 import { useCreateClient } from '../hooks/use-create-client'
 
 /** Create-client form. On success navigates to the client list. */
@@ -42,11 +42,7 @@ export function CreateClientForm() {
           <Input id="registration_number" {...register('registration_number')} />
         </Field>
 
-        {errorMessage !== null && (
-          <Text variant="muted" role="alert">
-            {errorMessage}
-          </Text>
-        )}
+        <MutationError message={errorMessage} />
 
         <div>
           <Button type="submit" disabled={isPending}>

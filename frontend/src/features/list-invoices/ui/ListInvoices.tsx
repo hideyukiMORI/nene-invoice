@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useExportInvoicesCsv, useExportPaymentsCsv } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useListInvoices } from '../hooks/use-list-invoices'
 
 /** Invoice list screen. Renders exactly one of loading / error / empty / ready. */
@@ -52,10 +52,7 @@ export function ListInvoices() {
       )}
 
       {state.kind === 'loading' && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.invoices.loading')} />
-          <Text variant="muted">{t('admin.invoices.loading')}</Text>
-        </Stack>
+        <LoadingState message={t('admin.invoices.loading')} />
       )}
 
       {state.kind === 'error' && (
@@ -122,16 +119,16 @@ export function ListInvoices() {
           {state.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
               <Button onClick={state.pagination.prevPage} disabled={!state.pagination.hasPrev}>
-                {t('admin.invoices.pagination.prev')}
+                {t('common.pagination.prev')}
               </Button>
               <Text variant="muted">
-                {t('admin.invoices.pagination.info', {
+                {t('common.pagination.info', {
                   page: state.pagination.page,
                   total: state.pagination.totalPages,
                 })}
               </Text>
               <Button onClick={state.pagination.nextPage} disabled={!state.pagination.hasNext}>
-                {t('admin.invoices.pagination.next')}
+                {t('common.pagination.next')}
               </Button>
             </div>
           )}

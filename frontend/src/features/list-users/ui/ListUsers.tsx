@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDeleteUser, type User } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, EmptyState, ErrorState, Spinner, Stack, Text } from '@/shared/ui'
+import { Button, ConfirmDialog, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useListUsers } from '../hooks/use-list-users'
 
 /** User list screen with per-row delete (confirmed). */
@@ -33,10 +33,7 @@ export function ListUsers() {
       </div>
 
       {state.kind === 'loading' && (
-        <Stack direction="row" gap="sm">
-          <Spinner label={t('admin.users.loading')} />
-          <Text variant="muted">{t('admin.users.loading')}</Text>
-        </Stack>
+        <LoadingState message={t('admin.users.loading')} />
       )}
 
       {state.kind === 'error' && (

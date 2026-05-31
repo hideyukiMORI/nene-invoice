@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate } from '@/shared/lib/format-money'
-import { Button, Field, Input, Select, Stack, Text } from '@/shared/ui'
+import { Button, Field, Input, MutationError, Select, Stack, Text } from '@/shared/ui'
 import { useCreateQuote } from '../hooks/use-create-quote'
 
 const TAX_RATES = [1000, 800] as const
@@ -121,11 +121,7 @@ export function CreateQuoteForm() {
           <Input id="notes" {...register('notes')} />
         </Field>
 
-        {errorMessage !== null && (
-          <Text variant="muted" role="alert">
-            {errorMessage}
-          </Text>
-        )}
+        <MutationError message={errorMessage} />
 
         <div>
           <Button type="submit" disabled={isPending}>

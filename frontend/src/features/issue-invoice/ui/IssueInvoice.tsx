@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, Stack, Text } from '@/shared/ui'
+import { Button, ConfirmDialog, MutationError, Stack, Text } from '@/shared/ui'
 import { useIssueInvoice } from '../hooks/use-issue-invoice'
 
 export interface IssueInvoiceProps {
@@ -36,11 +36,7 @@ export function IssueInvoice({ invoiceId }: IssueInvoiceProps) {
           {isPending ? t('admin.invoices.issue.submitting') : t('admin.invoices.issue.action')}
         </Button>
       </div>
-      {errorMessage !== null && (
-        <Text variant="muted" role="alert">
-          {errorMessage}
-        </Text>
-      )}
+      <MutationError message={errorMessage} />
       {confirming && (
         <ConfirmDialog
           title={t('admin.invoices.issue.confirmTitle')}
