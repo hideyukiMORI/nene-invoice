@@ -9,7 +9,7 @@ use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
-use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
+use NeneInvoice\Invoice\Pdf\InvoicePdfGeneratorInterface;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\Mailer\MailerInterface;
@@ -31,7 +31,7 @@ final readonly class SendInvoiceEmailUseCase
         private LineItemRepositoryInterface $lineItems,
         private ClientRepositoryInterface $clients,
         private CompanySettingsRepositoryInterface $companySettings,
-        private InvoicePdfGenerator $pdfGenerator,
+        private InvoicePdfGeneratorInterface $pdfGenerator,
         private MailerInterface $mailer,
         private RequestScopedHolder $orgId,
         private string $fromName,

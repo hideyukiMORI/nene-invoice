@@ -17,7 +17,7 @@ use RuntimeException;
  * The per-rate breakdown is re-derived from line items via TaxCalculator so the
  * PDF matches the API response exactly.
  */
-final readonly class InvoicePdfGenerator
+final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 {
     public function __construct(private TaxCalculator $taxCalculator)
     {

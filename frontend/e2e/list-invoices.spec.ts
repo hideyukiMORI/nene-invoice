@@ -45,4 +45,44 @@ test.describe('List invoices', () => {
     await expect(page.getByRole('link', { name: 'INV-2026-002' })).toBeVisible()
     await expect(page.getByText('2 / 2 ページ')).toBeVisible()
   })
+
+  test('downloads invoices CSV', async ({ page }) => {
+    await page.route('**/admin/invoices/export', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/csv; charset=UTF-8',
+        body: Buffer.from('\xEF\xBB\xBF請求書番号\nINV-2026-001\n'),
+      }),
+    )
+
+    await login(page)
+    await page.getByRole('link', { name: '請求書', exact: true }).click()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: '請求書 CSV' }).click(),
+    ])
+
+    expect(download.suggestedFilename()).toMatch(/invoices-.*\.csv/)
+  })
+
+  test('downloads payments CSV', async ({ page }) => {
+    await page.route('**/admin/payments/export', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/csv; charset=UTF-8',
+        body: Buffer.from('\xEF\xBB\xBF請求書番号\nINV-2026-001\n'),
+      }),
+    )
+
+    await login(page)
+    await page.getByRole('link', { name: '請求書', exact: true }).click()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: '入金 CSV' }).click(),
+    ])
+
+    expect(download.suggestedFilename()).toMatch(/payments-.*\.csv/)
+  })
 })
