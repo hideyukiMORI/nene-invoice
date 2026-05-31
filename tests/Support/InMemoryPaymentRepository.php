@@ -139,4 +139,9 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
         // Tests that need a real total use integration (Pdo) setup.
         return 0;
     }
+
+    public function findValidForExport(): array
+    {
+        return [];
+    }
 }

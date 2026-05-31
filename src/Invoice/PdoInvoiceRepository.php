@@ -237,6 +237,34 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         );
     }
 
+    public function findIssuedForExport(): array
+    {
+        $rows = $this->query->fetchAll(
+            'SELECT i.invoice_number, i.issued_at, i.due_at,
+                    COALESCE(c.name, \'\') AS client_name,
+                    i.subtotal_cents, i.tax_cents, i.total_cents,
+                    i.status, i.is_qualified_invoice
+             FROM invoices i
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             WHERE i.organization_id = ? AND i.is_deleted = 0
+               AND i.status != \'draft\'
+             ORDER BY i.issued_at DESC, i.id DESC',
+            [$this->orgId->get()],
+        );
+
+        return array_map(static fn (array $row): array => [
+            'invoice_number'     => (string) ($row['invoice_number'] ?? ''),
+            'issued_at'          => isset($row['issued_at']) && $row['issued_at'] !== '' ? substr((string) $row['issued_at'], 0, 10) : '',
+            'due_at'             => isset($row['due_at']) && $row['due_at'] !== '' ? substr((string) $row['due_at'], 0, 10) : '',
+            'client_name'        => (string) ($row['client_name'] ?? ''),
+            'subtotal_cents'     => (int) $row['subtotal_cents'],
+            'tax_cents'          => (int) $row['tax_cents'],
+            'total_cents'        => (int) $row['total_cents'],
+            'status'             => (string) $row['status'],
+            'is_qualified_invoice' => (bool) $row['is_qualified_invoice'],
+        ], $rows);
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): Invoice
     {

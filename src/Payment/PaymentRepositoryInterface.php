@@ -43,4 +43,12 @@ interface PaymentRepositoryInterface
      * resolved organization: sum(invoice.total_cents) - sum(non-void payments).
      */
     public function outstandingTotal(): int;
+
+    /**
+     * Returns all non-voided payments for the organization, joined with invoice
+     * number and client name. Intended for CSV export only.
+     *
+     * @return list<array{invoice_number: string, client_name: string, paid_at: string, amount_cents: int, method: string, note: string}>
+     */
+    public function findValidForExport(): array;
 }

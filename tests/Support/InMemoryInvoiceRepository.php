@@ -176,6 +176,11 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         $this->byId[$id] = $this->withId($existing, $id, true);
     }
 
+    public function findIssuedForExport(): array
+    {
+        return [];
+    }
+
     private function withId(Invoice $invoice, int $id, bool $isDeleted): Invoice
     {
         return new Invoice(

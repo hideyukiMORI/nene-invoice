@@ -44,4 +44,12 @@ interface InvoiceRepositoryInterface
 
     /** @throws InvoiceNotFoundException */
     public function delete(int $id): void;
+
+    /**
+     * Returns all non-draft, non-deleted invoices for the organization joined
+     * with the client name. Intended for CSV export only.
+     *
+     * @return list<array{invoice_number: string, issued_at: string|null, due_at: string|null, client_name: string, subtotal_cents: int, tax_cents: int, total_cents: int, status: string, is_qualified_invoice: bool}>
+     */
+    public function findIssuedForExport(): array;
 }

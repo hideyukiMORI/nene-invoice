@@ -14,6 +14,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -89,18 +90,43 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): PaymentNotFoundExceptionHandler => new PaymentNotFoundExceptionHandler(self::problemDetails($c)),
             )
             ->set(
+                ExportPaymentsCsvUseCase::class,
+                static fn (ContainerInterface $c): ExportPaymentsCsvUseCase => new ExportPaymentsCsvUseCase(
+                    self::payments($c),
+                ),
+            )
+            ->set(
+                ExportPaymentsCsvHandler::class,
+                static fn (ContainerInterface $c): ExportPaymentsCsvHandler => new ExportPaymentsCsvHandler(
+                    self::resolve($c, ExportPaymentsCsvUseCase::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 PaymentRouteRegistrar::class,
                 static function (ContainerInterface $c): PaymentRouteRegistrar {
-                    $record = $c->get(RecordPaymentHandler::class);
-                    $list = $c->get(ListPaymentsHandler::class);
+                    $record    = $c->get(RecordPaymentHandler::class);
+                    $list      = $c->get(ListPaymentsHandler::class);
+                    $exportCsv = $c->get(ExportPaymentsCsvHandler::class);
 
-                    if (!$record instanceof RecordPaymentHandler || !$list instanceof ListPaymentsHandler) {
+                    if (!$record instanceof RecordPaymentHandler || !$list instanceof ListPaymentsHandler || !$exportCsv instanceof ExportPaymentsCsvHandler) {
                         throw new LogicException('Payment handler services are invalid.');
                     }
 
-                    return new PaymentRouteRegistrar($record, $list);
+                    return new PaymentRouteRegistrar($record, $list, $exportCsv);
                 },
             );
+    }
+
+    private static function payments(ContainerInterface $c): PaymentRepositoryInterface
+    {
+        $repo = $c->get(PaymentRepositoryInterface::class);
+
+        if (!$repo instanceof PaymentRepositoryInterface) {
+            throw new LogicException('Payment repository service is invalid.');
+        }
+
+        return $repo;
     }
 
     /**
