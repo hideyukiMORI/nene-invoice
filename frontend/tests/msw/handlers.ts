@@ -49,6 +49,37 @@ export const handlers = [
     }),
   ),
 
+  http.get('/admin/users', () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: 1,
+          email: 'admin@example.com',
+          role: 'admin',
+          organization_id: 1,
+          status: 'active',
+          created_at: '2026-05-01 00:00:00',
+          updated_at: '2026-05-01 00:00:00',
+        },
+      ],
+      total: 1,
+      limit: 100,
+      offset: 0,
+    }),
+  ),
+
+  http.get('/admin/users/:id', () =>
+    HttpResponse.json({
+      id: 1,
+      email: 'admin@example.com',
+      role: 'admin',
+      organization_id: 1,
+      status: 'active',
+      created_at: '2026-05-01 00:00:00',
+      updated_at: '2026-05-01 00:00:00',
+    }),
+  ),
+
   http.get('/admin/clients', () =>
     HttpResponse.json({ items: [buildClientDto()], total: 1, limit: 100, offset: 0 }),
   ),

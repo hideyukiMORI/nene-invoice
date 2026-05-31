@@ -75,4 +75,25 @@ test.describe('View quote', () => {
 
     await expect(page).toHaveURL(/\/invoices\/10$/)
   })
+
+  test('triggers PDF download for a quote', async ({ page }) => {
+    await page.route('**/admin/quotes/1', (route) => route.fulfill(json(QUOTE)))
+    await page.route('**/admin/quotes/1/pdf', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        body: Buffer.from('%PDF-1.4 fake'),
+      }),
+    )
+
+    await page.getByRole('link', { name: 'EST-2026-001' }).click()
+    await expect(page.getByRole('button', { name: 'PDF をダウンロード' })).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'PDF をダウンロード' }).click(),
+    ])
+
+    expect(download.suggestedFilename()).toMatch(/EST-2026-001.*\.pdf/)
+  })
 })
