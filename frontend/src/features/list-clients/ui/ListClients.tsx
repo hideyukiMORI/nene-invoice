@@ -67,11 +67,13 @@ export function ListClients() {
             <tbody>
               {state.clients.map((client) => (
                 <tr key={client.id}>
-                  <td>{client.name}</td>
-                  <td>{client.contact_name ?? '—'}</td>
-                  <td>{client.email ?? '—'}</td>
-                  <td className="num">{client.registration_number ?? '—'}</td>
-                  <td className="tr">
+                  <td data-label={t('admin.clients.col.name')}>{client.name}</td>
+                  <td data-label={t('admin.clients.col.contact')}>{client.contact_name ?? '—'}</td>
+                  <td data-label={t('admin.clients.col.email')}>{client.email ?? '—'}</td>
+                  <td className="num" data-label={t('admin.clients.col.registration')}>
+                    {client.registration_number ?? '—'}
+                  </td>
+                  <td className="tr" data-label={t('admin.clients.col.actions')}>
                     <Stack direction="row" gap="sm" className="justify-end">
                       <Link
                         to={`/clients/${String(client.id)}/edit`}
