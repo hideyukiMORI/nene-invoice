@@ -47,18 +47,22 @@ export function ListQuotes() {
               <tbody>
                 {state.quotes.map((quote) => (
                   <tr key={quote.id}>
-                    <td>
+                    <td data-label={t('admin.quotes.col.number')}>
                       <Link to={`/quotes/${String(quote.id)}`} className="num text-accent">
                         {quote.quote_number}
                       </Link>
                     </td>
-                    <td>
+                    <td data-label={t('admin.quotes.col.status')}>
                       <Badge tone={quoteStatusTone[quote.status]}>
                         {t(`admin.quotes.status.${quote.status}`)}
                       </Badge>
                     </td>
-                    <td className="num">{quote.client_id}</td>
-                    <td className="tr num">{formatYen(quote.total_cents)}</td>
+                    <td className="num" data-label={t('admin.quotes.col.client')}>
+                      {quote.client_id}
+                    </td>
+                    <td className="tr num" data-label={t('admin.quotes.col.total')}>
+                      {formatYen(quote.total_cents)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

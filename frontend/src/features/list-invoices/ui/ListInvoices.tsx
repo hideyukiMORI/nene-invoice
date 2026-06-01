@@ -79,12 +79,12 @@ export function ListInvoices() {
               <tbody>
                 {state.invoices.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td>
+                    <td data-label={t('admin.invoices.col.number')}>
                       <Link to={`/invoices/${String(invoice.id)}`} className="num text-accent">
                         {invoice.invoice_number ?? '—'}
                       </Link>
                     </td>
-                    <td>
+                    <td data-label={t('admin.invoices.col.status')}>
                       <span className="flex items-center gap-inline-xs">
                         <Badge tone={invoiceStatusTone[invoice.status]}>
                           {t(`admin.invoices.status.${invoice.status}`)}
@@ -94,9 +94,13 @@ export function ListInvoices() {
                         )}
                       </span>
                     </td>
-                    <td className="num">{invoice.client_id}</td>
-                    <td className="tr num">{formatYen(invoice.total_cents)}</td>
-                    <td className="tr num">
+                    <td className="num" data-label={t('admin.invoices.col.client')}>
+                      {invoice.client_id}
+                    </td>
+                    <td className="tr num" data-label={t('admin.invoices.col.total')}>
+                      {formatYen(invoice.total_cents)}
+                    </td>
+                    <td className="tr num" data-label={t('admin.invoices.col.outstanding')}>
                       {invoice.outstanding_cents === null
                         ? '—'
                         : formatYen(invoice.outstanding_cents)}

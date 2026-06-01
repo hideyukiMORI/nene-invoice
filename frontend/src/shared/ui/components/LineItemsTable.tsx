@@ -32,11 +32,19 @@ export function LineItemsTable({ items }: { items: LineItemRow[] }) {
         <tbody>
           {items.map((line, index) => (
             <tr key={index}>
-              <td>{line.description}</td>
-              <td className="tr num">{line.quantity}</td>
-              <td className="tr num">{formatYen(line.unit_price_cents)}</td>
-              <td className="tr num">{formatTaxRate(line.tax_rate_bps)}</td>
-              <td className="tr num">{formatYen(line.line_subtotal_cents)}</td>
+              <td data-label={t('admin.invoices.line.description')}>{line.description}</td>
+              <td className="tr num" data-label={t('admin.invoices.line.quantity')}>
+                {line.quantity}
+              </td>
+              <td className="tr num" data-label={t('admin.invoices.line.unitPrice')}>
+                {formatYen(line.unit_price_cents)}
+              </td>
+              <td className="tr num" data-label={t('admin.invoices.line.taxRate')}>
+                {formatTaxRate(line.tax_rate_bps)}
+              </td>
+              <td className="tr num" data-label={t('admin.invoices.line.lineSubtotal')}>
+                {formatYen(line.line_subtotal_cents)}
+              </td>
             </tr>
           ))}
         </tbody>

@@ -72,12 +72,16 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
             <tbody>
               {payments.map((payment) => (
                 <tr key={payment.id}>
-                  <td className="num">{payment.paid_at}</td>
-                  <td>
+                  <td className="num" data-label={t('admin.payments.col.paidAt')}>
+                    {payment.paid_at}
+                  </td>
+                  <td data-label={t('admin.payments.col.method')}>
                     {payment.method === null ? '—' : t(`admin.payments.method.${payment.method}`)}
                   </td>
-                  <td>{payment.note ?? '—'}</td>
-                  <td className="tr num">{formatYen(payment.amount_cents)}</td>
+                  <td data-label={t('admin.payments.col.note')}>{payment.note ?? '—'}</td>
+                  <td className="tr num" data-label={t('admin.payments.col.amount')}>
+                    {formatYen(payment.amount_cents)}
+                  </td>
                 </tr>
               ))}
             </tbody>

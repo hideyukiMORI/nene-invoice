@@ -80,16 +80,16 @@ export function ListUsers() {
             <tbody>
               {state.users.map((user) => (
                 <tr key={user.id}>
-                  <td>{user.email}</td>
-                  <td>
+                  <td data-label={t('admin.users.col.email')}>{user.email}</td>
+                  <td data-label={t('admin.users.col.role')}>
                     <Badge tone={ROLE_TONE[user.role]}>{t(`admin.users.role.${user.role}`)}</Badge>
                   </td>
-                  <td>
+                  <td data-label={t('admin.users.col.status')}>
                     <Badge tone={STATUS_TONE[user.status]}>
                       {t(`admin.users.status.${user.status}`)}
                     </Badge>
                   </td>
-                  <td className="tr">
+                  <td className="tr" data-label={t('admin.users.col.actions')}>
                     <Stack direction="row" gap="sm" className="justify-end">
                       <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
                         {t('admin.users.editButton')}

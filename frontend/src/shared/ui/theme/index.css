@@ -404,12 +404,64 @@
     .stat-num {
       font-size: 1.375rem;
     }
+    /* tables → stacked cards (no horizontal scroll) — each <td> needs data-label */
     .table-scroll {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow: visible;
     }
-    .table-scroll .data-table {
-      min-width: 600px;
+    .data-table {
+      display: block;
+      min-width: 0;
+    }
+    .data-table thead {
+      display: none;
+    }
+    .data-table tbody {
+      display: block;
+      width: 100%;
+    }
+    .data-table tbody tr {
+      display: block;
+      padding: 0.6875rem 0.875rem;
+      border-bottom: 1px solid var(--color-border-strong);
+    }
+    .data-table tbody tr:nth-child(even),
+    .data-table tbody tr:hover {
+      background: transparent;
+    }
+    .data-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .data-table td {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      padding: 0.3125rem 0;
+      text-align: left;
+      white-space: normal;
+      border: none !important;
+      border-bottom: 1px solid var(--color-border) !important;
+    }
+    .data-table td:last-child {
+      border-bottom: none !important;
+    }
+    .data-table td::before {
+      content: attr(data-label);
+      width: 6.5em;
+      flex: none;
+      font-size: var(--text-caption);
+      font-weight: 600;
+      color: var(--color-fg-muted);
+      text-align: left;
+    }
+    .data-table td:not([data-label]) {
+      display: none;
+    }
+    .data-table td.tr {
+      text-align: left;
+    }
+    .data-table td:first-child {
+      font-weight: 600;
+      color: var(--color-fg);
     }
     .auth-card {
       width: 100%;
