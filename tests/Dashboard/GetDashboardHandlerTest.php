@@ -51,6 +51,9 @@ final class GetDashboardHandlerTest extends TestCase
         self::assertSame(0, $body['overdue_count']);
         self::assertSame(0, $body['outstanding_total_cents']);
         self::assertSame([], $body['recent_unpaid']);
+        self::assertSame(0, $body['received_this_month_cents']);
+        self::assertSame(0, $body['received_last_month_cents']);
+        self::assertSame(['current' => 0, 'overdue_1_30' => 0, 'overdue_31_plus' => 0], $body['aging']);
     }
 
     public function test_returns_correct_counts_with_invoices(): void

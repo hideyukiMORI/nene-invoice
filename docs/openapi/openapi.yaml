@@ -1198,7 +1198,29 @@ components:
           description: Up to 5 most recent unpaid invoices, newest first.
           items:
             $ref: '#/components/schemas/Invoice'
-      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid]
+        received_this_month_cents:
+          type: integer
+          description: Sum of non-void payments received in the current month (paid_at based), in cents.
+        received_last_month_cents:
+          type: integer
+          description: Sum of non-void payments received in the previous month, in cents (for month-over-month comparison).
+        aging:
+          $ref: '#/components/schemas/ReceivableAging'
+      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid, received_this_month_cents, received_last_month_cents, aging]
+    ReceivableAging:
+      type: object
+      description: Outstanding receivable balance bucketed by overdue age, in cents.
+      properties:
+        current:
+          type: integer
+          description: Not yet due (due_at null or in the future), in cents.
+        overdue_1_30:
+          type: integer
+          description: Overdue by 1–30 days, in cents.
+        overdue_31_plus:
+          type: integer
+          description: Overdue by 31 days or more, in cents.
+      required: [current, overdue_1_30, overdue_31_plus]
     CompanySettings:
       type: object
       description: Issuer (自社) profile. registration_number is `T` + 13 digits.

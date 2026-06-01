@@ -51,6 +51,9 @@ final readonly class GetDashboardHandler implements RequestHandlerInterface
             'overdue_count'           => $summary->overdueCount,
             'outstanding_total_cents' => $summary->outstandingTotalCents,
             'recent_unpaid'           => $recentUnpaid,
+            'received_this_month_cents' => $summary->receivedThisMonthCents,
+            'received_last_month_cents' => $summary->receivedLastMonthCents,
+            'aging'                     => $summary->aging,
         ]);
     }
 }

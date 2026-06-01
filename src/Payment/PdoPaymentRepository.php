@@ -159,6 +159,46 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         ], $rows);
     }
 
+    public function receivedTotalBetween(string $startInclusive, string $endExclusive): int
+    {
+        $row = $this->query->fetchOne(
+            'SELECT COALESCE(SUM(amount_cents), 0) AS total
+             FROM payments
+             WHERE organization_id = ? AND is_deleted = 0 AND paid_at >= ? AND paid_at < ?',
+            [$this->orgId->get(), $startInclusive, $endExclusive],
+        );
+
+        return $row !== null ? (int) $row['total'] : 0;
+    }
+
+    public function agingBuckets(string $now, string $thirtyDaysAgo): array
+    {
+        // Per-invoice net outstanding (total - non-void payments), then bucket the
+        // positive remainder by how far past due_at the invoice is.
+        $row = $this->query->fetchOne(
+            'SELECT
+                COALESCE(SUM(CASE WHEN t.due_at IS NULL OR t.due_at >= ? THEN t.net ELSE 0 END), 0) AS current,
+                COALESCE(SUM(CASE WHEN t.due_at < ? AND t.due_at >= ? THEN t.net ELSE 0 END), 0) AS overdue_1_30,
+                COALESCE(SUM(CASE WHEN t.due_at < ? THEN t.net ELSE 0 END), 0) AS overdue_31_plus
+             FROM (
+                SELECT i.id, i.due_at,
+                       i.total_cents - COALESCE(SUM(CASE WHEN p.is_deleted = 0 THEN p.amount_cents ELSE 0 END), 0) AS net
+                FROM invoices i
+                LEFT JOIN payments p ON p.invoice_id = i.id
+                WHERE i.organization_id = ? AND i.is_deleted = 0 AND i.status IN (\'issued\', \'partially_paid\')
+                GROUP BY i.id, i.due_at, i.total_cents
+             ) t
+             WHERE t.net > 0',
+            [$now, $now, $thirtyDaysAgo, $thirtyDaysAgo, $this->orgId->get()],
+        );
+
+        return [
+            'current'         => $row !== null ? (int) $row['current'] : 0,
+            'overdue_1_30'    => $row !== null ? (int) $row['overdue_1_30'] : 0,
+            'overdue_31_plus' => $row !== null ? (int) $row['overdue_31_plus'] : 0,
+        ];
+    }
+
     /** @param array<string, mixed> $row */
     private function mapRow(array $row): Payment
     {
