@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
 import { cn } from '@/shared/lib/cn'
@@ -118,6 +118,12 @@ const NAV: NavGroup[] = [
 /** Authenticated app chrome: deep-green sidebar + topbar + routed content. */
 export function AppShell() {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
+
+  // Breadcrumb tail = the nav item whose route prefixes the current path.
+  const activeItem = NAV.flatMap((g) => g.items).find(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  )
 
   const linkClass = ({ isActive }: { isActive: boolean }): string =>
     cn(
@@ -165,7 +171,9 @@ export function AppShell() {
         <header className="flex items-center justify-between border-b border-border bg-surface-raised px-inline-lg py-stack-sm">
           <div className="text-body text-fg-muted">
             NeNe Invoice <span className="opacity-40">/</span>{' '}
-            <span className="font-medium text-fg">{t('common.appName')}</span>
+            <span className="font-medium text-fg">
+              {activeItem ? t(activeItem.label) : t('common.appName')}
+            </span>
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-inline-lg py-stack-lg">

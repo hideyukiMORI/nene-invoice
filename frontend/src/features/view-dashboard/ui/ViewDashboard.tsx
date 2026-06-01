@@ -1,14 +1,19 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { cn } from '@/shared/lib/cn'
 import { formatYen } from '@/shared/lib/format-money'
-import { Badge, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import { Badge, EmptyState, ErrorState, LoadingState, Stack } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
 
-/** Admin dashboard: summary cards + recent unpaid invoice list. */
+const BTN_GHOST =
+  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium border border-border-strong bg-surface-raised text-fg transition-colors hover:bg-surface-overlay'
+const BTN_PRIMARY =
+  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium bg-accent text-fg-inverse transition-colors hover:bg-accent-hover'
+
+/** Admin dashboard: page head + summary stat cards + recent unpaid invoices. */
 export function ViewDashboard() {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const state = useViewDashboard()
 
   if (state.kind === 'loading') {
@@ -25,102 +30,114 @@ export function ViewDashboard() {
     )
   }
 
+  const asOf = new Date().toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   return (
     <Stack gap="lg">
-      <Text as="h1" variant="heading-md">
-        {t('admin.dashboard.title')}
-      </Text>
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="page-sub">{t('admin.dashboard.asOf', { date: asOf })}</p>
+        </div>
+        <div className="flex items-center gap-inline-sm">
+          <Link to="/quotes/new" className={BTN_GHOST}>
+            {t('admin.dashboard.createQuote')}
+          </Link>
+          <Link to="/invoices/new" className={BTN_PRIMARY}>
+            {t('admin.dashboard.createInvoice')}
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 gap-inline-md sm:grid-cols-3">
-        <SummaryCard
+      <div className="stats">
+        <StatCard
           label={t('admin.dashboard.unpaid')}
           value={String(state.unpaidCount)}
-          sub={formatYen(state.outstandingTotalCents)}
+          tone="c-brand"
+          foot={t('admin.dashboard.totalAmount', {
+            amount: formatYen(state.outstandingTotalCents),
+          })}
         />
-        <SummaryCard
+        <StatCard
           label={t('admin.dashboard.overdue')}
           value={String(state.overdueCount)}
-          highlight={state.overdueCount > 0}
+          tone="c-danger"
         />
-        <SummaryCard
+        <StatCard
           label={t('admin.dashboard.outstanding')}
           value={formatYen(state.outstandingTotalCents)}
+          foot={t('admin.dashboard.invoiceCount', { count: state.unpaidCount })}
         />
       </div>
 
-      <Stack gap="sm">
-        <Text variant="heading-sm">{t('admin.dashboard.recentUnpaid')}</Text>
-
-        {state.recentUnpaid.length === 0 ? (
-          <EmptyState message={t('admin.dashboard.noUnpaid')} />
-        ) : (
-          <table className="data-table">
-            <tbody>
-              {state.recentUnpaid.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td>
-                    <Link to={`/invoices/${String(invoice.id)}`} className="num text-accent">
-                      {invoice.invoice_number ?? '—'}
-                    </Link>
-                  </td>
-                  <td>
-                    <span className="flex items-center gap-inline-xs">
-                      <Badge tone={invoiceStatusTone[invoice.status]}>
-                        {t(`admin.invoices.status.${invoice.status}`)}
-                      </Badge>
-                      {invoice.is_overdue && (
-                        <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
-                      )}
-                    </span>
-                  </td>
-                  <td className="tr num">
-                    {invoice.due_at !== null ? invoice.due_at.slice(0, 10) : '—'}
-                  </td>
-                  <td className="tr num">
-                    {invoice.outstanding_cents !== null
-                      ? formatYen(invoice.outstanding_cents)
-                      : formatYen(invoice.total_cents)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        <div>
-          <Link to="/invoices" className="text-body text-accent">
-            {t('admin.invoices.title')} →
+      <div className="panel">
+        <div className="panel-head">
+          <h3>{t('admin.dashboard.recentUnpaid')}</h3>
+          <Link to="/invoices" className="btn-link">
+            {t('admin.dashboard.viewAll')}
           </Link>
         </div>
-      </Stack>
+        <div className="px-inline-lg">
+          {state.recentUnpaid.length === 0 ? (
+            <div className="py-stack-md">
+              <EmptyState message={t('admin.dashboard.noUnpaid')} />
+            </div>
+          ) : (
+            state.recentUnpaid.map((invoice) => (
+              <div key={invoice.id} className="mini-row">
+                <div className="mini-left">
+                  <Link
+                    to={`/invoices/${String(invoice.id)}`}
+                    className="num font-semibold text-accent"
+                  >
+                    {invoice.invoice_number ?? '—'}
+                  </Link>
+                  <Badge tone={invoiceStatusTone[invoice.status]}>
+                    {t(`admin.invoices.status.${invoice.status}`)}
+                  </Badge>
+                  {invoice.is_overdue && (
+                    <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
+                  )}
+                </div>
+                <div className="mini-right">
+                  <div className="mini-amt">
+                    {formatYen(invoice.outstanding_cents ?? invoice.total_cents)}
+                  </div>
+                  <div className="text-caption text-fg-muted">
+                    {invoice.due_at !== null
+                      ? t('admin.dashboard.due', { date: invoice.due_at.slice(0, 10) })
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </Stack>
   )
 }
 
-function SummaryCard({
+function StatCard({
   label,
   value,
-  sub,
-  highlight = false,
+  foot,
+  tone,
 }: {
   label: string
   value: string
-  sub?: string
-  highlight?: boolean
+  foot?: ReactNode
+  tone?: 'c-brand' | 'c-danger' | 'c-warn'
 }) {
   return (
-    <div className="border border-border bg-surface-raised p-inline-md">
-      <Text variant="muted" className="text-caption">
-        {label}
-      </Text>
-      <Text as="p" variant="heading-md" className={cn('num', highlight && 'text-danger')}>
-        {value}
-      </Text>
-      {sub !== undefined && (
-        <Text variant="muted" className="num">
-          {sub}
-        </Text>
-      )}
+    <div className="stat">
+      <div className="stat-label">{label}</div>
+      <div className={tone ? `stat-num ${tone}` : 'stat-num'}>{value}</div>
+      {foot !== undefined && <div className="stat-foot">{foot}</div>}
     </div>
   )
 }

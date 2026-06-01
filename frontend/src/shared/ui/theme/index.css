@@ -86,6 +86,132 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Case C — page header (title + sub + actions) */
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.125rem;
+  }
+  .page-title {
+    font-size: 1.3125rem;
+    font-weight: 700;
+    letter-spacing: 0.005em;
+    color: var(--color-fg);
+  }
+  .page-sub {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    margin-top: 0.1875rem;
+  }
+
+  /* Case C — stat cards */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+    margin-bottom: 1.375rem;
+  }
+  .stat {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    padding: 0.9375rem 1rem;
+  }
+  .stat-label {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    font-weight: 500;
+  }
+  .stat-num {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5625rem;
+    font-weight: 700;
+    margin-top: 0.4375rem;
+    color: var(--color-fg);
+    letter-spacing: -0.01em;
+  }
+  .stat-num.c-brand {
+    color: var(--color-accent-hover);
+  }
+  .stat-num.c-danger {
+    color: var(--color-danger);
+  }
+  .stat-num.c-warn {
+    color: var(--color-warn);
+  }
+  .stat-foot {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    margin-top: 0.3125rem;
+  }
+
+  /* Case C — panel (titled content box) */
+  .panel {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8125rem 1.125rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .panel-head h3 {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .panel-body {
+    padding: 1.125rem;
+  }
+
+  /* Case C — mini list rows (dashboard recent) */
+  .mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6875rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .mini-row:last-child {
+    border-bottom: none;
+  }
+  .mini-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    min-width: 0;
+  }
+  .mini-right {
+    text-align: right;
+    flex: none;
+  }
+  .mini-amt {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+
+  /* Inline text-link button (panel "see all") */
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    font-size: var(--text-caption);
+    padding: 0;
+  }
+
   /* Case C — login: card centered on a deep-green gradient field */
   .auth {
     min-height: 100vh;
