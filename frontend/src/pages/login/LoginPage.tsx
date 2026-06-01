@@ -111,24 +111,29 @@ export function LoginPage() {
             <span className="tb">
               {trustIcon(
                 <>
-                  <rect x="3" y="7" width="10" height="7" rx="1" />
-                  <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+                  <circle cx="7" cy="7" r="4.3" />
+                  <path d="M10.2 10.2L14 14" />
                 </>,
               )}
-              {t('admin.auth.trustSsl')}
-            </span>
-            <span className="tb">
-              {trustIcon(<path d="M8 2l5 2v3.5c0 3-2 5.3-5 6.5-3-1.2-5-3.5-5-6.5V4z" />)}
-              {t('admin.auth.trustQualified')}
+              {t('admin.auth.trustSecurity')}
             </span>
             <span className="tb">
               {trustIcon(
                 <>
-                  <rect x="2.5" y="4" width="11" height="8" rx="1" />
-                  <path d="M2.5 7h11" />
+                  <rect x="2.5" y="3" width="11" height="4" rx="1" />
+                  <rect x="2.5" y="9" width="11" height="4" rx="1" />
+                  <path d="M5 5h.01M5 11h.01" />
                 </>,
               )}
-              {t('admin.auth.trustDatacenter')}
+              {t('admin.auth.trustSelfhost')}
+            </span>
+            <span className="tb">
+              {trustIcon(<path d="M6 5L2.5 8 6 11M10 5l3.5 3L10 11" />)}
+              {t('admin.auth.trustOss')}
+            </span>
+            <span className="tb">
+              {trustIcon(<path d="M8 2l5 2v3.5c0 3-2 5.3-5 6.5-3-1.2-5-3.5-5-6.5V4z" />)}
+              {t('admin.auth.trustQualified')}
             </span>
           </div>
           <div className="copy">© {new Date().getFullYear()} NeNe Invoice</div>
