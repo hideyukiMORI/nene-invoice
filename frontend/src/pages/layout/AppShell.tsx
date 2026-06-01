@@ -34,7 +34,15 @@ function MonoMark() {
 }
 
 const icon = (path: ReactNode): ReactNode => (
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-4.5">
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="size-4.5"
+  >
     {path}
   </svg>
 )
