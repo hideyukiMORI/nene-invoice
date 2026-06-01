@@ -21,8 +21,7 @@ export const jaMessages = {
   'admin.auth.remember': 'ログイン状態を保持',
   'admin.auth.forgotPasswordPrompt': 'パスワードをお忘れですか？',
   'admin.auth.forgotPasswordLink': 'パスワードをお忘れですか？',
-  'admin.auth.secNote':
-    'このサイトは SSL で保護されています。ログイン情報は暗号化して送信されます。',
+  'admin.auth.secNote': 'パスワードはハッシュ化して安全に保管されます。',
   'admin.auth.brandTagline': '請求業務を、確実に。見積から入金まで一気通貫で。',
   'admin.auth.brandLead':
     '適格請求書（インボイス）制度に対応した、堅牢な見積・請求・入金管理。バックオフィスの締め作業を、正確かつ滞りなく。',
@@ -32,9 +31,10 @@ export const jaMessages = {
   'admin.auth.feat2Desc': '発行・入金記録をすべて記録',
   'admin.auth.feat3Title': '入金消込をリアルタイムに',
   'admin.auth.feat3Desc': '売掛残高・期限超過を即時把握',
-  'admin.auth.trustSsl': '256-bit SSL 暗号化',
+  'admin.auth.trustSecurity': 'セキュリティ診断実施',
+  'admin.auth.trustSelfhost': '自己ホスト・データ主権',
+  'admin.auth.trustOss': 'オープンソース（MIT）',
   'admin.auth.trustQualified': '適格請求書対応',
-  'admin.auth.trustDatacenter': '国内データセンター',
   'admin.auth.failed': 'メールアドレスまたはパスワードが正しくありません。',
   'admin.auth.emailInvalid': '有効なメールアドレスを入力してください。',
   'admin.auth.passwordRequired': 'パスワードを入力してください。',
