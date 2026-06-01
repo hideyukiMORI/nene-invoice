@@ -2,38 +2,8 @@ import { Button, Field, Input, MutationError, Stack } from '@/shared/ui'
 import { useTranslation } from '@/shared/i18n'
 import { useSignIn } from '../hooks/use-sign-in'
 
-/** Overlapping-N monogram (案C 採用ロゴ). */
-function MonogramMark() {
-  return (
-    <span className="mono-mark" aria-hidden="true">
-      <svg viewBox="0 0 42 42">
-        <text
-          x="-2"
-          y="31"
-          fontFamily="sans-serif"
-          fontWeight="800"
-          fontSize="32"
-          fill="currentColor"
-          opacity="0.32"
-        >
-          N
-        </text>
-        <text
-          x="11"
-          y="31"
-          fontFamily="sans-serif"
-          fontWeight="800"
-          fontSize="32"
-          fill="currentColor"
-        >
-          N
-        </text>
-      </svg>
-    </span>
-  )
-}
-
-/** Login form. On success the auth store flips and the app shell reveals itself. */
+/** Login form (right panel of the split-screen). On success the auth store
+ *  flips and the app shell reveals itself. */
 export function SignInForm() {
   const { t } = useTranslation()
   const { form, onSubmit, isPending, errorMessage } = useSignIn()
@@ -41,16 +11,10 @@ export function SignInForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <h1 className="sr-only">{t('admin.auth.title')}</h1>
-      <Stack gap="md">
-        <Stack gap="sm" className="items-center text-center">
-          <div className="auth-brand">
-            <MonogramMark />
-            <span className="auth-name">NeNe Invoice</span>
-          </div>
-          <p className="text-caption text-fg-muted">{t('admin.auth.subtitle')}</p>
-        </Stack>
+      <h1 className="af-head">{t('admin.auth.title')}</h1>
+      <p className="af-headsub">{t('admin.auth.headSub')}</p>
 
+      <Stack gap="md">
         <Field
           id="email"
           label={t('admin.auth.email')}
@@ -81,15 +45,32 @@ export function SignInForm() {
 
         <MutationError message={errorMessage} />
 
+        <div className="auth-optrow">
+          <label className="auth-check">
+            <input type="checkbox" />
+            {t('admin.auth.remember')}
+          </label>
+          <button type="button" className="btn-link">
+            {t('admin.auth.forgotPasswordLink')}
+          </button>
+        </div>
+
         <Button type="submit" disabled={isPending} className="w-full py-stack-sm">
           {t('admin.auth.submit')}
         </Button>
 
-        <p className="text-center text-caption text-fg-muted">
-          {t('admin.auth.forgotPasswordPrompt')}{' '}
-          <button type="button" className="text-accent hover:underline">
-            {t('admin.auth.forgotPasswordLink')}
-          </button>
+        <p className="auth-secnote">
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            aria-hidden="true"
+          >
+            <rect x="3" y="7" width="10" height="7" rx="1" />
+            <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+          </svg>
+          {t('admin.auth.secNote')}
         </p>
       </Stack>
     </form>
