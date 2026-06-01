@@ -30,6 +30,9 @@ test.describe('Dashboard', () => {
         overdue_count: 1,
         outstanding_total_cents: 250000,
         recent_unpaid: [RECENT_INVOICE],
+        received_this_month_cents: 80000,
+        received_last_month_cents: 50000,
+        aging: { current: 100000, overdue_1_30: 100000, overdue_31_plus: 50000 },
       },
     })
 

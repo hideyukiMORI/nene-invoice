@@ -109,7 +109,7 @@
   /* Case C — stat cards */
   .stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 0.875rem;
     margin-bottom: 1.375rem;
   }
@@ -146,6 +146,36 @@
     font-size: var(--text-caption);
     color: var(--color-fg-muted);
     margin-top: 0.3125rem;
+  }
+  .stat-foot.up {
+    color: var(--color-success);
+  }
+  .stat-foot.down {
+    color: var(--color-danger);
+  }
+
+  /* Dashboard two-column body: recent list (wide) + aging (narrow) */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 1.125rem;
+    align-items: start;
+  }
+
+  /* Receivable-aging progress bar */
+  .pay-bar {
+    height: 7px;
+    background: var(--color-surface-overlay);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .pay-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--color-success);
+  }
+  .pay-bar.over > span {
+    background: var(--color-danger);
   }
 
   /* Case C — panel (titled content box) */
