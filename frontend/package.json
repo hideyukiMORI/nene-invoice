@@ -20,6 +20,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "codegen": "openapi-typescript ../docs/openapi/openapi.yaml -o src/shared/api/schema.gen.ts",
+    "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
     "check": "npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook"
   },
