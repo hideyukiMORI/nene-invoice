@@ -8,10 +8,25 @@ import { cn } from '@/shared/lib/cn'
 function MonoMark() {
   return (
     <svg viewBox="0 0 42 42" className="size-6" aria-hidden="true">
-      <text x="-2" y="31" fontFamily="sans-serif" fontWeight="800" fontSize="32" fill="currentColor" opacity="0.4">
+      <text
+        x="-2"
+        y="31"
+        fontFamily="sans-serif"
+        fontWeight="800"
+        fontSize="32"
+        fill="currentColor"
+        opacity="0.4"
+      >
         N
       </text>
-      <text x="11" y="31" fontFamily="sans-serif" fontWeight="800" fontSize="32" fill="currentColor">
+      <text
+        x="11"
+        y="31"
+        fontFamily="sans-serif"
+        fontWeight="800"
+        fontSize="32"
+        fill="currentColor"
+      >
         N
       </text>
     </svg>
@@ -19,7 +34,7 @@ function MonoMark() {
 }
 
 const icon = (path: ReactNode): ReactNode => (
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-[18px]">
+  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" className="size-4.5">
     {path}
   </svg>
 )
@@ -113,8 +128,8 @@ export function AppShell() {
     )
 
   return (
-    <div className="grid min-h-screen grid-cols-[232px_1fr]">
-      <aside className="flex flex-col bg-side-bg text-side-fg">
+    <div className="flex min-h-screen">
+      <aside className="flex w-58 shrink-0 flex-col bg-side-bg text-side-fg">
         <div className="flex items-center gap-inline-sm px-inline-md pt-stack-lg pb-stack-xs font-semibold">
           <MonoMark />
           <span className="text-heading-sm">NeNe Invoice</span>
@@ -129,7 +144,7 @@ export function AppShell() {
               <div className="px-inline-sm pb-stack-xs text-caption font-medium uppercase tracking-wide text-side-fg-muted">
                 {t(group.label)}
               </div>
-              <div className="flex flex-col gap-[2px]">
+              <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
                   <NavLink key={item.to} to={item.to} className={linkClass}>
                     <span className="shrink-0">{ICONS[item.iconKey]}</span>
@@ -146,7 +161,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-col bg-surface">
+      <div className="flex min-h-screen flex-1 flex-col bg-surface">
         <header className="flex items-center justify-between border-b border-border bg-surface-raised px-inline-lg py-stack-sm">
           <div className="text-body text-fg-muted">
             NeNe Invoice <span className="opacity-40">/</span>{' '}

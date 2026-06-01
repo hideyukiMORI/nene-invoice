@@ -14,11 +14,9 @@ const USER = {
 test.describe('User management', () => {
   test.describe('List users', () => {
     test('shows the user list after login', async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'GET') {
-          route.fulfill(
-            json({ items: [USER], total: 1, limit: 100, offset: 0 }),
-          )
+          route.fulfill(json({ items: [USER], total: 1, limit: 100, offset: 0 }))
         } else {
           route.fallback()
         }
@@ -33,7 +31,7 @@ test.describe('User management', () => {
     })
 
     test('shows empty state when no users', async ({ page }) => {
-      await page.route('**/admin/users', (route) =>
+      await page.route('**/admin/users*', (route) =>
         route.fulfill(json({ items: [], total: 0, limit: 100, offset: 0 })),
       )
 
@@ -46,7 +44,7 @@ test.describe('User management', () => {
 
   test.describe('Create user', () => {
     test.beforeEach(async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'GET') {
           route.fulfill(json({ items: [], total: 0, limit: 100, offset: 0 }))
         } else {
@@ -77,7 +75,7 @@ test.describe('User management', () => {
     })
 
     test('creates a user and returns to the list', async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'POST') {
           route.fulfill(json(USER, 201))
         } else {
@@ -93,7 +91,7 @@ test.describe('User management', () => {
     })
 
     test('shows error when server rejects creation', async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'POST') {
           route.fulfill(problem('email-conflict', 409))
         } else {
@@ -111,7 +109,7 @@ test.describe('User management', () => {
 
   test.describe('Edit user', () => {
     test('prefills form and saves update', async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'GET') {
           route.fulfill(json({ items: [USER], total: 1, limit: 100, offset: 0 }))
         } else {
@@ -142,7 +140,7 @@ test.describe('User management', () => {
 
   test.describe('Delete user', () => {
     test('deletes a user after confirmation', async ({ page }) => {
-      await page.route('**/admin/users', (route, request) => {
+      await page.route('**/admin/users*', (route, request) => {
         if (request.method() === 'GET') {
           route.fulfill(json({ items: [USER], total: 1, limit: 100, offset: 0 }))
         } else {

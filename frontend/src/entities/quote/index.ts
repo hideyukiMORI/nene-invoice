@@ -1,6 +1,7 @@
 export { type QuoteId, toQuoteId } from './ids'
 export type { Quote, QuotePage, QuoteStatus, QuoteWithLines, CreateQuoteInput } from './model'
 export { quoteKeys } from './query-keys'
+export { quoteStatusTone } from './status-tone'
 export { useQuoteList, useQuote } from './queries'
 export { useCreateQuote, useChangeQuoteStatus, useConvertQuote } from './mutations'
 export { useDownloadQuotePdf } from './download'

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useDeleteUser, type User } from '@/entities/user'
+import { useDeleteUser, type User, type UserRole, type UserStatus } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
 import {
+  Badge,
+  type BadgeTone,
   Button,
   ConfirmDialog,
   EmptyState,
@@ -12,6 +14,18 @@ import {
   Text,
 } from '@/shared/ui'
 import { useListUsers } from '../hooks/use-list-users'
+
+const ROLE_TONE: Record<UserRole, BadgeTone> = {
+  superadmin: 'brand',
+  admin: 'info',
+  member: 'neutral',
+  viewer: 'neutral',
+}
+
+const STATUS_TONE: Record<UserStatus, BadgeTone> = {
+  active: 'ok',
+  invited: 'warn',
+}
 
 /** User list screen with per-row delete (confirmed). */
 export function ListUsers() {
@@ -53,26 +67,28 @@ export function ListUsers() {
       {state.kind === 'empty' && <EmptyState message={t('admin.users.empty')} />}
 
       {state.kind === 'ready' && (
-        <table className="w-full border-collapse text-body">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-border text-left">
-              <th className="py-stack-sm pr-inline-md font-medium">{t('admin.users.col.email')}</th>
-              <th className="py-stack-sm pr-inline-md font-medium">{t('admin.users.col.role')}</th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.users.col.status')}
-              </th>
-              <th className="py-stack-sm text-right font-medium">{t('admin.users.col.actions')}</th>
+            <tr>
+              <th>{t('admin.users.col.email')}</th>
+              <th>{t('admin.users.col.role')}</th>
+              <th>{t('admin.users.col.status')}</th>
+              <th className="tr">{t('admin.users.col.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {state.users.map((user) => (
-              <tr key={user.id} className="border-b border-border">
-                <td className="py-stack-sm pr-inline-md">{user.email}</td>
-                <td className="py-stack-sm pr-inline-md">{t(`admin.users.role.${user.role}`)}</td>
-                <td className="py-stack-sm pr-inline-md">
-                  {t(`admin.users.status.${user.status}`)}
+              <tr key={user.id}>
+                <td>{user.email}</td>
+                <td>
+                  <Badge tone={ROLE_TONE[user.role]}>{t(`admin.users.role.${user.role}`)}</Badge>
                 </td>
-                <td className="py-stack-sm text-right">
+                <td>
+                  <Badge tone={STATUS_TONE[user.status]}>
+                    {t(`admin.users.status.${user.status}`)}
+                  </Badge>
+                </td>
+                <td className="tr">
                   <Stack direction="row" gap="sm" className="justify-end">
                     <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
                       {t('admin.users.editButton')}

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
+import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { cn } from '@/shared/lib/cn'
 import { formatYen } from '@/shared/lib/format-money'
-import { EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import { Badge, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
 
 /** Admin dashboard: summary cards + recent unpaid invoice list. */
@@ -52,27 +54,29 @@ export function ViewDashboard() {
         {state.recentUnpaid.length === 0 ? (
           <EmptyState message={t('admin.dashboard.noUnpaid')} />
         ) : (
-          <table className="w-full border-collapse text-body">
+          <table className="data-table">
             <tbody>
               {state.recentUnpaid.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-border">
-                  <td className="py-stack-sm pr-inline-md">
-                    <Link to={`/invoices/${String(invoice.id)}`} className="text-accent">
+                <tr key={invoice.id}>
+                  <td>
+                    <Link to={`/invoices/${String(invoice.id)}`} className="num text-accent">
                       {invoice.invoice_number ?? '—'}
                     </Link>
                   </td>
-                  <td className="py-stack-sm pr-inline-md">
-                    <span>{t(`admin.invoices.status.${invoice.status}`)}</span>
-                    {invoice.is_overdue && (
-                      <span className="ml-inline-sm text-error text-caption font-medium">
-                        {t('admin.invoices.status.overdue')}
-                      </span>
-                    )}
+                  <td>
+                    <span className="flex items-center gap-inline-xs">
+                      <Badge tone={invoiceStatusTone[invoice.status]}>
+                        {t(`admin.invoices.status.${invoice.status}`)}
+                      </Badge>
+                      {invoice.is_overdue && (
+                        <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
+                      )}
+                    </span>
                   </td>
-                  <td className="py-stack-sm pr-inline-md text-right">
+                  <td className="tr num">
                     {invoice.due_at !== null ? invoice.due_at.slice(0, 10) : '—'}
                   </td>
-                  <td className="py-stack-sm text-right">
+                  <td className="tr num">
                     {invoice.outstanding_cents !== null
                       ? formatYen(invoice.outstanding_cents)
                       : formatYen(invoice.total_cents)}
@@ -105,14 +109,18 @@ function SummaryCard({
   highlight?: boolean
 }) {
   return (
-    <div className="rounded border border-border bg-surface-raised p-inline-md">
+    <div className="border border-border bg-surface-raised p-inline-md">
       <Text variant="muted" className="text-caption">
         {label}
       </Text>
-      <Text as="p" variant="heading-md" className={highlight ? 'text-error' : undefined}>
+      <Text as="p" variant="heading-md" className={cn('num', highlight && 'text-danger')}>
         {value}
       </Text>
-      {sub !== undefined && <Text variant="muted">{sub}</Text>}
+      {sub !== undefined && (
+        <Text variant="muted" className="num">
+          {sub}
+        </Text>
+      )}
     </div>
   )
 }

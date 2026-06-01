@@ -2,22 +2,54 @@
  * Default theme — the complete token set. Every visual value in the app lives
  * here. A sibling themes/*.css must redefine all of these to restyle the app;
  * switching is a one-line change in ../active.css.
+ *
+ * Direction: 案C「高密度オペ」— くすんだ深緑 (muted pine) / 角ゼロ / コンパクト。
  */
 @theme {
   /* Color (semantic). Utility names derive from the part after --color-,
      e.g. --color-fg → text-fg / bg-fg; --color-surface → bg-surface. */
-  --color-surface: oklch(98% 0.005 250);
+
+  /* surfaces */
+  --color-surface: oklch(98% 0.0025 175);
   --color-surface-raised: oklch(100% 0 0);
-  --color-surface-overlay: oklch(96% 0.008 250);
-  --color-fg: oklch(28% 0.02 260);
-  --color-fg-muted: oklch(55% 0.02 260);
-  --color-fg-inverse: oklch(99% 0 0);
-  --color-border: oklch(90% 0.01 260);
-  --color-accent: oklch(52% 0.15 255);
-  --color-accent-hover: oklch(46% 0.15 255);
-  --color-danger: oklch(55% 0.2 25);
-  --color-success: oklch(58% 0.13 150);
-  --color-focus-ring: oklch(60% 0.16 255);
+  --color-surface-overlay: oklch(97.4% 0.0035 175);
+
+  /* ink */
+  --color-fg: oklch(27% 0.011 172);
+  --color-fg-muted: oklch(50% 0.01 172);
+  --color-fg-inverse: oklch(98.5% 0.006 165);
+
+  /* borders */
+  --color-border: oklch(90.5% 0.006 172);
+  --color-border-strong: oklch(83.5% 0.008 172);
+
+  /* brand — muted pine green */
+  --color-accent: oklch(41% 0.046 167);
+  --color-accent-hover: oklch(34% 0.045 168);
+  --color-accent-soft: oklch(93.5% 0.018 167);
+  --color-accent-deep: oklch(28% 0.036 170);
+
+  /* status (desaturated) + soft fills */
+  --color-danger: oklch(49% 0.115 28);
+  --color-danger-soft: oklch(95% 0.03 28);
+  --color-success: oklch(47% 0.07 155);
+  --color-success-soft: oklch(94.5% 0.028 155);
+  --color-warn: oklch(55% 0.075 75);
+  --color-warn-soft: oklch(95% 0.035 80);
+  --color-info: oklch(48% 0.055 235);
+  --color-info-soft: oklch(95% 0.025 235);
+  --color-neutral-soft: oklch(93.5% 0.004 172);
+
+  --color-focus-ring: oklch(43% 0.072 162);
+
+  /* sidebar (product chrome) — deep green, always dark */
+  --color-side-bg: oklch(29% 0.03 168);
+  --color-side-bg-2: oklch(25% 0.026 169);
+  --color-side-fg: oklch(89% 0.013 166);
+  --color-side-fg-muted: oklch(72% 0.016 167);
+  --color-side-active: oklch(37% 0.045 166);
+  --color-side-border: oklch(36% 0.026 167);
+  --color-side-brand: oklch(93% 0.025 158);
 
   /* Spacing — inline (x) and stack (y) */
   --spacing-inline-xs: 0.25rem;
@@ -32,21 +64,24 @@
   --spacing-stack-xl: 2.5rem;
 
   /* Typography */
-  --font-sans: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
-  --text-body: 0.875rem;
+  --font-sans: 'Noto Sans JP', system-ui, sans-serif;
+  --font-num: 'Roboto Mono', 'Noto Sans JP', monospace;
+  --text-caption: 0.6875rem;
+  --text-body: 0.8125rem;
   --text-heading-sm: 1.125rem;
   --text-heading-md: 1.5rem;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
 
-  /* Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
+  /* Radius — 案C: 角ゼロ。丸は full のみ残す（スピナー等） */
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
   --radius-full: 9999px;
 
   /* Shadow */
-  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.06);
-  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px oklch(30% 0.02 165 / 0.06);
+  --shadow-md: 0 4px 12px oklch(28% 0.03 165 / 0.12);
+  --shadow-pop: 0 8px 28px oklch(28% 0.03 165 / 0.16), 0 2px 6px oklch(28% 0.03 165 / 0.08);
 
   /* Motion */
   --duration-fast: 120ms;
@@ -69,4 +104,5 @@ body {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }

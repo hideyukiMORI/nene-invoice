@@ -59,32 +59,24 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
       )}
 
       {payments.length > 0 && (
-        <table className="w-full border-collapse text-body">
+        <table className="data-table">
           <thead>
-            <tr className="border-b border-border text-left">
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.payments.col.paidAt')}
-              </th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.payments.col.method')}
-              </th>
-              <th className="py-stack-sm pr-inline-md font-medium">
-                {t('admin.payments.col.note')}
-              </th>
-              <th className="py-stack-sm text-right font-medium">
-                {t('admin.payments.col.amount')}
-              </th>
+            <tr>
+              <th>{t('admin.payments.col.paidAt')}</th>
+              <th>{t('admin.payments.col.method')}</th>
+              <th>{t('admin.payments.col.note')}</th>
+              <th className="tr">{t('admin.payments.col.amount')}</th>
             </tr>
           </thead>
           <tbody>
             {payments.map((payment) => (
-              <tr key={payment.id} className="border-b border-border">
-                <td className="py-stack-sm pr-inline-md">{payment.paid_at}</td>
-                <td className="py-stack-sm pr-inline-md">
+              <tr key={payment.id}>
+                <td className="num">{payment.paid_at}</td>
+                <td>
                   {payment.method === null ? '—' : t(`admin.payments.method.${payment.method}`)}
                 </td>
-                <td className="py-stack-sm pr-inline-md">{payment.note ?? '—'}</td>
-                <td className="py-stack-sm text-right">{formatYen(payment.amount_cents)}</td>
+                <td>{payment.note ?? '—'}</td>
+                <td className="tr num">{formatYen(payment.amount_cents)}</td>
               </tr>
             ))}
           </tbody>
@@ -93,7 +85,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
 
       <div className="flex justify-between">
         <Text variant="muted">{t('admin.payments.totalPaid')}</Text>
-        <Text>{formatYen(totalPaidCents)}</Text>
+        <Text className="num">{formatYen(totalPaidCents)}</Text>
       </div>
 
       {canRecord && (
