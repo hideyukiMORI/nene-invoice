@@ -18,28 +18,30 @@ export interface LineItemRow {
 export function LineItemsTable({ items }: { items: LineItemRow[] }) {
   const { t } = useTranslation()
   return (
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>{t('admin.invoices.line.description')}</th>
-          <th className="tr">{t('admin.invoices.line.quantity')}</th>
-          <th className="tr">{t('admin.invoices.line.unitPrice')}</th>
-          <th className="tr">{t('admin.invoices.line.taxRate')}</th>
-          <th className="tr">{t('admin.invoices.line.lineSubtotal')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((line, index) => (
-          <tr key={index}>
-            <td>{line.description}</td>
-            <td className="tr num">{line.quantity}</td>
-            <td className="tr num">{formatYen(line.unit_price_cents)}</td>
-            <td className="tr num">{formatTaxRate(line.tax_rate_bps)}</td>
-            <td className="tr num">{formatYen(line.line_subtotal_cents)}</td>
+    <div className="table-scroll">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>{t('admin.invoices.line.description')}</th>
+            <th className="tr">{t('admin.invoices.line.quantity')}</th>
+            <th className="tr">{t('admin.invoices.line.unitPrice')}</th>
+            <th className="tr">{t('admin.invoices.line.taxRate')}</th>
+            <th className="tr">{t('admin.invoices.line.lineSubtotal')}</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {items.map((line, index) => (
+            <tr key={index}>
+              <td>{line.description}</td>
+              <td className="tr num">{line.quantity}</td>
+              <td className="tr num">{formatYen(line.unit_price_cents)}</td>
+              <td className="tr num">{formatTaxRate(line.tax_rate_bps)}</td>
+              <td className="tr num">{formatYen(line.line_subtotal_cents)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

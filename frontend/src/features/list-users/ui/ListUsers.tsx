@@ -67,47 +67,49 @@ export function ListUsers() {
       {state.kind === 'empty' && <EmptyState message={t('admin.users.empty')} />}
 
       {state.kind === 'ready' && (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{t('admin.users.col.email')}</th>
-              <th>{t('admin.users.col.role')}</th>
-              <th>{t('admin.users.col.status')}</th>
-              <th className="tr">{t('admin.users.col.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.email}</td>
-                <td>
-                  <Badge tone={ROLE_TONE[user.role]}>{t(`admin.users.role.${user.role}`)}</Badge>
-                </td>
-                <td>
-                  <Badge tone={STATUS_TONE[user.status]}>
-                    {t(`admin.users.status.${user.status}`)}
-                  </Badge>
-                </td>
-                <td className="tr">
-                  <Stack direction="row" gap="sm" className="justify-end">
-                    <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
-                      {t('admin.users.editButton')}
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setPendingDelete(user)
-                      }}
-                    >
-                      {t('admin.users.delete.action')}
-                    </Button>
-                  </Stack>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{t('admin.users.col.email')}</th>
+                <th>{t('admin.users.col.role')}</th>
+                <th>{t('admin.users.col.status')}</th>
+                <th className="tr">{t('admin.users.col.actions')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {state.users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.email}</td>
+                  <td>
+                    <Badge tone={ROLE_TONE[user.role]}>{t(`admin.users.role.${user.role}`)}</Badge>
+                  </td>
+                  <td>
+                    <Badge tone={STATUS_TONE[user.status]}>
+                      {t(`admin.users.status.${user.status}`)}
+                    </Badge>
+                  </td>
+                  <td className="tr">
+                    <Stack direction="row" gap="sm" className="justify-end">
+                      <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
+                        {t('admin.users.editButton')}
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setPendingDelete(user)
+                        }}
+                      >
+                        {t('admin.users.delete.action')}
+                      </Button>
+                    </Stack>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {deleteUser.isError && (

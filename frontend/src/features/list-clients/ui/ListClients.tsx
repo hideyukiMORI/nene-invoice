@@ -53,46 +53,48 @@ export function ListClients() {
       {state.kind === 'empty' && <EmptyState message={t('admin.clients.empty')} />}
 
       {state.kind === 'ready' && (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{t('admin.clients.col.name')}</th>
-              <th>{t('admin.clients.col.contact')}</th>
-              <th>{t('admin.clients.col.email')}</th>
-              <th>{t('admin.clients.col.registration')}</th>
-              <th className="tr">{t('admin.clients.col.actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.clients.map((client) => (
-              <tr key={client.id}>
-                <td>{client.name}</td>
-                <td>{client.contact_name ?? '—'}</td>
-                <td>{client.email ?? '—'}</td>
-                <td className="num">{client.registration_number ?? '—'}</td>
-                <td className="tr">
-                  <Stack direction="row" gap="sm" className="justify-end">
-                    <Link
-                      to={`/clients/${String(client.id)}/edit`}
-                      className="text-body text-accent"
-                    >
-                      {t('admin.clients.editButton')}
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setPendingDelete(client)
-                      }}
-                    >
-                      {t('admin.clients.delete.action')}
-                    </Button>
-                  </Stack>
-                </td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{t('admin.clients.col.name')}</th>
+                <th>{t('admin.clients.col.contact')}</th>
+                <th>{t('admin.clients.col.email')}</th>
+                <th>{t('admin.clients.col.registration')}</th>
+                <th className="tr">{t('admin.clients.col.actions')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {state.clients.map((client) => (
+                <tr key={client.id}>
+                  <td>{client.name}</td>
+                  <td>{client.contact_name ?? '—'}</td>
+                  <td>{client.email ?? '—'}</td>
+                  <td className="num">{client.registration_number ?? '—'}</td>
+                  <td className="tr">
+                    <Stack direction="row" gap="sm" className="justify-end">
+                      <Link
+                        to={`/clients/${String(client.id)}/edit`}
+                        className="text-body text-accent"
+                      >
+                        {t('admin.clients.editButton')}
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setPendingDelete(client)
+                        }}
+                      >
+                        {t('admin.clients.delete.action')}
+                      </Button>
+                    </Stack>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {deleteClient.isError && (

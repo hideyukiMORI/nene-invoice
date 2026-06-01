@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
@@ -83,6 +83,20 @@ const ICONS: Record<string, ReactNode> = {
   ),
 }
 
+/** Hamburger (mobile drawer toggle). */
+const burgerIcon = (
+  <svg
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+    strokeLinecap="round"
+    className="size-4.5"
+  >
+    <path d="M3 5.5h14M3 10h14M3 14.5h14" />
+  </svg>
+)
+
 interface NavItem {
   to: string
   label: MessageKey
@@ -115,10 +129,15 @@ const NAV: NavGroup[] = [
   },
 ]
 
-/** Authenticated app chrome: deep-green sidebar + topbar + routed content. */
+/** Authenticated app chrome: deep-green sidebar (off-canvas drawer on mobile)
+ *  + topbar + routed content. Responsive styling lives in the theme layer. */
 export function AppShell() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
+  const [navOpen, setNavOpen] = useState(false)
+  const closeNav = (): void => {
+    setNavOpen(false)
+  }
 
   // Breadcrumb tail = the nav item whose route prefixes the current path.
   const activeItem = NAV.flatMap((g) => g.items).find(
@@ -127,15 +146,15 @@ export function AppShell() {
 
   const linkClass = ({ isActive }: { isActive: boolean }): string =>
     cn(
-      'flex items-center gap-inline-sm rounded-md px-inline-sm py-stack-xs text-body transition-colors',
+      'flex items-center gap-inline-sm px-inline-sm py-stack-xs text-body transition-colors',
       isActive
         ? 'bg-side-active text-side-fg font-medium'
         : 'text-side-fg-muted hover:bg-side-active/60 hover:text-side-fg',
     )
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-58 shrink-0 flex-col bg-side-bg text-side-fg">
+    <div className={cn('app', navOpen && 'nav-open')}>
+      <aside className="side flex flex-col bg-side-bg text-side-fg">
         <div className="flex items-center gap-inline-sm px-inline-md pt-stack-lg pb-stack-xs font-semibold">
           <MonoMark />
           <span className="text-heading-sm">NeNe Invoice</span>
@@ -152,7 +171,7 @@ export function AppShell() {
               </div>
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={linkClass}>
+                  <NavLink key={item.to} to={item.to} className={linkClass} onClick={closeNav}>
                     <span className="shrink-0">{ICONS[item.iconKey]}</span>
                     {t(item.label)}
                   </NavLink>
@@ -167,16 +186,30 @@ export function AppShell() {
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col bg-surface">
-        <header className="flex items-center justify-between border-b border-border bg-surface-raised px-inline-lg py-stack-sm">
-          <div className="text-body text-fg-muted">
-            NeNe Invoice <span className="opacity-40">/</span>{' '}
-            <span className="font-medium text-fg">
-              {activeItem ? t(activeItem.label) : t('common.appName')}
-            </span>
+      <div className="side-backdrop" aria-hidden="true" onClick={closeNav} />
+
+      <div className="app-main flex flex-col bg-surface">
+        <header className="topbar flex items-center justify-between border-b border-border bg-surface-raised">
+          <div className="tb-left flex items-center gap-inline-sm">
+            <button
+              type="button"
+              className="tb-burger items-center justify-center border border-border-strong bg-surface-raised text-fg-muted"
+              aria-label={t('admin.nav.openMenu')}
+              onClick={() => {
+                setNavOpen(true)
+              }}
+            >
+              {burgerIcon}
+            </button>
+            <div className="tb-crumb text-body text-fg-muted">
+              NeNe Invoice <span className="opacity-40">/</span>{' '}
+              <span className="font-medium text-fg">
+                {activeItem ? t(activeItem.label) : t('common.appName')}
+              </span>
+            </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-inline-lg py-stack-lg">
+        <main className="app-content mx-auto w-full max-w-5xl flex-1">
           <Outlet />
         </main>
       </div>

@@ -280,4 +280,147 @@
     font-size: 1.0625rem;
     color: var(--color-fg);
   }
+
+  /* App shell layout — sidebar grid + topbar (responsive overrides below) */
+  .app {
+    display: grid;
+    grid-template-columns: 14.5rem 1fr;
+    min-height: 100vh;
+    position: relative;
+  }
+  /* Let the content cell shrink below its content so .table-scroll can clip
+     and wide tables scroll internally instead of widening the page. */
+  .app-main {
+    min-width: 0;
+  }
+  .topbar {
+    padding: 0 var(--spacing-inline-lg);
+    height: 56px;
+  }
+  .app-content {
+    padding: var(--spacing-stack-lg) var(--spacing-inline-lg);
+  }
+  .tb-burger {
+    display: none;
+    width: 34px;
+    height: 34px;
+    flex: none;
+  }
+  .side-backdrop {
+    display: none;
+  }
+  .table-scroll {
+    width: 100%;
+  }
+
+  /* ============================================================
+     RESPONSIVE / MOBILE (案C モバイル指示書)
+     ============================================================ */
+
+  /* tablet */
+  @media (max-width: 1080px) {
+    .app {
+      grid-template-columns: 12.5rem 1fr;
+    }
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .app-content {
+      padding: 1.25rem 1.25rem 2.25rem;
+    }
+  }
+
+  /* collapse two-column content grids */
+  @media (max-width: 860px) {
+    .dash-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* mobile: sidebar becomes an off-canvas drawer */
+  @media (max-width: 760px) {
+    .app {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 40;
+      width: 16.25rem;
+      max-width: 84%;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      box-shadow: var(--shadow-pop);
+    }
+    .app.nav-open .side {
+      transform: translateX(0);
+    }
+    .side-backdrop {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      background: oklch(20% 0.02 165 / 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .app.nav-open .side-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tb-burger {
+      display: inline-flex;
+    }
+    .topbar {
+      padding: 0 0.875rem;
+      height: 50px;
+    }
+    .tb-crumb {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .app-content {
+      padding: 1rem 0.875rem 2rem;
+    }
+    .page-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    .page-title {
+      font-size: 1.1875rem;
+    }
+    .stats {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.625rem;
+    }
+    .stat {
+      padding: 0.8125rem;
+    }
+    .stat-num {
+      font-size: 1.375rem;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll .data-table {
+      min-width: 600px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 360px;
+    }
+  }
+
+  /* very small */
+  @media (max-width: 420px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
 }

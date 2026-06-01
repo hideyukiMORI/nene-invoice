@@ -22,6 +22,7 @@ export const enMessages: MessageCatalog = {
   'admin.auth.emailInvalid': 'Enter a valid email address.',
   'admin.auth.passwordRequired': 'Enter your password.',
   'admin.account.signedInAs': 'Signed in as {{email}}',
+  'admin.nav.openMenu': 'Open menu',
   'admin.nav.dashboard': 'Dashboard',
   'admin.nav.quotes': 'Quotes',
   'admin.nav.invoices': 'Invoices',

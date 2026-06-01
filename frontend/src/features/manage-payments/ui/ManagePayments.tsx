@@ -59,28 +59,30 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
       )}
 
       {payments.length > 0 && (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>{t('admin.payments.col.paidAt')}</th>
-              <th>{t('admin.payments.col.method')}</th>
-              <th>{t('admin.payments.col.note')}</th>
-              <th className="tr">{t('admin.payments.col.amount')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((payment) => (
-              <tr key={payment.id}>
-                <td className="num">{payment.paid_at}</td>
-                <td>
-                  {payment.method === null ? '—' : t(`admin.payments.method.${payment.method}`)}
-                </td>
-                <td>{payment.note ?? '—'}</td>
-                <td className="tr num">{formatYen(payment.amount_cents)}</td>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>{t('admin.payments.col.paidAt')}</th>
+                <th>{t('admin.payments.col.method')}</th>
+                <th>{t('admin.payments.col.note')}</th>
+                <th className="tr">{t('admin.payments.col.amount')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {payments.map((payment) => (
+                <tr key={payment.id}>
+                  <td className="num">{payment.paid_at}</td>
+                  <td>
+                    {payment.method === null ? '—' : t(`admin.payments.method.${payment.method}`)}
+                  </td>
+                  <td>{payment.note ?? '—'}</td>
+                  <td className="tr num">{formatYen(payment.amount_cents)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <div className="flex justify-between">

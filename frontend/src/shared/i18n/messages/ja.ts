@@ -23,6 +23,7 @@ export const jaMessages = {
   'admin.auth.emailInvalid': '有効なメールアドレスを入力してください。',
   'admin.auth.passwordRequired': 'パスワードを入力してください。',
   'admin.account.signedInAs': '{{email}} でログイン中',
+  'admin.nav.openMenu': 'メニューを開く',
   'admin.nav.dashboard': 'ダッシュボード',
   'admin.nav.quotes': '見積書',
   'admin.nav.invoices': '請求書',
