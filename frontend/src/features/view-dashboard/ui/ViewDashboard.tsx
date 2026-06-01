@@ -1,12 +1,19 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import { Badge, EmptyState, ErrorState, LoadingState, Stack } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
 
-/** Admin dashboard: summary cards + recent unpaid invoice list. */
+const BTN_GHOST =
+  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium border border-border-strong bg-surface-raised text-fg transition-colors hover:bg-surface-overlay'
+const BTN_PRIMARY =
+  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium bg-accent text-fg-inverse transition-colors hover:bg-accent-hover'
+
+/** Admin dashboard: page head + summary stat cards + recent unpaid + AR aging. */
 export function ViewDashboard() {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const state = useViewDashboard()
 
   if (state.kind === 'loading') {
@@ -23,96 +30,205 @@ export function ViewDashboard() {
     )
   }
 
+  const asOf = new Date().toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  // Month-over-month change in received payments (only when there is a prior base).
+  const last = state.receivedLastMonthCents
+  let momText: string | undefined
+  let momDir: 'up' | 'down' | undefined
+  if (last > 0) {
+    const pct = Math.round(((state.receivedThisMonthCents - last) / last) * 100)
+    momText = t('admin.dashboard.momChange', { change: `${pct > 0 ? '+' : ''}${String(pct)}%` })
+    momDir = pct >= 0 ? 'up' : 'down'
+  }
+
+  const aging = state.aging
+  const agingTotal = aging.current + aging.overdue_1_30 + aging.overdue_31_plus
+  const pct = (n: number): number => (agingTotal > 0 ? Math.round((n / agingTotal) * 100) : 0)
+
   return (
     <Stack gap="lg">
-      <Text as="h1" variant="heading-md">
-        {t('admin.dashboard.title')}
-      </Text>
+      <div className="page-head">
+        <div>
+          <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+          <p className="page-sub">{t('admin.dashboard.asOf', { date: asOf })}</p>
+        </div>
+        <div className="flex items-center gap-inline-sm">
+          <Link to="/quotes/new" className={BTN_GHOST}>
+            {t('admin.dashboard.createQuote')}
+          </Link>
+          <Link to="/invoices/new" className={BTN_PRIMARY}>
+            {t('admin.dashboard.createInvoice')}
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 gap-inline-md sm:grid-cols-3">
-        <SummaryCard
+      <div className="stats">
+        <StatCard
           label={t('admin.dashboard.unpaid')}
           value={String(state.unpaidCount)}
-          sub={formatYen(state.outstandingTotalCents)}
+          tone="c-brand"
+          foot={t('admin.dashboard.totalAmount', {
+            amount: formatYen(state.outstandingTotalCents),
+          })}
         />
-        <SummaryCard
+        <StatCard
           label={t('admin.dashboard.overdue')}
           value={String(state.overdueCount)}
-          highlight={state.overdueCount > 0}
+          tone="c-danger"
         />
-        <SummaryCard
+        <StatCard
+          label={t('admin.dashboard.receivedThisMonth')}
+          value={formatYen(state.receivedThisMonthCents)}
+          foot={momText}
+          footClass={momDir}
+        />
+        <StatCard
           label={t('admin.dashboard.outstanding')}
           value={formatYen(state.outstandingTotalCents)}
+          foot={t('admin.dashboard.invoiceCount', { count: state.unpaidCount })}
         />
       </div>
 
-      <Stack gap="sm">
-        <Text variant="heading-sm">{t('admin.dashboard.recentUnpaid')}</Text>
-
-        {state.recentUnpaid.length === 0 ? (
-          <EmptyState message={t('admin.dashboard.noUnpaid')} />
-        ) : (
-          <table className="w-full border-collapse text-body">
-            <tbody>
-              {state.recentUnpaid.map((invoice) => (
-                <tr key={invoice.id} className="border-b border-border">
-                  <td className="py-stack-sm pr-inline-md">
-                    <Link to={`/invoices/${String(invoice.id)}`} className="text-accent">
+      <div className="dash-grid">
+        <div className="panel">
+          <div className="panel-head">
+            <h3>{t('admin.dashboard.recentUnpaid')}</h3>
+            <Link to="/invoices" className="btn-link">
+              {t('admin.dashboard.viewAll')}
+            </Link>
+          </div>
+          <div className="px-inline-lg">
+            {state.recentUnpaid.length === 0 ? (
+              <div className="py-stack-md">
+                <EmptyState message={t('admin.dashboard.noUnpaid')} />
+              </div>
+            ) : (
+              state.recentUnpaid.map((invoice) => (
+                <div key={invoice.id} className="mini-row">
+                  <div className="mini-left">
+                    <Link
+                      to={`/invoices/${String(invoice.id)}`}
+                      className="num font-semibold text-accent"
+                    >
                       {invoice.invoice_number ?? '—'}
                     </Link>
-                  </td>
-                  <td className="py-stack-sm pr-inline-md">
-                    <span>{t(`admin.invoices.status.${invoice.status}`)}</span>
+                    <Badge tone={invoiceStatusTone[invoice.status]}>
+                      {t(`admin.invoices.status.${invoice.status}`)}
+                    </Badge>
                     {invoice.is_overdue && (
-                      <span className="ml-inline-sm text-error text-caption font-medium">
-                        {t('admin.invoices.status.overdue')}
-                      </span>
+                      <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
                     )}
-                  </td>
-                  <td className="py-stack-sm pr-inline-md text-right">
-                    {invoice.due_at !== null ? invoice.due_at.slice(0, 10) : '—'}
-                  </td>
-                  <td className="py-stack-sm text-right">
-                    {invoice.outstanding_cents !== null
-                      ? formatYen(invoice.outstanding_cents)
-                      : formatYen(invoice.total_cents)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        <div>
-          <Link to="/invoices" className="text-body text-accent">
-            {t('admin.invoices.title')} →
-          </Link>
+                  </div>
+                  <div className="mini-right">
+                    <div className="mini-amt">
+                      {formatYen(invoice.outstanding_cents ?? invoice.total_cents)}
+                    </div>
+                    <div className="text-caption text-fg-muted">
+                      {invoice.due_at !== null
+                        ? t('admin.dashboard.due', { date: invoice.due_at.slice(0, 10) })
+                        : '—'}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      </Stack>
+
+        <div className="panel">
+          <div className="panel-head">
+            <h3>{t('admin.dashboard.aging')}</h3>
+          </div>
+          <div className="panel-body">
+            <div className="flex flex-col gap-stack-sm">
+              <AgingRow
+                label={t('admin.dashboard.agingCurrent')}
+                cents={aging.current}
+                pct={pct(aging.current)}
+              />
+              <AgingRow
+                label={t('admin.dashboard.aging1to30')}
+                cents={aging.overdue_1_30}
+                pct={pct(aging.overdue_1_30)}
+                over
+              />
+              <AgingRow
+                label={t('admin.dashboard.aging31plus')}
+                cents={aging.overdue_31_plus}
+                pct={pct(aging.overdue_31_plus)}
+                over
+                danger
+              />
+            </div>
+            <hr className="my-stack-md border-t border-border" />
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">{t('admin.dashboard.collectionsTotal')}</span>
+              <span className="num font-bold">{formatYen(agingTotal)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </Stack>
   )
 }
 
-function SummaryCard({
+function StatCard({
   label,
   value,
-  sub,
-  highlight = false,
+  foot,
+  tone,
+  footClass,
 }: {
   label: string
   value: string
-  sub?: string
-  highlight?: boolean
+  foot?: ReactNode
+  tone?: 'c-brand' | 'c-danger' | 'c-warn'
+  footClass?: 'up' | 'down'
 }) {
   return (
-    <div className="rounded border border-border bg-surface-raised p-inline-md">
-      <Text variant="muted" className="text-caption">
-        {label}
-      </Text>
-      <Text as="p" variant="heading-md" className={highlight ? 'text-error' : undefined}>
-        {value}
-      </Text>
-      {sub !== undefined && <Text variant="muted">{sub}</Text>}
+    <div className="stat">
+      <div className="stat-label">{label}</div>
+      <div className={tone ? `stat-num ${tone}` : 'stat-num'}>{value}</div>
+      {foot !== undefined && (
+        <div className={footClass ? `stat-foot ${footClass}` : 'stat-foot'}>{foot}</div>
+      )}
+    </div>
+  )
+}
+
+function AgingRow({
+  label,
+  cents,
+  pct,
+  over = false,
+  danger = false,
+}: {
+  label: string
+  cents: number
+  pct: number
+  over?: boolean
+  danger?: boolean
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <span className="text-caption text-fg-muted">{label}</span>
+        <span
+          className={
+            danger ? 'num text-caption font-semibold text-danger' : 'num text-caption font-semibold'
+          }
+        >
+          {formatYen(cents)}
+        </span>
+      </div>
+      <div className={over ? 'pay-bar over mt-stack-xs' : 'pay-bar mt-stack-xs'}>
+        <span style={{ width: `${String(pct)}%` }} />
+      </div>
     </div>
   )
 }

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
+import { quoteStatusTone } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import { Badge, Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
 import { useListQuotes } from '../hooks/use-list-quotes'
 
 export function ListQuotes() {
@@ -33,40 +34,36 @@ export function ListQuotes() {
 
       {state.kind === 'ready' && (
         <>
-          <table className="w-full border-collapse text-body">
-            <thead>
-              <tr className="border-b border-border text-left">
-                <th className="py-stack-sm pr-inline-md font-medium">
-                  {t('admin.quotes.col.number')}
-                </th>
-                <th className="py-stack-sm pr-inline-md font-medium">
-                  {t('admin.quotes.col.status')}
-                </th>
-                <th className="py-stack-sm pr-inline-md font-medium">
-                  {t('admin.quotes.col.client')}
-                </th>
-                <th className="py-stack-sm text-right font-medium">
-                  {t('admin.quotes.col.total')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.quotes.map((quote) => (
-                <tr key={quote.id} className="border-b border-border">
-                  <td className="py-stack-sm pr-inline-md">
-                    <Link to={`/quotes/${String(quote.id)}`} className="text-accent">
-                      {quote.quote_number}
-                    </Link>
-                  </td>
-                  <td className="py-stack-sm pr-inline-md">
-                    {t(`admin.quotes.status.${quote.status}`)}
-                  </td>
-                  <td className="py-stack-sm pr-inline-md">{quote.client_id}</td>
-                  <td className="py-stack-sm text-right">{formatYen(quote.total_cents)}</td>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t('admin.quotes.col.number')}</th>
+                  <th>{t('admin.quotes.col.status')}</th>
+                  <th>{t('admin.quotes.col.client')}</th>
+                  <th className="tr">{t('admin.quotes.col.total')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {state.quotes.map((quote) => (
+                  <tr key={quote.id}>
+                    <td>
+                      <Link to={`/quotes/${String(quote.id)}`} className="num text-accent">
+                        {quote.quote_number}
+                      </Link>
+                    </td>
+                    <td>
+                      <Badge tone={quoteStatusTone[quote.status]}>
+                        {t(`admin.quotes.status.${quote.status}`)}
+                      </Badge>
+                    </td>
+                    <td className="num">{quote.client_id}</td>
+                    <td className="tr num">{formatYen(quote.total_cents)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {state.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
               <Button onClick={state.pagination.prevPage} disabled={!state.pagination.hasPrev}>

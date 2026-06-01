@@ -1,18 +1,25 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Stack, Text } from '@/shared/ui'
 import { useAccountMenu } from '../hooks/use-account-menu'
 
-/** Header account summary + sign-out. */
+/** Sidebar account summary + sign-out, themed for the deep-green chrome. */
 export function AccountMenu() {
   const { t } = useTranslation()
   const { email, onSignOut } = useAccountMenu()
 
   return (
-    <Stack direction="row" gap="md">
-      {email !== null && <Text variant="muted">{t('admin.account.signedInAs', { email })}</Text>}
-      <Button variant="ghost" size="sm" onClick={onSignOut}>
+    <div className="flex flex-col gap-stack-xs">
+      {email !== null && (
+        <span className="truncate text-caption text-side-fg-muted" title={email}>
+          {t('admin.account.signedInAs', { email })}
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={onSignOut}
+        className="w-full border border-side-border px-inline-sm py-stack-xs text-body text-side-fg transition-colors hover:bg-side-active focus-visible:outline-2 focus-visible:outline-focus-ring"
+      >
         {t('common.actions.signOut')}
-      </Button>
-    </Stack>
+      </button>
+    </div>
   )
 }

@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
+import { quoteStatusTone, useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import {
+  Badge,
   Button,
   ErrorState,
   LineItemsTable,
@@ -47,11 +48,11 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
         <Link to="/quotes" className="text-body text-accent">
           ← {t('admin.quotes.detail.backToList')}
         </Link>
-        <div className="flex items-start justify-between">
-          <Text as="h1" variant="heading-md">
+        <div className="flex flex-wrap items-start justify-between gap-stack-sm">
+          <Text as="h1" variant="heading-md" className="num">
             {quote.quote_number}
           </Text>
-          <Stack direction="row" gap="sm">
+          <Stack direction="row" gap="sm" className="flex-wrap justify-end">
             <Stack gap="sm">
               <Button onClick={pdf.download} disabled={pdf.isDownloading}>
                 {pdf.isDownloading
@@ -110,7 +111,9 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
           </Stack>
         </div>
         <Stack direction="row" gap="md">
-          <Text variant="muted">{t(`admin.quotes.status.${quote.status}`)}</Text>
+          <Badge tone={quoteStatusTone[quote.status]}>
+            {t(`admin.quotes.status.${quote.status}`)}
+          </Badge>
           {quote.issued_at !== null && (
             <Text variant="muted">
               {t('admin.quotes.detail.issuedAt')}: {quote.issued_at.slice(0, 10)}

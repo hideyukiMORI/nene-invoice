@@ -8,5 +8,12 @@ export function toDashboardSummary(dto: DashboardSummaryDto): DashboardSummary {
     overdue_count: dto.overdue_count,
     outstanding_total_cents: dto.outstanding_total_cents,
     recent_unpaid: dto.recent_unpaid.map(toInvoice),
+    received_this_month_cents: dto.received_this_month_cents,
+    received_last_month_cents: dto.received_last_month_cents,
+    aging: {
+      current: dto.aging.current,
+      overdue_1_30: dto.aging.overdue_1_30,
+      overdue_31_plus: dto.aging.overdue_31_plus,
+    },
   }
 }

@@ -292,6 +292,29 @@ export interface paths {
         patch: operations["changeQuoteStatus"];
         trace?: never;
     };
+    "/admin/quotes/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Download quote PDF
+         * @description Generates and streams the quote as a PDF (見積書 layout). Requires ViewBilling capability. Returns application/pdf with Content-Disposition: attachment.
+         */
+        get: operations["getQuotePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/quotes/{id}/convert": {
         parameters: {
             query?: never;
@@ -309,6 +332,46 @@ export interface paths {
          * @description Converts an accepted quote into a draft invoice (copies lines/totals).
          */
         post: operations["convertQuoteToInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/invoices/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export invoices as CSV
+         * @description Downloads all issued (non-draft) invoices for the organization as a UTF-8 BOM CSV file compatible with Excel and accounting software. Requires ViewBilling capability.
+         */
+        get: operations["exportInvoicesCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payments/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export payments as CSV
+         * @description Downloads all valid (non-voided) payments for the organization as a UTF-8 BOM CSV file compatible with Excel and accounting software. Includes invoice number and client name for reference. Requires ViewBilling capability.
+         */
+        get: operations["exportPaymentsCsv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -447,6 +510,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/invoices/{id}/send-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send invoice by email
+         * @description Generates the invoice PDF and sends it to the client's email address. Requires the invoice to be in issued, partially_paid, or paid status and the client to have an email address. Requires ManageBilling capability.
+         */
+        post: operations["sendInvoiceEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invoices/{id}/payments": {
         parameters: {
             query?: never;
@@ -569,6 +655,20 @@ export interface components {
             outstanding_total_cents: number;
             /** @description Up to 5 most recent unpaid invoices, newest first. */
             recent_unpaid: components["schemas"]["Invoice"][];
+            /** @description Sum of non-void payments received in the current month (paid_at based), in cents. */
+            received_this_month_cents: number;
+            /** @description Sum of non-void payments received in the previous month, in cents (for month-over-month comparison). */
+            received_last_month_cents: number;
+            aging: components["schemas"]["ReceivableAging"];
+        };
+        /** @description Outstanding receivable balance bucketed by overdue age, in cents. */
+        ReceivableAging: {
+            /** @description Not yet due (due_at null or in the future), in cents. */
+            current: number;
+            /** @description Overdue by 1–30 days, in cents. */
+            overdue_1_30: number;
+            /** @description Overdue by 31 days or more, in cents. */
+            overdue_31_plus: number;
         };
         /** @description Issuer (自社) profile. registration_number is `T` + 13 digits. */
         CompanySettings: {
@@ -827,6 +927,17 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
+        /** @description Too many failed login attempts from the source IP. */
+        TooManyRequests: {
+            headers: {
+                /** @description Seconds to wait before retrying. */
+                "Retry-After"?: number;
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
         /** @description Request body or field validation error. */
         ValidationFailed: {
             headers: {
@@ -942,6 +1053,7 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationFailed"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     getCurrentUser: {
@@ -1596,6 +1708,32 @@ export interface operations {
             422: components["responses"]["InvalidStateTransition"];
         };
     };
+    getQuotePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF binary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     convertQuoteToInvoice: {
         parameters: {
             query?: never;
@@ -1621,6 +1759,50 @@ export interface operations {
             403: components["responses"]["InsufficientCapability"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    exportInvoicesCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    exportPaymentsCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
         };
     };
     listInvoices: {
@@ -1825,6 +2007,31 @@ export interface operations {
             403: components["responses"]["InsufficientCapability"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["QualifiedInvoiceIncomplete"];
+        };
+    };
+    sendInvoiceEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Email sent */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     listPayments: {

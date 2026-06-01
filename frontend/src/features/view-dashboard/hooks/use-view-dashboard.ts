@@ -1,4 +1,4 @@
-import { useDashboard, type DashboardSummary } from '@/entities/dashboard'
+import { useDashboard, type DashboardSummary, type ReceivableAging } from '@/entities/dashboard'
 import type { Invoice } from '@/entities/invoice'
 
 export type ViewDashboardState =
@@ -10,6 +10,9 @@ export type ViewDashboardState =
       overdueCount: number
       outstandingTotalCents: number
       recentUnpaid: Invoice[]
+      receivedThisMonthCents: number
+      receivedLastMonthCents: number
+      aging: ReceivableAging
     }
 
 export function useViewDashboard(): ViewDashboardState {
@@ -33,5 +36,8 @@ export function useViewDashboard(): ViewDashboardState {
     overdueCount: data.overdue_count,
     outstandingTotalCents: data.outstanding_total_cents,
     recentUnpaid: data.recent_unpaid,
+    receivedThisMonthCents: data.received_this_month_cents,
+    receivedLastMonthCents: data.received_last_month_cents,
+    aging: data.aging,
   }
 }

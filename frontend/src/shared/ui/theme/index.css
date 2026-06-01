@@ -1,2 +1,426 @@
 @import 'tailwindcss';
 @import './active.css';
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  /* Case C — ruled, dense data table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body);
+  }
+  .data-table thead th {
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-fg-muted);
+    background: var(--color-surface-overlay);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-border-strong);
+    white-space: nowrap;
+  }
+  .data-table thead th.tr {
+    text-align: right;
+  }
+  .data-table tbody td {
+    padding: 0.4375rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  .data-table tbody td.tr {
+    text-align: right;
+  }
+  .data-table tbody tr:nth-child(even) {
+    background: var(--color-surface-overlay);
+  }
+  .data-table tbody tr:hover {
+    background: var(--color-accent-soft);
+  }
+
+  /* Case C — square status badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    line-height: 1.5;
+    padding: 1px 7px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .badge-neutral {
+    background: var(--color-neutral-soft);
+    color: var(--color-fg-muted);
+  }
+  .badge-info {
+    background: var(--color-info-soft);
+    color: var(--color-info);
+  }
+  .badge-ok {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+  }
+  .badge-warn {
+    background: var(--color-warn-soft);
+    color: var(--color-warn);
+  }
+  .badge-danger {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+  }
+  .badge-brand {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-hover);
+  }
+
+  /* Tabular numerals for amounts / document numbers */
+  .num {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Case C — page header (title + sub + actions) */
+  .page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.125rem;
+  }
+  .page-title {
+    font-size: 1.3125rem;
+    font-weight: 700;
+    letter-spacing: 0.005em;
+    color: var(--color-fg);
+  }
+  .page-sub {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    margin-top: 0.1875rem;
+  }
+
+  /* Case C — stat cards */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem;
+    margin-bottom: 1.375rem;
+  }
+  .stat {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    padding: 0.9375rem 1rem;
+  }
+  .stat-label {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    font-weight: 500;
+  }
+  .stat-num {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5625rem;
+    font-weight: 700;
+    margin-top: 0.4375rem;
+    color: var(--color-fg);
+    letter-spacing: -0.01em;
+  }
+  .stat-num.c-brand {
+    color: var(--color-accent-hover);
+  }
+  .stat-num.c-danger {
+    color: var(--color-danger);
+  }
+  .stat-num.c-warn {
+    color: var(--color-warn);
+  }
+  .stat-foot {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    margin-top: 0.3125rem;
+  }
+  .stat-foot.up {
+    color: var(--color-success);
+  }
+  .stat-foot.down {
+    color: var(--color-danger);
+  }
+
+  /* Dashboard two-column body: recent list (wide) + aging (narrow) */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 1.125rem;
+    align-items: start;
+  }
+
+  /* Receivable-aging progress bar */
+  .pay-bar {
+    height: 7px;
+    background: var(--color-surface-overlay);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+  .pay-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--color-success);
+  }
+  .pay-bar.over > span {
+    background: var(--color-danger);
+  }
+
+  /* Case C — panel (titled content box) */
+  .panel {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8125rem 1.125rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .panel-head h3 {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .panel-body {
+    padding: 1.125rem;
+  }
+
+  /* Case C — mini list rows (dashboard recent) */
+  .mini-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6875rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .mini-row:last-child {
+    border-bottom: none;
+  }
+  .mini-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+    min-width: 0;
+  }
+  .mini-right {
+    text-align: right;
+    flex: none;
+  }
+  .mini-amt {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+
+  /* Inline text-link button (panel "see all") */
+  .btn-link {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    font-size: var(--text-caption);
+    padding: 0;
+  }
+
+  /* Case C — login: card centered on a deep-green gradient field */
+  .auth {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 2.5rem 1.5rem;
+    background: linear-gradient(160deg, var(--color-accent-deep), var(--color-accent-hover));
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-pop);
+    padding: 1.875rem 1.875rem 1.75rem;
+  }
+  .auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+  }
+  .auth-brand .mono-mark {
+    width: 40px;
+    height: 36px;
+    flex: none;
+    color: var(--color-accent);
+  }
+  .auth-brand .mono-mark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .auth-name {
+    font-weight: 700;
+    font-size: 1.0625rem;
+    color: var(--color-fg);
+  }
+
+  /* App shell layout — sidebar grid + topbar (responsive overrides below) */
+  .app {
+    display: grid;
+    grid-template-columns: 14.5rem 1fr;
+    min-height: 100vh;
+    position: relative;
+  }
+  /* Let the content cell shrink below its content so .table-scroll can clip
+     and wide tables scroll internally instead of widening the page. */
+  .app-main {
+    min-width: 0;
+  }
+  .topbar {
+    padding: 0 var(--spacing-inline-lg);
+    height: 56px;
+  }
+  .app-content {
+    padding: var(--spacing-stack-lg) var(--spacing-inline-lg);
+  }
+  .tb-burger {
+    display: none;
+    width: 34px;
+    height: 34px;
+    flex: none;
+  }
+  .side-backdrop {
+    display: none;
+  }
+  .table-scroll {
+    width: 100%;
+  }
+
+  /* ============================================================
+     RESPONSIVE / MOBILE (案C モバイル指示書)
+     ============================================================ */
+
+  /* tablet */
+  @media (max-width: 1080px) {
+    .app {
+      grid-template-columns: 12.5rem 1fr;
+    }
+    .stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .app-content {
+      padding: 1.25rem 1.25rem 2.25rem;
+    }
+  }
+
+  /* collapse two-column content grids */
+  @media (max-width: 860px) {
+    .dash-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* mobile: sidebar becomes an off-canvas drawer */
+  @media (max-width: 760px) {
+    .app {
+      grid-template-columns: 1fr;
+    }
+    .side {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 40;
+      width: 16.25rem;
+      max-width: 84%;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      box-shadow: var(--shadow-pop);
+    }
+    .app.nav-open .side {
+      transform: translateX(0);
+    }
+    .side-backdrop {
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      background: oklch(20% 0.02 165 / 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .app.nav-open .side-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tb-burger {
+      display: inline-flex;
+    }
+    .topbar {
+      padding: 0 0.875rem;
+      height: 50px;
+    }
+    .tb-crumb {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .app-content {
+      padding: 1rem 0.875rem 2rem;
+    }
+    .page-head {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    .page-title {
+      font-size: 1.1875rem;
+    }
+    .stats {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.625rem;
+    }
+    .stat {
+      padding: 0.8125rem;
+    }
+    .stat-num {
+      font-size: 1.375rem;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll .data-table {
+      min-width: 600px;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 360px;
+    }
+  }
+
+  /* very small */
+  @media (max-width: 420px) {
+    .stats {
+      grid-template-columns: 1fr;
+    }
+  }
+}

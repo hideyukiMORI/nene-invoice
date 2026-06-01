@@ -29,6 +29,9 @@ describe('useViewDashboard', () => {
           overdue_count: 1,
           outstanding_total_cents: 250000,
           recent_unpaid: [buildInvoiceDto({ id: 11 })],
+          received_this_month_cents: 0,
+          received_last_month_cents: 0,
+          aging: { current: 0, overdue_1_30: 0, overdue_31_plus: 0 },
         }),
       ),
     )

@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom'
-import { useDownloadInvoicePdf, useSendInvoiceEmail, type InvoiceId } from '@/entities/invoice'
+import {
+  invoiceStatusTone,
+  useDownloadInvoicePdf,
+  useSendInvoiceEmail,
+  type InvoiceId,
+} from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import {
+  Badge,
   Button,
   ErrorState,
   LineItemsTable,
@@ -52,81 +58,81 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
         <Link to="/invoices" className="text-body text-accent">
           ← {t('admin.invoices.detail.backToList')}
         </Link>
-        <div className="flex items-start justify-between">
-          <Text as="h1" variant="heading-md">
+        <div className="flex flex-wrap items-start justify-between gap-stack-sm">
+          <Text as="h1" variant="heading-md" className="num">
             {invoice.invoice_number ?? t('admin.invoices.detail.notIssued')}
           </Text>
-          {pdf.canDownload && (
-            <Stack gap="sm">
-              <Button onClick={pdf.download} disabled={pdf.isDownloading}>
-                {pdf.isDownloading
-                  ? t('admin.invoices.detail.downloadingPdf')
-                  : t('admin.invoices.detail.downloadPdf')}
-              </Button>
-              <MutationError message={pdf.errorMessage} />
-            </Stack>
-          )}
-          {isIssued && (
-            <Stack gap="sm">
-              <Button
-                onClick={() => {
-                  sendEmail.mutate(invoiceId)
-                }}
-                disabled={sendEmail.isPending}
-              >
-                {sendEmail.isPending
-                  ? t('admin.invoices.detail.sendingEmail')
-                  : t('admin.invoices.detail.sendEmail')}
-              </Button>
-              {sendEmail.isSuccess && (
-                <Text variant="muted" role="status">
-                  {t('admin.invoices.detail.emailSent')}
-                </Text>
-              )}
-              <MutationError
-                message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null}
-              />
-            </Stack>
-          )}
-          {link.canGenerate && (
-            <Stack gap="sm">
-              <Button onClick={link.generate} disabled={link.isGenerating}>
-                {link.isGenerating
-                  ? t('admin.invoices.detail.generatingLink')
-                  : t('admin.invoices.detail.generateLink')}
-              </Button>
-              {link.downloadUrl !== null && (
-                <Stack gap="sm">
-                  <Text variant="muted" className="break-all text-caption">
-                    {`${window.location.origin}${link.downloadUrl}`}
+          <div className="flex flex-wrap items-start gap-inline-sm">
+            {pdf.canDownload && (
+              <Stack gap="sm">
+                <Button onClick={pdf.download} disabled={pdf.isDownloading}>
+                  {pdf.isDownloading
+                    ? t('admin.invoices.detail.downloadingPdf')
+                    : t('admin.invoices.detail.downloadPdf')}
+                </Button>
+                <MutationError message={pdf.errorMessage} />
+              </Stack>
+            )}
+            {isIssued && (
+              <Stack gap="sm">
+                <Button
+                  onClick={() => {
+                    sendEmail.mutate(invoiceId)
+                  }}
+                  disabled={sendEmail.isPending}
+                >
+                  {sendEmail.isPending
+                    ? t('admin.invoices.detail.sendingEmail')
+                    : t('admin.invoices.detail.sendEmail')}
+                </Button>
+                {sendEmail.isSuccess && (
+                  <Text variant="muted" role="status">
+                    {t('admin.invoices.detail.emailSent')}
                   </Text>
-                  <Stack direction="row" gap="sm">
-                    <Button onClick={link.copy}>
-                      {link.copied
-                        ? t('admin.invoices.detail.linkCopied')
-                        : t('admin.invoices.detail.linkCopy')}
-                    </Button>
-                    {link.expiresAt !== null && (
-                      <Text variant="muted">
-                        {t('admin.invoices.detail.linkExpiry', { expiresAt: link.expiresAt })}
-                      </Text>
-                    )}
+                )}
+                <MutationError
+                  message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null}
+                />
+              </Stack>
+            )}
+            {link.canGenerate && (
+              <Stack gap="sm">
+                <Button onClick={link.generate} disabled={link.isGenerating}>
+                  {link.isGenerating
+                    ? t('admin.invoices.detail.generatingLink')
+                    : t('admin.invoices.detail.generateLink')}
+                </Button>
+                {link.downloadUrl !== null && (
+                  <Stack gap="sm">
+                    <Text variant="muted" className="break-all text-caption">
+                      {`${window.location.origin}${link.downloadUrl}`}
+                    </Text>
+                    <Stack direction="row" gap="sm">
+                      <Button onClick={link.copy}>
+                        {link.copied
+                          ? t('admin.invoices.detail.linkCopied')
+                          : t('admin.invoices.detail.linkCopy')}
+                      </Button>
+                      {link.expiresAt !== null && (
+                        <Text variant="muted">
+                          {t('admin.invoices.detail.linkExpiry', { expiresAt: link.expiresAt })}
+                        </Text>
+                      )}
+                    </Stack>
                   </Stack>
-                </Stack>
-              )}
-              <MutationError message={link.errorMessage} />
-            </Stack>
-          )}
+                )}
+                <MutationError message={link.errorMessage} />
+              </Stack>
+            )}
+          </div>
         </div>
         <Stack direction="row" gap="md">
-          <Text variant="muted">{t(`admin.invoices.status.${invoice.status}`)}</Text>
-          {invoice.is_overdue && (
-            <Text variant="muted" className="text-error font-medium">
-              {t('admin.invoices.status.overdue')}
-            </Text>
-          )}
+          <Badge tone={invoiceStatusTone[invoice.status]}>
+            {t(`admin.invoices.status.${invoice.status}`)}
+          </Badge>
+          {invoice.is_overdue && <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>}
           {invoice.is_qualified_invoice && (
-            <Text variant="muted">{t('admin.invoices.detail.qualified')}</Text>
+            <Badge tone="brand">{t('admin.invoices.detail.qualified')}</Badge>
           )}
           {invoice.issued_at !== null && (
             <Text variant="muted">
