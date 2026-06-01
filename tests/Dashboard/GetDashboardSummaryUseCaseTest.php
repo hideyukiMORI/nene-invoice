@@ -15,6 +15,8 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
 {
     private InMemoryInvoiceRepository $invoices;
 
+    private InMemoryPaymentRepository $payments;
+
     private GetDashboardSummaryUseCase $useCase;
 
     protected function setUp(): void
@@ -22,7 +24,8 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         $holder = new \Nene2\Http\RequestScopedHolder();
         $holder->set(1);
         $this->invoices = new InMemoryInvoiceRepository($holder);
-        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, new InMemoryPaymentRepository($holder));
+        $this->payments = new InMemoryPaymentRepository($holder);
+        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, $this->payments);
     }
 
     public function test_empty_organization_returns_zeros(): void
@@ -33,6 +36,19 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         self::assertSame(0, $summary->overdueCount);
         self::assertSame(0, $summary->outstandingTotalCents);
         self::assertCount(0, $summary->recentUnpaid);
+        self::assertSame(0, $summary->receivedThisMonthCents);
+        self::assertSame(0, $summary->receivedLastMonthCents);
+        self::assertSame(['current' => 0, 'overdue_1_30' => 0, 'overdue_31_plus' => 0], $summary->aging);
+    }
+
+    public function test_received_this_month_sums_current_month_payments(): void
+    {
+        $thisMonth = date('Y-m-15 12:00:00');
+        $this->payments->save(new \NeneInvoice\Payment\Payment(organizationId: 1, invoiceId: 1, amountCents: 4200, paidAt: $thisMonth));
+
+        $summary = $this->useCase->execute();
+
+        self::assertSame(4200, $summary->receivedThisMonthCents);
     }
 
     public function test_counts_unpaid_invoices(): void

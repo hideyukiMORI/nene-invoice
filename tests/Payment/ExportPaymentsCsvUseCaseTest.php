@@ -121,6 +121,15 @@ final class ExportPaymentsCsvUseCaseTest extends TestCase
             {
                 return 0;
             }
+            public function receivedTotalBetween(string $startInclusive, string $endExclusive): int
+            {
+                return 0;
+            }
+            /** @return array{current: int, overdue_1_30: int, overdue_31_plus: int} */
+            public function agingBuckets(string $now, string $thirtyDaysAgo): array
+            {
+                return ['current' => 0, 'overdue_1_30' => 0, 'overdue_31_plus' => 0];
+            }
         };
     }
 }

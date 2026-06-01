@@ -94,6 +94,8 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Issuer fields | `legal_name`, `bank_name`, `bank_branch`, `account_type`, `account_number`, `logo_url` | `company_name`, `branch`, `acct_no` |
 | Client fields | `contact_name`, `billing_address` | `contact`, `address` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
+| Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents` | `monthly_received_cents`, `received_this_month`, `mtd_cents` |
+| Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
 
 Rules: money columns end in `_cents` (integer); timestamps end in `_at` (except
 the documented `valid_until`); booleans use `is_` / `has_`; foreign keys are

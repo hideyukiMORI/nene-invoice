@@ -12,12 +12,18 @@ use NeneInvoice\Invoice\Invoice;
  */
 final readonly class DashboardSummary
 {
-    /** @param list<Invoice> $recentUnpaid */
+    /**
+     * @param list<Invoice>                                                $recentUnpaid
+     * @param array{current: int, overdue_1_30: int, overdue_31_plus: int} $aging outstanding receivable bucketed by overdue age, in cents
+     */
     public function __construct(
         public int $unpaidCount,
         public int $overdueCount,
         public int $outstandingTotalCents,
         public array $recentUnpaid,
+        public int $receivedThisMonthCents,
+        public int $receivedLastMonthCents,
+        public array $aging,
     ) {
     }
 }

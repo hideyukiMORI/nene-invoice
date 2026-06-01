@@ -51,4 +51,19 @@ interface PaymentRepositoryInterface
      * @return list<array{invoice_number: string, client_name: string, paid_at: string, amount_cents: int, method: string, note: string}>
      */
     public function findValidForExport(): array;
+
+    /**
+     * Sum of non-void payment amounts (cents) with paid_at in [$startInclusive, $endExclusive).
+     * Used for the dashboard's monthly received total. Org-scoped.
+     */
+    public function receivedTotalBetween(string $startInclusive, string $endExclusive): int;
+
+    /**
+     * Outstanding receivable (sum invoice.total_cents - non-void payments, per invoice, floored at 0)
+     * bucketed by overdue age, in cents, across issued / partially_paid invoices. Org-scoped.
+     * Buckets: current (due_at null or >= now), 1–30 days overdue, 31+ days overdue.
+     *
+     * @return array{current: int, overdue_1_30: int, overdue_31_plus: int}
+     */
+    public function agingBuckets(string $now, string $thirtyDaysAgo): array;
 }

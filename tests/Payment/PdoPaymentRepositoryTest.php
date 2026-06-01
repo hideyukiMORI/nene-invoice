@@ -17,6 +17,7 @@ final class PdoPaymentRepositoryTest extends TestCase
     /** @var RequestScopedHolder<int> */
     private RequestScopedHolder $orgId;
     private PdoPaymentRepository $repository;
+    private \PDO $pdo;
 
     protected function setUp(): void
     {
@@ -34,13 +35,43 @@ final class PdoPaymentRepositoryTest extends TestCase
         $factory = new PdoConnectionFactory($config);
         $pdo = $factory->create();
 
-        $schema = file_get_contents(dirname(__DIR__, 2) . '/database/schema/payments.sql');
-        self::assertIsString($schema);
-        $pdo->exec($schema);
+        foreach (['payments', 'invoices'] as $table) {
+            $schema = file_get_contents(dirname(__DIR__, 2) . "/database/schema/{$table}.sql");
+            self::assertIsString($schema);
+            $pdo->exec($schema);
+        }
 
+        $this->pdo   = $pdo;
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
         $this->repository = new PdoPaymentRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+    }
+
+    /** Inserts an invoice row directly (the payment repo cannot create invoices). */
+    private function insertInvoice(
+        int $id,
+        int $organizationId,
+        string $status,
+        int $totalCents,
+        ?string $dueAt,
+    ): void {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO invoices (id, organization_id, client_id, status, is_qualified_invoice, due_at, subtotal_cents, tax_cents, total_cents, is_deleted, created_at, updated_at)
+             VALUES (?, ?, 1, ?, 0, ?, ?, 0, ?, 0, ?, ?)',
+        );
+        $now = '2026-05-29 00:00:00';
+        $stmt->execute([$id, $organizationId, $status, $dueAt, $totalCents, $totalCents, $now, $now]);
+    }
+
+    /** Inserts a payment row directly with an explicit organization (the repo forces org from the holder). */
+    private function insertPayment(int $organizationId, int $invoiceId, int $amountCents, string $paidAt, bool $isDeleted): void
+    {
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO payments (organization_id, invoice_id, amount_cents, paid_at, is_deleted, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)',
+        );
+        $now = '2026-05-29 00:00:00';
+        $stmt->execute([$organizationId, $invoiceId, $amountCents, $paidAt, $isDeleted ? 1 : 0, $now, $now]);
     }
 
     public function test_saves_and_reads_back_payments_for_invoice(): void
@@ -139,5 +170,55 @@ final class PdoPaymentRepositoryTest extends TestCase
         $voided = $this->repository->findById($id);
         self::assertNotNull($voided);
         self::assertTrue($voided->isDeleted);
+    }
+
+    public function test_received_total_between_sums_non_void_in_range_and_scopes_org(): void
+    {
+        // in range
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 1, amountCents: 1000, paidAt: '2026-05-10 09:00:00'));
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 2, amountCents: 2000, paidAt: '2026-05-31 23:59:59'));
+        // boundary: end is exclusive
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 3, amountCents: 4000, paidAt: '2026-06-01 00:00:00'));
+        // before range
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 4, amountCents: 8000, paidAt: '2026-04-30 23:59:59'));
+        // other org (raw insert: the repo forces organization_id from the holder)
+        $this->insertPayment(2, 5, 9000, '2026-05-15 09:00:00', false);
+        // voided in range
+        $voidId = $this->repository->save(new Payment(organizationId: 1, invoiceId: 6, amountCents: 500, paidAt: '2026-05-20 09:00:00'));
+        $this->repository->markVoided($voidId);
+
+        $total = $this->repository->receivedTotalBetween('2026-05-01 00:00:00', '2026-06-01 00:00:00');
+
+        self::assertSame(3000, $total);
+    }
+
+    public function test_aging_buckets_split_outstanding_by_overdue_age(): void
+    {
+        // now reference for the assertion: 2026-05-31, thirtyDaysAgo: 2026-05-01
+        $now          = '2026-05-31 12:00:00';
+        $thirtyDaysAgo = '2026-05-01 12:00:00';
+
+        // current: not yet due
+        $this->insertInvoice(1, 1, 'issued', 10000, '2026-06-30 00:00:00');
+        // current: no due date
+        $this->insertInvoice(2, 1, 'issued', 5000, null);
+        // 1–30 days overdue (due 2026-05-20, partially paid 2000 → net 6000)
+        $this->insertInvoice(3, 1, 'partially_paid', 8000, '2026-05-20 00:00:00');
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 3, amountCents: 2000, paidAt: '2026-05-21 09:00:00'));
+        // 31+ days overdue
+        $this->insertInvoice(4, 1, 'issued', 7000, '2026-03-31 00:00:00');
+        // excluded: paid invoice
+        $this->insertInvoice(5, 1, 'paid', 9999, '2026-03-01 00:00:00');
+        // excluded: fully covered net = 0
+        $this->insertInvoice(6, 1, 'issued', 3000, '2026-04-01 00:00:00');
+        $this->repository->save(new Payment(organizationId: 1, invoiceId: 6, amountCents: 3000, paidAt: '2026-04-02 09:00:00'));
+        // excluded: other org
+        $this->insertInvoice(7, 2, 'issued', 12000, '2026-03-01 00:00:00');
+
+        $aging = $this->repository->agingBuckets($now, $thirtyDaysAgo);
+
+        self::assertSame(15000, $aging['current']);          // 10000 + 5000
+        self::assertSame(6000, $aging['overdue_1_30']);      // 8000 - 2000
+        self::assertSame(7000, $aging['overdue_31_plus']);
     }
 }
