@@ -144,4 +144,30 @@ final class InMemoryPaymentRepository implements PaymentRepositoryInterface
     {
         return [];
     }
+
+    public function receivedTotalBetween(string $startInclusive, string $endExclusive): int
+    {
+        $total = 0;
+
+        foreach ($this->byId as $payment) {
+            if (
+                $payment->organizationId === $this->orgId->get()
+                && !$payment->isDeleted
+                && $payment->paidAt >= $startInclusive
+                && $payment->paidAt < $endExclusive
+            ) {
+                $total += $payment->amountCents;
+            }
+        }
+
+        return $total;
+    }
+
+    /** @return array{current: int, overdue_1_30: int, overdue_31_plus: int} */
+    public function agingBuckets(string $now, string $thirtyDaysAgo): array
+    {
+        // InMemory: invoices are tracked separately, so this fake returns zeros.
+        // The aging join is covered by the Pdo repository integration test.
+        return ['current' => 0, 'overdue_1_30' => 0, 'overdue_31_plus' => 0];
+    }
 }
