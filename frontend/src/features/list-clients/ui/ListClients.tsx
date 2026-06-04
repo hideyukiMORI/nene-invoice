@@ -8,6 +8,7 @@ import {
   type ClientSortField,
 } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
+import { KbdHint } from '@/shared/keyboard'
 import {
   Button,
   ConfirmDialog,
@@ -76,14 +77,16 @@ export function ListClients() {
         </Text>
         <LinkButton to="/clients/new" size="sm">
           {t('admin.clients.newButton')}
+          <KbdHint>n</KbdHint>
         </LinkButton>
       </div>
 
       <form onSubmit={onSubmit}>
         <div className="flex flex-wrap items-end gap-inline-sm">
-          <Field id="client-q" label={t('admin.clients.filter.search')}>
+          <Field id="client-q" label={t('admin.clients.filter.search')} hint={<KbdHint>/</KbdHint>}>
             <Input
               id="client-q"
+              data-kbd="search"
               className="w-72"
               value={draft.q ?? ''}
               placeholder={t('admin.clients.filter.searchPlaceholder')}

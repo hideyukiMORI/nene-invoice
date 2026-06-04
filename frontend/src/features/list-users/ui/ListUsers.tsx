@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useDeleteUser, type User, type UserRole, type UserStatus } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
+import { KbdHint } from '@/shared/keyboard'
 import {
   Badge,
   type BadgeTone,
@@ -52,6 +53,7 @@ export function ListUsers() {
         </Text>
         <LinkButton to="/users/new" size="sm">
           {t('admin.users.newButton')}
+          <KbdHint>n</KbdHint>
         </LinkButton>
       </div>
 

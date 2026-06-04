@@ -9,6 +9,7 @@ import {
   type QuoteStatus,
 } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
+import { KbdHint } from '@/shared/keyboard'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -71,15 +72,17 @@ export function ListQuotes() {
         </Text>
         <LinkButton to="/quotes/new" size="sm">
           {t('admin.quotes.newButton')}
+          <KbdHint>n</KbdHint>
         </LinkButton>
       </div>
 
       <form onSubmit={onSubmit}>
         <Stack gap="sm">
           <div className="audit-filters">
-            <Field id="q-q" label={t('admin.quotes.filter.search')}>
+            <Field id="q-q" label={t('admin.quotes.filter.search')} hint={<KbdHint>/</KbdHint>}>
               <Input
                 id="q-q"
+                data-kbd="search"
                 value={draft.q ?? ''}
                 placeholder={t('admin.quotes.filter.searchPlaceholder')}
                 onChange={(e) => {

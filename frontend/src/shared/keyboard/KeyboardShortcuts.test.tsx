@@ -65,6 +65,39 @@ describe('KeyboardShortcuts', () => {
     expect(getByTestId('loc')).toHaveTextContent('/')
   })
 
+  it('focuses the list search box on /', () => {
+    const { getByRole } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <input data-kbd="search" aria-label="search" />
+      </>,
+    )
+
+    fireEvent.keyDown(document.body, { key: '/' })
+
+    expect(getByRole('textbox')).toHaveFocus()
+  })
+
+  it('opens the contextual new form on n (invoices → /invoices/new)', async () => {
+    const { getByTestId } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <LocationProbe />
+      </>,
+    )
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 'i' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/invoices')
+    })
+
+    fireEvent.keyDown(document.body, { key: 'n' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/invoices/new')
+    })
+  })
+
   it('submits the surrounding form on Ctrl/Cmd+Enter, even from a field', () => {
     const onSubmit = vi.fn((e: { preventDefault: () => void }) => {
       e.preventDefault()

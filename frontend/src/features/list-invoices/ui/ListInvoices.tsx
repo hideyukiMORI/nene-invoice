@@ -10,6 +10,7 @@ import {
   type InvoiceSortField,
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { KbdHint } from '@/shared/keyboard'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -97,6 +98,7 @@ export function ListInvoices() {
           </Button>
           <LinkButton to="/invoices/new" size="sm">
             {t('admin.invoices.newButton')}
+            <KbdHint>n</KbdHint>
           </LinkButton>
         </Stack>
       </div>
@@ -110,9 +112,10 @@ export function ListInvoices() {
       <form onSubmit={onSubmit}>
         <Stack gap="sm">
           <div className="audit-filters">
-            <Field id="inv-q" label={t('admin.invoices.filter.search')}>
+            <Field id="inv-q" label={t('admin.invoices.filter.search')} hint={<KbdHint>/</KbdHint>}>
               <Input
                 id="inv-q"
+                data-kbd="search"
                 value={draft.q ?? ''}
                 placeholder={t('admin.invoices.filter.searchPlaceholder')}
                 onChange={(e) => {
