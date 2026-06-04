@@ -14,6 +14,12 @@ export interface MonthlyBilled {
   count: number
 }
 
+/** Cumulative issued total at a day of the month (Issue #281). */
+export interface DailyBilled {
+  day: number
+  cumulative_cents: number
+}
+
 export interface DashboardSummary {
   unpaid_count: number
   overdue_count: number
@@ -25,4 +31,7 @@ export interface DashboardSummary {
   billed_this_month_cents: number
   billed_last_month_cents: number
   monthly_billed: MonthlyBilled[]
+  billed_prev_year_month_cents: number
+  billed_daily_current: DailyBilled[]
+  billed_daily_prev_month: DailyBilled[]
 }

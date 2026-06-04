@@ -22,5 +22,14 @@ export function toDashboardSummary(dto: DashboardSummaryDto): DashboardSummary {
       billed_cents: m.billed_cents,
       count: m.count,
     })),
+    billed_prev_year_month_cents: dto.billed_prev_year_month_cents,
+    billed_daily_current: dto.billed_daily_current.map((d) => ({
+      day: d.day,
+      cumulative_cents: d.cumulative_cents,
+    })),
+    billed_daily_prev_month: dto.billed_daily_prev_month.map((d) => ({
+      day: d.day,
+      cumulative_cents: d.cumulative_cents,
+    })),
   }
 }
