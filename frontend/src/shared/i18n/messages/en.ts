@@ -6,6 +6,7 @@ export const enMessages: MessageCatalog = {
   'common.actions.retry': 'Retry',
   'common.actions.signOut': 'Sign out',
   'common.error.generic': 'Something went wrong.',
+  'common.locale.label': 'Language',
   'common.locale.ja': '日本語',
   'common.locale.en': 'English',
   'common.pagination.prev': 'Previous',
