@@ -39,6 +39,25 @@ final readonly class GetDashboardSummaryUseCase
         $billedThisMonth = $this->invoices->billedTotalBetween($thisMonthStart, $nextMonthStart);
         $billedLastMonth = $this->invoices->billedTotalBetween($lastMonthStart, $thisMonthStart);
 
+        // Prior-year same month (YoY hero).
+        $prevYearStart = $nowDt->modify('first day of this month')->modify('-1 year');
+        $billedPrevYearMonth = $this->invoices->billedTotalBetween(
+            $prevYearStart->format('Y-m-01 00:00:00'),
+            $prevYearStart->modify('first day of next month')->format('Y-m-01 00:00:00'),
+        );
+
+        // Daily cumulative pace — current month (1..today) and the full prior month.
+        $today = (int) $nowDt->format('j');
+        $prevMonthLen = (int) $nowDt->modify('first day of last month')->format('t');
+        $dailyCurrent = $this->dailyCumulative(
+            $this->invoices->billedRowsBetween($thisMonthStart, $nextMonthStart),
+            $today,
+        );
+        $dailyPrev = $this->dailyCumulative(
+            $this->invoices->billedRowsBetween($lastMonthStart, $thisMonthStart),
+            $prevMonthLen,
+        );
+
         return new DashboardSummary(
             unpaidCount: $data['unpaid_count'],
             overdueCount: $data['overdue_count'],
@@ -50,7 +69,39 @@ final readonly class GetDashboardSummaryUseCase
             billedThisMonthCents: $billedThisMonth['cents'],
             billedLastMonthCents: $billedLastMonth['cents'],
             monthlyBilled: $this->monthlyBilled($nowDt),
+            billedPrevYearMonthCents: $billedPrevYearMonth['cents'],
+            billedDailyCurrent: $dailyCurrent,
+            billedDailyPrevMonth: $dailyPrev,
         );
+    }
+
+    /**
+     * Builds a per-day cumulative series from issued-invoice rows. Date grouping
+     * is in PHP (dialect-agnostic). Days are 1..$daysCount inclusive.
+     *
+     * @param list<array{issued_at: string, total_cents: int}> $rows
+     *
+     * @return list<array{day: int, cumulative_cents: int}>
+     */
+    private function dailyCumulative(array $rows, int $daysCount): array
+    {
+        $perDay = array_fill(1, max($daysCount, 1), 0);
+
+        foreach ($rows as $row) {
+            $day = (int) substr($row['issued_at'], 8, 2);
+            if ($day >= 1 && $day <= $daysCount) {
+                $perDay[$day] += $row['total_cents'];
+            }
+        }
+
+        $series = [];
+        $cumulative = 0;
+        for ($d = 1; $d <= $daysCount; ++$d) {
+            $cumulative += $perDay[$d];
+            $series[] = ['day' => $d, 'cumulative_cents' => $cumulative];
+        }
+
+        return $series;
     }
 
     /**

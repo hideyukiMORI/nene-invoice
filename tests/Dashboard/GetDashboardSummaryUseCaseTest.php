@@ -43,6 +43,28 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         self::assertSame(0, $summary->billedLastMonthCents);
         self::assertCount(6, $summary->monthlyBilled);
         self::assertSame(0, $summary->monthlyBilled[5]['billed_cents']);
+        self::assertSame(0, $summary->billedPrevYearMonthCents);
+        self::assertNotEmpty($summary->billedDailyCurrent);
+        self::assertSame(1, $summary->billedDailyCurrent[0]['day']);
+        self::assertSame(0, $summary->billedDailyCurrent[0]['cumulative_cents']);
+    }
+
+    public function test_year_over_year_and_daily_cumulative(): void
+    {
+        $issue = function (string $issuedAt, int $cents): void {
+            $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Issued, subtotalCents: $cents, taxCents: 0, totalCents: $cents, issuedAt: $issuedAt));
+        };
+        $issue(date('Y-m-01 10:00:00'), 3000); // this month, day 1
+        $issue(date('Y-m-01 10:00:00', (int) strtotime('first day of last month')), 4000); // last month, day 1
+        $issue(date('Y-m-01 10:00:00', (int) strtotime('-1 year')), 5000); // same month last year, day 1
+
+        $summary = $this->useCase->execute();
+
+        self::assertSame(5000, $summary->billedPrevYearMonthCents);
+
+        // Day-1 invoices: cumulative is constant from day 1 onward.
+        self::assertSame(3000, $summary->billedDailyCurrent[0]['cumulative_cents']);
+        self::assertSame(4000, $summary->billedDailyPrevMonth[0]['cumulative_cents']);
     }
 
     public function test_billed_metrics_and_monthly_trend(): void

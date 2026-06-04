@@ -54,6 +54,15 @@ interface InvoiceRepositoryInterface
      */
     public function billedTotalBetween(string $startInclusive, string $endExclusive): array;
 
+    /**
+     * Issued invoices within [start, end) as `{issued_at, total_cents}` rows —
+     * used to build daily-cumulative billing (drafts excluded). Date grouping is
+     * done in PHP so the query stays dialect-agnostic.
+     *
+     * @return list<array{issued_at: string, total_cents: int}>
+     */
+    public function billedRowsBetween(string $startInclusive, string $endExclusive): array;
+
     public function save(Invoice $invoice): int;
 
     /** @throws InvoiceNotFoundException */
