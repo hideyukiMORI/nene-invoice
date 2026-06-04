@@ -14,6 +14,7 @@ import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
   Button,
+  DatePicker,
   EmptyState,
   ErrorState,
   Field,
@@ -115,22 +116,20 @@ export function ListQuotes() {
               </Select>
             </Field>
             <Field id="q-valid-from" label={t('admin.quotes.filter.validFrom')}>
-              <Input
+              <DatePicker
                 id="q-valid-from"
-                type="date"
                 value={draft.valid_from ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, valid_from: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, valid_from: v === '' ? null : v })
                 }}
               />
             </Field>
             <Field id="q-valid-to" label={t('admin.quotes.filter.validTo')}>
-              <Input
+              <DatePicker
                 id="q-valid-to"
-                type="date"
                 value={draft.valid_to ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, valid_to: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, valid_to: v === '' ? null : v })
                 }}
               />
             </Field>

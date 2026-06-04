@@ -15,6 +15,7 @@ import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
   Button,
+  DatePicker,
   EmptyState,
   ErrorState,
   Field,
@@ -151,22 +152,20 @@ export function ListInvoices() {
               </Select>
             </Field>
             <Field id="inv-due-from" label={t('admin.invoices.filter.dueFrom')}>
-              <Input
+              <DatePicker
                 id="inv-due-from"
-                type="date"
                 value={draft.due_from ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, due_from: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, due_from: v === '' ? null : v })
                 }}
               />
             </Field>
             <Field id="inv-due-to" label={t('admin.invoices.filter.dueTo')}>
-              <Input
+              <DatePicker
                 id="inv-due-to"
-                type="date"
                 value={draft.due_to ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, due_to: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, due_to: v === '' ? null : v })
                 }}
               />
             </Field>

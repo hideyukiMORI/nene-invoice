@@ -1,10 +1,11 @@
-import { useWatch } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
 import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
 import {
   Button,
+  DatePicker,
   Field,
   FormRow,
   InlineAlert,
@@ -83,7 +84,13 @@ export function CreateQuoteForm() {
                 </Select>
               </Field>
               <Field id="valid_until" label={t('admin.quotes.create.validUntil')}>
-                <Input id="valid_until" type="date" {...register('valid_until')} />
+                <Controller
+                  control={control}
+                  name="valid_until"
+                  render={({ field }) => (
+                    <DatePicker id="valid_until" value={field.value} onChange={field.onChange} />
+                  )}
+                />
               </Field>
             </FormRow>
             {!clientsLoading && clients.length === 0 && (
