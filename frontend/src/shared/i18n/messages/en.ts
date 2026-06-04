@@ -212,6 +212,7 @@ export const enMessages: MessageCatalog = {
   'admin.quotes.create.removeLine': 'Remove',
   'admin.quotes.create.validUntil': 'Valid until',
   'admin.quotes.create.notes': 'Notes',
+  'admin.quotes.create.notesPlaceholder': 'We look forward to your consideration.',
   'admin.quotes.create.submit': 'Create',
   'admin.quotes.create.submitting': 'Creating…',
   'admin.quotes.create.error': 'Could not create the quote. Check your input.',

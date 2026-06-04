@@ -214,6 +214,7 @@ export const jaMessages = {
   'admin.quotes.create.removeLine': '削除',
   'admin.quotes.create.validUntil': '有効期限',
   'admin.quotes.create.notes': '備考',
+  'admin.quotes.create.notesPlaceholder': 'ご検討のほどよろしくお願いいたします。',
   'admin.quotes.create.submit': '作成する',
   'admin.quotes.create.submitting': '作成中…',
   'admin.quotes.create.error': '見積書を作成できませんでした。入力内容を確認してください。',
