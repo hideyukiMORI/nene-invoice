@@ -21,41 +21,49 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 
 ## Quick Start
 
-**Status:** Phase 0 — product design complete; runtime scaffold landed (Issue #4). Tenant resolution, auth, and billing domains are next.
+**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress; CSV export already landed.
 
 ```bash
 git clone https://github.com/hideyukiMORI/nene-invoice.git
 cd nene-invoice
 composer install
 composer check                          # PHPUnit + PHPStan 8 + php-cs-fixer
-php -S 127.0.0.1:8080 -t public_html public_html/index.php
-curl http://127.0.0.1:8080/health       # {"status":"ok",...}
-# docker compose — Tier B, lands with ADR 0003 (Issue #7)
+
+# Backend API (front controller as router; local ports fixed to the 85** range)
+php -S localhost:8510 -t public_html public_html/index.php
+curl http://localhost:8510/health       # {"status":"ok","checks":{"database":"ok"}}
+
+# Admin SPA (separate terminal) — Vite dev server on :5185
+cd frontend && npm install && npm run dev
 ```
 
-## Architecture (planned)
+Shared-hosting / production install uses the web installer (`public_html/install.php`) and a release ZIP — see [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md).
+
+## Architecture
 
 ```
-Admin UI (React)  ──→  NeNe Invoice API (NENE2)  ──→  MySQL
-Ops / MCP           ──→         │
-                                ↓ HTTP (optional)
-                    NeNe Records / NeNe Concierge
+Admin UI (React SPA)  ──→  NeNe Invoice API (NENE2 / PHP 8.4)  ──→  MySQL / SQLite
+Ops / MCP             ──→            │
+                                     ↓ HTTP (optional)
+                          NeNe Records / NeNe Concierge
 ```
 
-- **Backend**: PHP 8.4, NENE2, Handler → UseCase → Repository
-- **Money**: integer cents everywhere — no floats
-- **PDF**: server-side qualified invoice generation
-- **Deploy**: Tier A (shared hosting) + Tier B (Docker) — ADR 0003 planned
+- **Backend**: PHP 8.4, NENE2, Handler → UseCase → Repository (org-scoped, ADR 0006)
+- **Money**: integer cents everywhere — no floats; tax rounded once per rate (ADR 0004)
+- **PDF**: server-side qualified-invoice generation (mPDF, Japanese fonts)
+- **Audit**: every mutating operation recorded with before/after snapshots (ADR 0008)
+- **Deploy**: Tier A (shared-hosting installer + release ZIP) shipped; Tier B (Docker) per ADR 0003
 
 ## Current Status
 
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 0 | Governance + product docs | ✅ |
-| 0+ | Runtime scaffold, OpenAPI, CI | 🔲 Issues #4–#7 |
-| 1 | Core billing API | 🔲 Planned |
-| 2 | Admin UI + PDF | 🔲 Planned |
-| 3 | Tier A shared hosting | 🔲 Planned |
+| 1 | Core billing API — auth, multi-tenancy, clients, quotes, invoices, payments | ✅ |
+| 2 | Admin UI (React) + qualified-invoice PDF + dashboard + audit log + ja/en | ✅ |
+| 3 | Tier A shared hosting — installer, release ZIP, operator guide | ✅ |
+| Sec | Security assessment rounds 1–2 (findings fixed) | ✅ |
+| 4 | Ecosystem integration (Records / Concierge, payment gateway) | 🔄 In progress — CSV export ✅ |
 
 See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
 

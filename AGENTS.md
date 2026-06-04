@@ -42,7 +42,7 @@ This file is the entry point for AI agents working on NeNe Invoice.
 
 NeNe Invoice is a self-hosted quote and invoice OSS on NENE2:
 
-- **Primary operators:** Japan SMB on PHP shared hosting (Tier A); **also** Docker/VPS (Tier B). Same codebase — ADR 0003 (planned).
+- **Primary operators:** Japan SMB on PHP shared hosting (Tier A, shipped — web installer + release ZIP); **also** Docker/VPS (Tier B). Same codebase — ADR 0003.
 - Create quotes and invoices with Japan invoice system fields (適格請求書).
 - Track payment status and overdue reminders.
 - Admin UI for clients, line items, documents, and company settings.

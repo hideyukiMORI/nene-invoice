@@ -27,7 +27,7 @@ Goal: engineering discipline and product design before runtime code.
 
 Tracked by `docs/milestones/2026-05-governance-and-foundation.md`.
 
-**Status: product docs complete; runtime scaffold next.**
+**Status: ✅ complete.**
 
 ## Phase 1: Core Billing API
 
@@ -42,15 +42,21 @@ Goal: tenancy, auth, client master, quotes, invoices, payments — API and DB on
 
 See [`docs/explanation/requirements.md#phase-1--api-only`](./explanation/requirements.md#phase-1--api-only).
 
+**Status: ✅ complete.**
+
 ## Phase 2: Admin UI + PDF
 
 Goal: operators manage billing without CLI.
 
-- React admin SPA — ja + en locale catalogs (ADR 0005; no other locales)
+- React admin SPA — ja + en locale catalogs with an in-app language switcher (ADR 0005; no other locales)
 - Server-side qualified invoice PDF (Japanese layout)
-- Email delivery via SMTP
-- Public PDF download token
-- Dashboard: unpaid / overdue
+- Email delivery via SMTP; public PDF download token
+- Dashboard: unpaid / overdue, monthly received, receivable aging
+- Audit-log viewer with filters + CSV export (ADR 0008)
+- List search / filter / sort (invoices, quotes, clients)
+- 案C「高密度オペ」design system, responsive (mobile bottom nav + table-as-cards)
+
+**Status: ✅ complete.**
 
 ## Phase 3: Tier A Shared Hosting
 
@@ -60,14 +66,19 @@ Goal: Japan SMB install path.
 - Operator guide (Japanese)
 - Same-origin admin on shared hosting
 
+**Status: ✅ complete.** (Security assessment rounds 1–2 done; app-layer findings fixed.)
+
 ## Phase 4: Ecosystem Integration
 
 Goal: connect to sibling products.
 
+- CSV export (invoices, payments, audit) ✅
 - NeNe Records product catalog import
 - NeNe Concierge lead → draft client / quote webhook
 - MCP tool catalog
-- CSV export; optional payment gateway
+- Optional payment gateway
+
+**Status: 🔄 in progress.**
 
 ## Non-goals
 
