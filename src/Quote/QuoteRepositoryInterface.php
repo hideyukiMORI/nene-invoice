@@ -18,6 +18,15 @@ interface QuoteRepositoryInterface
 
     public function count(): int;
 
+    /**
+     * Admin list: filtered + searched + sorted, joined with the client name.
+     *
+     * @return list<QuoteListRow>
+     */
+    public function findForAdminList(QuoteListFilter $filter, QuoteSort $sort, int $limit, int $offset): array;
+
+    public function countForAdminList(QuoteListFilter $filter): int;
+
     public function save(Quote $quote): int;
 
     /** @throws QuoteNotFoundException */

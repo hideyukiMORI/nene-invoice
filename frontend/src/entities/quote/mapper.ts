@@ -9,6 +9,7 @@ export function toQuote(dto: QuoteDto): Quote {
     quote_number: dto.quote_number,
     status: dto.status,
     client_id: dto.client_id,
+    client_name: dto.client_name ?? null,
     issued_at: dto.issued_at ?? null,
     valid_until: dto.valid_until ?? null,
     subtotal_cents: dto.subtotal_cents,

@@ -274,7 +274,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List quotes */
+        /**
+         * List quotes
+         * @description Lists quotes with optional search / filters / sort (admin). `q` matches quote number or client name; `status` is a comma-separated subset; `sort` ∈ number|client|status|issued_at|valid_until|total with `order`.
+         */
         get: operations["listQuotes"];
         put?: never;
         /**
@@ -771,6 +774,8 @@ export interface components {
             id: number;
             organization_id: number;
             client_id: number;
+            /** @description Client display name (list responses only; null elsewhere). */
+            client_name?: string | null;
             /** @description Format EST-YYYY-NNN. */
             quote_number: string;
             /** @enum {string} */
@@ -1651,6 +1656,14 @@ export interface operations {
                 limit?: components["parameters"]["LimitParam"];
                 /** @description Number of items to skip (default 0). */
                 offset?: components["parameters"]["OffsetParam"];
+                q?: string;
+                status?: string;
+                valid_from?: string;
+                valid_to?: string;
+                total_min?: number;
+                total_max?: number;
+                sort?: "number" | "client" | "status" | "issued_at" | "valid_until" | "total";
+                order?: "asc" | "desc";
             };
             header?: never;
             path?: never;

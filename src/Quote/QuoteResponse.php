@@ -17,12 +17,13 @@ final class QuoteResponse
      * @param list<LineItem>|null $lines
      * @return array<string, mixed>
      */
-    public static function toArray(Quote $quote, ?array $lines = null): array
+    public static function toArray(Quote $quote, ?array $lines = null, ?string $clientName = null): array
     {
         $data = [
             'id' => $quote->id,
             'organization_id' => $quote->organizationId,
             'client_id' => $quote->clientId,
+            'client_name' => $clientName,
             'quote_number' => $quote->quoteNumber,
             'status' => $quote->status->value,
             'issued_at' => $quote->issuedAt,

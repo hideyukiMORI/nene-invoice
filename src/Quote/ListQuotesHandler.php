@@ -34,13 +34,75 @@ final readonly class ListQuotesHandler implements RequestHandlerInterface
         $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
         $offset = max(0, $offset);
 
-        $result = $this->useCase->execute($limit, $offset);
+        $filter = $this->buildFilter($query);
+        $sort   = QuoteSort::fromInput(self::stringParam($query, 'sort'), self::stringParam($query, 'order'));
+
+        $result      = $this->useCase->executeAdmin($filter, $sort, $limit, $offset);
+        $clientNames = $result->clientNameByQuoteId;
 
         return $this->json->create([
-            'items' => array_map(static fn (Quote $q): array => QuoteResponse::toArray($q), $result->items),
+            'items' => array_map(
+                static fn (Quote $q): array => QuoteResponse::toArray(
+                    $q,
+                    null,
+                    $q->id !== null ? ($clientNames[$q->id] ?? null) : null,
+                ),
+                $result->items,
+            ),
             'total' => $result->total,
             'limit' => $limit,
             'offset' => $offset,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     */
+    private function buildFilter(array $query): QuoteListFilter
+    {
+        $statusParam = self::stringParam($query, 'status');
+        $statuses    = $statusParam === null
+            ? []
+            : array_values(array_filter(
+                array_map('trim', explode(',', $statusParam)),
+                static fn (string $s): bool => in_array($s, ['draft', 'sent', 'accepted', 'rejected', 'expired'], true),
+            ));
+
+        return new QuoteListFilter(
+            statuses: $statuses,
+            search: self::stringParam($query, 'q'),
+            validFrom: self::dateParam($query, 'valid_from'),
+            validTo: self::dateParam($query, 'valid_to'),
+            totalMin: self::intParam($query, 'total_min'),
+            totalMax: self::intParam($query, 'total_max'),
+        );
+    }
+
+    /** @param array<string, mixed> $query */
+    private static function stringParam(array $query, string $key): ?string
+    {
+        $value = $query[$key] ?? null;
+        if (!is_string($value)) {
+            return null;
+        }
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
+    }
+
+    /** @param array<string, mixed> $query */
+    private static function intParam(array $query, string $key): ?int
+    {
+        $value = $query[$key] ?? null;
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
+    /** @param array<string, mixed> $query */
+    private static function dateParam(array $query, string $key): ?string
+    {
+        $value = self::stringParam($query, $key);
+
+        return $value !== null && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : null;
     }
 }
