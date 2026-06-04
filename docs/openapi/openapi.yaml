@@ -129,6 +129,38 @@ paths:
       parameters:
         - $ref: '#/components/parameters/LimitParam'
         - $ref: '#/components/parameters/OffsetParam'
+        - name: entity_type
+          in: query
+          required: false
+          description: Filter by entity type (exact match), e.g. invoice, client.
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: false
+          description: Filter by action (exact match), e.g. invoice.issued.
+          schema:
+            type: string
+        - name: actor_user_id
+          in: query
+          required: false
+          description: Filter by the acting user id (exact match).
+          schema:
+            type: integer
+        - name: created_from
+          in: query
+          required: false
+          description: Inclusive lower bound on created_at (YYYY-MM-DD or full datetime).
+          schema:
+            type: string
+        - name: created_to
+          in: query
+          required: false
+          description: >
+            Inclusive upper bound on created_at. A date-only value covers the
+            whole day (expanded to 23:59:59).
+          schema:
+            type: string
       responses:
         '200':
           description: Audit log page

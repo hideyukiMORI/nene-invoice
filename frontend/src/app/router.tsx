@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { AppShell } from '@/pages/layout'
+import { AuditLogsPage } from '@/pages/audit-logs'
 import { ClientCreatePage } from '@/pages/client-create'
 import { ClientEditPage } from '@/pages/client-edit'
 import { ClientsPage } from '@/pages/clients'
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: 'users', element: <UsersPage /> },
       { path: 'users/new', element: <UserCreatePage /> },
       { path: 'users/:id/edit', element: <UserEditPage /> },
+      { path: 'audit-logs', element: <AuditLogsPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/invoices" replace /> },

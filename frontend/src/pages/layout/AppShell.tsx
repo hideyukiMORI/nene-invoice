@@ -89,6 +89,14 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M10 1.8v2.3M10 15.9v2.3M3.2 10H1M19 10h-2.2M5.1 5.1L3.6 3.6M16.4 16.4l-1.5-1.5M14.9 5.1l1.5-1.5M3.6 16.4l1.5-1.5" />
     </>,
   ),
+  audit: icon(
+    <>
+      <path d="M5 2.5h7l3 3v12H5z" />
+      <path d="M11.5 2.5v3.5H15" />
+      <path d="M7.5 9.5l1.5 1.5 3-3.5" />
+      <path d="M7.5 13.5h5" />
+    </>,
+  ),
 }
 
 /** Hamburger (mobile drawer toggle). */
@@ -132,6 +140,7 @@ const NAV: NavGroup[] = [
     label: 'admin.nav.group.admin',
     items: [
       { to: '/users', label: 'admin.nav.users', iconKey: 'users' },
+      { to: '/audit-logs', label: 'admin.nav.auditLogs', iconKey: 'audit' },
       { to: '/settings', label: 'admin.nav.settings', iconKey: 'settings' },
     ],
   },

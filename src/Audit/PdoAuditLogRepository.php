@@ -41,21 +41,65 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
     }
 
     /** @return list<AuditLog> */
-    public function findAll(int $limit, int $offset): array
+    public function findAll(AuditLogFilter $filter, int $limit, int $offset): array
     {
+        [$where, $params] = $this->buildWhere($filter);
+        $params[] = $limit;
+        $params[] = $offset;
+
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM audit_logs WHERE organization_id = ? ORDER BY id DESC LIMIT ? OFFSET ?',
-            [$this->orgId->get(), $limit, $offset],
+            'SELECT ' . self::COLUMNS . ' FROM audit_logs WHERE ' . $where . ' ORDER BY id DESC LIMIT ? OFFSET ?',
+            $params,
         );
 
         return array_map(fn (array $row): AuditLog => $this->mapRow($row), $rows);
     }
 
-    public function count(): int
+    public function count(AuditLogFilter $filter): int
     {
-        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM audit_logs WHERE organization_id = ?', [$this->orgId->get()]);
+        [$where, $params] = $this->buildWhere($filter);
+
+        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM audit_logs WHERE ' . $where, $params);
 
         return $row !== null ? (int) $row['cnt'] : 0;
+    }
+
+    /**
+     * Builds the shared WHERE clause (organization scope + optional filters).
+     *
+     * @return array{0: string, 1: list<mixed>}
+     */
+    private function buildWhere(AuditLogFilter $filter): array
+    {
+        $conditions = ['organization_id = ?'];
+        $params = [$this->orgId->get()];
+
+        if ($filter->entityType !== null) {
+            $conditions[] = 'entity_type = ?';
+            $params[] = $filter->entityType;
+        }
+
+        if ($filter->action !== null) {
+            $conditions[] = 'action = ?';
+            $params[] = $filter->action;
+        }
+
+        if ($filter->actorUserId !== null) {
+            $conditions[] = 'actor_user_id = ?';
+            $params[] = $filter->actorUserId;
+        }
+
+        if ($filter->createdFrom !== null) {
+            $conditions[] = 'created_at >= ?';
+            $params[] = $filter->createdFrom;
+        }
+
+        if ($filter->createdTo !== null) {
+            $conditions[] = 'created_at <= ?';
+            $params[] = $filter->createdTo;
+        }
+
+        return [implode(' AND ', $conditions), $params];
     }
 
     /** @param array<string, mixed>|null $value */

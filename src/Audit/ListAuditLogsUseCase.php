@@ -15,11 +15,11 @@ final readonly class ListAuditLogsUseCase
     ) {
     }
 
-    public function execute(int $limit, int $offset): ListAuditLogsResult
+    public function execute(AuditLogFilter $filter, int $limit, int $offset): ListAuditLogsResult
     {
         return new ListAuditLogsResult(
-            $this->logs->findAll($limit, $offset),
-            $this->logs->count(),
+            $this->logs->findAll($filter, $limit, $offset),
+            $this->logs->count($filter),
         );
     }
 }

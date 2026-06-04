@@ -162,6 +162,37 @@
     align-items: start;
   }
 
+  /* Audit-log filter bar: wraps responsively without JSX breakpoints */
+  .audit-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .audit-filters-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+  }
+
+  /* Audit-log before/after diff (two columns, collapses on mobile) */
+  .audit-diff {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  .audit-kv {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+  .audit-kv-row.changed {
+    background: var(--color-surface-overlay);
+  }
+
   /* Receivable-aging progress bar */
   .pay-bar {
     height: 7px;
@@ -588,6 +619,9 @@
   /* collapse two-column content grids */
   @media (max-width: 860px) {
     .dash-grid {
+      grid-template-columns: 1fr;
+    }
+    .audit-diff {
       grid-template-columns: 1fr;
     }
   }
