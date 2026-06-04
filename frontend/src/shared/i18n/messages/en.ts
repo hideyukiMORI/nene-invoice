@@ -318,7 +318,11 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.issue.action': 'Issue (qualified invoice)',
   'admin.invoices.issue.submitting': 'Issuing…',
   'admin.invoices.issue.error':
-    'Could not issue. Check the registration number in company settings.',
+    'Could not issue. Please check the registration number in company settings.',
+  'admin.invoices.issue.recover': 'Open company settings →',
+  'admin.invoices.issue.successTitle': 'Issued',
+  'admin.invoices.issue.successBody': '{{number}} has been issued.',
+  'admin.invoices.issue.successBodyNoNumber': 'The invoice has been issued.',
   'admin.invoices.issue.confirmTitle': 'Issue this invoice?',
   'admin.invoices.issue.confirmMessage':
     'Issuing allocates the invoice number and locks the contents (no further edits).',
@@ -343,8 +347,11 @@ export const enMessages: MessageCatalog = {
   'admin.payments.record.confirmTitle': 'Record {{amount}} as a payment?',
   'admin.payments.record.confirmMessage':
     'Recording will update the payment status of the invoice.',
-  'admin.payments.record.error':
-    'Could not record the payment. Check the amount (no over-payment).',
+  'admin.payments.record.error': 'Could not record the payment. Please check your input.',
+  'admin.payments.record.errorOverpay':
+    'Could not record the payment. The amount exceeds the balance ({{balance}}).',
+  'admin.payments.record.successTitle': 'Payment recorded',
+  'admin.payments.record.successBody': 'Recorded {{amount}}.',
   'admin.payments.record.invalid': 'Enter a valid amount.',
   'admin.dashboard.title': 'Dashboard',
   'admin.dashboard.loading': 'Loading…',

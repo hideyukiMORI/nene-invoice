@@ -55,7 +55,9 @@ test.describe('Issue invoice', () => {
     await page.getByRole('dialog').getByRole('button', { name: '発行する（適格請求書）' }).click()
 
     await expect(
-      page.getByText('発行できませんでした。会社情報の登録番号を確認してください。'),
+      page.getByText('発行できませんでした。会社情報の登録番号をご確認ください。'),
     ).toBeVisible()
+    // 型2 recovery affordance: a link to the company settings.
+    await expect(page.getByRole('button', { name: '会社設定を開く →' })).toBeVisible()
   })
 })

@@ -6,9 +6,9 @@ import {
   ConfirmDialog,
   EmptyState,
   Field,
+  InlineAlert,
   Input,
   LoadingState,
-  MutationError,
   Select,
   Stack,
   Text,
@@ -126,7 +126,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
                 <Input id="payment-note" {...register('note')} />
               </Field>
             </Stack>
-            <MutationError message={errorMessage} />
+            {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
             <div>
               <Button type="submit" disabled={isRecording}>
                 {isRecording

@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { Button, ConfirmDialog, MutationError, Stack } from '@/shared/ui'
+import { Button, ConfirmDialog, InlineAlert, Stack } from '@/shared/ui'
 import { useIssueInvoice } from '../hooks/use-issue-invoice'
 
 export interface IssueInvoiceProps {
@@ -12,6 +13,7 @@ export interface IssueInvoiceProps {
  * (allocates the INV number and locks the document), so it is confirmed. */
 export function IssueInvoice({ invoiceId }: IssueInvoiceProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { canIssue, issue, isPending, errorMessage } = useIssueInvoice(invoiceId)
   const [confirming, setConfirming] = useState(false)
 
@@ -36,7 +38,20 @@ export function IssueInvoice({ invoiceId }: IssueInvoiceProps) {
           {isPending ? t('admin.invoices.issue.submitting') : t('admin.invoices.issue.action')}
         </Button>
       </div>
-      <MutationError message={errorMessage} />
+      {errorMessage !== null && (
+        <div className="max-w-xl">
+          <InlineAlert
+            tone="error"
+            message={errorMessage}
+            recover={{
+              label: t('admin.invoices.issue.recover'),
+              onClick: () => {
+                void navigate('/settings')
+              },
+            }}
+          />
+        </div>
+      )}
       {confirming && (
         <ConfirmDialog
           title={t('admin.invoices.issue.confirmTitle')}

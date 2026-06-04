@@ -1054,6 +1054,55 @@
     font-weight: 500;
   }
 
+  /* 型2 (lightweight) / inline notices — single-line .alert + recover link.
+     Used when the cause is singular (e.g. issue rejected, overpayment). */
+  .alert {
+    display: flex;
+    gap: 0.5625rem;
+    align-items: flex-start;
+    padding: 0.6875rem 0.875rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+  }
+  .alert svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+  }
+  .alert.error {
+    background: var(--color-danger-soft);
+    color: var(--color-danger);
+    border-color: color-mix(in oklch, var(--color-danger) 30%, transparent);
+  }
+  .alert.success {
+    background: var(--color-success-soft);
+    color: var(--color-success);
+    border-color: color-mix(in oklch, var(--color-success) 30%, transparent);
+  }
+  .alert.info {
+    background: var(--color-info-soft);
+    color: var(--color-info);
+    border-color: color-mix(in oklch, var(--color-info) 30%, transparent);
+  }
+  .recover-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-danger);
+    cursor: pointer;
+  }
+  .recover-link:hover {
+    text-decoration: underline;
+  }
+
   /* 型2 — action error (operation attempted but not completed) */
   .alert-rich {
     display: flex;

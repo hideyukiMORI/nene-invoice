@@ -25,6 +25,12 @@ export {
   type ActionErrorProps,
   type ActionErrorAction,
 } from './components/ActionError'
+export {
+  InlineAlert,
+  type InlineAlertProps,
+  type InlineAlertTone,
+  type InlineAlertRecover,
+} from './components/InlineAlert'
 export { LineItemsTable, TotalRow } from './components/LineItemsTable'
 export { ToastProvider } from './toast/ToastProvider'
 export { useToast } from './toast/context'
