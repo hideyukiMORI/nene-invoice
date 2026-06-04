@@ -260,7 +260,7 @@ export function ListInvoices() {
                           {t(`admin.invoices.status.${invoice.status}`)}
                         </Badge>
                         {invoice.is_overdue && (
-                          <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
+                          <span className="flag-overdue">{t('admin.invoices.status.overdue')}</span>
                         )}
                       </span>
                     </td>

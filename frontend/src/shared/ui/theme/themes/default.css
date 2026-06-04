@@ -40,6 +40,19 @@
   --color-info-soft: oklch(95% 0.025 235);
   --color-neutral-soft: oklch(93.5% 0.004 172);
 
+  /* Muted status-badge palette (design 03) — refined, low-chroma chips. Distinct
+     from --color-danger (functional error red), which stays vivid. */
+  --color-bdg-draft-fg: oklch(48% 0.01 245);
+  --color-bdg-draft-bg: oklch(95.5% 0.005 245);
+  --color-bdg-sent-fg: oklch(48% 0.045 248);
+  --color-bdg-sent-bg: oklch(95.5% 0.018 248);
+  --color-bdg-acc-fg: oklch(45% 0.052 162);
+  --color-bdg-acc-bg: oklch(94.8% 0.022 162);
+  --color-bdg-part-fg: oklch(52% 0.06 72);
+  --color-bdg-part-bg: oklch(95.2% 0.032 74);
+  --color-bdg-rej-fg: oklch(51% 0.078 33);
+  --color-bdg-rej-bg: oklch(95.2% 0.026 33);
+
   --color-focus-ring: oklch(43% 0.072 162);
 
   /* sidebar (product chrome) — deep green, always dark */
