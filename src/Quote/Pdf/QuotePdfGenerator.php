@@ -137,13 +137,22 @@ final readonly class QuotePdfGenerator
             ? '<p class="notes"><strong>備考</strong><br>' . nl2br($esc($notes)) . '</p>'
             : '';
 
+        // Heredoc does not interpolate static calls ({self::yen(...)}), so the
+        // amounts are formatted into plain variables first.
+        $subtotalYen = self::yen($subtotalCents);
+        $taxTotalYen = self::yen($taxCents);
+        $totalYen    = self::yen($totalCents);
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <style>
-body { font-family: sans-serif; font-size: 10pt; color: #111; }
+/* Do NOT set a non-CJK font-family (e.g. sans-serif): it overrides mPDF's
+   mode=ja Japanese font and renders all 日本語 as tofu (□). Leave it unset so
+   the CJK-capable default applies. */
+body { font-size: 10pt; color: #111; }
 h1 { font-size: 22pt; text-align: center; margin: 0 0 4mm; border-bottom: 1pt solid #333; padding-bottom: 2mm; }
 .header-meta { text-align: right; font-size: 9pt; margin-bottom: 5mm; }
 .parties { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
@@ -204,9 +213,9 @@ h1 { font-size: 22pt; text-align: center; margin: 0 0 4mm; border-bottom: 1pt so
 </table>
 <table class="summary">
   {$breakdownRows}
-  <tr><td>小計</td><td class="tr">{self::yen($subtotalCents)}</td></tr>
-  <tr><td>消費税合計</td><td class="tr">{self::yen($taxCents)}</td></tr>
-  <tr class="total-row"><td>お見積金額</td><td class="tr">{self::yen($totalCents)}</td></tr>
+  <tr><td>小計</td><td class="tr">{$subtotalYen}</td></tr>
+  <tr><td>消費税合計</td><td class="tr">{$taxTotalYen}</td></tr>
+  <tr class="total-row"><td>お見積金額</td><td class="tr">{$totalYen}</td></tr>
 </table>
 {$bankHtml}
 {$notesHtml}
