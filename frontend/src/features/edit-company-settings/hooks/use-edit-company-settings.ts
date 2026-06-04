@@ -15,6 +15,12 @@ const schema = z.object({
   bank_branch: z.string(),
   account_type: z.string(),
   account_number: z.string(),
+  // Billing defaults (Issue #268). Kept as strings in the form; '' = unset.
+  // For closing/pay day, '' = 末日; for month offset, '' = no payment-terms default.
+  default_quote_validity_days: z.string(),
+  default_payment_closing_day: z.string(),
+  default_payment_month_offset: z.string(),
+  default_payment_pay_day: z.string(),
 })
 
 export type EditCompanySettingsFormValues = z.infer<typeof schema>
@@ -32,6 +38,8 @@ export type EditCompanySettingsState =
     }
 
 const nullToEmpty = (v: string | null | undefined): string => v ?? ''
+const numberToEmpty = (v: number | null | undefined): string =>
+  v === null || v === undefined ? '' : String(v)
 
 export function useEditCompanySettings(): EditCompanySettingsState {
   const { t } = useTranslation()
@@ -51,6 +59,10 @@ export function useEditCompanySettings(): EditCompanySettingsState {
       bank_branch: '',
       account_type: '',
       account_number: '',
+      default_quote_validity_days: '',
+      default_payment_closing_day: '',
+      default_payment_month_offset: '',
+      default_payment_pay_day: '',
     },
   })
 
@@ -68,6 +80,10 @@ export function useEditCompanySettings(): EditCompanySettingsState {
         bank_branch: nullToEmpty(settings?.bank_branch),
         account_type: nullToEmpty(settings?.account_type),
         account_number: nullToEmpty(settings?.account_number),
+        default_quote_validity_days: numberToEmpty(settings?.default_quote_validity_days),
+        default_payment_closing_day: numberToEmpty(settings?.default_payment_closing_day),
+        default_payment_month_offset: numberToEmpty(settings?.default_payment_month_offset),
+        default_payment_pay_day: numberToEmpty(settings?.default_payment_pay_day),
       })
     }
   }, [settings, reset])
@@ -83,9 +99,14 @@ export function useEditCompanySettings(): EditCompanySettingsState {
   }
 
   const emptyToNull = (v: string): string | null => (v === '' ? null : v)
+  const intOrNull = (v: string): number | null => (v === '' ? null : Number.parseInt(v, 10))
 
   const submit = form.handleSubmit((values) => {
     setSavedMessage(null)
+    // Payment terms are active only when a month offset is chosen; otherwise the
+    // whole 締め日＋支払サイト default is cleared.
+    const monthOffset = intOrNull(values.default_payment_month_offset)
+    const termsActive = monthOffset !== null
     update.mutate(
       {
         legal_name: values.legal_name,
@@ -97,6 +118,12 @@ export function useEditCompanySettings(): EditCompanySettingsState {
         bank_branch: emptyToNull(values.bank_branch),
         account_type: emptyToNull(values.account_type),
         account_number: emptyToNull(values.account_number),
+        default_quote_validity_days: intOrNull(values.default_quote_validity_days),
+        default_payment_closing_day: termsActive
+          ? intOrNull(values.default_payment_closing_day)
+          : null,
+        default_payment_month_offset: monthOffset,
+        default_payment_pay_day: termsActive ? intOrNull(values.default_payment_pay_day) : null,
       },
       {
         onSuccess: () => {

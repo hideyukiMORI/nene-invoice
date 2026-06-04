@@ -13,5 +13,9 @@ export function toCompanySettings(dto: CompanySettingsDto): CompanySettings {
     bank_branch: dto.bank_branch ?? null,
     account_type: dto.account_type ?? null,
     account_number: dto.account_number ?? null,
+    default_quote_validity_days: dto.default_quote_validity_days ?? null,
+    default_payment_closing_day: dto.default_payment_closing_day ?? null,
+    default_payment_month_offset: dto.default_payment_month_offset ?? null,
+    default_payment_pay_day: dto.default_payment_pay_day ?? null,
   }
 }

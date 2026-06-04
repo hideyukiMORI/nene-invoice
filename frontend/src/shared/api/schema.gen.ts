@@ -712,6 +712,14 @@ export interface components {
             account_type?: string | null;
             account_number?: string | null;
             logo_url?: string | null;
+            /** @description Default quote validity period in days (有効期限). null = no default. */
+            default_quote_validity_days?: number | null;
+            /** @description Payment closing day (締め日) 1–31; null = month-end (末日) when terms are configured. */
+            default_payment_closing_day?: number | null;
+            /** @description Payment month offset (支払月) — 0=当月, 1=翌月 … null = no payment-terms default. */
+            default_payment_month_offset?: number | null;
+            /** @description Payment day (支払日) 1–31; null = month-end (末日) when terms are configured. */
+            default_payment_pay_day?: number | null;
             created_at?: string | null;
             updated_at?: string | null;
         };
@@ -726,6 +734,14 @@ export interface components {
             account_type?: string | null;
             account_number?: string | null;
             logo_url?: string | null;
+            /** @description Default quote validity period in days (有効期限). null = no default. */
+            default_quote_validity_days?: number | null;
+            /** @description Payment closing day (締め日) 1–31; null = month-end (末日) when terms are configured. */
+            default_payment_closing_day?: number | null;
+            /** @description Payment month offset (支払月) — 0=当月, 1=翌月 … null = no payment-terms default. */
+            default_payment_month_offset?: number | null;
+            /** @description Payment day (支払日) 1–31; null = month-end (末日) when terms are configured. */
+            default_payment_pay_day?: number | null;
         };
         Client: {
             id: number;

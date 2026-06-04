@@ -24,6 +24,10 @@ export function useUpdateCompanySettings(): UseMutationResult<
         bank_branch: input.bank_branch,
         account_type: input.account_type,
         account_number: input.account_number,
+        default_quote_validity_days: input.default_quote_validity_days,
+        default_payment_closing_day: input.default_payment_closing_day,
+        default_payment_month_offset: input.default_payment_month_offset,
+        default_payment_pay_day: input.default_payment_pay_day,
       })
       return toCompanySettings(dto)
     },
