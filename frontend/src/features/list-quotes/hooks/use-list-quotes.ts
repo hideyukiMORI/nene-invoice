@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { useQuoteList, type Quote } from '@/entities/quote'
+import {
+  EMPTY_QUOTE_FILTERS,
+  useQuoteList,
+  type Quote,
+  type QuoteListFilters,
+  type QuoteSort,
+  type QuoteSortField,
+} from '@/entities/quote'
 
 const PAGE_SIZE = 20
 
@@ -16,27 +23,67 @@ export type ListQuotesState =
   | { kind: 'loading' }
   | { kind: 'error'; retry: () => void }
   | { kind: 'empty' }
-  | { kind: 'ready'; quotes: Quote[]; pagination: QuotePagination }
+  | { kind: 'ready'; quotes: Quote[] }
 
-export function useListQuotes(): ListQuotesState {
+export interface ListQuotesView {
+  filters: QuoteListFilters
+  applyFilters: (next: QuoteListFilters) => void
+  resetFilters: () => void
+  sort: QuoteSort
+  toggleSort: (field: QuoteSortField) => void
+  pagination: QuotePagination
+  state: ListQuotesState
+}
+
+export function useListQuotes(): ListQuotesView {
+  const [filters, setFilters] = useState<QuoteListFilters>(EMPTY_QUOTE_FILTERS)
+  const [sort, setSort] = useState<QuoteSort>({ field: null, order: 'desc' })
   const [page, setPage] = useState(1)
-  const query = useQuoteList({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })
 
-  if (query.isPending) return { kind: 'loading' }
-  if (query.isError) {
-    return {
+  const query = useQuoteList({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE, filters, sort })
+
+  const total = query.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const applyFilters = (next: QuoteListFilters): void => {
+    setPage(1)
+    setFilters(next)
+  }
+  const resetFilters = (): void => {
+    setPage(1)
+    setFilters(EMPTY_QUOTE_FILTERS)
+  }
+  const toggleSort = (field: QuoteSortField): void => {
+    setPage(1)
+    setSort((current) =>
+      current.field === field
+        ? { field, order: current.order === 'asc' ? 'desc' : 'asc' }
+        : { field, order: 'asc' },
+    )
+  }
+
+  let state: ListQuotesState
+  if (query.isPending) {
+    state = { kind: 'loading' }
+  } else if (query.isError) {
+    state = {
       kind: 'error',
       retry: () => {
         void query.refetch()
       },
     }
+  } else if (query.data.items.length === 0) {
+    state = { kind: 'empty' }
+  } else {
+    state = { kind: 'ready', quotes: query.data.items }
   }
-  if (query.data.items.length === 0) return { kind: 'empty' }
 
-  const totalPages = Math.max(1, Math.ceil(query.data.total / PAGE_SIZE))
   return {
-    kind: 'ready',
-    quotes: query.data.items,
+    filters,
+    applyFilters,
+    resetFilters,
+    sort,
+    toggleSort,
     pagination: {
       page,
       totalPages,
@@ -49,5 +96,6 @@ export function useListQuotes(): ListQuotesState {
         setPage((p) => Math.min(totalPages, p + 1))
       },
     },
+    state,
   }
 }

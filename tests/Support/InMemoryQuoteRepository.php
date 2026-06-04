@@ -6,8 +6,11 @@ namespace NeneInvoice\Tests\Support;
 
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Quote\Quote;
+use NeneInvoice\Quote\QuoteListFilter;
+use NeneInvoice\Quote\QuoteListRow;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
+use NeneInvoice\Quote\QuoteSort;
 
 /**
  * In-memory fake for use-case tests (no database). Reads are scoped to the
@@ -61,6 +64,72 @@ final class InMemoryQuoteRepository implements QuoteRepositoryInterface
             $this->byId,
             fn (Quote $q): bool => $q->organizationId === $this->orgId->get() && !$q->isDeleted,
         ));
+    }
+
+    /**
+     * Admin list fake: applies the admin filters + sort. The fake has no client
+     * data, so search matches quote_number only and clientName is empty (the
+     * client join is covered by the Pdo integration test).
+     *
+     * @return list<QuoteListRow>
+     */
+    public function findForAdminList(QuoteListFilter $filter, QuoteSort $sort, int $limit, int $offset): array
+    {
+        $matches = $this->adminFiltered($filter);
+
+        usort($matches, static function (Quote $a, Quote $b) use ($sort): int {
+            $cmp = match ($sort->field) {
+                'number'      => strcmp($a->quoteNumber, $b->quoteNumber),
+                'status'      => strcmp($a->status->value, $b->status->value),
+                'issued_at'   => strcmp((string) $a->issuedAt, (string) $b->issuedAt),
+                'valid_until' => strcmp((string) $a->validUntil, (string) $b->validUntil),
+                'total'       => $a->totalCents <=> $b->totalCents,
+                default       => ($a->id ?? 0) <=> ($b->id ?? 0),
+            };
+
+            return $sort->descending ? -$cmp : $cmp;
+        });
+
+        $page = array_slice($matches, $offset, $limit);
+
+        return array_map(static fn (Quote $q): QuoteListRow => new QuoteListRow($q, ''), $page);
+    }
+
+    public function countForAdminList(QuoteListFilter $filter): int
+    {
+        return count($this->adminFiltered($filter));
+    }
+
+    /** @return list<Quote> */
+    private function adminFiltered(QuoteListFilter $filter): array
+    {
+        $orgId = $this->orgId->get();
+
+        return array_values(array_filter($this->byId, static function (Quote $q) use ($orgId, $filter): bool {
+            if ($q->organizationId !== $orgId || $q->isDeleted) {
+                return false;
+            }
+            if ($filter->statuses !== [] && !in_array($q->status->value, $filter->statuses, true)) {
+                return false;
+            }
+            if ($filter->search !== null && stripos($q->quoteNumber, $filter->search) === false) {
+                return false;
+            }
+            if ($filter->totalMin !== null && $q->totalCents < $filter->totalMin) {
+                return false;
+            }
+            if ($filter->totalMax !== null && $q->totalCents > $filter->totalMax) {
+                return false;
+            }
+            if ($filter->validFrom !== null && ($q->validUntil === null || $q->validUntil < $filter->validFrom)) {
+                return false;
+            }
+            if ($filter->validTo !== null && ($q->validUntil === null || $q->validUntil > $filter->validTo)) {
+                return false;
+            }
+
+            return true;
+        }));
     }
 
     public function save(Quote $quote): int

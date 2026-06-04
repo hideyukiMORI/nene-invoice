@@ -565,9 +565,21 @@ paths:
       tags: [Quotes]
       summary: List quotes
       operationId: listQuotes
+      description: >
+        Lists quotes with optional search / filters / sort (admin). `q` matches
+        quote number or client name; `status` is a comma-separated subset;
+        `sort` ∈ number|client|status|issued_at|valid_until|total with `order`.
       parameters:
         - $ref: '#/components/parameters/LimitParam'
         - $ref: '#/components/parameters/OffsetParam'
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: valid_from, in: query, required: false, schema: { type: string } }
+        - { name: valid_to, in: query, required: false, schema: { type: string } }
+        - { name: total_min, in: query, required: false, schema: { type: integer } }
+        - { name: total_max, in: query, required: false, schema: { type: integer } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [number, client, status, issued_at, valid_until, total] } }
+        - { name: order, in: query, required: false, schema: { type: string, enum: [asc, desc] } }
       responses:
         '200':
           description: Quote page
@@ -1467,6 +1479,9 @@ components:
           type: integer
         client_id:
           type: integer
+        client_name:
+          type: [string, 'null']
+          description: Client display name (list responses only; null elsewhere).
         quote_number:
           type: string
           description: Format EST-YYYY-NNN.

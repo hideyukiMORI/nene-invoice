@@ -9,6 +9,7 @@ const quoteDto = (id: number) => ({
   id,
   organization_id: 1,
   client_id: 5,
+  client_name: '株式会社サンプル',
   quote_number: `EST-2026-00${String(id)}`,
   status: 'draft',
   subtotal_cents: 1000,
@@ -20,7 +21,7 @@ describe('useListQuotes', () => {
   it('exposes the empty state when there are no quotes', async () => {
     const { result } = renderHookWithProviders(() => useListQuotes())
     await waitFor(() => {
-      expect(result.current.kind).toBe('empty')
+      expect(result.current.state.kind).toBe('empty')
     })
   })
 
@@ -32,17 +33,18 @@ describe('useListQuotes', () => {
     )
 
     const { result } = renderHookWithProviders(() => useListQuotes())
-    expect(result.current.kind).toBe('loading')
+    expect(result.current.state.kind).toBe('loading')
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('ready')
+      expect(result.current.state.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
-      expect(result.current.quotes).toHaveLength(1)
-      expect(result.current.pagination.totalPages).toBe(1)
-      expect(result.current.pagination.hasNext).toBe(false)
+    if (result.current.state.kind === 'ready') {
+      expect(result.current.state.quotes).toHaveLength(1)
+      expect(result.current.state.quotes[0]?.client_name).toBe('株式会社サンプル')
     }
+    expect(result.current.pagination.totalPages).toBe(1)
+    expect(result.current.pagination.hasNext).toBe(false)
   })
 
   it('paginates and advances to page 2', async () => {
@@ -56,22 +58,57 @@ describe('useListQuotes', () => {
 
     const { result } = renderHookWithProviders(() => useListQuotes())
     await waitFor(() => {
-      expect(result.current.kind).toBe('ready')
+      expect(result.current.state.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
-      expect(result.current.pagination.totalPages).toBe(2)
-      expect(result.current.pagination.hasNext).toBe(true)
-      act(() => {
-        result.current.pagination.nextPage()
-      })
-    }
+    expect(result.current.pagination.totalPages).toBe(2)
+    expect(result.current.pagination.hasNext).toBe(true)
+    act(() => {
+      result.current.pagination.nextPage()
+    })
 
     await waitFor(() => {
-      if (result.current.kind === 'ready') {
-        expect(result.current.pagination.page).toBe(2)
-        expect(result.current.pagination.hasPrev).toBe(true)
-      }
+      expect(result.current.pagination.page).toBe(2)
+      expect(result.current.pagination.hasPrev).toBe(true)
+    })
+  })
+
+  it('sends search / status / sort as query parameters', async () => {
+    const seen: string[] = []
+    server.use(
+      http.get('/admin/quotes', ({ request }) => {
+        seen.push(new URL(request.url).search)
+        return HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 })
+      }),
+    )
+
+    const { result } = renderHookWithProviders(() => useListQuotes())
+    await waitFor(() => {
+      expect(result.current.state.kind).toBe('empty')
+    })
+
+    act(() => {
+      result.current.applyFilters({
+        q: 'EST-001',
+        statuses: ['sent'],
+        valid_from: '2026-06-01',
+        valid_to: '2026-06-30',
+        total_min: 1000,
+        total_max: 500000,
+      })
+    })
+    act(() => {
+      result.current.toggleSort('total')
+    })
+
+    await waitFor(() => {
+      const last = seen.at(-1) ?? ''
+      expect(last).toContain('q=EST-001')
+      expect(last).toContain('status=sent')
+      expect(last).toContain('valid_from=2026-06-01')
+      expect(last).toContain('total_min=1000')
+      expect(last).toContain('sort=total')
+      expect(last).toContain('order=asc')
     })
   })
 
@@ -80,7 +117,7 @@ describe('useListQuotes', () => {
 
     const { result } = renderHookWithProviders(() => useListQuotes())
     await waitFor(() => {
-      expect(result.current.kind).toBe('error')
+      expect(result.current.state.kind).toBe('error')
     })
   })
 })

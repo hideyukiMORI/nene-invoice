@@ -1,5 +1,13 @@
+import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { quoteStatusTone } from '@/entities/quote'
+import {
+  EMPTY_QUOTE_FILTERS,
+  QUOTE_STATUSES,
+  quoteStatusTone,
+  type QuoteListFilters,
+  type QuoteSortField,
+  type QuoteStatus,
+} from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import {
@@ -7,16 +15,53 @@ import {
   Button,
   EmptyState,
   ErrorState,
+  Field,
+  Input,
   LinkButton,
   LoadingState,
+  Select,
   Stack,
   Text,
 } from '@/shared/ui'
 import { useListQuotes } from '../hooks/use-list-quotes'
 
+const toNullableInt = (value: string): number | null => {
+  const n = Number.parseInt(value, 10)
+  return Number.isNaN(n) ? null : n
+}
+const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? null : value.trim())
+
 export function ListQuotes() {
   const { t } = useTranslation()
-  const state = useListQuotes()
+  const view = useListQuotes()
+  const [draft, setDraft] = useState<QuoteListFilters>(EMPTY_QUOTE_FILTERS)
+
+  const onSubmit = (event: SyntheticEvent): void => {
+    event.preventDefault()
+    view.applyFilters(draft)
+  }
+  const onReset = (): void => {
+    setDraft(EMPTY_QUOTE_FILTERS)
+    view.resetFilters()
+  }
+
+  const sortIndicator = (field: QuoteSortField): string =>
+    view.sort.field === field ? (view.sort.order === 'asc' ? ' ▲' : ' ▼') : ''
+
+  const sortableTh = (field: QuoteSortField, label: string, right = false): ReactNode => (
+    <th className={right ? 'tr' : undefined}>
+      <button
+        type="button"
+        className="th-sort"
+        onClick={() => {
+          view.toggleSort(field)
+        }}
+      >
+        {label}
+        {sortIndicator(field)}
+      </button>
+    </th>
+  )
 
   return (
     <Stack gap="md">
@@ -29,32 +74,118 @@ export function ListQuotes() {
         </LinkButton>
       </div>
 
-      {state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}
+      <form onSubmit={onSubmit}>
+        <Stack gap="sm">
+          <div className="audit-filters">
+            <Field id="q-q" label={t('admin.quotes.filter.search')}>
+              <Input
+                id="q-q"
+                value={draft.q ?? ''}
+                placeholder={t('admin.quotes.filter.searchPlaceholder')}
+                onChange={(e) => {
+                  setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+                }}
+              />
+            </Field>
+            <Field id="q-status" label={t('admin.quotes.filter.status')}>
+              <Select
+                id="q-status"
+                value={draft.statuses[0] ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setDraft({ ...draft, statuses: v === '' ? [] : [v as QuoteStatus] })
+                }}
+              >
+                <option value="">{t('admin.quotes.filter.statusAny')}</option>
+                {QUOTE_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {t(`admin.quotes.status.${s}`)}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field id="q-valid-from" label={t('admin.quotes.filter.validFrom')}>
+              <Input
+                id="q-valid-from"
+                type="date"
+                value={draft.valid_from ?? ''}
+                onChange={(e) => {
+                  setDraft({ ...draft, valid_from: trimmedOrNull(e.target.value) })
+                }}
+              />
+            </Field>
+            <Field id="q-valid-to" label={t('admin.quotes.filter.validTo')}>
+              <Input
+                id="q-valid-to"
+                type="date"
+                value={draft.valid_to ?? ''}
+                onChange={(e) => {
+                  setDraft({ ...draft, valid_to: trimmedOrNull(e.target.value) })
+                }}
+              />
+            </Field>
+            <Field id="q-total-min" label={t('admin.quotes.filter.totalMin')}>
+              <Input
+                id="q-total-min"
+                type="number"
+                inputMode="numeric"
+                value={draft.total_min ?? ''}
+                onChange={(e) => {
+                  setDraft({ ...draft, total_min: toNullableInt(e.target.value) })
+                }}
+              />
+            </Field>
+            <Field id="q-total-max" label={t('admin.quotes.filter.totalMax')}>
+              <Input
+                id="q-total-max"
+                type="number"
+                inputMode="numeric"
+                value={draft.total_max ?? ''}
+                onChange={(e) => {
+                  setDraft({ ...draft, total_max: toNullableInt(e.target.value) })
+                }}
+              />
+            </Field>
+          </div>
+          <div className="audit-filters-actions">
+            <span className="flex-1" />
+            <Button type="submit" size="sm">
+              {t('admin.quotes.filter.apply')}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={onReset}>
+              {t('admin.quotes.filter.reset')}
+            </Button>
+          </div>
+        </Stack>
+      </form>
 
-      {state.kind === 'error' && (
+      {view.state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}
+
+      {view.state.kind === 'error' && (
         <ErrorState
           message={t('admin.quotes.error')}
           retryLabel={t('common.actions.retry')}
-          onRetry={state.retry}
+          onRetry={view.state.retry}
         />
       )}
 
-      {state.kind === 'empty' && <EmptyState message={t('admin.quotes.empty')} />}
+      {view.state.kind === 'empty' && <EmptyState message={t('admin.quotes.empty')} />}
 
-      {state.kind === 'ready' && (
+      {view.state.kind === 'ready' && (
         <>
           <div className="table-scroll">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>{t('admin.quotes.col.number')}</th>
-                  <th>{t('admin.quotes.col.status')}</th>
-                  <th>{t('admin.quotes.col.client')}</th>
-                  <th className="tr">{t('admin.quotes.col.total')}</th>
+                  {sortableTh('number', t('admin.quotes.col.number'))}
+                  {sortableTh('status', t('admin.quotes.col.status'))}
+                  {sortableTh('client', t('admin.quotes.col.client'))}
+                  {sortableTh('valid_until', t('admin.quotes.col.validUntil'))}
+                  {sortableTh('total', t('admin.quotes.col.total'), true)}
                 </tr>
               </thead>
               <tbody>
-                {state.quotes.map((quote) => (
+                {view.state.quotes.map((quote) => (
                   <tr key={quote.id}>
                     <td data-label={t('admin.quotes.col.number')}>
                       <Link to={`/quotes/${String(quote.id)}`} className="num text-accent">
@@ -66,8 +197,11 @@ export function ListQuotes() {
                         {t(`admin.quotes.status.${quote.status}`)}
                       </Badge>
                     </td>
-                    <td className="num" data-label={t('admin.quotes.col.client')}>
-                      {quote.client_id}
+                    <td data-label={t('admin.quotes.col.client')}>
+                      {quote.client_name ?? `#${String(quote.client_id)}`}
+                    </td>
+                    <td className="num" data-label={t('admin.quotes.col.validUntil')}>
+                      {quote.valid_until ?? '—'}
                     </td>
                     <td className="tr num" data-label={t('admin.quotes.col.total')}>
                       {formatYen(quote.total_cents)}
@@ -77,18 +211,18 @@ export function ListQuotes() {
               </tbody>
             </table>
           </div>
-          {state.pagination.totalPages > 1 && (
+          {view.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <Button onClick={state.pagination.prevPage} disabled={!state.pagination.hasPrev}>
+              <Button onClick={view.pagination.prevPage} disabled={!view.pagination.hasPrev}>
                 {t('common.pagination.prev')}
               </Button>
               <Text variant="muted">
                 {t('common.pagination.info', {
-                  page: state.pagination.page,
-                  total: state.pagination.totalPages,
+                  page: view.pagination.page,
+                  total: view.pagination.totalPages,
                 })}
               </Text>
-              <Button onClick={state.pagination.nextPage} disabled={!state.pagination.hasNext}>
+              <Button onClick={view.pagination.nextPage} disabled={!view.pagination.hasNext}>
                 {t('common.pagination.next')}
               </Button>
             </div>
