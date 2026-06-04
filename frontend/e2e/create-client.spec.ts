@@ -11,7 +11,7 @@ const CLIENT = {
   registration_number: null,
 }
 
-/** Reaches /clients/new through login → clients list → "新規作成". */
+/** Reaches /clients/new through login → clients list → "取引先を作成". */
 test.describe('Create client', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/admin/clients', (route, request) => {
@@ -24,7 +24,7 @@ test.describe('Create client', () => {
 
     await login(page)
     await page.getByRole('link', { name: '取引先' }).click()
-    await page.getByRole('link', { name: '新規作成' }).click()
+    await page.getByRole('link', { name: '取引先を作成' }).click()
     await expect(page.getByRole('heading', { name: '取引先の作成' })).toBeVisible()
   })
 

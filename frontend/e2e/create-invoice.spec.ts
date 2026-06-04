@@ -23,7 +23,7 @@ const INVOICE = {
   line_items: [],
 }
 
-/** Reaches /invoices/new through login → invoices list → "新規作成". */
+/** Reaches /invoices/new through login → invoices list → "請求書を作成". */
 test.describe('Create invoice', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/admin/clients*', (route) =>
@@ -39,7 +39,7 @@ test.describe('Create invoice', () => {
 
     await login(page)
     await page.getByRole('link', { name: '請求書', exact: true }).click()
-    await page.getByRole('link', { name: '新規作成' }).click()
+    await page.getByRole('link', { name: '請求書を作成' }).click()
     await expect(page.getByRole('heading', { name: '請求書の作成' })).toBeVisible()
   })
 

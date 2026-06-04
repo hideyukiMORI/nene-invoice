@@ -101,7 +101,6 @@ export function ListInvoices() {
           </Button>
           <LinkButton to="/invoices/new" size="sm" aria-keyshortcuts="n">
             {t('admin.invoices.newButton')}
-            <KbdHint variant="solid">n</KbdHint>
           </LinkButton>
         </Stack>
       </div>

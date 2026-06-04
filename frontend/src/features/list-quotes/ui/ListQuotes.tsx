@@ -75,7 +75,6 @@ export function ListQuotes() {
         </Text>
         <LinkButton to="/quotes/new" size="sm" aria-keyshortcuts="n">
           {t('admin.quotes.newButton')}
-          <KbdHint variant="solid">n</KbdHint>
         </LinkButton>
       </div>
 

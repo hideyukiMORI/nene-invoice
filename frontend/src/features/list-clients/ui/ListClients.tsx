@@ -78,7 +78,6 @@ export function ListClients() {
         </Text>
         <LinkButton to="/clients/new" size="sm" aria-keyshortcuts="n">
           {t('admin.clients.newButton')}
-          <KbdHint variant="solid">n</KbdHint>
         </LinkButton>
       </div>
 
