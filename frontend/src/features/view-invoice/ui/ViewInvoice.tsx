@@ -165,7 +165,7 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
           </div>
         )}
         <Stack direction="row" gap="md">
-          <Badge tone={invoiceStatusTone[invoice.status]}>
+          <Badge tone={invoiceStatusTone[invoice.status]} className="badge-status">
             {t(`admin.invoices.status.${invoice.status}`)}
           </Badge>
           {invoice.is_overdue && (

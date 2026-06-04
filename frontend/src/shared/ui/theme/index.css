@@ -147,6 +147,11 @@
     background: var(--color-accent-soft);
     color: var(--color-accent-hover);
   }
+  /* Quote/invoice status chips share a fixed 68px width so they align in a column. */
+  .badge-status {
+    min-width: 68px;
+    justify-content: center;
+  }
   /* Overdue stays a vivid functional flag (design 03), not a muted chip. */
   .flag-overdue {
     font-size: 11px;

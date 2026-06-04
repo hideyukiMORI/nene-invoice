@@ -172,7 +172,7 @@ export function ViewDashboard() {
                     >
                       {invoice.invoice_number ?? '—'}
                     </Link>
-                    <Badge tone={invoiceStatusTone[invoice.status]}>
+                    <Badge tone={invoiceStatusTone[invoice.status]} className="badge-status">
                       {t(`admin.invoices.status.${invoice.status}`)}
                     </Badge>
                     {invoice.is_overdue && (
