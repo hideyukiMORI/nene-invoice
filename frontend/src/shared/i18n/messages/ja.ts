@@ -5,6 +5,7 @@
 export const jaMessages = {
   'common.appName': 'NeNe Invoice 管理',
   'common.actions.retry': '再試行',
+  'common.actions.close': '閉じる',
   'common.actions.signOut': 'ログアウト',
   'common.error.generic': 'エラーが発生しました。',
   'common.locale.label': '言語',
@@ -277,9 +278,14 @@ export const jaMessages = {
   'admin.invoices.detail.downloadPdfError': 'PDF を取得できませんでした。',
   'admin.invoices.detail.sendEmail': 'メールで送信',
   'admin.invoices.detail.sendingEmail': '送信中…',
-  'admin.invoices.detail.emailSent': 'メールを送信しました。',
-  'admin.invoices.detail.emailError':
-    'メールの送信に失敗しました。取引先のメールアドレスを確認してください。',
+  'admin.invoices.detail.emailSentTitle': 'メールを送信しました',
+  'admin.invoices.detail.emailSentBody': '{{client}} 宛に請求書を送付しました。',
+  'admin.invoices.detail.emailSentBodyNoClient': '請求書を送付しました。',
+  'admin.invoices.detail.emailErrorTitle': 'メールを送信できませんでした',
+  'admin.invoices.detail.emailErrorBody':
+    '取引先のメールアドレスが未登録、または形式に誤りがある可能性があります。アドレスをご確認のうえ、再度お試しください。',
+  'admin.invoices.detail.emailRetry': '再送信する',
+  'admin.invoices.detail.emailCheckClient': '取引先を確認',
   'admin.invoices.detail.generateLink': 'クライアント向けリンクを生成',
   'admin.invoices.detail.generatingLink': 'リンクを生成中…',
   'admin.invoices.detail.generateLinkError': 'リンクの生成に失敗しました。',
