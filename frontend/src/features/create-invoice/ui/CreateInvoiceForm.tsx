@@ -2,7 +2,7 @@ import { useWatch } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
-import { Button, Field, Input, MutationError, Select, Stack, Text, Textarea } from '@/shared/ui'
+import { Button, Field, InlineAlert, Input, Select, Stack, Text, Textarea } from '@/shared/ui'
 import { useCreateInvoice } from '../hooks/use-create-invoice'
 
 const TAX_RATES = [1000, 800] as const
@@ -181,7 +181,7 @@ export function CreateInvoiceForm() {
             </div>
           </div>
 
-          <MutationError message={errorMessage} />
+          {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
 
           <div className="form-actions-end">
             <Button type="submit" disabled={isPending}>

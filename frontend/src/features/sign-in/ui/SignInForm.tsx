@@ -1,4 +1,4 @@
-import { Button, Field, Input, MutationError, Stack } from '@/shared/ui'
+import { Button, Field, InlineAlert, Input, Stack } from '@/shared/ui'
 import { useTranslation } from '@/shared/i18n'
 import { useSignIn } from '../hooks/use-sign-in'
 
@@ -15,6 +15,10 @@ export function SignInForm() {
       <p className="af-headsub">{t('admin.auth.headSub')}</p>
 
       <Stack gap="md">
+        {/* 型1 (login): the cause can't be pinned to one field, so a single-line
+            summary sits at the top and both fields are marked invalid. */}
+        {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
+
         <Field
           id="email"
           label={t('admin.auth.email')}
@@ -24,7 +28,7 @@ export function SignInForm() {
             id="email"
             type="email"
             autoComplete="username"
-            aria-invalid={errors.email ? true : undefined}
+            aria-invalid={errors.email || errorMessage !== null ? true : undefined}
             {...form.register('email')}
           />
         </Field>
@@ -38,12 +42,10 @@ export function SignInForm() {
             id="password"
             type="password"
             autoComplete="current-password"
-            aria-invalid={errors.password ? true : undefined}
+            aria-invalid={errors.password || errorMessage !== null ? true : undefined}
             {...form.register('password')}
           />
         </Field>
-
-        <MutationError message={errorMessage} />
 
         <div className="auth-optrow">
           <label className="auth-check">

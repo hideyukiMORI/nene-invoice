@@ -6,9 +6,9 @@ import {
   Badge,
   Button,
   ErrorState,
+  InlineAlert,
   LineItemsTable,
   LoadingState,
-  MutationError,
   Stack,
   Text,
   TotalRow,
@@ -59,7 +59,7 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
                   ? t('admin.quotes.detail.downloadingPdf')
                   : t('admin.quotes.detail.downloadPdf')}
               </Button>
-              <MutationError message={pdf.errorMessage} />
+              {pdf.errorMessage !== null && <InlineAlert tone="error" message={pdf.errorMessage} />}
             </Stack>
             {state.canSend && (
               <Button
@@ -125,7 +125,7 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             </Text>
           )}
         </Stack>
-        <MutationError message={state.actionError} />
+        {state.actionError !== null && <InlineAlert tone="error" message={state.actionError} />}
       </Stack>
 
       <LineItemsTable items={quote.line_items} />

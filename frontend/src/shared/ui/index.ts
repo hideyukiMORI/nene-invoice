@@ -19,7 +19,6 @@ export { EmptyState, type EmptyStateProps } from './components/EmptyState'
 export { ErrorState, type ErrorStateProps } from './components/ErrorState'
 export { ConfirmDialog, type ConfirmDialogProps } from './components/ConfirmDialog'
 export { LoadingState } from './components/LoadingState'
-export { MutationError } from './components/MutationError'
 export {
   ActionError,
   type ActionErrorProps,
