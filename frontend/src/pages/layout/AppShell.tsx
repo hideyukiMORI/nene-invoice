@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
-import { KeyboardShortcuts, openShortcutsOverlay } from '@/shared/keyboard'
+import { KbdHint, KeyboardShortcuts, openShortcutsOverlay } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
 
 /** Monogram NN mark (logo concept 03 — overlapping N's). */
@@ -268,6 +268,7 @@ export function AppShell() {
           <button
             type="button"
             onClick={openShortcutsOverlay}
+            aria-keyshortcuts="?"
             className="mb-stack-xs flex w-full items-center gap-inline-sm rounded-none px-inline-sm py-stack-xs text-body text-side-fg-muted transition-colors hover:bg-side-active/60 hover:text-side-fg"
           >
             <svg
@@ -282,7 +283,7 @@ export function AppShell() {
               <path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M14 11h.01M8 11h4" />
             </svg>
             <span className="flex-1 text-left">{t('admin.nav.shortcuts')}</span>
-            <kbd className="kbd">?</kbd>
+            <KbdHint variant="outline">?</KbdHint>
           </button>
           <AccountMenu />
         </div>

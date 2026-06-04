@@ -76,25 +76,29 @@ export function ListClients() {
         <Text as="h1" variant="heading-md">
           {t('admin.clients.title')}
         </Text>
-        <LinkButton to="/clients/new" size="sm">
+        <LinkButton to="/clients/new" size="sm" aria-keyshortcuts="n">
           {t('admin.clients.newButton')}
-          <KbdHint>n</KbdHint>
+          <KbdHint variant="solid">n</KbdHint>
         </LinkButton>
       </div>
 
       <form onSubmit={onSubmit}>
         <div className="flex flex-wrap items-end gap-inline-sm">
-          <Field id="client-q" label={t('admin.clients.filter.search')} hint={<KbdHint>/</KbdHint>}>
-            <Input
-              id="client-q"
-              data-kbd="search"
-              className="w-72"
-              value={draft.q ?? ''}
-              placeholder={t('admin.clients.filter.searchPlaceholder')}
-              onChange={(e) => {
-                setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-              }}
-            />
+          <Field id="client-q" label={t('admin.clients.filter.search')}>
+            <div className="field-kbd w-72">
+              <Input
+                id="client-q"
+                data-kbd="search"
+                aria-keyshortcuts="/"
+                className="w-full pr-9"
+                value={draft.q ?? ''}
+                placeholder={t('admin.clients.filter.searchPlaceholder')}
+                onChange={(e) => {
+                  setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+                }}
+              />
+              <KbdHint>/</KbdHint>
+            </div>
           </Field>
           <Button type="submit" size="sm">
             {t('admin.clients.filter.apply')}

@@ -98,9 +98,9 @@ export function ListInvoices() {
               ? t('admin.invoices.export.downloading')
               : t('admin.invoices.export.payments')}
           </Button>
-          <LinkButton to="/invoices/new" size="sm">
+          <LinkButton to="/invoices/new" size="sm" aria-keyshortcuts="n">
             {t('admin.invoices.newButton')}
-            <KbdHint>n</KbdHint>
+            <KbdHint variant="solid">n</KbdHint>
           </LinkButton>
         </Stack>
       </div>
@@ -114,16 +114,21 @@ export function ListInvoices() {
       <form onSubmit={onSubmit}>
         <Stack gap="sm">
           <div className="audit-filters">
-            <Field id="inv-q" label={t('admin.invoices.filter.search')} hint={<KbdHint>/</KbdHint>}>
-              <Input
-                id="inv-q"
-                data-kbd="search"
-                value={draft.q ?? ''}
-                placeholder={t('admin.invoices.filter.searchPlaceholder')}
-                onChange={(e) => {
-                  setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-                }}
-              />
+            <Field id="inv-q" label={t('admin.invoices.filter.search')}>
+              <div className="field-kbd">
+                <Input
+                  id="inv-q"
+                  data-kbd="search"
+                  aria-keyshortcuts="/"
+                  className="pr-9"
+                  value={draft.q ?? ''}
+                  placeholder={t('admin.invoices.filter.searchPlaceholder')}
+                  onChange={(e) => {
+                    setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+                  }}
+                />
+                <KbdHint>/</KbdHint>
+              </div>
             </Field>
             <Field id="inv-status" label={t('admin.invoices.filter.status')}>
               <Select
