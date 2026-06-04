@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
+import { KeyboardShortcuts } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
 
 /** Monogram NN mark (logo concept 03 — overlapping N's). */
@@ -227,6 +228,7 @@ export function AppShell() {
 
   return (
     <div className={cn('app', navOpen && 'nav-open')}>
+      <KeyboardShortcuts />
       <aside className="side flex flex-col bg-side-bg text-side-fg">
         <div className="flex items-center gap-inline-sm px-inline-md pt-stack-lg pb-stack-xs font-semibold">
           <MonoMark />
