@@ -92,6 +92,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Numbers | `quote_number`, `invoice_number` | `number`, `quote_no` |
 | Timestamps | `issued_at`, `due_at`, `paid_at`, `valid_until`, `deleted_at` | `issue_date`, `due_date`, `paidAt` |
 | Issuer fields | `legal_name`, `bank_name`, `bank_branch`, `account_type`, `account_number`, `logo_url` | `company_name`, `branch`, `acct_no` |
+| Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `contact_name`, `billing_address` | `contact`, `address` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
 | Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents` | `monthly_received_cents`, `received_this_month`, `mtd_cents` |

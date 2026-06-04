@@ -47,6 +47,10 @@ final readonly class UpdateCompanySettingsUseCase
             accountType: $input->accountType,
             accountNumber: $input->accountNumber,
             logoUrl: $input->logoUrl,
+            defaultQuoteValidityDays: $input->defaultQuoteValidityDays,
+            defaultPaymentClosingDay: $input->defaultPaymentClosingDay,
+            defaultPaymentMonthOffset: $input->defaultPaymentMonthOffset,
+            defaultPaymentPayDay: $input->defaultPaymentPayDay,
         ));
 
         $saved = $this->repository->find();

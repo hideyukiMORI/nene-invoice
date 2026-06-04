@@ -38,6 +38,12 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
             return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"legal_name" is required.');
         }
 
+        $rangeError = $this->validateBillingDefaults($decoded);
+
+        if ($rangeError !== null) {
+            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, $rangeError);
+        }
+
         $settings = $this->useCase->execute(AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
             address: $this->optional($decoded, 'address'),
@@ -49,6 +55,10 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
             accountType: $this->optional($decoded, 'account_type'),
             accountNumber: $this->optional($decoded, 'account_number'),
             logoUrl: $this->optional($decoded, 'logo_url'),
+            defaultQuoteValidityDays: $this->optionalInt($decoded, 'default_quote_validity_days'),
+            defaultPaymentClosingDay: $this->optionalInt($decoded, 'default_payment_closing_day'),
+            defaultPaymentMonthOffset: $this->optionalInt($decoded, 'default_payment_month_offset'),
+            defaultPaymentPayDay: $this->optionalInt($decoded, 'default_payment_pay_day'),
         ));
 
         return $this->json->create(CompanySettingsResponse::toArray($settings));
@@ -60,5 +70,46 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
         $value = $body[$key] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /** @param array<string, mixed> $body */
+    private function optionalInt(array $body, string $key): ?int
+    {
+        $value = $body[$key] ?? null;
+
+        return is_int($value) ? $value : null;
+    }
+
+    /**
+     * Validates the billing-default integers (Issue #268). Returns an error
+     * message, or null when all are absent / null / valid.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function validateBillingDefaults(array $body): ?string
+    {
+        if (!$this->isNullOrIntInRange($body['default_quote_validity_days'] ?? null, 1, 3650)) {
+            return '"default_quote_validity_days" must be an integer between 1 and 3650.';
+        }
+        if (!$this->isNullOrIntInRange($body['default_payment_closing_day'] ?? null, 1, 31)) {
+            return '"default_payment_closing_day" must be an integer between 1 and 31.';
+        }
+        if (!$this->isNullOrIntInRange($body['default_payment_month_offset'] ?? null, 0, 12)) {
+            return '"default_payment_month_offset" must be an integer between 0 and 12.';
+        }
+        if (!$this->isNullOrIntInRange($body['default_payment_pay_day'] ?? null, 1, 31)) {
+            return '"default_payment_pay_day" must be an integer between 1 and 31.';
+        }
+
+        return null;
+    }
+
+    private function isNullOrIntInRange(mixed $value, int $min, int $max): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        return is_int($value) && $value >= $min && $value <= $max;
     }
 }

@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS `company_settings` (
     `account_type`        VARCHAR(32)   DEFAULT NULL,
     `account_number`      VARCHAR(64)   DEFAULT NULL,
     `logo_url`            VARCHAR(1024) DEFAULT NULL,
+    `default_quote_validity_days`  INT  DEFAULT NULL,
+    `default_payment_closing_day`  INT  DEFAULT NULL,
+    `default_payment_month_offset` INT  DEFAULT NULL,
+    `default_payment_pay_day`      INT  DEFAULT NULL,
     `created_at`          DATETIME      NOT NULL,
     `updated_at`          DATETIME      NOT NULL,
     UNIQUE KEY `uniq_company_settings_organization_id` (`organization_id`)

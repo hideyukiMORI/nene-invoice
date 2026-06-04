@@ -1360,6 +1360,24 @@ components:
           type: [string, 'null']
         logo_url:
           type: [string, 'null']
+        default_quote_validity_days:
+          type: [integer, 'null']
+          description: Default quote validity period in days (有効期限). null = no default.
+        default_payment_closing_day:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 31
+          description: Payment closing day (締め日) 1–31; null = month-end (末日) when terms are configured.
+        default_payment_month_offset:
+          type: [integer, 'null']
+          minimum: 0
+          maximum: 12
+          description: Payment month offset (支払月) — 0=当月, 1=翌月 … null = no payment-terms default.
+        default_payment_pay_day:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 31
+          description: Payment day (支払日) 1–31; null = month-end (末日) when terms are configured.
         created_at:
           type: [string, 'null']
         updated_at:
@@ -1388,6 +1406,26 @@ components:
           type: [string, 'null']
         logo_url:
           type: [string, 'null']
+        default_quote_validity_days:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 3650
+          description: Default quote validity period in days (有効期限). null = no default.
+        default_payment_closing_day:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 31
+          description: Payment closing day (締め日) 1–31; null = month-end (末日) when terms are configured.
+        default_payment_month_offset:
+          type: [integer, 'null']
+          minimum: 0
+          maximum: 12
+          description: Payment month offset (支払月) — 0=当月, 1=翌月 … null = no payment-terms default.
+        default_payment_pay_day:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 31
+          description: Payment day (支払日) 1–31; null = month-end (末日) when terms are configured.
       required: [legal_name]
     Client:
       type: object

@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS company_settings (
     account_type VARCHAR(32) NULL DEFAULT NULL,
     account_number VARCHAR(64) NULL DEFAULT NULL,
     logo_url VARCHAR(1024) NULL DEFAULT NULL,
+    default_quote_validity_days INTEGER NULL DEFAULT NULL,
+    default_payment_closing_day INTEGER NULL DEFAULT NULL,
+    default_payment_month_offset INTEGER NULL DEFAULT NULL,
+    default_payment_pay_day INTEGER NULL DEFAULT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 );
