@@ -1,4 +1,5 @@
 export { KeyboardShortcuts } from './KeyboardShortcuts'
 export { KbdHint } from './KbdHint'
 export { isMacPlatform } from './platform'
+export { useLineGridEnter } from './use-line-grid-enter'
 export { useRowCursor } from './use-row-cursor'
