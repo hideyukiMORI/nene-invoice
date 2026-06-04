@@ -228,10 +228,10 @@ export function AppShell() {
 
   const linkClass = ({ isActive }: { isActive: boolean }): string =>
     cn(
-      'flex items-center gap-inline-sm px-inline-sm py-stack-xs text-body transition-colors',
+      'flex items-center gap-inline-sm px-inline-sm py-stack-xs text-body font-medium transition-colors',
       isActive
-        ? 'bg-side-active text-side-fg font-medium'
-        : 'text-side-fg-muted hover:bg-side-active/60 hover:text-side-fg',
+        ? 'bg-side-active text-side-fg font-semibold'
+        : 'text-side-fg hover:bg-side-active/60',
     )
 
   return (
