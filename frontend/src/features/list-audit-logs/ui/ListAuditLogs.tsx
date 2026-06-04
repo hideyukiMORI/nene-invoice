@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import {
   Button,
+  DatePicker,
   EmptyState,
   ErrorState,
   Field,
@@ -128,23 +129,21 @@ export function ListAuditLogs() {
             </Field>
 
             <Field id="audit-from" label={t('admin.audit.filter.from')}>
-              <Input
+              <DatePicker
                 id="audit-from"
-                type="date"
                 value={draft.created_from ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, created_from: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, created_from: v === '' ? null : v })
                 }}
               />
             </Field>
 
             <Field id="audit-to" label={t('admin.audit.filter.to')}>
-              <Input
+              <DatePicker
                 id="audit-to"
-                type="date"
                 value={draft.created_to ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, created_to: trimmedOrNull(e.target.value) })
+                onChange={(v) => {
+                  setDraft({ ...draft, created_to: v === '' ? null : v })
                 }}
               />
             </Field>
