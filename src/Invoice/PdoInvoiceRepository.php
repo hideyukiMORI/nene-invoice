@@ -276,6 +276,26 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         ];
     }
 
+    public function billedRowsBetween(string $startInclusive, string $endExclusive): array
+    {
+        $rows = $this->query->fetchAll(
+            'SELECT issued_at, total_cents
+             FROM invoices
+             WHERE organization_id = ? AND is_deleted = 0
+               AND issued_at IS NOT NULL AND issued_at >= ? AND issued_at < ?
+             ORDER BY issued_at ASC',
+            [$this->orgId->get(), $startInclusive, $endExclusive],
+        );
+
+        return array_map(
+            static fn (array $row): array => [
+                'issued_at' => (string) $row['issued_at'],
+                'total_cents' => (int) $row['total_cents'],
+            ],
+            $rows,
+        );
+    }
+
     /**
      * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
      */

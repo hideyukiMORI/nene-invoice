@@ -242,6 +242,23 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         return ['cents' => $cents, 'count' => $count];
     }
 
+    public function billedRowsBetween(string $startInclusive, string $endExclusive): array
+    {
+        $orgId = $this->orgId->get();
+        $rows = [];
+
+        foreach ($this->byId as $i) {
+            if ($i->organizationId !== $orgId || $i->isDeleted || $i->issuedAt === null) {
+                continue;
+            }
+            if ($i->issuedAt >= $startInclusive && $i->issuedAt < $endExclusive) {
+                $rows[] = ['issued_at' => $i->issuedAt, 'total_cents' => $i->totalCents];
+            }
+        }
+
+        return $rows;
+    }
+
     public function save(Invoice $invoice): int
     {
         $id = $this->nextId++;

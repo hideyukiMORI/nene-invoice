@@ -151,6 +151,10 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             {
                 return ['cents' => 0, 'count' => 0];
             }
+            public function billedRowsBetween(string $startInclusive, string $endExclusive): array
+            {
+                return [];
+            }
             public function save(Invoice $invoice): int
             {
                 return 0;

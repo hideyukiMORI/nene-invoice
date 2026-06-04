@@ -1330,7 +1330,31 @@ components:
           description: Issued-invoice totals for the last 6 calendar months, oldest first.
           items:
             $ref: '#/components/schemas/MonthlyBilled'
-      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid, received_this_month_cents, received_last_month_cents, aging, billed_this_month_cents, billed_last_month_cents, monthly_billed]
+        billed_prev_year_month_cents:
+          type: integer
+          description: Total of invoices issued in the same month one year ago, in cents (year-over-year).
+        billed_daily_current:
+          type: array
+          description: Cumulative issued total per day for the current month, day 1 to today.
+          items:
+            $ref: '#/components/schemas/DailyBilled'
+        billed_daily_prev_month:
+          type: array
+          description: Cumulative issued total per day for the full previous month (pace comparison).
+          items:
+            $ref: '#/components/schemas/DailyBilled'
+      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid, received_this_month_cents, received_last_month_cents, aging, billed_this_month_cents, billed_last_month_cents, monthly_billed, billed_prev_year_month_cents, billed_daily_current, billed_daily_prev_month]
+    DailyBilled:
+      type: object
+      description: Cumulative issued-invoice total at a given day of the month.
+      properties:
+        day:
+          type: integer
+          description: Day of month (1–31).
+        cumulative_cents:
+          type: integer
+          description: Cumulative issued total from day 1 through this day, in cents.
+      required: [day, cumulative_cents]
     MonthlyBilled:
       type: object
       description: Issued-invoice total for one calendar month.
