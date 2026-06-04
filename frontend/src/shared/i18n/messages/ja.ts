@@ -374,6 +374,8 @@ export const jaMessages = {
   'admin.dashboard.invoiceCount': '{{count}} 件の請求書',
   'admin.dashboard.due': '期限 {{date}}',
   'admin.dashboard.receivedThisMonth': '当月入金額',
+  'admin.dashboard.billedThisMonth': '当月請求発行額',
+  'admin.dashboard.billedTrend': '請求発行額の推移',
   'admin.dashboard.momChange': '前月比 {{change}}',
   'admin.dashboard.aging': '売掛金エイジング',
   'admin.dashboard.agingCurrent': '期限内',

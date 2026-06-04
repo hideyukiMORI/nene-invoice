@@ -15,6 +15,7 @@ final readonly class DashboardSummary
     /**
      * @param list<Invoice>                                                $recentUnpaid
      * @param array{current: int, overdue_1_30: int, overdue_31_plus: int} $aging outstanding receivable bucketed by overdue age, in cents
+     * @param list<array{month: string, billed_cents: int, count: int}>    $monthlyBilled issued-invoice totals per month (oldest→newest, Issue #272)
      */
     public function __construct(
         public int $unpaidCount,
@@ -24,6 +25,9 @@ final readonly class DashboardSummary
         public int $receivedThisMonthCents,
         public int $receivedLastMonthCents,
         public array $aging,
+        public int $billedThisMonthCents,
+        public int $billedLastMonthCents,
+        public array $monthlyBilled,
     ) {
     }
 }

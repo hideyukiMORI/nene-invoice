@@ -15,5 +15,12 @@ export function toDashboardSummary(dto: DashboardSummaryDto): DashboardSummary {
       overdue_1_30: dto.aging.overdue_1_30,
       overdue_31_plus: dto.aging.overdue_31_plus,
     },
+    billed_this_month_cents: dto.billed_this_month_cents,
+    billed_last_month_cents: dto.billed_last_month_cents,
+    monthly_billed: dto.monthly_billed.map((m) => ({
+      month: m.month,
+      billed_cents: m.billed_cents,
+      count: m.count,
+    })),
   }
 }

@@ -39,6 +39,37 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         self::assertSame(0, $summary->receivedThisMonthCents);
         self::assertSame(0, $summary->receivedLastMonthCents);
         self::assertSame(['current' => 0, 'overdue_1_30' => 0, 'overdue_31_plus' => 0], $summary->aging);
+        self::assertSame(0, $summary->billedThisMonthCents);
+        self::assertSame(0, $summary->billedLastMonthCents);
+        self::assertCount(6, $summary->monthlyBilled);
+        self::assertSame(0, $summary->monthlyBilled[5]['billed_cents']);
+    }
+
+    public function test_billed_metrics_and_monthly_trend(): void
+    {
+        $thisMonth = date('Y-m-10 09:00:00');
+        $lastMonth = date('Y-m-10 09:00:00', (int) strtotime('first day of last month'));
+
+        // Issued this month: 1000 + 2000 (paid still counts as issued).
+        $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Issued, subtotalCents: 1000, taxCents: 0, totalCents: 1000, issuedAt: $thisMonth));
+        $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Paid, subtotalCents: 2000, taxCents: 0, totalCents: 2000, issuedAt: $thisMonth));
+        // Issued last month: 5000.
+        $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Issued, subtotalCents: 5000, taxCents: 0, totalCents: 5000, issuedAt: $lastMonth));
+        // Draft (never issued) is excluded.
+        $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Draft, subtotalCents: 9999, taxCents: 0, totalCents: 9999));
+
+        $summary = $this->useCase->execute();
+
+        self::assertSame(3000, $summary->billedThisMonthCents);
+        self::assertSame(5000, $summary->billedLastMonthCents);
+
+        self::assertCount(6, $summary->monthlyBilled);
+        // Last bucket is the current month (oldest→newest).
+        self::assertSame(date('Y-m'), $summary->monthlyBilled[5]['month']);
+        self::assertSame(3000, $summary->monthlyBilled[5]['billed_cents']);
+        self::assertSame(2, $summary->monthlyBilled[5]['count']);
+        self::assertSame(5000, $summary->monthlyBilled[4]['billed_cents']);
+        self::assertSame(1, $summary->monthlyBilled[4]['count']);
     }
 
     public function test_received_this_month_sums_current_month_payments(): void

@@ -258,6 +258,25 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     }
 
     /**
+     * @return array{cents: int, count: int}
+     */
+    public function billedTotalBetween(string $startInclusive, string $endExclusive): array
+    {
+        $row = $this->query->fetchOne(
+            'SELECT COALESCE(SUM(total_cents), 0) AS cents, COUNT(*) AS cnt
+             FROM invoices
+             WHERE organization_id = ? AND is_deleted = 0
+               AND issued_at IS NOT NULL AND issued_at >= ? AND issued_at < ?',
+            [$this->orgId->get(), $startInclusive, $endExclusive],
+        );
+
+        return [
+            'cents' => $row !== null ? (int) $row['cents'] : 0,
+            'count' => $row !== null ? (int) $row['cnt'] : 0,
+        ];
+    }
+
+    /**
      * @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>}
      */
     public function getDashboardData(string $now): array

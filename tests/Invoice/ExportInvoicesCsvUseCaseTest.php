@@ -147,6 +147,10 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             {
                 return ['unpaid_count' => 0, 'overdue_count' => 0, 'recent_unpaid' => []];
             }
+            public function billedTotalBetween(string $startInclusive, string $endExclusive): array
+            {
+                return ['cents' => 0, 'count' => 0];
+            }
             public function save(Invoice $invoice): int
             {
                 return 0;

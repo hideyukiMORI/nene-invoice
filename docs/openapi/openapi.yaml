@@ -1319,7 +1319,32 @@ components:
           description: Sum of non-void payments received in the previous month, in cents (for month-over-month comparison).
         aging:
           $ref: '#/components/schemas/ReceivableAging'
-      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid, received_this_month_cents, received_last_month_cents, aging]
+        billed_this_month_cents:
+          type: integer
+          description: Total of invoices issued in the current month (issued_at based), in cents.
+        billed_last_month_cents:
+          type: integer
+          description: Total of invoices issued in the previous month, in cents (for month-over-month comparison).
+        monthly_billed:
+          type: array
+          description: Issued-invoice totals for the last 6 calendar months, oldest first.
+          items:
+            $ref: '#/components/schemas/MonthlyBilled'
+      required: [unpaid_count, overdue_count, outstanding_total_cents, recent_unpaid, received_this_month_cents, received_last_month_cents, aging, billed_this_month_cents, billed_last_month_cents, monthly_billed]
+    MonthlyBilled:
+      type: object
+      description: Issued-invoice total for one calendar month.
+      properties:
+        month:
+          type: string
+          description: Calendar month, `YYYY-MM`.
+        billed_cents:
+          type: integer
+          description: Total of invoices issued in this month, in cents.
+        count:
+          type: integer
+          description: Number of invoices issued in this month.
+      required: [month, billed_cents, count]
     ReceivableAging:
       type: object
       description: Outstanding receivable balance bucketed by overdue age, in cents.

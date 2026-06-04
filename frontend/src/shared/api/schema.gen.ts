@@ -689,6 +689,21 @@ export interface components {
             /** @description Sum of non-void payments received in the previous month, in cents (for month-over-month comparison). */
             received_last_month_cents: number;
             aging: components["schemas"]["ReceivableAging"];
+            /** @description Total of invoices issued in the current month (issued_at based), in cents. */
+            billed_this_month_cents: number;
+            /** @description Total of invoices issued in the previous month, in cents (for month-over-month comparison). */
+            billed_last_month_cents: number;
+            /** @description Issued-invoice totals for the last 6 calendar months, oldest first. */
+            monthly_billed: components["schemas"]["MonthlyBilled"][];
+        };
+        /** @description Issued-invoice total for one calendar month. */
+        MonthlyBilled: {
+            /** @description Calendar month, `YYYY-MM`. */
+            month: string;
+            /** @description Total of invoices issued in this month, in cents. */
+            billed_cents: number;
+            /** @description Number of invoices issued in this month. */
+            count: number;
         };
         /** @description Outstanding receivable balance bucketed by overdue age, in cents. */
         ReceivableAging: {

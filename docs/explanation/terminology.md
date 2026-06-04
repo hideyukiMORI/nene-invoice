@@ -95,7 +95,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `contact_name`, `billing_address` | `contact`, `address` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
-| Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents` | `monthly_received_cents`, `received_this_month`, `mtd_cents` |
+| Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents`, `billed_this_month_cents`, `billed_last_month_cents`, `monthly_billed` (→ `month`, `billed_cents`, `count`) | `monthly_received_cents`, `received_this_month`, `mtd_cents`, `issued_this_month_cents`, `invoiced_cents` |
 | Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
 
 Rules: money columns end in `_cents` (integer); timestamps end in `_at` (except

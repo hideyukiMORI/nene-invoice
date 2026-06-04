@@ -54,6 +54,9 @@ final readonly class GetDashboardHandler implements RequestHandlerInterface
             'received_this_month_cents' => $summary->receivedThisMonthCents,
             'received_last_month_cents' => $summary->receivedLastMonthCents,
             'aging'                     => $summary->aging,
+            'billed_this_month_cents'   => $summary->billedThisMonthCents,
+            'billed_last_month_cents'   => $summary->billedLastMonthCents,
+            'monthly_billed'            => $summary->monthlyBilled,
         ]);
     }
 }

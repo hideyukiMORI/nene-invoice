@@ -46,6 +46,14 @@ interface InvoiceRepositoryInterface
      */
     public function getDashboardData(string $now): array;
 
+    /**
+     * Total (cents) and count of invoices *issued* within [start, end) — the
+     * billing-issuance metric (drafts are excluded; bucketed by `issued_at`).
+     *
+     * @return array{cents: int, count: int}
+     */
+    public function billedTotalBetween(string $startInclusive, string $endExclusive): array;
+
     public function save(Invoice $invoice): int;
 
     /** @throws InvoiceNotFoundException */

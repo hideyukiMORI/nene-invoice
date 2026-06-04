@@ -36,6 +36,9 @@ final readonly class GetDashboardSummaryUseCase
         $lastMonthStart = $nowDt->modify('first day of last month')->format('Y-m-01 00:00:00');
         $thirtyDaysAgo  = $nowDt->modify('-30 days')->format('Y-m-d H:i:s');
 
+        $billedThisMonth = $this->invoices->billedTotalBetween($thisMonthStart, $nextMonthStart);
+        $billedLastMonth = $this->invoices->billedTotalBetween($lastMonthStart, $thisMonthStart);
+
         return new DashboardSummary(
             unpaidCount: $data['unpaid_count'],
             overdueCount: $data['overdue_count'],
@@ -44,6 +47,37 @@ final readonly class GetDashboardSummaryUseCase
             receivedThisMonthCents: $this->payments->receivedTotalBetween($thisMonthStart, $nextMonthStart),
             receivedLastMonthCents: $this->payments->receivedTotalBetween($lastMonthStart, $thisMonthStart),
             aging: $this->payments->agingBuckets($now, $thirtyDaysAgo),
+            billedThisMonthCents: $billedThisMonth['cents'],
+            billedLastMonthCents: $billedLastMonth['cents'],
+            monthlyBilled: $this->monthlyBilled($nowDt),
         );
+    }
+
+    /**
+     * Issued-invoice totals for the last 6 calendar months (oldest→newest).
+     *
+     * @return list<array{month: string, billed_cents: int, count: int}>
+     */
+    private function monthlyBilled(DateTimeImmutable $nowDt): array
+    {
+        $firstOfThisMonth = $nowDt->modify('first day of this month')->setTime(0, 0, 0);
+        $months = [];
+
+        for ($k = 5; $k >= 0; --$k) {
+            $start  = $firstOfThisMonth->modify("-{$k} month");
+            $end    = $start->modify('+1 month');
+            $bucket = $this->invoices->billedTotalBetween(
+                $start->format('Y-m-d H:i:s'),
+                $end->format('Y-m-d H:i:s'),
+            );
+
+            $months[] = [
+                'month'        => $start->format('Y-m'),
+                'billed_cents' => $bucket['cents'],
+                'count'        => $bucket['count'],
+            ];
+        }
+
+        return $months;
     }
 }
