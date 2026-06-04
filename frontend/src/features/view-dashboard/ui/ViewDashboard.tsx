@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { MonthlyBilled } from '@/entities/dashboard'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { cn } from '@/shared/lib/cn'
 import { formatYen } from '@/shared/lib/format-money'
 import { Badge, EmptyState, ErrorState, LinkButton, LoadingState, Stack } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
@@ -111,7 +112,7 @@ export function ViewDashboard() {
           <h3>{t('admin.dashboard.billedTrend')}</h3>
         </div>
         <div className="panel-body">
-          <BilledTrend months={state.monthlyBilled} locale={locale} />
+          <IssuanceTrend months={state.monthlyBilled} />
         </div>
       </div>
 
@@ -198,30 +199,95 @@ export function ViewDashboard() {
   )
 }
 
-/** (B) Monthly issued-invoice trend — simple CSS bar chart (no chart lib). */
-function BilledTrend({ months, locale }: { months: MonthlyBilled[]; locale: string }) {
-  const max = Math.max(1, ...months.map((m) => m.billed_cents))
-  const monthLabel = (ym: string): string =>
-    new Date(`${ym}-01T00:00:00`).toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
-      month: 'short',
-    })
+/** Cents → 万円 with up to one decimal (e.g. 1,208,000 → "120.8"). */
+const toMan = (cents: number): string => {
+  const v = cents / 10000
+  return (Math.round(v * 10) / 10).toString()
+}
+
+/**
+ * (B) Monthly issuance trend (design 04): confirmed bars with the peak
+ * highlighted, the in-progress current month shown as a projected landing
+ * (着地見込み) with the actual filled in, and an average reference line.
+ */
+function IssuanceTrend({ months }: { months: MonthlyBilled[] }) {
+  const { t, locale } = useTranslation()
+  if (months.length === 0) return null
+
+  const lastIdx = months.length - 1
+  const confirmed = months.slice(0, lastIdx)
+  const current = months[lastIdx]
+
+  // Project the in-progress month's landing from the month-to-date pace.
+  const now = new Date()
+  const dayOfMonth = now.getDate()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const pace = Math.max(dayOfMonth / daysInMonth, 0.0001)
+  const projected = Math.round((current?.billed_cents ?? 0) / pace)
+
+  const peakValue = Math.max(0, ...confirmed.map((m) => m.billed_cents))
+  const scale = Math.max(peakValue, projected, 1)
+  const average =
+    confirmed.length > 0
+      ? Math.round(confirmed.reduce((sum, m) => sum + m.billed_cents, 0) / confirmed.length)
+      : 0
+
+  const monthNo = (ym: string): number => Number(ym.slice(5))
+  const monthLabel = (ym: string, isNow: boolean): string => {
+    const n = monthNo(ym)
+    if (locale === 'ja') return isNow ? `${String(n)}月` : String(n)
+    return new Date(`${ym}-01T00:00:00`).toLocaleDateString('en-US', { month: 'short' })
+  }
 
   return (
-    <div className="bar-chart">
-      {months.map((m) => (
-        <div className="bar-col" key={m.month}>
-          <span className="bar-cap num">{formatYen(m.billed_cents)}</span>
-          <div className="bar-track">
-            <div
-              className="bar"
-              style={{ height: `${String(Math.round((m.billed_cents / max) * 100))}%` }}
-              title={formatYen(m.billed_cents)}
-            />
+    <>
+      <div className="iss-plot">
+        {average > 0 && (
+          <div className="iss-avg" style={{ bottom: `${String((average / scale) * 100)}%` }}>
+            <span>{t('admin.dashboard.average', { amount: formatYen(average) })}</span>
           </div>
-          <span className="bar-label">{monthLabel(m.month)}</span>
-        </div>
-      ))}
-    </div>
+        )}
+        {months.map((m, i) => {
+          const isNow = i === lastIdx
+          const barValue = isNow ? projected : m.billed_cents
+          const isPeak = !isNow && m.billed_cents === peakValue && peakValue > 0
+          return (
+            <div key={m.month} className={cn('iss-col', isNow && 'is-now')}>
+              <span className="iss-v">{toMan(m.billed_cents)}</span>
+              <div
+                className={cn('iss-bar', isPeak && 'peak', isNow && 'proj')}
+                style={{ height: `${String((barValue / scale) * 100)}%` }}
+                title={
+                  isNow
+                    ? t('admin.dashboard.billedProjected', {
+                        actual: formatYen(m.billed_cents),
+                        projected: formatYen(projected),
+                      })
+                    : formatYen(m.billed_cents)
+                }
+              >
+                {isNow && (
+                  <span
+                    className="fill"
+                    style={{
+                      height: `${String((m.billed_cents / Math.max(projected, 1)) * 100)}%`,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="iss-x">
+        {months.map((m, i) => (
+          <div key={m.month} className={cn('iss-xl', i === lastIdx && 'is-now')}>
+            {monthLabel(m.month, i === lastIdx)}
+          </div>
+        ))}
+      </div>
+      <div className="iss-unit">{t('admin.dashboard.billedUnit')}</div>
+    </>
   )
 }
 
