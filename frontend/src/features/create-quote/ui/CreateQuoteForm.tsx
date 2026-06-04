@@ -1,5 +1,6 @@
 import { useWatch } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
+import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
 import {
@@ -39,6 +40,7 @@ export function CreateQuoteForm() {
     register,
     formState: { errors },
   } = form
+  const { gridRef } = useLineGridEnter(lines.fields.length, addLine)
 
   // Live totals preview (backend stays authoritative; mirrors TaxCalculator).
   const watched = useWatch({ control, name: 'line_items' })
@@ -92,7 +94,7 @@ export function CreateQuoteForm() {
           {/* Line items */}
           <div className="card">
             <div className="section-title">{t('admin.quotes.create.lineItems')}</div>
-            <div className="line-grid">
+            <div className="line-grid" ref={gridRef}>
               <div className="line-head">
                 <span>{t('admin.invoices.line.description')}</span>
                 <span className="tr">{t('admin.invoices.line.quantity')}</span>

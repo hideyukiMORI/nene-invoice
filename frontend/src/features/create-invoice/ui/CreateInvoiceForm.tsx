@@ -1,5 +1,6 @@
 import { useWatch } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
+import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
 import { Button, Field, InlineAlert, Input, Select, Stack, Text, Textarea } from '@/shared/ui'
@@ -29,6 +30,7 @@ export function CreateInvoiceForm() {
     register,
     formState: { errors },
   } = form
+  const { gridRef } = useLineGridEnter(lines.fields.length, addLine)
 
   // Live totals preview (backend stays authoritative; mirrors TaxCalculator).
   // Empty number inputs surface as NaN; computeDocumentTotals coerces those to 0.
@@ -78,7 +80,7 @@ export function CreateInvoiceForm() {
           {/* Line items */}
           <div className="card">
             <div className="section-title">{t('admin.invoices.create.lineItems')}</div>
-            <div className="line-grid">
+            <div className="line-grid" ref={gridRef}>
               <div className="line-head">
                 <span>{t('admin.invoices.line.description')}</span>
                 <span className="tr">{t('admin.invoices.line.quantity')}</span>
