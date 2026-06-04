@@ -1459,18 +1459,45 @@
   .kbd.wide {
     padding: 0 9px;
   }
-  /* inline hint keycap (spec §04) — smaller, muted, hidden on touch */
+  /* Inline hint keycap (design 03 §02/§03) — control-internal size, 3 contrast
+     variants by surface, decorative + hidden on touch. */
   .kbd-hint {
-    height: 18px;
-    min-width: 18px;
+    height: 17px;
+    min-width: 17px;
     padding: 0 5px;
-    font-size: 10.5px;
+    font-size: 10px;
     border-bottom-width: 1px;
     box-shadow: none;
+  }
+  .kbd-hint.ghost {
+    background: var(--color-surface-overlay);
+    border-color: var(--color-border-strong);
     color: var(--color-fg-muted);
   }
+  .kbd-hint.solid {
+    background: color-mix(in oklch, #fff 22%, transparent);
+    border-color: color-mix(in oklch, #fff 30%, transparent);
+    color: #fff;
+  }
+  .kbd-hint.outline {
+    background: transparent;
+    border-color: color-mix(in oklch, currentColor 35%, transparent);
+    color: inherit;
+  }
+  /* Keycap pinned inside an input's right edge (e.g. search `/`). */
+  .field-kbd {
+    position: relative;
+  }
+  .field-kbd > .kbd {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
   @media (hover: none) {
-    .kbd-hint {
+    .kbd-hint,
+    .field-kbd > .kbd {
       display: none;
     }
   }

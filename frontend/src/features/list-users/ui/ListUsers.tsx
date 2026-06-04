@@ -58,9 +58,9 @@ export function ListUsers() {
         <Text as="h1" variant="heading-md">
           {t('admin.users.title')}
         </Text>
-        <LinkButton to="/users/new" size="sm">
+        <LinkButton to="/users/new" size="sm" aria-keyshortcuts="n">
           {t('admin.users.newButton')}
-          <KbdHint>n</KbdHint>
+          <KbdHint variant="solid">n</KbdHint>
         </LinkButton>
       </div>
 

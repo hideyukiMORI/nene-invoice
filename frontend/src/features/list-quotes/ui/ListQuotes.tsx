@@ -72,25 +72,30 @@ export function ListQuotes() {
         <Text as="h1" variant="heading-md">
           {t('admin.quotes.title')}
         </Text>
-        <LinkButton to="/quotes/new" size="sm">
+        <LinkButton to="/quotes/new" size="sm" aria-keyshortcuts="n">
           {t('admin.quotes.newButton')}
-          <KbdHint>n</KbdHint>
+          <KbdHint variant="solid">n</KbdHint>
         </LinkButton>
       </div>
 
       <form onSubmit={onSubmit}>
         <Stack gap="sm">
           <div className="audit-filters">
-            <Field id="q-q" label={t('admin.quotes.filter.search')} hint={<KbdHint>/</KbdHint>}>
-              <Input
-                id="q-q"
-                data-kbd="search"
-                value={draft.q ?? ''}
-                placeholder={t('admin.quotes.filter.searchPlaceholder')}
-                onChange={(e) => {
-                  setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-                }}
-              />
+            <Field id="q-q" label={t('admin.quotes.filter.search')}>
+              <div className="field-kbd">
+                <Input
+                  id="q-q"
+                  data-kbd="search"
+                  aria-keyshortcuts="/"
+                  className="pr-9"
+                  value={draft.q ?? ''}
+                  placeholder={t('admin.quotes.filter.searchPlaceholder')}
+                  onChange={(e) => {
+                    setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+                  }}
+                />
+                <KbdHint>/</KbdHint>
+              </div>
             </Field>
             <Field id="q-status" label={t('admin.quotes.filter.status')}>
               <Select
