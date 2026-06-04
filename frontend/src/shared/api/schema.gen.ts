@@ -848,6 +848,8 @@ export interface components {
         AuditLog: {
             id: number;
             actor_user_id?: number | null;
+            /** @description Actor's current email, resolved at read time for display. */
+            actor_email?: string | null;
             organization_id?: number | null;
             /** @description e.g. invoice.created, invoice.issued, payment.recorded. */
             action: string;

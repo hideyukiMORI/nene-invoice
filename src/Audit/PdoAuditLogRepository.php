@@ -9,7 +9,7 @@ use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterface
 {
-    private const COLUMNS = 'id, actor_user_id, organization_id, action, entity_type, entity_id, before_json, after_json, created_at';
+    private const COLUMNS = 'a.id, a.actor_user_id, a.organization_id, a.action, a.entity_type, a.entity_id, a.before_json, a.after_json, a.created_at';
 
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for read queries
@@ -47,8 +47,13 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
         $params[] = $limit;
         $params[] = $offset;
 
+        // Resolve the actor's current email for display (the stored
+        // actor_user_id is immutable; this lookup is read-time only).
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM audit_logs WHERE ' . $where . ' ORDER BY id DESC LIMIT ? OFFSET ?',
+            'SELECT ' . self::COLUMNS . ', u.email AS actor_email
+             FROM audit_logs a
+             LEFT JOIN users u ON u.id = a.actor_user_id
+             WHERE ' . $where . ' ORDER BY a.id DESC LIMIT ? OFFSET ?',
             $params,
         );
 
@@ -59,7 +64,7 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
     {
         [$where, $params] = $this->buildWhere($filter);
 
-        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM audit_logs WHERE ' . $where, $params);
+        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM audit_logs a WHERE ' . $where, $params);
 
         return $row !== null ? (int) $row['cnt'] : 0;
     }
@@ -71,31 +76,33 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
      */
     private function buildWhere(AuditLogFilter $filter): array
     {
-        $conditions = ['organization_id = ?'];
+        // Columns are qualified with the `a` (audit_logs) alias because findAll
+        // joins `users` (both tables have organization_id / created_at).
+        $conditions = ['a.organization_id = ?'];
         $params = [$this->orgId->get()];
 
         if ($filter->entityType !== null) {
-            $conditions[] = 'entity_type = ?';
+            $conditions[] = 'a.entity_type = ?';
             $params[] = $filter->entityType;
         }
 
         if ($filter->action !== null) {
-            $conditions[] = 'action = ?';
+            $conditions[] = 'a.action = ?';
             $params[] = $filter->action;
         }
 
         if ($filter->actorUserId !== null) {
-            $conditions[] = 'actor_user_id = ?';
+            $conditions[] = 'a.actor_user_id = ?';
             $params[] = $filter->actorUserId;
         }
 
         if ($filter->createdFrom !== null) {
-            $conditions[] = 'created_at >= ?';
+            $conditions[] = 'a.created_at >= ?';
             $params[] = $filter->createdFrom;
         }
 
         if ($filter->createdTo !== null) {
-            $conditions[] = 'created_at <= ?';
+            $conditions[] = 'a.created_at <= ?';
             $params[] = $filter->createdTo;
         }
 
@@ -140,6 +147,7 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
             after: self::decode(isset($row['after_json']) ? (string) $row['after_json'] : null),
             id: (int) $row['id'],
             createdAt: (string) $row['created_at'],
+            actorEmail: isset($row['actor_email']) ? (string) $row['actor_email'] : null,
         );
     }
 }
