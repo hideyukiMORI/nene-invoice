@@ -124,133 +124,149 @@ export function EditCompanySettings() {
             {t('admin.settings.title')}
           </Text>
 
-          <Field
-            id="legal_name"
-            label={t('admin.settings.legalName')}
-            error={errors.legal_name ? t('admin.settings.legalNameRequired') : undefined}
-          >
-            <Input
-              id="legal_name"
-              aria-invalid={errors.legal_name ? true : undefined}
-              {...register('legal_name')}
-            />
-          </Field>
-
-          <Field id="address" label={t('admin.settings.address')}>
-            <Input id="address" {...register('address')} />
-          </Field>
-
-          <Field id="phone" label={t('admin.settings.phone')}>
-            <Input id="phone" type="tel" {...register('phone')} />
-          </Field>
-
-          <Field id="email" label={t('admin.settings.email')}>
-            <Input id="email" type="email" {...register('email')} />
-          </Field>
-
-          <Field id="registration_number" label={t('admin.settings.registrationNumber')}>
-            <Input
-              id="registration_number"
-              placeholder="T1234567890123"
-              {...register('registration_number')}
-            />
-            <Text variant="muted" className="text-caption">
-              {t('admin.settings.registrationNumberHint')}
-            </Text>
-          </Field>
-
-          <Text variant="heading-sm">{t('admin.settings.bankSection')}</Text>
-
-          <FormRow>
-            <Field id="bank_name" label={t('admin.settings.bankName')}>
-              <Input id="bank_name" {...register('bank_name')} />
-            </Field>
-            <Field id="bank_branch" label={t('admin.settings.bankBranch')}>
-              <Input id="bank_branch" {...register('bank_branch')} />
-            </Field>
-          </FormRow>
-
-          <FormRow>
-            <Field id="account_type" label={t('admin.settings.accountType')}>
-              <Input
-                id="account_type"
-                placeholder={t('admin.settings.accountTypePlaceholder')}
-                {...register('account_type')}
-              />
-            </Field>
-            <Field id="account_number" label={t('admin.settings.accountNumber')}>
-              <Input id="account_number" {...register('account_number')} />
-            </Field>
-          </FormRow>
-
-          <div className="field-sep" />
-          <Text variant="heading-sm">{t('admin.settings.billingSection')}</Text>
-
-          <Field id="default_quote_validity_days" label={t('admin.settings.quoteValidityDays')}>
-            <Input
-              id="default_quote_validity_days"
-              type="number"
-              min={1}
-              max={3650}
-              inputMode="numeric"
-              placeholder={t('admin.settings.quoteValidityPlaceholder')}
-              {...register('default_quote_validity_days')}
-            />
-            <Text variant="muted" className="text-caption">
-              {t('admin.settings.quoteValidityHint')}
-            </Text>
-          </Field>
-
-          <Text variant="muted" className="text-caption">
-            {t('admin.settings.paymentTermsHint')}
-          </Text>
-          <div className="pay-site">
-            <Field id="default_payment_closing_day" label={t('admin.settings.closingDay')}>
-              <Select id="default_payment_closing_day" {...register('default_payment_closing_day')}>
-                <option value="">{t('admin.settings.monthEnd')}</option>
-                {DAY_OPTIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {t('admin.settings.dayNth', { n: d })}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <div className="ps-arrow" aria-hidden="true">
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div className="card">
+            <div className="section-title">{t('admin.settings.basicSection')}</div>
+            <Stack gap="md">
+              <Field
+                id="legal_name"
+                label={t('admin.settings.legalName')}
+                error={errors.legal_name ? t('admin.settings.legalNameRequired') : undefined}
               >
-                <path d="M2 8h11M9 4l4 4-4 4" />
-              </svg>
-            </div>
-            <Field id="default_payment_month_offset" label={t('admin.settings.monthOffset')}>
-              <Select
-                id="default_payment_month_offset"
-                {...register('default_payment_month_offset')}
-              >
-                <option value="0">{t('admin.settings.offsetCurrent')}</option>
-                <option value="1">{t('admin.settings.offsetNext')}</option>
-                <option value="2">{t('admin.settings.offsetNext2')}</option>
-                <option value="">{t('admin.settings.paymentTermsOff')}</option>
-              </Select>
-            </Field>
-            <Field id="default_payment_pay_day" label={t('admin.settings.payDay')}>
-              <Select id="default_payment_pay_day" {...register('default_payment_pay_day')}>
-                <option value="">{t('admin.settings.monthEnd')}</option>
-                {DAY_OPTIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {t('admin.settings.dayNth', { n: d })}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+                <Input
+                  id="legal_name"
+                  aria-invalid={errors.legal_name ? true : undefined}
+                  {...register('legal_name')}
+                />
+              </Field>
+
+              <Field id="address" label={t('admin.settings.address')}>
+                <Input id="address" {...register('address')} />
+              </Field>
+
+              <FormRow>
+                <Field id="phone" label={t('admin.settings.phone')}>
+                  <Input id="phone" type="tel" {...register('phone')} />
+                </Field>
+                <Field id="email" label={t('admin.settings.email')}>
+                  <Input id="email" type="email" {...register('email')} />
+                </Field>
+              </FormRow>
+
+              <Field id="registration_number" label={t('admin.settings.registrationNumber')}>
+                <Input
+                  id="registration_number"
+                  placeholder="T1234567890123"
+                  {...register('registration_number')}
+                />
+                <Text variant="muted" className="text-caption">
+                  {t('admin.settings.registrationNumberHint')}
+                </Text>
+              </Field>
+            </Stack>
           </div>
 
-          <PayPreview control={state.form.control} />
+          <div className="card">
+            <div className="section-title">{t('admin.settings.bankSection')}</div>
+            <Stack gap="md">
+              <FormRow>
+                <Field id="bank_name" label={t('admin.settings.bankName')}>
+                  <Input id="bank_name" {...register('bank_name')} />
+                </Field>
+                <Field id="bank_branch" label={t('admin.settings.bankBranch')}>
+                  <Input id="bank_branch" {...register('bank_branch')} />
+                </Field>
+              </FormRow>
+
+              <FormRow>
+                <Field id="account_type" label={t('admin.settings.accountType')}>
+                  <Input
+                    id="account_type"
+                    placeholder={t('admin.settings.accountTypePlaceholder')}
+                    {...register('account_type')}
+                  />
+                </Field>
+                <Field id="account_number" label={t('admin.settings.accountNumber')}>
+                  <Input id="account_number" {...register('account_number')} />
+                </Field>
+              </FormRow>
+            </Stack>
+          </div>
+
+          <div className="card">
+            <div className="section-title">{t('admin.settings.billingSection')}</div>
+            <Stack gap="md">
+              <Field id="default_quote_validity_days" label={t('admin.settings.quoteValidityDays')}>
+                <Input
+                  id="default_quote_validity_days"
+                  type="number"
+                  min={1}
+                  max={3650}
+                  inputMode="numeric"
+                  placeholder={t('admin.settings.quoteValidityPlaceholder')}
+                  {...register('default_quote_validity_days')}
+                />
+                <Text variant="muted" className="text-caption">
+                  {t('admin.settings.quoteValidityHint')}
+                </Text>
+              </Field>
+
+              <div className="field-sep" />
+
+              <Text variant="muted" className="text-caption">
+                {t('admin.settings.paymentTermsHint')}
+              </Text>
+              <div className="pay-site">
+                <Field id="default_payment_closing_day" label={t('admin.settings.closingDay')}>
+                  <Select
+                    id="default_payment_closing_day"
+                    {...register('default_payment_closing_day')}
+                  >
+                    <option value="">{t('admin.settings.monthEnd')}</option>
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        {t('admin.settings.dayNth', { n: d })}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <div className="ps-arrow" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M2 8h11M9 4l4 4-4 4" />
+                  </svg>
+                </div>
+                <Field id="default_payment_month_offset" label={t('admin.settings.monthOffset')}>
+                  <Select
+                    id="default_payment_month_offset"
+                    {...register('default_payment_month_offset')}
+                  >
+                    <option value="0">{t('admin.settings.offsetCurrent')}</option>
+                    <option value="1">{t('admin.settings.offsetNext')}</option>
+                    <option value="2">{t('admin.settings.offsetNext2')}</option>
+                    <option value="">{t('admin.settings.paymentTermsOff')}</option>
+                  </Select>
+                </Field>
+                <Field id="default_payment_pay_day" label={t('admin.settings.payDay')}>
+                  <Select id="default_payment_pay_day" {...register('default_payment_pay_day')}>
+                    <option value="">{t('admin.settings.monthEnd')}</option>
+                    {DAY_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        {t('admin.settings.dayNth', { n: d })}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              </div>
+
+              <PayPreview control={state.form.control} />
+            </Stack>
+          </div>
 
           {state.errorMessage !== null && (
             <Text variant="muted" role="alert">

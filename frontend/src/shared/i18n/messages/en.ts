@@ -416,6 +416,7 @@ export const enMessages: MessageCatalog = {
   'admin.settings.title': 'Company Settings',
   'admin.settings.loading': 'Loading settings…',
   'admin.settings.loadError': 'Could not load settings.',
+  'admin.settings.basicSection': 'Basic info',
   'admin.settings.legalName': 'Legal name',
   'admin.settings.legalNameRequired': 'Legal name is required.',
   'admin.settings.address': 'Address',
