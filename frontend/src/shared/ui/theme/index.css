@@ -86,28 +86,39 @@
     white-space: nowrap;
   }
   .badge-neutral {
-    background: var(--color-neutral-soft);
-    color: var(--color-fg-muted);
+    background: var(--color-bdg-draft-bg);
+    color: var(--color-bdg-draft-fg);
+    border-color: color-mix(in oklch, var(--color-bdg-draft-fg) 20%, transparent);
   }
   .badge-info {
-    background: var(--color-info-soft);
-    color: var(--color-info);
+    background: var(--color-bdg-sent-bg);
+    color: var(--color-bdg-sent-fg);
+    border-color: color-mix(in oklch, var(--color-bdg-sent-fg) 22%, transparent);
   }
   .badge-ok {
-    background: var(--color-success-soft);
-    color: var(--color-success);
+    background: var(--color-bdg-acc-bg);
+    color: var(--color-bdg-acc-fg);
+    border-color: color-mix(in oklch, var(--color-bdg-acc-fg) 24%, transparent);
   }
   .badge-warn {
-    background: var(--color-warn-soft);
-    color: var(--color-warn);
+    background: var(--color-bdg-part-bg);
+    color: var(--color-bdg-part-fg);
+    border-color: color-mix(in oklch, var(--color-bdg-part-fg) 26%, transparent);
   }
   .badge-danger {
-    background: var(--color-danger-soft);
-    color: var(--color-danger);
+    background: var(--color-bdg-rej-bg);
+    color: var(--color-bdg-rej-fg);
+    border-color: color-mix(in oklch, var(--color-bdg-rej-fg) 26%, transparent);
   }
   .badge-brand {
     background: var(--color-accent-soft);
     color: var(--color-accent-hover);
+  }
+  /* Overdue stays a vivid functional flag (design 03), not a muted chip. */
+  .flag-overdue {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-danger);
   }
 
   /* Tabular numerals for amounts / document numbers */

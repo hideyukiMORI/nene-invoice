@@ -142,7 +142,7 @@ export function ViewDashboard() {
                       {t(`admin.invoices.status.${invoice.status}`)}
                     </Badge>
                     {invoice.is_overdue && (
-                      <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>
+                      <span className="flag-overdue">{t('admin.invoices.status.overdue')}</span>
                     )}
                   </div>
                   <div className="mini-right">

@@ -168,7 +168,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
           <Badge tone={invoiceStatusTone[invoice.status]}>
             {t(`admin.invoices.status.${invoice.status}`)}
           </Badge>
-          {invoice.is_overdue && <Badge tone="danger">{t('admin.invoices.status.overdue')}</Badge>}
+          {invoice.is_overdue && (
+            <span className="flag-overdue">{t('admin.invoices.status.overdue')}</span>
+          )}
           {invoice.is_qualified_invoice && (
             <Badge tone="brand">{t('admin.invoices.detail.qualified')}</Badge>
           )}
