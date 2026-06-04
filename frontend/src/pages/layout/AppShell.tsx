@@ -98,6 +98,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M7.5 13.5h5" />
     </>,
   ),
+  help: icon(
+    <>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M7.8 7.8a2.2 2.2 0 1 1 3 2.05c-.7.3-1 .7-1 1.45v.4" />
+      <path d="M9.8 14.2v.1" />
+    </>,
+  ),
   more: icon(
     <>
       <circle cx="4" cy="10" r="1.4" />
@@ -149,6 +156,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/users', label: 'admin.nav.users', iconKey: 'users' },
       { to: '/audit-logs', label: 'admin.nav.auditLogs', iconKey: 'audit' },
+      { to: '/help', label: 'admin.nav.help', iconKey: 'help' },
       { to: '/settings', label: 'admin.nav.settings', iconKey: 'settings' },
     ],
   },
@@ -169,7 +177,7 @@ const BOTTOM_TABS: BottomTab[] = [
   { to: '/clients', label: 'admin.bottomNav.clients', iconKey: 'clients' },
 ]
 /** Routes that live behind the 「メニュー」 tab (not direct bottom tabs). */
-const DRAWER_ROUTES = ['/users', '/audit-logs', '/settings']
+const DRAWER_ROUTES = ['/users', '/audit-logs', '/help', '/settings']
 
 interface BottomNavProps {
   pathname: string
