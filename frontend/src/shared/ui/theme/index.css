@@ -1146,6 +1146,13 @@
     gap: 0.5rem;
     margin-top: 0.6875rem;
   }
+  /* Full-width feedback banner placed *outside* a button row so a failing
+     action never stretches one button's column (Issue #266). Capped for
+     readability. */
+  .ar-banner {
+    width: 100%;
+    max-width: 640px;
+  }
   .alert-rich .ar-close {
     flex: none;
     width: 1.5rem;
