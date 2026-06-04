@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   EMPTY_INVOICE_FILTERS,
   INVOICE_STATUSES,
@@ -10,7 +10,7 @@ import {
   type InvoiceSortField,
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
-import { KbdHint } from '@/shared/keyboard'
+import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -36,11 +36,18 @@ const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? n
 /** Invoice list screen with search / filter / sort. */
 export function ListInvoices() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const view = useListInvoices()
   const exportInvoices = useExportInvoicesCsv()
   const exportPayments = useExportPaymentsCsv()
 
   const [draft, setDraft] = useState<InvoiceListFilters>(EMPTY_INVOICE_FILTERS)
+
+  const rows = view.state.kind === 'ready' ? view.state.invoices : []
+  const cursor = useRowCursor(rows.length, (index) => {
+    const row = rows[index]
+    if (row !== undefined) void navigate(`/invoices/${String(row.id)}`)
+  })
 
   const onSubmit = (event: SyntheticEvent): void => {
     event.preventDefault()
@@ -236,8 +243,12 @@ export function ListInvoices() {
                 </tr>
               </thead>
               <tbody>
-                {view.state.invoices.map((invoice) => (
-                  <tr key={invoice.id}>
+                {view.state.invoices.map((invoice, index) => (
+                  <tr
+                    key={invoice.id}
+                    data-kbd-row={index}
+                    className={cursor === index ? 'is-cursor' : undefined}
+                  >
                     <td data-label={t('admin.invoices.col.number')}>
                       <Link to={`/invoices/${String(invoice.id)}`} className="num text-accent">
                         {invoice.invoice_number ?? '—'}

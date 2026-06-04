@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ShortcutsOverlay } from './ShortcutsOverlay'
+import { KBD_LIST_EVENT, type RowCursorAction } from './use-row-cursor'
+
+function emitListAction(action: RowCursorAction): void {
+  document.dispatchEvent(new CustomEvent(KBD_LIST_EVENT, { detail: { action } }))
+}
 
 /** g-prefix sequence timeout (spec §02-D). */
 const G_TIMEOUT_MS = 1200
@@ -34,9 +39,10 @@ function isEditableTarget(target: EventTarget | null): boolean {
 
 /**
  * Global keyboard dispatcher (Issue #257, spec §02 contract A→E). Mounted once
- * inside the authenticated shell — never on the login screen. This phase wires
- * navigation (g-prefix), the ⌘/Ctrl+Enter submit chord, and the `?` overlay;
- * single-key actions and list/grid navigation arrive in later phases.
+ * inside the authenticated shell — never on the login screen. Wires navigation
+ * (g-prefix), the ⌘/Ctrl+Enter submit chord, the `?` overlay, single-key actions
+ * (n / /), and the list row cursor (j / k / o / Enter) via the `kbd:list` event.
+ * The line-item grid Enter is handled form-locally, not here.
  */
 export function KeyboardShortcuts() {
   const navigate = useNavigate()
@@ -147,7 +153,22 @@ export function KeyboardShortcuts() {
         return
       }
 
-      // List/grid navigation (j / k / o / Enter) lands in the next phase.
+      // Layer 4 — list row cursor. A mounted list (useRowCursor) consumes these;
+      // on other screens they are no-ops.
+      if (e.key === 'j' || e.key === 'k') {
+        e.preventDefault()
+        emitListAction(e.key === 'j' ? 'down' : 'up')
+        return
+      }
+      if (e.key === 'o') {
+        emitListAction('open')
+        return
+      }
+      // Enter opens the cursored row only when nothing interactive is focused —
+      // otherwise it must activate the focused control (button/link) normally.
+      if (e.key === 'Enter' && (e.target === document.body || e.target === null)) {
+        emitListAction('open')
+      }
     }
 
     document.addEventListener('keydown', onKeydown)

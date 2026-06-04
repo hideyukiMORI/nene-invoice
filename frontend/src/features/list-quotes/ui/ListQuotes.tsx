@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   EMPTY_QUOTE_FILTERS,
   QUOTE_STATUSES,
@@ -9,7 +9,7 @@ import {
   type QuoteStatus,
 } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
-import { KbdHint } from '@/shared/keyboard'
+import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -34,8 +34,15 @@ const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? n
 
 export function ListQuotes() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const view = useListQuotes()
   const [draft, setDraft] = useState<QuoteListFilters>(EMPTY_QUOTE_FILTERS)
+
+  const rows = view.state.kind === 'ready' ? view.state.quotes : []
+  const cursor = useRowCursor(rows.length, (index) => {
+    const row = rows[index]
+    if (row !== undefined) void navigate(`/quotes/${String(row.id)}`)
+  })
 
   const onSubmit = (event: SyntheticEvent): void => {
     event.preventDefault()
@@ -188,8 +195,12 @@ export function ListQuotes() {
                 </tr>
               </thead>
               <tbody>
-                {view.state.quotes.map((quote) => (
-                  <tr key={quote.id}>
+                {view.state.quotes.map((quote, index) => (
+                  <tr
+                    key={quote.id}
+                    data-kbd-row={index}
+                    className={cursor === index ? 'is-cursor' : undefined}
+                  >
                     <td data-label={t('admin.quotes.col.number')}>
                       <Link to={`/quotes/${String(quote.id)}`} className="num text-accent">
                         {quote.quote_number}
