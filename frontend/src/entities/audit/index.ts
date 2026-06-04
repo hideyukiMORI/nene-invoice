@@ -6,3 +6,9 @@ export {
   type AuditLogFilters,
   type AuditLogPage,
 } from './model'
+export {
+  AUDIT_ENTITY_TYPES,
+  AUDIT_ACTIONS,
+  auditEntityLabelKey,
+  auditActionLabelKey,
+} from './labels'
