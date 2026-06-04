@@ -7,6 +7,9 @@ import type { InvoiceId } from './ids'
  */
 export interface Invoice {
   id: InvoiceId
+  client_id: number
+  /** Client display name (list responses only; null elsewhere). */
+  client_name: string | null
   invoice_number: string | null
   status: InvoiceStatus
   /** Computed: issued/partially_paid and due_at is in the past. */
@@ -26,6 +29,34 @@ export interface InvoicePage {
   total: number
   limit: number
   offset: number
+}
+
+/** Applied search / filters for the admin invoice list. */
+export interface InvoiceListFilters {
+  q: string | null
+  statuses: InvoiceStatus[]
+  overdue: boolean
+  due_from: string | null
+  due_to: string | null
+  total_min: number | null
+  total_max: number | null
+}
+
+export const EMPTY_INVOICE_FILTERS: InvoiceListFilters = {
+  q: null,
+  statuses: [],
+  overdue: false,
+  due_from: null,
+  due_to: null,
+  total_min: null,
+  total_max: null,
+}
+
+export type InvoiceSortField = 'number' | 'client' | 'status' | 'issued_at' | 'due_at' | 'total'
+
+export interface InvoiceSort {
+  field: InvoiceSortField | null
+  order: 'asc' | 'desc'
 }
 
 /** One invoice line. Money is integer cents; tax rate is basis points. */

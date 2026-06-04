@@ -22,11 +22,13 @@ final class InvoiceResponse
         Invoice $invoice,
         ?array $lines = null,
         ?int $outstandingCents = null,
+        ?string $clientName = null,
     ): array {
         $data = [
             'id' => $invoice->id,
             'organization_id' => $invoice->organizationId,
             'client_id' => $invoice->clientId,
+            'client_name' => $clientName,
             'quote_id' => $invoice->quoteId,
             'invoice_number' => $invoice->invoiceNumber,
             'status' => $invoice->status->value,

@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { useInvoiceList, type Invoice } from '@/entities/invoice'
+import {
+  EMPTY_INVOICE_FILTERS,
+  useInvoiceList,
+  type Invoice,
+  type InvoiceListFilters,
+  type InvoiceSort,
+  type InvoiceSortField,
+} from '@/entities/invoice'
 
 const PAGE_SIZE = 20
 
@@ -17,31 +24,67 @@ export type ListInvoicesState =
   | { kind: 'loading' }
   | { kind: 'error'; retry: () => void }
   | { kind: 'empty' }
-  | { kind: 'ready'; invoices: Invoice[]; pagination: Pagination }
+  | { kind: 'ready'; invoices: Invoice[] }
 
-export function useListInvoices(): ListInvoicesState {
+export interface ListInvoicesView {
+  filters: InvoiceListFilters
+  applyFilters: (next: InvoiceListFilters) => void
+  resetFilters: () => void
+  sort: InvoiceSort
+  toggleSort: (field: InvoiceSortField) => void
+  pagination: Pagination
+  state: ListInvoicesState
+}
+
+export function useListInvoices(): ListInvoicesView {
+  const [filters, setFilters] = useState<InvoiceListFilters>(EMPTY_INVOICE_FILTERS)
+  const [sort, setSort] = useState<InvoiceSort>({ field: null, order: 'desc' })
   const [page, setPage] = useState(1)
-  const query = useInvoiceList({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE })
 
-  if (query.isPending) {
-    return { kind: 'loading' }
+  const query = useInvoiceList({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE, filters, sort })
+
+  const total = query.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const applyFilters = (next: InvoiceListFilters): void => {
+    setPage(1)
+    setFilters(next)
   }
-  if (query.isError) {
-    return {
+  const resetFilters = (): void => {
+    setPage(1)
+    setFilters(EMPTY_INVOICE_FILTERS)
+  }
+  const toggleSort = (field: InvoiceSortField): void => {
+    setPage(1)
+    setSort((current) =>
+      current.field === field
+        ? { field, order: current.order === 'asc' ? 'desc' : 'asc' }
+        : { field, order: 'asc' },
+    )
+  }
+
+  let state: ListInvoicesState
+  if (query.isPending) {
+    state = { kind: 'loading' }
+  } else if (query.isError) {
+    state = {
       kind: 'error',
       retry: () => {
         void query.refetch()
       },
     }
-  }
-  if (query.data.items.length === 0) {
-    return { kind: 'empty' }
+  } else if (query.data.items.length === 0) {
+    state = { kind: 'empty' }
+  } else {
+    state = { kind: 'ready', invoices: query.data.items }
   }
 
-  const totalPages = Math.max(1, Math.ceil(query.data.total / PAGE_SIZE))
   return {
-    kind: 'ready',
-    invoices: query.data.items,
+    filters,
+    applyFilters,
+    resetFilters,
+    sort,
+    toggleSort,
     pagination: {
       page,
       totalPages,
@@ -54,5 +97,6 @@ export function useListInvoices(): ListInvoicesState {
         setPage((p) => Math.min(totalPages, p + 1))
       },
     },
+    state,
   }
 }

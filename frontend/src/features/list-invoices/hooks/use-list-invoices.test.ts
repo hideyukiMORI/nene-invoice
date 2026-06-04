@@ -10,15 +10,15 @@ describe('useListInvoices', () => {
   it('starts loading then exposes the ready list', async () => {
     const { result } = renderHookWithProviders(() => useListInvoices())
 
-    expect(result.current.kind).toBe('loading')
+    expect(result.current.state.kind).toBe('loading')
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('ready')
+      expect(result.current.state.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
-      expect(result.current.invoices).toHaveLength(1)
-      expect(result.current.invoices[0]?.total_cents).toBe(116480)
+    if (result.current.state.kind === 'ready') {
+      expect(result.current.state.invoices).toHaveLength(1)
+      expect(result.current.state.invoices[0]?.total_cents).toBe(116480)
     }
   })
 
@@ -26,15 +26,13 @@ describe('useListInvoices', () => {
     const { result } = renderHookWithProviders(() => useListInvoices())
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('ready')
+      expect(result.current.state.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
-      expect(result.current.pagination.page).toBe(1)
-      expect(result.current.pagination.totalPages).toBe(1)
-      expect(result.current.pagination.hasPrev).toBe(false)
-      expect(result.current.pagination.hasNext).toBe(false)
-    }
+    expect(result.current.pagination.page).toBe(1)
+    expect(result.current.pagination.totalPages).toBe(1)
+    expect(result.current.pagination.hasPrev).toBe(false)
+    expect(result.current.pagination.hasNext).toBe(false)
   })
 
   it('exposes multi-page pagination and advances to page 2', async () => {
@@ -50,25 +48,62 @@ describe('useListInvoices', () => {
     const { result } = renderHookWithProviders(() => useListInvoices())
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('ready')
+      expect(result.current.state.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
-      expect(result.current.pagination.totalPages).toBe(2)
-      expect(result.current.pagination.hasNext).toBe(true)
-      expect(result.current.pagination.hasPrev).toBe(false)
+    expect(result.current.pagination.totalPages).toBe(2)
+    expect(result.current.pagination.hasNext).toBe(true)
+    expect(result.current.pagination.hasPrev).toBe(false)
 
-      act(() => {
-        result.current.pagination.nextPage()
-      })
-    }
+    act(() => {
+      result.current.pagination.nextPage()
+    })
 
     await waitFor(() => {
-      if (result.current.kind === 'ready') {
-        expect(result.current.pagination.page).toBe(2)
-        expect(result.current.pagination.hasPrev).toBe(true)
-        expect(result.current.pagination.hasNext).toBe(false)
-      }
+      expect(result.current.pagination.page).toBe(2)
+      expect(result.current.pagination.hasPrev).toBe(true)
+      expect(result.current.pagination.hasNext).toBe(false)
+    })
+  })
+
+  it('sends search / status / sort as query parameters', async () => {
+    const seen: string[] = []
+    server.use(
+      http.get('/admin/invoices', ({ request }) => {
+        seen.push(new URL(request.url).search)
+        return HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 })
+      }),
+    )
+
+    const { result } = renderHookWithProviders(() => useListInvoices())
+    await waitFor(() => {
+      expect(result.current.state.kind).toBe('empty')
+    })
+
+    act(() => {
+      result.current.applyFilters({
+        q: 'INV-001',
+        statuses: ['issued'],
+        overdue: true,
+        due_from: '2026-06-01',
+        due_to: '2026-06-30',
+        total_min: 1000,
+        total_max: 500000,
+      })
+    })
+    act(() => {
+      result.current.toggleSort('total')
+    })
+
+    await waitFor(() => {
+      const last = seen.at(-1) ?? ''
+      expect(last).toContain('q=INV-001')
+      expect(last).toContain('status=issued')
+      expect(last).toContain('overdue=1')
+      expect(last).toContain('due_from=2026-06-01')
+      expect(last).toContain('total_min=1000')
+      expect(last).toContain('sort=total')
+      expect(last).toContain('order=asc')
     })
   })
 
@@ -78,7 +113,7 @@ describe('useListInvoices', () => {
     const { result } = renderHookWithProviders(() => useListInvoices())
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('error')
+      expect(result.current.state.kind).toBe('error')
     })
   })
 
@@ -92,7 +127,7 @@ describe('useListInvoices', () => {
     const { result } = renderHookWithProviders(() => useListInvoices())
 
     await waitFor(() => {
-      expect(result.current.kind).toBe('empty')
+      expect(result.current.state.kind).toBe('empty')
     })
   })
 })

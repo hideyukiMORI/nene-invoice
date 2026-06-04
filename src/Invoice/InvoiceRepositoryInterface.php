@@ -30,6 +30,15 @@ interface InvoiceRepositoryInterface
     public function countFiltered(InvoiceListFilter $filter): int;
 
     /**
+     * Admin list: filtered + searched + sorted, joined with the client name.
+     *
+     * @return list<InvoiceListRow>
+     */
+    public function findForAdminList(InvoiceListFilter $filter, InvoiceSort $sort, int $limit, int $offset): array;
+
+    public function countForAdminList(InvoiceListFilter $filter): int;
+
+    /**
      * Returns counts and recent unpaid invoices for the dashboard in a single query.
      * `$now` is a comparable datetime string (e.g. `Y-m-d H:i:s`).
      *

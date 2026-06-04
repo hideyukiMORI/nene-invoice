@@ -7,8 +7,10 @@ namespace NeneInvoice\Tests\Support;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceListFilter;
+use NeneInvoice\Invoice\InvoiceListRow;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Invoice\InvoiceSort;
 use NeneInvoice\Invoice\InvoiceStatus;
 
 /**
@@ -86,6 +88,79 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     public function countFiltered(InvoiceListFilter $filter): int
     {
         return count($this->filtered($filter));
+    }
+
+    /**
+     * Admin list fake: applies the admin filters + sort. The fake has no client
+     * data, so search matches invoice_number only and clientName is empty (the
+     * client join is covered by the Pdo integration test).
+     *
+     * @return list<InvoiceListRow>
+     */
+    public function findForAdminList(InvoiceListFilter $filter, InvoiceSort $sort, int $limit, int $offset): array
+    {
+        $matches = $this->adminFiltered($filter);
+
+        usort($matches, static function (Invoice $a, Invoice $b) use ($sort): int {
+            $cmp = match ($sort->field) {
+                'number'    => strcmp((string) $a->invoiceNumber, (string) $b->invoiceNumber),
+                'status'    => strcmp($a->status->value, $b->status->value),
+                'issued_at' => strcmp((string) $a->issuedAt, (string) $b->issuedAt),
+                'due_at'    => strcmp((string) $a->dueAt, (string) $b->dueAt),
+                'total'     => $a->totalCents <=> $b->totalCents,
+                default     => ($a->id ?? 0) <=> ($b->id ?? 0),
+            };
+
+            return $sort->descending ? -$cmp : $cmp;
+        });
+
+        $page = array_slice($matches, $offset, $limit);
+
+        return array_map(static fn (Invoice $i): InvoiceListRow => new InvoiceListRow($i, ''), $page);
+    }
+
+    public function countForAdminList(InvoiceListFilter $filter): int
+    {
+        return count($this->adminFiltered($filter));
+    }
+
+    /** @return list<Invoice> */
+    private function adminFiltered(InvoiceListFilter $filter): array
+    {
+        $orgId = $this->orgId->get();
+        $today = $filter->todayOrNow();
+
+        return array_values(array_filter($this->byId, static function (Invoice $i) use ($orgId, $filter, $today): bool {
+            if ($i->organizationId !== $orgId || $i->isDeleted) {
+                return false;
+            }
+            if ($filter->statuses !== [] && !in_array($i->status->value, $filter->statuses, true)) {
+                return false;
+            }
+            if ($filter->search !== null && stripos((string) $i->invoiceNumber, $filter->search) === false) {
+                return false;
+            }
+            if ($filter->totalMin !== null && $i->totalCents < $filter->totalMin) {
+                return false;
+            }
+            if ($filter->totalMax !== null && $i->totalCents > $filter->totalMax) {
+                return false;
+            }
+            if ($filter->dueFrom !== null && ($i->dueAt === null || $i->dueAt < $filter->dueFrom)) {
+                return false;
+            }
+            if ($filter->dueTo !== null && ($i->dueAt === null || $i->dueAt > $filter->dueTo)) {
+                return false;
+            }
+            if ($filter->overdueOnly) {
+                $open = in_array($i->status, [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid], true);
+                if (!$open || $i->dueAt === null || $i->dueAt >= $today) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
     }
 
     /** @return list<Invoice> */

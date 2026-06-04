@@ -6,6 +6,8 @@ import type { Invoice, InvoicePage, InvoiceWithLines, LineItem } from './model'
 export function toInvoice(dto: InvoiceDto): Invoice {
   return {
     id: toInvoiceId(dto.id),
+    client_id: dto.client_id,
+    client_name: dto.client_name ?? null,
     invoice_number: dto.invoice_number ?? null,
     status: dto.status,
     is_overdue: dto.is_overdue,

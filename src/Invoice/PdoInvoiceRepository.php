@@ -84,6 +84,135 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     }
 
     /**
+     * Admin list: filtered + searched + sorted, joined with the client name.
+     *
+     * @return list<InvoiceListRow>
+     */
+    public function findForAdminList(InvoiceListFilter $filter, InvoiceSort $sort, int $limit, int $offset): array
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT i.id, i.organization_id, i.client_id, i.quote_id, i.invoice_number, i.status,
+                    i.is_qualified_invoice, i.issued_at, i.due_at, i.subtotal_cents, i.tax_cents,
+                    i.total_cents, i.notes, i.is_deleted, i.created_at, i.updated_at,
+                    COALESCE(c.name, \'\') AS client_name
+             FROM invoices i
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             WHERE ' . $where . '
+             ORDER BY ' . self::orderByClause($sort) . '
+             LIMIT ? OFFSET ?',
+            [...$params, $limit, $offset],
+        );
+
+        return array_map(
+            fn (array $row): InvoiceListRow => new InvoiceListRow(
+                $this->mapRow($row),
+                (string) ($row['client_name'] ?? ''),
+            ),
+            $rows,
+        );
+    }
+
+    public function countForAdminList(InvoiceListFilter $filter): int
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $row = $this->query->fetchOne(
+            'SELECT COUNT(*) AS cnt
+             FROM invoices i
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             WHERE ' . $where,
+            $params,
+        );
+
+        return $row !== null ? (int) $row['cnt'] : 0;
+    }
+
+    /**
+     * Admin WHERE: columns qualified with the `i` (invoices) / `c` (clients)
+     * aliases because the admin query joins clients (search / sort by name).
+     *
+     * @return array{0: string, 1: list<int|string>}
+     */
+    private function buildAdminWhere(InvoiceListFilter $filter): array
+    {
+        $clauses = ['i.organization_id = ?', 'i.is_deleted = 0'];
+        /** @var list<int|string> $params */
+        $params = [$this->orgId->get()];
+
+        if ($filter->statuses !== []) {
+            $placeholders = implode(', ', array_fill(0, count($filter->statuses), '?'));
+            $clauses[] = 'i.status IN (' . $placeholders . ')';
+            foreach ($filter->statuses as $status) {
+                $params[] = $status;
+            }
+        }
+
+        if ($filter->search !== null) {
+            $clauses[] = "(i.invoice_number LIKE ? ESCAPE '!' OR c.name LIKE ? ESCAPE '!')";
+            $like = '%' . self::escapeLike($filter->search) . '%';
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        if ($filter->dueFrom !== null) {
+            $clauses[] = 'i.due_at IS NOT NULL AND i.due_at >= ?';
+            $params[] = $filter->dueFrom;
+        }
+
+        if ($filter->dueTo !== null) {
+            $clauses[] = 'i.due_at IS NOT NULL AND i.due_at <= ?';
+            $params[] = $filter->dueTo;
+        }
+
+        if ($filter->totalMin !== null) {
+            $clauses[] = 'i.total_cents >= ?';
+            $params[] = $filter->totalMin;
+        }
+
+        if ($filter->totalMax !== null) {
+            $clauses[] = 'i.total_cents <= ?';
+            $params[] = $filter->totalMax;
+        }
+
+        if ($filter->overdueOnly) {
+            $clauses[] = "i.status IN ('issued', 'partially_paid')";
+            $clauses[] = 'i.due_at IS NOT NULL AND i.due_at < ?';
+            $params[] = $filter->todayOrNow();
+        }
+
+        return [implode(' AND ', $clauses), $params];
+    }
+
+    /** Maps a whitelisted sort field to a SQL ORDER BY, with `i.id` as tiebreak. */
+    private static function orderByClause(InvoiceSort $sort): string
+    {
+        $columns = [
+            'number'    => 'i.invoice_number',
+            'client'    => 'c.name',
+            'status'    => 'i.status',
+            'issued_at' => 'i.issued_at',
+            'due_at'    => 'i.due_at',
+            'total'     => 'i.total_cents',
+        ];
+
+        $direction = $sort->descending ? 'DESC' : 'ASC';
+
+        if ($sort->field === null || !isset($columns[$sort->field])) {
+            return 'i.id ' . $direction;
+        }
+
+        return $columns[$sort->field] . ' ' . $direction . ', i.id DESC';
+    }
+
+    /** Escapes LIKE wildcards (ESCAPE '!') so user input is matched literally. */
+    private static function escapeLike(string $value): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+    }
+
+    /**
      * @return array{0: string, 1: list<int|string>}
      */
     private function buildWhere(InvoiceListFilter $filter): array

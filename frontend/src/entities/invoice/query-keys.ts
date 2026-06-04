@@ -1,6 +1,10 @@
+import type { InvoiceListFilters, InvoiceSort } from './model'
+
 export interface InvoiceListParams {
   limit: number
   offset: number
+  filters: InvoiceListFilters
+  sort: InvoiceSort
 }
 
 /** Hierarchical, typed query keys — features never write key strings. */

@@ -760,9 +760,22 @@ paths:
       tags: [Invoices]
       summary: List invoices
       operationId: listInvoices
+      description: >
+        Lists invoices with optional search / filters / sort (admin). `q` matches
+        invoice number or client name; `status` is a comma-separated subset;
+        `sort` ∈ number|client|status|issued_at|due_at|total with `order` asc|desc.
       parameters:
         - $ref: '#/components/parameters/LimitParam'
         - $ref: '#/components/parameters/OffsetParam'
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: status, in: query, required: false, schema: { type: string } }
+        - { name: overdue, in: query, required: false, schema: { type: string, enum: ['1'] } }
+        - { name: due_from, in: query, required: false, schema: { type: string } }
+        - { name: due_to, in: query, required: false, schema: { type: string } }
+        - { name: total_min, in: query, required: false, schema: { type: integer } }
+        - { name: total_max, in: query, required: false, schema: { type: integer } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [number, client, status, issued_at, due_at, total] } }
+        - { name: order, in: query, required: false, schema: { type: string, enum: [asc, desc] } }
       responses:
         '200':
           description: Invoice page
@@ -1519,6 +1532,9 @@ components:
           type: integer
         client_id:
           type: integer
+        client_name:
+          type: [string, 'null']
+          description: Client display name (list responses only; null elsewhere).
         quote_id:
           type: [integer, 'null']
         invoice_number:
