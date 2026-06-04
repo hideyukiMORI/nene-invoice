@@ -418,6 +418,7 @@ export const jaMessages = {
   'admin.settings.title': '会社設定',
   'admin.settings.loading': '設定を読み込み中…',
   'admin.settings.loadError': '設定を取得できませんでした。',
+  'admin.settings.basicSection': '基本情報',
   'admin.settings.legalName': '法人名',
   'admin.settings.legalNameRequired': '法人名は必須です。',
   'admin.settings.address': '住所',
