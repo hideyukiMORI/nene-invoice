@@ -275,6 +275,7 @@ export const jaMessages = {
   'admin.invoices.create.addLine': '明細を追加',
   'admin.invoices.create.removeLine': '削除',
   'admin.invoices.create.notes': '備考',
+  'admin.invoices.create.notesPlaceholder': 'お振込手数料は貴社にてご負担ください。',
   'admin.invoices.create.submit': '作成する',
   'admin.invoices.create.submitting': '作成中…',
   'admin.invoices.create.error': '請求書を作成できませんでした。入力内容を確認してください。',

@@ -183,6 +183,123 @@
     gap: 0.875rem;
   }
 
+  /* ============================================================
+     DOCUMENT FORM (invoice / quote create) — final spec
+     ============================================================ */
+  .card {
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+    padding: 1.25rem;
+  }
+  .section-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-fg);
+    margin-bottom: 0.75rem;
+  }
+
+  /* line-item editor grid (品目 | 数量 | 単価 | 税率 | 金額 | 削除) */
+  .line-grid {
+    width: 100%;
+  }
+  .line-head,
+  .line-row {
+    display: grid;
+    grid-template-columns: 1fr 70px 110px 78px 116px 34px;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .line-head {
+    font-size: 0.65625rem;
+    font-weight: 600;
+    color: var(--color-fg-muted);
+    padding-bottom: 0.4375rem;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 0.5625rem;
+    letter-spacing: 0.02em;
+  }
+  .line-head .tr {
+    text-align: right;
+  }
+  .line-row {
+    margin-bottom: 0.5rem;
+  }
+  .line-amt {
+    text-align: right;
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78125rem;
+    font-weight: 600;
+  }
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-surface-raised);
+    color: var(--color-fg-muted);
+    cursor: pointer;
+  }
+  .icon-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .icon-btn:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+  }
+
+  /* notes (left) + totals (right) two-column foot */
+  .note-totals-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.125rem;
+    align-items: start;
+  }
+
+  /* totals summary */
+  .totals {
+    width: 100%;
+  }
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.375rem 0;
+    font-size: 0.78125rem;
+  }
+  .totals-row .t-label {
+    color: var(--color-fg-muted);
+  }
+  .totals-row .t-val {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+  .totals-row.grand {
+    border-top: 2px solid var(--color-border-strong);
+    margin-top: 0.375rem;
+    padding-top: 0.6875rem;
+  }
+  .totals-row.grand .t-label {
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .totals-row.grand .t-val {
+    font-size: 1.1875rem;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+
+  /* right-aligned form action row */
+  .form-actions-end {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+
   /* Audit-log filter bar: wraps responsively without JSX breakpoints */
   .audit-filters {
     display: grid;
@@ -781,6 +898,37 @@
     .data-table td:first-child {
       font-weight: 600;
       color: var(--color-fg);
+    }
+
+    /* line-item editor → stacked card (no horizontal scroll) */
+    .line-head {
+      display: none;
+    }
+    .line-row {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      margin-bottom: 0.625rem;
+      border: 1px solid var(--color-border);
+    }
+    .line-row > input:first-child {
+      grid-column: 1 / -1;
+    }
+    .line-row .line-amt {
+      grid-column: 1 / 2;
+      align-self: center;
+      text-align: left;
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+    .line-row .icon-btn {
+      grid-column: 2 / 3;
+      justify-self: end;
+    }
+
+    /* notes + totals stack */
+    .note-totals-grid {
+      grid-template-columns: 1fr;
     }
   }
 
