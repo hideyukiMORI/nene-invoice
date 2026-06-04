@@ -8,6 +8,7 @@ import { invoiceKeys, useInvoice, type InvoiceId } from '@/entities/invoice'
 import { usePaymentList, useRecordPayment, type Payment } from '@/entities/payment'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
+import { useToast } from '@/shared/ui'
 
 export const PAYMENT_METHODS = ['bank_transfer', 'cash', 'other'] as const
 
@@ -41,6 +42,7 @@ export interface UseManagePayments {
 
 export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const queryClient = useQueryClient()
   const invoice = useInvoice(invoiceId)
   const payments = usePaymentList(invoiceId)
@@ -75,6 +77,13 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
           form.reset({ amount_cents: 0, method: '', note: '' })
           void queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(invoiceId) })
           void queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() })
+          showToast({
+            tone: 'ok',
+            title: t('admin.payments.record.successTitle'),
+            description: t('admin.payments.record.successBody', {
+              amount: formatYen(values.amount_cents),
+            }),
+          })
         },
       },
     )
@@ -87,6 +96,17 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
   const confirmTitle = t('admin.payments.record.confirmTitle', {
     amount: formatYen(pending?.amount_cents ?? 0),
   })
+
+  // A 422 means the amount was rejected (most often over-payment); surface the
+  // remaining balance when we know it. Other failures (network, 5xx) stay
+  // generic so we never claim a cause we can't confirm.
+  const outstandingCents = invoice.data?.outstanding_cents ?? null
+  const errorMessage =
+    record.error !== null
+      ? record.error.status === 422 && outstandingCents !== null
+        ? t('admin.payments.record.errorOverpay', { balance: formatYen(outstandingCents) })
+        : t('admin.payments.record.error')
+      : null
 
   return {
     visible: status !== undefined && status !== 'draft',
@@ -104,6 +124,6 @@ export function useManagePayments(invoiceId: InvoiceId): UseManagePayments {
     onConfirm,
     onCancel,
     isRecording: record.isPending,
-    errorMessage: record.isError ? t('admin.payments.record.error') : null,
+    errorMessage,
   }
 }

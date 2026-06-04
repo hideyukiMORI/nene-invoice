@@ -319,7 +319,11 @@ export const jaMessages = {
   'admin.invoices.create.invalid': '入力内容に誤りがあります。',
   'admin.invoices.issue.action': '発行する（適格請求書）',
   'admin.invoices.issue.submitting': '発行中…',
-  'admin.invoices.issue.error': '発行できませんでした。会社情報の登録番号を確認してください。',
+  'admin.invoices.issue.error': '発行できませんでした。会社情報の登録番号をご確認ください。',
+  'admin.invoices.issue.recover': '会社設定を開く →',
+  'admin.invoices.issue.successTitle': '発行しました',
+  'admin.invoices.issue.successBody': '{{number}} を発行しました。',
+  'admin.invoices.issue.successBodyNoNumber': '請求書を発行しました。',
   'admin.invoices.issue.confirmTitle': '請求書を発行しますか？',
   'admin.invoices.issue.confirmMessage':
     '発行すると番号が採番され、内容は確定（変更不可）になります。',
@@ -343,8 +347,11 @@ export const jaMessages = {
   'admin.payments.record.submitting': '記録中…',
   'admin.payments.record.confirmTitle': '{{amount}} を入金として記録しますか？',
   'admin.payments.record.confirmMessage': '記録すると請求書の入金状態が更新されます。',
-  'admin.payments.record.error':
-    '入金を記録できませんでした。金額（過入金でないか）を確認してください。',
+  'admin.payments.record.error': '入金を記録できませんでした。入力内容をご確認ください。',
+  'admin.payments.record.errorOverpay':
+    '入金を記録できませんでした。金額が残高（{{balance}}）を超えています。',
+  'admin.payments.record.successTitle': '入金を記録しました',
+  'admin.payments.record.successBody': '{{amount}} を記録しました。',
   'admin.payments.record.invalid': '金額を正しく入力してください。',
   'admin.dashboard.title': 'ダッシュボード',
   'admin.dashboard.loading': '読み込み中…',
