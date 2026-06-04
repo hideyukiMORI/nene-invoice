@@ -22,6 +22,7 @@ import {
   LinkButton,
   LoadingState,
   Select,
+  SortableTh,
   Stack,
   Text,
 } from '@/shared/ui'
@@ -58,22 +59,16 @@ export function ListInvoices() {
     view.resetFilters()
   }
 
-  const sortIndicator = (field: InvoiceSortField): string =>
-    view.sort.field === field ? (view.sort.order === 'asc' ? ' ▲' : ' ▼') : ''
-
   const sortableTh = (field: InvoiceSortField, label: string, right = false): ReactNode => (
-    <th className={right ? 'tr' : undefined}>
-      <button
-        type="button"
-        className="th-sort"
-        onClick={() => {
-          view.toggleSort(field)
-        }}
-      >
-        {label}
-        {sortIndicator(field)}
-      </button>
-    </th>
+    <SortableTh
+      label={label}
+      active={view.sort.field === field}
+      order={view.sort.order}
+      right={right}
+      onToggle={() => {
+        view.toggleSort(field)
+      }}
+    />
   )
 
   return (
