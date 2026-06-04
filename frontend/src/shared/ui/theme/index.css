@@ -162,6 +162,17 @@
     align-items: start;
   }
 
+  /* Form layout: constrained, left-aligned column + even paired-field rows */
+  .form-layout {
+    width: 100%;
+    max-width: 40rem;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.875rem;
+  }
+
   /* Audit-log filter bar: wraps responsively without JSX breakpoints */
   .audit-filters {
     display: grid;
@@ -622,6 +633,13 @@
       grid-template-columns: 1fr;
     }
     .audit-diff {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* collapse paired form fields on narrow viewports */
+  @media (max-width: 640px) {
+    .form-row {
       grid-template-columns: 1fr;
     }
   }
