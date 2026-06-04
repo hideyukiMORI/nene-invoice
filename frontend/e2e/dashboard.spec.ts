@@ -33,6 +33,12 @@ test.describe('Dashboard', () => {
         received_this_month_cents: 80000,
         received_last_month_cents: 50000,
         aging: { current: 100000, overdue_1_30: 100000, overdue_31_plus: 50000 },
+        billed_this_month_cents: 330000,
+        billed_last_month_cents: 210000,
+        monthly_billed: [
+          { month: '2026-05', billed_cents: 210000, count: 3 },
+          { month: '2026-06', billed_cents: 330000, count: 4 },
+        ],
       },
     })
 
