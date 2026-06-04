@@ -271,6 +271,7 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.create.addLine': 'Add line',
   'admin.invoices.create.removeLine': 'Remove',
   'admin.invoices.create.notes': 'Notes',
+  'admin.invoices.create.notesPlaceholder': 'Please cover any transfer fees on your end.',
   'admin.invoices.create.submit': 'Create',
   'admin.invoices.create.submitting': 'Creating…',
   'admin.invoices.create.error': 'Could not create the invoice. Check your input.',
