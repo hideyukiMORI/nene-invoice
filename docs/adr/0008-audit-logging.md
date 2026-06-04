@@ -48,6 +48,14 @@ A dedicated `audit_logs` table records one row per mutating operation:
   snapshots.
 - **All create / update / delete operations** record an entry. Reads are not
   audited. Soft deletes record a `*.deleted` action with the before snapshot.
+- **Non-CRUD state-changing events are also recorded** when they are
+  business-meaningful and compliance-relevant, using the same `{entity}.{verb}`
+  convention with `before = null`:
+  - `invoice.sent` — the invoice PDF was emailed to the client; `after` is the
+    sanitized invoice snapshot (proof of the content that went out).
+  - `invoice.download_token_issued` — a time-limited public download link was
+    generated; `after` carries only the non-secret `expires_at`. The raw token
+    and its SHA-256 hash are **never** written to the audit trail.
 - New domains (quotes, invoices, payments, …) record audit from the start.
 
 ## Consequences

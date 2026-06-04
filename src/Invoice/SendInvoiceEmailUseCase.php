@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettings;
@@ -33,16 +34,19 @@ final readonly class SendInvoiceEmailUseCase
         private CompanySettingsRepositoryInterface $companySettings,
         private InvoicePdfGeneratorInterface $pdfGenerator,
         private MailerInterface $mailer,
+        private AuditRecorderInterface $audit,
         private RequestScopedHolder $orgId,
         private string $fromName,
     ) {
     }
 
     /**
+     * @param int|null $actorUserId authenticated user who triggered the send (null for system)
+     *
      * @throws InvoiceNotFoundException
      * @throws InvoiceEmailException
      */
-    public function execute(int $invoiceId): void
+    public function execute(?int $actorUserId, int $invoiceId): void
     {
         $organizationId = $this->orgId->get();
 
@@ -96,5 +100,18 @@ final readonly class SendInvoiceEmailUseCase
             attachmentName: preg_replace('/[^A-Za-z0-9\-_]/', '_', $invoiceNumber) . '.pdf',
             attachmentMime: 'application/pdf',
         ));
+
+        // Audit (ADR 0008): record the send as an auditable event. `after` is the
+        // sanitized snapshot of the invoice content that was sent (proof of what
+        // went out); `before` is null because no entity state changed.
+        $this->audit->record(
+            $actorUserId,
+            $organizationId,
+            'invoice.sent',
+            'invoice',
+            $invoiceId,
+            null,
+            InvoiceResponse::toArray($invoice, $lines),
+        );
     }
 }

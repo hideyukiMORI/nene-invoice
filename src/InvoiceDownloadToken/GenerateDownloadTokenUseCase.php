@@ -6,6 +6,7 @@ namespace NeneInvoice\InvoiceDownloadToken;
 
 use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 
@@ -24,15 +25,18 @@ final readonly class GenerateDownloadTokenUseCase
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private InvoiceDownloadTokenRepositoryInterface $tokens,
+        private AuditRecorderInterface $audit,
         private RequestScopedHolder $orgId,
     ) {
     }
 
     /**
+     * @param int|null $actorUserId authenticated user who generated the token (null for system)
+     *
      * @return array{rawToken: string, expiresAt: string}
      * @throws InvoiceNotFoundException
      */
-    public function execute(int $invoiceId): array
+    public function execute(?int $actorUserId, int $invoiceId): array
     {
         // The invoice repository is org-scoped (holder), so a foreign invoice
         // is already invisible here.
@@ -57,6 +61,19 @@ final readonly class GenerateDownloadTokenUseCase
             expiresAt: $expiresAt,
             createdAt: $createdAt,
         ));
+
+        // Audit (ADR 0008): issuing a public download link is an auditable event.
+        // `after` carries only the non-secret expiry — the raw token and its hash
+        // are never written to the audit trail.
+        $this->audit->record(
+            $actorUserId,
+            $organizationId,
+            'invoice.download_token_issued',
+            'invoice',
+            $invoiceId,
+            null,
+            ['expires_at' => $expiresAt],
+        );
 
         return ['rawToken' => $rawToken, 'expiresAt' => $expiresAt];
     }
