@@ -205,7 +205,7 @@ export function ListQuotes() {
                       </Link>
                     </td>
                     <td data-label={t('admin.quotes.col.status')}>
-                      <Badge tone={quoteStatusTone[quote.status]}>
+                      <Badge tone={quoteStatusTone[quote.status]} className="badge-status">
                         {t(`admin.quotes.status.${quote.status}`)}
                       </Badge>
                     </td>

@@ -254,7 +254,7 @@ export function ListInvoices() {
                     </td>
                     <td data-label={t('admin.invoices.col.status')}>
                       <span className="flex items-center gap-inline-xs">
-                        <Badge tone={invoiceStatusTone[invoice.status]}>
+                        <Badge tone={invoiceStatusTone[invoice.status]} className="badge-status">
                           {t(`admin.invoices.status.${invoice.status}`)}
                         </Badge>
                         {invoice.is_overdue && (

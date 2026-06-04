@@ -116,7 +116,7 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
         )}
 
         <Stack direction="row" gap="md">
-          <Badge tone={quoteStatusTone[quote.status]}>
+          <Badge tone={quoteStatusTone[quote.status]} className="badge-status">
             {t(`admin.quotes.status.${quote.status}`)}
           </Badge>
           {quote.issued_at !== null && (
