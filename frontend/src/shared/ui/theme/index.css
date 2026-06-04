@@ -8,7 +8,8 @@
 }
 
 @layer components {
-  /* Case C — ruled, dense data table */
+  /* Case C — ruled, dense data table (spec .tbl). The outer box is .table-scroll
+     (spec .tbl-wrap); cells are ruled with vertical hairlines. */
   .data-table {
     width: 100%;
     border-collapse: collapse;
@@ -17,12 +18,12 @@
   .data-table thead th {
     text-align: left;
     font-weight: 600;
-    font-size: var(--text-caption);
+    font-size: 0.625rem; /* 10px — spec dir-c th */
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     color: var(--color-fg-muted);
     background: var(--color-surface-overlay);
-    padding: 0.5rem 0.75rem;
+    padding: 0.5625rem 0.5625rem; /* 9px */
     border-bottom: 1px solid var(--color-border-strong);
     white-space: nowrap;
   }
@@ -30,12 +31,25 @@
     text-align: right;
   }
   .data-table tbody td {
-    padding: 0.4375rem 0.75rem;
+    padding: 0.25rem 0.5625rem; /* 4px 9px — spec dir-c row padding (dense) */
     border-bottom: 1px solid var(--color-border);
     vertical-align: middle;
   }
   .data-table tbody td.tr {
     text-align: right;
+  }
+  /* vertical cell ruling (spec: .dir-c .tbl td/th { border-right }) */
+  .data-table th,
+  .data-table td {
+    border-right: 1px solid var(--color-border);
+  }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    border-right: none;
+  }
+  /* the outer .table-scroll box provides the bottom edge */
+  .data-table tbody tr:last-child td {
+    border-bottom: none;
   }
   .data-table tbody tr:nth-child(even) {
     background: var(--color-surface-overlay);
@@ -733,8 +747,13 @@
   .side-backdrop {
     display: none;
   }
+  /* Spec .tbl-wrap: the table sits inside a bordered box (square, no radius). */
   .table-scroll {
     width: 100%;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
   }
 
   /* ============================================================
