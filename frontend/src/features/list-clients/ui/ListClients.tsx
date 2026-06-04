@@ -154,15 +154,15 @@ export function ListClients() {
                       >
                         {t('admin.clients.editButton')}
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
+                        type="button"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-body text-danger"
                         onClick={() => {
                           setPendingDelete(client)
                         }}
                       >
                         {t('admin.clients.delete.action')}
-                      </Button>
+                      </button>
                     </Stack>
                   </td>
                 </tr>

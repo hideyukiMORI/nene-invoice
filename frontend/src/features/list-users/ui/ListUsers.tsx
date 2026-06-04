@@ -6,7 +6,6 @@ import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import {
   Badge,
   type BadgeTone,
-  Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
@@ -108,15 +107,15 @@ export function ListUsers() {
                       <Link to={`/users/${String(user.id)}/edit`} className="text-body text-accent">
                         {t('admin.users.editButton')}
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <button
+                        type="button"
+                        className="cursor-pointer border-0 bg-transparent p-0 text-body text-danger"
                         onClick={() => {
                           setPendingDelete(user)
                         }}
                       >
                         {t('admin.users.delete.action')}
-                      </Button>
+                      </button>
                     </Stack>
                   </td>
                 </tr>
