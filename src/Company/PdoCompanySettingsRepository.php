@@ -9,7 +9,7 @@ use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoCompanySettingsRepository implements CompanySettingsRepositoryInterface
 {
-    private const COLUMNS = 'organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, created_at, updated_at';
+    private const COLUMNS = 'organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, default_quote_validity_days, default_payment_closing_day, default_payment_month_offset, default_payment_pay_day, created_at, updated_at';
 
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
@@ -39,7 +39,7 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
 
         if ($exists) {
             $this->query->execute(
-                'UPDATE company_settings SET legal_name = ?, address = ?, phone = ?, email = ?, registration_number = ?, bank_name = ?, bank_branch = ?, account_type = ?, account_number = ?, logo_url = ?, updated_at = ? WHERE organization_id = ?',
+                'UPDATE company_settings SET legal_name = ?, address = ?, phone = ?, email = ?, registration_number = ?, bank_name = ?, bank_branch = ?, account_type = ?, account_number = ?, logo_url = ?, default_quote_validity_days = ?, default_payment_closing_day = ?, default_payment_month_offset = ?, default_payment_pay_day = ?, updated_at = ? WHERE organization_id = ?',
                 [
                     $settings->legalName,
                     $settings->address,
@@ -51,6 +51,10 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
                     $settings->accountType,
                     $settings->accountNumber,
                     $settings->logoUrl,
+                    $settings->defaultQuoteValidityDays,
+                    $settings->defaultPaymentClosingDay,
+                    $settings->defaultPaymentMonthOffset,
+                    $settings->defaultPaymentPayDay,
                     $now,
                     $organizationId,
                 ],
@@ -60,8 +64,8 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
         }
 
         $this->query->execute(
-            'INSERT INTO company_settings (organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO company_settings (organization_id, legal_name, address, phone, email, registration_number, bank_name, bank_branch, account_type, account_number, logo_url, default_quote_validity_days, default_payment_closing_day, default_payment_month_offset, default_payment_pay_day, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $organizationId,
                 $settings->legalName,
@@ -74,6 +78,10 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
                 $settings->accountType,
                 $settings->accountNumber,
                 $settings->logoUrl,
+                $settings->defaultQuoteValidityDays,
+                $settings->defaultPaymentClosingDay,
+                $settings->defaultPaymentMonthOffset,
+                $settings->defaultPaymentPayDay,
                 $now,
                 $now,
             ],
@@ -95,6 +103,10 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
             accountType: $this->nullableString($row['account_type'] ?? null),
             accountNumber: $this->nullableString($row['account_number'] ?? null),
             logoUrl: $this->nullableString($row['logo_url'] ?? null),
+            defaultQuoteValidityDays: $this->nullableInt($row['default_quote_validity_days'] ?? null),
+            defaultPaymentClosingDay: $this->nullableInt($row['default_payment_closing_day'] ?? null),
+            defaultPaymentMonthOffset: $this->nullableInt($row['default_payment_month_offset'] ?? null),
+            defaultPaymentPayDay: $this->nullableInt($row['default_payment_pay_day'] ?? null),
             createdAt: (string) $row['created_at'],
             updatedAt: (string) $row['updated_at'],
         );
@@ -103,5 +115,10 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
     private function nullableString(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return $value === null || $value === '' ? null : (int) $value;
     }
 }

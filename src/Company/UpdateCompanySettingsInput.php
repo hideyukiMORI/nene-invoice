@@ -17,6 +17,10 @@ final readonly class UpdateCompanySettingsInput
         public ?string $accountType = null,
         public ?string $accountNumber = null,
         public ?string $logoUrl = null,
+        public ?int $defaultQuoteValidityDays = null,
+        public ?int $defaultPaymentClosingDay = null,
+        public ?int $defaultPaymentMonthOffset = null,
+        public ?int $defaultPaymentPayDay = null,
     ) {
     }
 }

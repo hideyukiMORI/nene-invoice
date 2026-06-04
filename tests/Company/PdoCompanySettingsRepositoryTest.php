@@ -66,6 +66,10 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
             bankBranch: '渋谷支店',
             accountType: '普通',
             accountNumber: '1234567',
+            defaultQuoteValidityDays: 30,
+            defaultPaymentClosingDay: 20,
+            defaultPaymentMonthOffset: 1,
+            defaultPaymentPayDay: null,
         );
 
         $this->repo->save($settings);
@@ -76,6 +80,11 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
         self::assertSame('T1234567890123', $found->registrationNumber);
         self::assertSame('テスト銀行', $found->bankName);
         self::assertSame('1234567', $found->accountNumber);
+        // Billing defaults round-trip, including null pay-day = 末日 (Issue #268).
+        self::assertSame(30, $found->defaultQuoteValidityDays);
+        self::assertSame(20, $found->defaultPaymentClosingDay);
+        self::assertSame(1, $found->defaultPaymentMonthOffset);
+        self::assertNull($found->defaultPaymentPayDay);
     }
 
     public function test_save_updates_existing_record(): void
