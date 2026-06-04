@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import type { MonthlyBilled } from '@/entities/dashboard'
+import type { DailyBilled, MonthlyBilled } from '@/entities/dashboard'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { cn } from '@/shared/lib/cn'
@@ -12,6 +12,7 @@ import { useViewDashboard } from '../hooks/use-view-dashboard'
 export function ViewDashboard() {
   const { t, locale } = useTranslation()
   const state = useViewDashboard()
+  const [trendView, setTrendView] = useState<'monthly' | 'daily'>('monthly')
 
   if (state.kind === 'loading') {
     return <LoadingState message={t('admin.dashboard.loading')} />
@@ -43,16 +44,16 @@ export function ViewDashboard() {
     momDir = pct >= 0 ? 'up' : 'down'
   }
 
-  // Same month-over-month, for invoices issued (billed) this month.
-  const billedLast = state.billedLastMonthCents
-  let billedMomText: string | undefined
-  let billedMomDir: 'up' | 'down' | undefined
-  if (billedLast > 0) {
-    const pct = Math.round(((state.billedThisMonthCents - billedLast) / billedLast) * 100)
-    billedMomText = t('admin.dashboard.momChange', {
+  // Year-over-year change in invoices issued (billed) this month (design 04).
+  const billedPrevYear = state.billedPrevYearMonthCents
+  let billedYoyText: string | undefined
+  let billedYoyDir: 'up' | 'down' | undefined
+  if (billedPrevYear > 0) {
+    const pct = Math.round(((state.billedThisMonthCents - billedPrevYear) / billedPrevYear) * 100)
+    billedYoyText = t('admin.dashboard.yoyChange', {
       change: `${pct > 0 ? '+' : ''}${String(pct)}%`,
     })
-    billedMomDir = pct >= 0 ? 'up' : 'down'
+    billedYoyDir = pct >= 0 ? 'up' : 'down'
   }
 
   const aging = state.aging
@@ -91,8 +92,8 @@ export function ViewDashboard() {
         <StatCard
           label={t('admin.dashboard.billedThisMonth')}
           value={formatYen(state.billedThisMonthCents)}
-          foot={billedMomText}
-          footClass={billedMomDir}
+          foot={billedYoyText}
+          footClass={billedYoyDir}
         />
         <StatCard
           label={t('admin.dashboard.receivedThisMonth')}
@@ -110,9 +111,38 @@ export function ViewDashboard() {
       <div className="panel">
         <div className="panel-head">
           <h3>{t('admin.dashboard.billedTrend')}</h3>
+          <div className="seg" role="group" aria-label={t('admin.dashboard.billedTrend')}>
+            <button
+              type="button"
+              className={cn('seg-btn', trendView === 'monthly' && 'is-on')}
+              aria-pressed={trendView === 'monthly'}
+              onClick={() => {
+                setTrendView('monthly')
+              }}
+            >
+              {t('admin.dashboard.viewMonthly')}
+            </button>
+            <button
+              type="button"
+              className={cn('seg-btn', trendView === 'daily' && 'is-on')}
+              aria-pressed={trendView === 'daily'}
+              onClick={() => {
+                setTrendView('daily')
+              }}
+            >
+              {t('admin.dashboard.viewDaily')}
+            </button>
+          </div>
         </div>
         <div className="panel-body">
-          <IssuanceTrend months={state.monthlyBilled} />
+          {trendView === 'monthly' ? (
+            <IssuanceTrend months={state.monthlyBilled} />
+          ) : (
+            <DailyCumulativeView
+              current={state.billedDailyCurrent}
+              prevMonth={state.billedDailyPrevMonth}
+            />
+          )}
         </div>
       </div>
 
@@ -287,6 +317,156 @@ function IssuanceTrend({ months }: { months: MonthlyBilled[] }) {
         ))}
       </div>
       <div className="iss-unit">{t('admin.dashboard.billedUnit')}</div>
+    </>
+  )
+}
+
+/**
+ * (C) Daily cumulative pace toward the month-end close (design 04). Plots this
+ * month's running total, the prior month for a same-day comparison (ghost), and
+ * the projected landing from today's pace.
+ */
+function DailyCumulativeView({
+  current,
+  prevMonth,
+}: {
+  current: DailyBilled[]
+  prevMonth: DailyBilled[]
+}) {
+  const { t, locale } = useTranslation()
+  if (current.length === 0) {
+    return <EmptyState message={t('admin.dashboard.noBilled')} />
+  }
+
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const todayDay = current[current.length - 1]?.day ?? now.getDate()
+  const currentLast = current[current.length - 1]?.cumulative_cents ?? 0
+  const projected = todayDay > 0 ? Math.round(currentLast / (todayDay / daysInMonth)) : currentLast
+  const prevLast =
+    prevMonth.length > 0 ? (prevMonth[prevMonth.length - 1]?.cumulative_cents ?? 0) : 0
+  const ghostToday =
+    prevMonth.find((d) => d.day === todayDay)?.cumulative_cents ??
+    (prevMonth.length > 0 ? prevLast : 0)
+
+  const niceMax = Math.max(
+    Math.ceil(Math.max(currentLast, projected, prevLast) / 500000) * 500000,
+    500000,
+  )
+
+  // viewBox 0 -12 520 208 — plot x 40..508, baseline y 170, top y 20.
+  const x = (day: number): number =>
+    daysInMonth > 1 ? 40 + ((day - 1) / (daysInMonth - 1)) * 468 : 40
+  const y = (v: number): number => 170 - (v / niceMax) * 150
+  const r2 = (n: number): string => (Math.round(n * 100) / 100).toString()
+  const pts = (rows: { day: number; cumulative_cents: number }[]): string =>
+    rows.map((d) => `${r2(x(Math.min(d.day, daysInMonth)))},${r2(y(d.cumulative_cents))}`).join(' ')
+
+  // Fine label (one decimal 万) for the highlighted current/landing values.
+  const man = (c: number): string =>
+    locale === 'ja'
+      ? `${(Math.round(c / 1000) / 10).toString()}万`
+      : `¥${String(Math.round(c / 1000))}k`
+  // Compact label for axis ticks — stays short for large amounts (fits the gutter).
+  const manAxis = (c: number): string => {
+    if (locale === 'ja') return `${String(Math.round(c / 10000))}万`
+    return c >= 1_000_000
+      ? `¥${(Math.round(c / 100000) / 10).toString()}M`
+      : `¥${String(Math.round(c / 1000))}k`
+  }
+  const todayX = x(todayDay)
+  const nowPts = pts(current)
+  const areaPts = `${nowPts} ${r2(todayX)},170 ${r2(x(1))},170`
+
+  // Sparse x-axis ticks: 1, quarter marks, and the close day.
+  const ticks = [
+    ...new Set([
+      1,
+      Math.round(daysInMonth / 4),
+      Math.round(daysInMonth / 2),
+      Math.round((daysInMonth * 3) / 4),
+      daysInMonth,
+    ]),
+  ].filter((d) => d >= 1 && d <= daysInMonth)
+
+  return (
+    <>
+      <svg
+        className="iss-line"
+        viewBox="0 -12 520 208"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label={t('admin.dashboard.billedTrend')}
+      >
+        {[0, niceMax / 2, niceMax].map((v) => (
+          <g key={v}>
+            <line className="lc-grid" x1="40" y1={r2(y(v))} x2="508" y2={r2(y(v))} />
+            <text className="lc-tx axis" x="34" y={r2(y(v) + 3)} textAnchor="end">
+              {v === 0 ? '0' : manAxis(v)}
+            </text>
+          </g>
+        ))}
+        <line className="lc-today" x1={r2(todayX)} y1="14" x2={r2(todayX)} y2="170" />
+        <text className="lc-tx now-mark" x={r2(todayX)} y="10" textAnchor="middle">
+          {t('admin.dashboard.dailyToday', {
+            date: `${String(now.getMonth() + 1)}/${String(todayDay)}`,
+          })}
+        </text>
+
+        <polygon className="lc-area" points={areaPts} />
+        {prevMonth.length > 0 && <polyline className="lc-ghost" points={pts(prevMonth)} />}
+        {prevMonth.length > 0 && (
+          <circle className="lc-dot-ghost" cx={r2(todayX)} cy={r2(y(ghostToday))} r="3" />
+        )}
+
+        <polyline
+          className="lc-proj"
+          points={`${r2(todayX)},${r2(y(currentLast))} ${r2(x(daysInMonth))},${r2(y(projected))}`}
+        />
+        <circle className="lc-dot-end" cx={r2(x(daysInMonth))} cy={r2(y(projected))} r="4.5" />
+        <text
+          className="lc-tx proj"
+          x={r2(x(daysInMonth) - 4)}
+          y={r2(y(projected) - 9)}
+          textAnchor="end"
+        >
+          {t('admin.dashboard.dailyLanding', { amount: manAxis(projected) })}
+        </text>
+
+        <polyline className="lc-now" points={nowPts} />
+        <circle className="lc-dot-now" cx={r2(todayX)} cy={r2(y(currentLast))} r="4.5" />
+        <text className="lc-tx now" x={r2(todayX - 6)} y={r2(y(currentLast) - 7)} textAnchor="end">
+          {man(currentLast)}
+        </text>
+
+        {ticks.map((d) => (
+          <text
+            key={d}
+            className="lc-tx axis"
+            x={r2(x(d))}
+            y="186"
+            textAnchor={d === daysInMonth ? 'end' : 'middle'}
+          >
+            {d === daysInMonth ? t('admin.dashboard.dailyClose', { day: d }) : d}
+          </text>
+        ))}
+      </svg>
+      <div className="iss-legend2">
+        <span className="now">
+          <span className="lg-line" />
+          {t('admin.dashboard.legendNow')}
+        </span>
+        <span className="proj">
+          <span className="lg-line" />
+          {t('admin.dashboard.legendProj')}
+        </span>
+        {prevMonth.length > 0 && (
+          <span className="ghost">
+            <span className="lg-line" />
+            {t('admin.dashboard.legendGhost')}
+          </span>
+        )}
+      </div>
     </>
   )
 }

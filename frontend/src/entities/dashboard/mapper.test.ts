@@ -19,6 +19,12 @@ describe('toDashboardSummary', () => {
         { month: '2026-05', billed_cents: 210000, count: 3 },
         { month: '2026-06', billed_cents: 330000, count: 4 },
       ],
+      billed_prev_year_month_cents: 180000,
+      billed_daily_current: [
+        { day: 1, cumulative_cents: 50000 },
+        { day: 2, cumulative_cents: 330000 },
+      ],
+      billed_daily_prev_month: [{ day: 1, cumulative_cents: 210000 }],
     }
 
     const summary = toDashboardSummary(dto)
@@ -34,6 +40,10 @@ describe('toDashboardSummary', () => {
     expect(summary.billed_last_month_cents).toBe(210000)
     expect(summary.monthly_billed).toHaveLength(2)
     expect(summary.monthly_billed[1]).toEqual({ month: '2026-06', billed_cents: 330000, count: 4 })
+    expect(summary.billed_prev_year_month_cents).toBe(180000)
+    expect(summary.billed_daily_current).toHaveLength(2)
+    expect(summary.billed_daily_current[1]).toEqual({ day: 2, cumulative_cents: 330000 })
+    expect(summary.billed_daily_prev_month[0]).toEqual({ day: 1, cumulative_cents: 210000 })
   })
 
   it('handles an empty recent-unpaid list', () => {
@@ -48,6 +58,9 @@ describe('toDashboardSummary', () => {
       billed_this_month_cents: 0,
       billed_last_month_cents: 0,
       monthly_billed: [],
+      billed_prev_year_month_cents: 0,
+      billed_daily_current: [],
+      billed_daily_prev_month: [],
     })
     expect(summary.recent_unpaid).toEqual([])
   })

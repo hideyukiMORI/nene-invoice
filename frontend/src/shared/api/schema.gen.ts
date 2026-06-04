@@ -695,6 +695,19 @@ export interface components {
             billed_last_month_cents: number;
             /** @description Issued-invoice totals for the last 6 calendar months, oldest first. */
             monthly_billed: components["schemas"]["MonthlyBilled"][];
+            /** @description Total of invoices issued in the same month one year ago, in cents (year-over-year). */
+            billed_prev_year_month_cents: number;
+            /** @description Cumulative issued total per day for the current month, day 1 to today. */
+            billed_daily_current: components["schemas"]["DailyBilled"][];
+            /** @description Cumulative issued total per day for the full previous month (pace comparison). */
+            billed_daily_prev_month: components["schemas"]["DailyBilled"][];
+        };
+        /** @description Cumulative issued-invoice total at a given day of the month. */
+        DailyBilled: {
+            /** @description Day of month (1–31). */
+            day: number;
+            /** @description Cumulative issued total from day 1 through this day, in cents. */
+            cumulative_cents: number;
         };
         /** @description Issued-invoice total for one calendar month. */
         MonthlyBilled: {

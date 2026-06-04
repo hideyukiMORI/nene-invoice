@@ -39,6 +39,12 @@ test.describe('Dashboard', () => {
           { month: '2026-05', billed_cents: 210000, count: 3 },
           { month: '2026-06', billed_cents: 330000, count: 4 },
         ],
+        billed_prev_year_month_cents: 180000,
+        billed_daily_current: [
+          { day: 1, cumulative_cents: 100000 },
+          { day: 2, cumulative_cents: 330000 },
+        ],
+        billed_daily_prev_month: [{ day: 1, cumulative_cents: 210000 }],
       },
     })
 

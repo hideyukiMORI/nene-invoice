@@ -30,6 +30,9 @@ const EMPTY_DASHBOARD = {
   billed_this_month_cents: 0,
   billed_last_month_cents: 0,
   monthly_billed: [],
+  billed_prev_year_month_cents: 0,
+  billed_daily_current: [],
+  billed_daily_prev_month: [],
 }
 
 /**

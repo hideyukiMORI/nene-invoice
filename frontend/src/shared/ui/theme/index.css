@@ -802,6 +802,122 @@
     color: var(--color-fg-muted);
   }
 
+  /* Dashboard — bar/line view toggle + daily-cumulative line chart (design 04) */
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--color-border-strong);
+  }
+  .seg-btn {
+    padding: 6px 13px;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    color: var(--color-fg-muted);
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+  .seg-btn + .seg-btn {
+    border-left: 1px solid var(--color-border);
+  }
+  .seg-btn.is-on {
+    background: var(--color-accent);
+    color: var(--color-fg-inverse);
+  }
+  .iss-line {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 20px;
+  }
+  .lc-grid {
+    stroke: var(--color-border);
+    stroke-width: 1;
+  }
+  .lc-area {
+    fill: color-mix(in oklch, var(--color-accent) 11%, transparent);
+  }
+  .lc-ghost {
+    fill: none;
+    stroke: color-mix(in oklch, var(--color-fg) 28%, transparent);
+    stroke-width: 2;
+  }
+  .lc-now {
+    fill: none;
+    stroke: var(--color-accent-deep);
+    stroke-width: 2.6;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .lc-proj {
+    fill: none;
+    stroke: var(--color-accent);
+    stroke-width: 2.6;
+    stroke-dasharray: 5 4;
+    stroke-linecap: round;
+  }
+  .lc-today {
+    stroke: var(--color-fg-muted);
+    stroke-width: 1;
+    stroke-dasharray: 2 3;
+  }
+  .lc-dot-now {
+    fill: var(--color-accent-deep);
+  }
+  .lc-dot-end {
+    fill: var(--color-surface-raised);
+    stroke: var(--color-accent);
+    stroke-width: 2;
+  }
+  .lc-dot-ghost {
+    fill: color-mix(in oklch, var(--color-fg) 28%, transparent);
+  }
+  .lc-tx {
+    fill: var(--color-fg-muted);
+    font-family: var(--font-num);
+    font-size: 14px;
+  }
+  .lc-tx.now,
+  .lc-tx.proj {
+    fill: var(--color-accent-deep);
+    font-weight: 700;
+  }
+  .lc-tx.now-mark {
+    fill: var(--color-fg-muted);
+    font-weight: 700;
+  }
+  .iss-legend2 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--color-fg-muted);
+  }
+  .iss-legend2 .lg-line {
+    display: inline-block;
+    width: 17px;
+    height: 0;
+    margin-right: 6px;
+    border-top: 2px solid currentColor;
+    vertical-align: middle;
+  }
+  .iss-legend2 .now {
+    color: var(--color-accent-deep);
+  }
+  .iss-legend2 .proj {
+    color: var(--color-accent);
+  }
+  .iss-legend2 .proj .lg-line {
+    border-top-style: dashed;
+  }
+  .iss-legend2 .ghost {
+    color: color-mix(in oklch, var(--color-fg) 40%, transparent);
+  }
+
   /* Case C — panel (titled content box) */
   .panel {
     background: var(--color-surface-raised);

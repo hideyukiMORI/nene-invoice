@@ -1,5 +1,6 @@
 import {
   useDashboard,
+  type DailyBilled,
   type DashboardSummary,
   type MonthlyBilled,
   type ReceivableAging,
@@ -21,6 +22,9 @@ export type ViewDashboardState =
       billedThisMonthCents: number
       billedLastMonthCents: number
       monthlyBilled: MonthlyBilled[]
+      billedPrevYearMonthCents: number
+      billedDailyCurrent: DailyBilled[]
+      billedDailyPrevMonth: DailyBilled[]
     }
 
 export function useViewDashboard(): ViewDashboardState {
@@ -50,5 +54,8 @@ export function useViewDashboard(): ViewDashboardState {
     billedThisMonthCents: data.billed_this_month_cents,
     billedLastMonthCents: data.billed_last_month_cents,
     monthlyBilled: data.monthly_billed,
+    billedPrevYearMonthCents: data.billed_prev_year_month_cents,
+    billedDailyCurrent: data.billed_daily_current,
+    billedDailyPrevMonth: data.billed_daily_prev_month,
   }
 }
