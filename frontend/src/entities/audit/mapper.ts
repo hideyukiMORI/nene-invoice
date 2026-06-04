@@ -9,6 +9,7 @@ export function toAuditLog(dto: AuditLogDto): AuditLog {
   return {
     id: dto.id,
     actor_user_id: dto.actor_user_id ?? null,
+    actor_email: dto.actor_email ?? null,
     organization_id: dto.organization_id ?? null,
     action: dto.action,
     entity_type: dto.entity_type,

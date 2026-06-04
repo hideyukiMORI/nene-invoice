@@ -16,6 +16,7 @@ final class AuditLogResponse
         return [
             'id' => $log->id,
             'actor_user_id' => $log->actorUserId,
+            'actor_email' => $log->actorEmail,
             'organization_id' => $log->organizationId,
             'action' => $log->action,
             'entity_type' => $log->entityType,

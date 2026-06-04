@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 final class AuditLogTest extends TestCase
 {
     private PdoAuditLogRepository $repository;
+    private \PDO $pdo;
     /** @var RequestScopedHolder<int> */
     private RequestScopedHolder $holder;
 
@@ -39,9 +40,25 @@ final class AuditLogTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
+        // findAll LEFT JOINs users to resolve the actor email.
+        $usersSchema = file_get_contents(dirname(__DIR__, 2) . '/database/schema/users.sql');
+        self::assertIsString($usersSchema);
+        $pdo->exec($usersSchema);
+
+        $this->pdo = $pdo;
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
         $this->repository = new PdoAuditLogRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+    }
+
+    private function insertUser(int $id, string $email): void
+    {
+        $this->pdo->exec(sprintf(
+            "INSERT INTO users (id, email, password_hash, role, organization_id, status, created_at, updated_at)
+             VALUES (%d, '%s', 'x', 'admin', 1, 'active', '2026-05-01 00:00:00', '2026-05-01 00:00:00')",
+            $id,
+            $email,
+        ));
     }
 
     public function test_recorder_persists_before_and_after_snapshots(): void
@@ -57,6 +74,21 @@ final class AuditLogTest extends TestCase
         self::assertSame(42, $logs[0]->entityId);
         self::assertSame(['name' => '前'], $logs[0]->before);
         self::assertSame(['name' => '後'], $logs[0]->after);
+    }
+
+    public function test_resolves_actor_email_and_falls_back_to_null(): void
+    {
+        $this->insertUser(7, 'operator@example.com');
+
+        $recorder = new AuditRecorder($this->repository);
+        $recorder->record(7, 1, 'invoice.issued', 'invoice', 5, null, ['status' => 'issued']);
+        // Actor 99 has no users row → email stays null (caller shows #id).
+        $recorder->record(99, 1, 'invoice.created', 'invoice', 6, null, ['status' => 'draft']);
+
+        $logs = $this->repository->findAll(new AuditLogFilter(), 10, 0);
+        // Newest first: actor 99 (no email), then actor 7 (resolved).
+        self::assertNull($logs[0]->actorEmail);
+        self::assertSame('operator@example.com', $logs[1]->actorEmail);
     }
 
     public function test_logs_are_scoped_and_counted_per_organization(): void

@@ -229,7 +229,10 @@ function AuditRow({ log, expanded, onToggle }: AuditRowProps) {
           {log.entity_id !== null ? ` #${String(log.entity_id)}` : ''}
         </td>
         <td data-label={t('admin.audit.col.actor')}>
-          {log.actor_user_id !== null ? `#${String(log.actor_user_id)}` : t('admin.audit.system')}
+          {log.actor_email ??
+            (log.actor_user_id !== null
+              ? `#${String(log.actor_user_id)}`
+              : t('admin.audit.system'))}
         </td>
         <td className="tr" data-label={t('admin.audit.col.detail')}>
           <Button variant="ghost" size="sm" onClick={onToggle} aria-expanded={expanded}>

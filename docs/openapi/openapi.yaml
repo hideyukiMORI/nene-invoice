@@ -1606,6 +1606,9 @@ components:
           type: integer
         actor_user_id:
           type: [integer, 'null']
+        actor_email:
+          type: [string, 'null']
+          description: Actor's current email, resolved at read time for display.
         organization_id:
           type: [integer, 'null']
         action:

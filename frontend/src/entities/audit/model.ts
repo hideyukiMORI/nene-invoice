@@ -2,6 +2,7 @@
 export interface AuditLog {
   id: number
   actor_user_id: number | null
+  actor_email: string | null
   organization_id: number | null
   action: string
   entity_type: string

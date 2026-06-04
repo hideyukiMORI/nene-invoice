@@ -26,6 +26,8 @@ final readonly class AuditLog
         public ?array $after = null,
         public ?int $id = null,
         public ?string $createdAt = null,
+        /** Actor's current email, resolved at read time (null on write / unresolvable). */
+        public ?string $actorEmail = null,
     ) {
     }
 }
