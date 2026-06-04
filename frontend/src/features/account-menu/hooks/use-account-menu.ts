@@ -1,8 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { signOut, useCurrentUser } from '@/entities/auth'
+import { signOut, useCurrentUser, type Role } from '@/entities/auth'
 
 export interface UseAccountMenu {
   email: string | null
+  role: Role | null
   onSignOut: () => void
 }
 
@@ -13,6 +14,7 @@ export function useAccountMenu(): UseAccountMenu {
 
   return {
     email: me.data?.email ?? null,
+    role: me.data?.role ?? null,
     onSignOut: () => {
       signOut()
       queryClient.clear()

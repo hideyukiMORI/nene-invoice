@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
-import { KbdHint, KeyboardShortcuts, openShortcutsOverlay } from '@/shared/keyboard'
+import { KeyboardShortcuts } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
 
 /** Monogram NN mark (logo concept 03 — overlapping N's). */
@@ -264,29 +264,7 @@ export function AppShell() {
           ))}
         </nav>
 
-        <div className="border-t border-side-border px-inline-sm py-stack-sm text-side-fg">
-          <button
-            type="button"
-            onClick={openShortcutsOverlay}
-            aria-keyshortcuts="?"
-            className="mb-stack-xs flex w-full items-center gap-inline-sm rounded-none px-inline-sm py-stack-xs text-body text-side-fg-muted transition-colors hover:bg-side-active/60 hover:text-side-fg"
-          >
-            <svg
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              className="size-4.5 shrink-0"
-              aria-hidden="true"
-            >
-              <rect x="2" y="5" width="16" height="10" rx="1.5" />
-              <path d="M5 8h.01M8 8h.01M11 8h.01M14 8h.01M5 11h.01M14 11h.01M8 11h4" />
-            </svg>
-            <span className="flex-1 text-left">{t('admin.nav.shortcuts')}</span>
-            <KbdHint variant="outline">?</KbdHint>
-          </button>
-          <AccountMenu />
-        </div>
+        <AccountMenu />
       </aside>
 
       <div className="side-backdrop" aria-hidden="true" onClick={closeNav} />
