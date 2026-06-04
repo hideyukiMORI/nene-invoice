@@ -13,6 +13,7 @@ use NeneInvoice\InvoiceDownloadToken\GenerateDownloadTokenHandler;
 use NeneInvoice\InvoiceDownloadToken\GenerateDownloadTokenUseCase;
 use NeneInvoice\Tests\Support\InMemoryInvoiceDownloadTokenRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
+use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 
@@ -43,7 +44,7 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
         ));
 
         $this->handler = new GenerateDownloadTokenHandler(
-            new GenerateDownloadTokenUseCase($this->invoices, $tokens, $this->holder),
+            new GenerateDownloadTokenUseCase($this->invoices, $tokens, new RecordingAuditRecorder(), $this->holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
         );
     }

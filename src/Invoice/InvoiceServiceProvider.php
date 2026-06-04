@@ -188,6 +188,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, InvoicePdfGenerator::class),
                     self::resolve($c, MailerInterface::class),
+                    self::resolve($c, AuditRecorderInterface::class),
                     self::orgHolder($c),
                     (string) (getenv('MAIL_FROM_NAME') ?: 'NeNe Invoice'),
                 ),

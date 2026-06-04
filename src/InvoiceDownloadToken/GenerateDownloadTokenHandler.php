@@ -6,6 +6,7 @@ namespace NeneInvoice\InvoiceDownloadToken;
 
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
+use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -29,7 +30,7 @@ final readonly class GenerateDownloadTokenHandler implements RequestHandlerInter
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id     = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $result = $this->useCase->execute($id);
+        $result = $this->useCase->execute(AuthContext::userId($request), $id);
 
         return $this->json->create([
             'url'        => '/invoices/download/' . $result['rawToken'],
