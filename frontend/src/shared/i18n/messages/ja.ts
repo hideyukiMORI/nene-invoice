@@ -49,6 +49,7 @@ export const jaMessages = {
   'admin.nav.users': 'ユーザー',
   'admin.nav.auditLogs': '監査ログ',
   'admin.nav.settings': '設定',
+  'admin.nav.shortcuts': 'キーボードショートカット',
   'admin.nav.primary': '主要ナビゲーション',
   'admin.bottomNav.dashboard': 'ダッシュボード',
   'admin.bottomNav.quotes': '見積',

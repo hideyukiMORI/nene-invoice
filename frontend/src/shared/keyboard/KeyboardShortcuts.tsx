@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { SHOW_SHORTCUTS_EVENT } from './overlay-control'
 import { ShortcutsOverlay } from './ShortcutsOverlay'
 import { KBD_LIST_EVENT, type RowCursorAction } from './use-row-cursor'
 
@@ -27,6 +28,13 @@ const NEW_ROUTE: Record<string, string> = {
   '/invoices': '/invoices/new',
   '/clients': '/clients/new',
   '/users': '/users/new',
+}
+
+/** Parent list roots for `u` (back to list). */
+const LIST_ROOTS = ['/invoices', '/quotes', '/clients', '/users', '/audit-logs']
+
+function parentListOf(path: string): string | null {
+  return LIST_ROOTS.find((root) => path.startsWith(`${root}/`)) ?? null
 }
 
 /** True when focus sits in an editable control — single keys must not fire. */
@@ -60,6 +68,16 @@ export function KeyboardShortcuts() {
   useEffect(() => {
     overlayRef.current = overlayOpen
   }, [overlayOpen])
+  // The sidebar "shortcuts" button opens the cheat-sheet via this event.
+  useEffect(() => {
+    const open = (): void => {
+      setOverlayOpen(true)
+    }
+    document.addEventListener(SHOW_SHORTCUTS_EVENT, open)
+    return () => {
+      document.removeEventListener(SHOW_SHORTCUTS_EVENT, open)
+    }
+  }, [])
   useEffect(() => {
     pendingRef.current = pendingG
   }, [pendingG])
@@ -133,12 +151,16 @@ export function KeyboardShortcuts() {
         return
       }
 
-      // Layer 2 — focus the list search box (`/`).
+      // Layer 2 — focus the search box, or the first form field (spec §08).
       if (e.key === '/') {
-        const search = document.querySelector('[data-kbd="search"]')
-        if (search instanceof HTMLElement) {
+        const target =
+          document.querySelector('[data-kbd="search"]') ??
+          document.querySelector(
+            'form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), form textarea, form select',
+          )
+        if (target instanceof HTMLElement) {
           e.preventDefault()
-          search.focus()
+          target.focus()
         }
         return
       }
@@ -149,6 +171,16 @@ export function KeyboardShortcuts() {
         if (dest !== undefined) {
           e.preventDefault()
           void navigate(dest)
+        }
+        return
+      }
+
+      // Layer 2 — back to the parent list (`u`), Gmail-style.
+      if (e.key === 'u') {
+        const list = parentListOf(pathRef.current)
+        if (list !== null) {
+          e.preventDefault()
+          void navigate(list)
         }
         return
       }
