@@ -1324,6 +1324,11 @@
       display: none;
     }
   }
+  /* list row cursor (spec §1-4) — j/k highlight with a ruled accent edge */
+  .data-table tbody tr.is-cursor {
+    background: var(--color-accent-soft);
+    box-shadow: inset 3px 0 0 var(--color-accent);
+  }
 
   /* g… prefix indicator (spec §02-D) — bottom-left while awaiting the 2nd key */
   .kbd-gind {

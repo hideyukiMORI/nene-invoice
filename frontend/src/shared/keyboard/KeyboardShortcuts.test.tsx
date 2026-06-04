@@ -3,9 +3,23 @@ import { useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
+import { useRowCursor } from './use-row-cursor'
 
 function LocationProbe() {
   return <div data-testid="loc">{useLocation().pathname}</div>
+}
+
+function ListHarness({ onOpen }: { onOpen: (index: number) => void }) {
+  const cursor = useRowCursor(3, onOpen)
+  return (
+    <ul>
+      {[0, 1, 2].map((i) => (
+        <li key={i} data-kbd-row={i} className={cursor === i ? 'is-cursor' : undefined}>
+          row{i}
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 describe('KeyboardShortcuts', () => {
@@ -96,6 +110,26 @@ describe('KeyboardShortcuts', () => {
     await waitFor(() => {
       expect(getByTestId('loc')).toHaveTextContent('/invoices/new')
     })
+  })
+
+  it('moves the row cursor with j/k and opens the cursored row with o', () => {
+    const onOpen = vi.fn()
+    const { container } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <ListHarness onOpen={onOpen} />
+      </>,
+    )
+
+    fireEvent.keyDown(document.body, { key: 'j' })
+    expect(container.querySelector('.is-cursor')).toHaveTextContent('row0')
+    fireEvent.keyDown(document.body, { key: 'j' })
+    expect(container.querySelector('.is-cursor')).toHaveTextContent('row1')
+    fireEvent.keyDown(document.body, { key: 'k' })
+    expect(container.querySelector('.is-cursor')).toHaveTextContent('row0')
+
+    fireEvent.keyDown(document.body, { key: 'o' })
+    expect(onOpen).toHaveBeenCalledWith(0)
   })
 
   it('submits the surrounding form on Ctrl/Cmd+Enter, even from a field', () => {

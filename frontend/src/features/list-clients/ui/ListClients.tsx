@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type SyntheticEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   EMPTY_CLIENT_FILTERS,
   useDeleteClient,
@@ -8,7 +8,7 @@ import {
   type ClientSortField,
 } from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
-import { KbdHint } from '@/shared/keyboard'
+import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import {
   Button,
   ConfirmDialog,
@@ -28,10 +28,17 @@ const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? n
 /** Client (取引先) list screen with search / sort and per-row delete. */
 export function ListClients() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const view = useListClients()
   const deleteClient = useDeleteClient()
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null)
   const [draft, setDraft] = useState<ClientListFilters>(EMPTY_CLIENT_FILTERS)
+
+  const rows = view.state.kind === 'ready' ? view.state.clients : []
+  const cursor = useRowCursor(rows.length, (index) => {
+    const row = rows[index]
+    if (row !== undefined) void navigate(`/clients/${String(row.id)}/edit`)
+  })
 
   const confirmDelete = (): void => {
     if (pendingDelete === null) return
@@ -129,8 +136,12 @@ export function ListClients() {
               </tr>
             </thead>
             <tbody>
-              {view.state.clients.map((client) => (
-                <tr key={client.id}>
+              {view.state.clients.map((client, index) => (
+                <tr
+                  key={client.id}
+                  data-kbd-row={index}
+                  className={cursor === index ? 'is-cursor' : undefined}
+                >
                   <td data-label={t('admin.clients.col.name')}>{client.name}</td>
                   <td data-label={t('admin.clients.col.contact')}>{client.contact_name ?? '—'}</td>
                   <td data-label={t('admin.clients.col.email')}>{client.email ?? '—'}</td>

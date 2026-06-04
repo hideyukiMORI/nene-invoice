@@ -43,6 +43,28 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     ],
   },
   {
+    ja: 'リスト',
+    en: 'List',
+    rows: [
+      {
+        ja: '次 / 前の行',
+        en: 'Next / Prev row',
+        combos: [
+          { caps: ['j'], join: 'none' },
+          { caps: ['k'], join: 'none' },
+        ],
+      },
+      {
+        ja: '選択行を開く',
+        en: 'Open row',
+        combos: [
+          { caps: ['Enter'], join: 'none' },
+          { caps: ['o'], join: 'none' },
+        ],
+      },
+    ],
+  },
+  {
     ja: 'アクション',
     en: 'Actions',
     rows: [

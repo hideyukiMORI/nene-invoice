@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useDeleteUser, type User, type UserRole, type UserStatus } from '@/entities/user'
 import { useTranslation } from '@/shared/i18n'
-import { KbdHint } from '@/shared/keyboard'
+import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import {
   Badge,
   type BadgeTone,
@@ -32,9 +32,16 @@ const STATUS_TONE: Record<UserStatus, BadgeTone> = {
 /** User list screen with per-row delete (confirmed). */
 export function ListUsers() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const state = useListUsers()
   const deleteUser = useDeleteUser()
   const [pendingDelete, setPendingDelete] = useState<User | null>(null)
+
+  const rows = state.kind === 'ready' ? state.users : []
+  const cursor = useRowCursor(rows.length, (index) => {
+    const row = rows[index]
+    if (row !== undefined) void navigate(`/users/${String(row.id)}/edit`)
+  })
 
   const confirmDelete = (): void => {
     if (pendingDelete === null) return
@@ -81,8 +88,12 @@ export function ListUsers() {
               </tr>
             </thead>
             <tbody>
-              {state.users.map((user) => (
-                <tr key={user.id}>
+              {state.users.map((user, index) => (
+                <tr
+                  key={user.id}
+                  data-kbd-row={index}
+                  className={cursor === index ? 'is-cursor' : undefined}
+                >
                   <td data-label={t('admin.users.col.email')}>{user.email}</td>
                   <td data-label={t('admin.users.col.role')}>
                     <Badge tone={ROLE_TONE[user.role]}>{t(`admin.users.role.${user.role}`)}</Badge>
