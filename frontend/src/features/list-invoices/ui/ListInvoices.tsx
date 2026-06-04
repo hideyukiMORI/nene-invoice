@@ -2,7 +2,16 @@ import { Link } from 'react-router-dom'
 import { invoiceStatusTone, useExportInvoicesCsv, useExportPaymentsCsv } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Badge, Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  LinkButton,
+  LoadingState,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { useListInvoices } from '../hooks/use-list-invoices'
 
 /** Invoice list screen. Renders exactly one of loading / error / empty / ready. */
@@ -39,9 +48,9 @@ export function ListInvoices() {
               ? t('admin.invoices.export.downloading')
               : t('admin.invoices.export.payments')}
           </Button>
-          <Link to="/invoices/new" className="text-body text-accent">
+          <LinkButton to="/invoices/new" size="sm">
             {t('admin.invoices.newButton')}
-          </Link>
+          </LinkButton>
         </Stack>
       </div>
 

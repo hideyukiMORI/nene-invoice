@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, Input, MutationError, Stack, Text } from '@/shared/ui'
+import { Button, Field, FormLayout, FormRow, Input, MutationError, Stack, Text } from '@/shared/ui'
 import { useCreateClient } from '../hooks/use-create-client'
 
 /** Create-client form. On success navigates to the client list. */
@@ -12,44 +12,48 @@ export function CreateClientForm() {
   } = form
 
   return (
-    <form onSubmit={onSubmit} noValidate>
-      <Stack gap="md">
-        <Text as="h1" variant="heading-md">
-          {t('admin.clients.create.title')}
-        </Text>
+    <FormLayout>
+      <form onSubmit={onSubmit} noValidate>
+        <Stack gap="md">
+          <Text as="h1" variant="heading-md">
+            {t('admin.clients.create.title')}
+          </Text>
 
-        <Field
-          id="name"
-          label={t('admin.clients.create.name')}
-          error={errors.name ? t('admin.clients.create.nameRequired') : undefined}
-        >
-          <Input id="name" aria-invalid={errors.name ? true : undefined} {...register('name')} />
-        </Field>
+          <Field
+            id="name"
+            label={t('admin.clients.create.name')}
+            error={errors.name ? t('admin.clients.create.nameRequired') : undefined}
+          >
+            <Input id="name" aria-invalid={errors.name ? true : undefined} {...register('name')} />
+          </Field>
 
-        <Field id="contact_name" label={t('admin.clients.create.contact')}>
-          <Input id="contact_name" {...register('contact_name')} />
-        </Field>
+          <FormRow>
+            <Field id="contact_name" label={t('admin.clients.create.contact')}>
+              <Input id="contact_name" {...register('contact_name')} />
+            </Field>
 
-        <Field id="email" label={t('admin.clients.create.email')}>
-          <Input id="email" type="email" {...register('email')} />
-        </Field>
+            <Field id="email" label={t('admin.clients.create.email')}>
+              <Input id="email" type="email" {...register('email')} />
+            </Field>
+          </FormRow>
 
-        <Field id="billing_address" label={t('admin.clients.create.billingAddress')}>
-          <Input id="billing_address" {...register('billing_address')} />
-        </Field>
+          <Field id="billing_address" label={t('admin.clients.create.billingAddress')}>
+            <Input id="billing_address" {...register('billing_address')} />
+          </Field>
 
-        <Field id="registration_number" label={t('admin.clients.create.registration')}>
-          <Input id="registration_number" {...register('registration_number')} />
-        </Field>
+          <Field id="registration_number" label={t('admin.clients.create.registration')}>
+            <Input id="registration_number" {...register('registration_number')} />
+          </Field>
 
-        <MutationError message={errorMessage} />
+          <MutationError message={errorMessage} />
 
-        <div>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? t('admin.clients.create.submitting') : t('admin.clients.create.submit')}
-          </Button>
-        </div>
-      </Stack>
-    </form>
+          <div>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? t('admin.clients.create.submitting') : t('admin.clients.create.submit')}
+            </Button>
+          </div>
+        </Stack>
+      </form>
+    </FormLayout>
   )
 }

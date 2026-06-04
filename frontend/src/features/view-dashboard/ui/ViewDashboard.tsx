@@ -3,13 +3,8 @@ import { Link } from 'react-router-dom'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Badge, EmptyState, ErrorState, LoadingState, Stack } from '@/shared/ui'
+import { Badge, EmptyState, ErrorState, LinkButton, LoadingState, Stack } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
-
-const BTN_GHOST =
-  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium border border-border-strong bg-surface-raised text-fg transition-colors hover:bg-surface-overlay'
-const BTN_PRIMARY =
-  'inline-flex items-center px-inline-md py-stack-xs text-body font-medium bg-accent text-fg-inverse transition-colors hover:bg-accent-hover'
 
 /** Admin dashboard: page head + summary stat cards + recent unpaid + AR aging. */
 export function ViewDashboard() {
@@ -58,12 +53,10 @@ export function ViewDashboard() {
           <p className="page-sub">{t('admin.dashboard.asOf', { date: asOf })}</p>
         </div>
         <div className="flex items-center gap-inline-sm">
-          <Link to="/quotes/new" className={BTN_GHOST}>
+          <LinkButton to="/quotes/new" variant="ghost">
             {t('admin.dashboard.createQuote')}
-          </Link>
-          <Link to="/invoices/new" className={BTN_PRIMARY}>
-            {t('admin.dashboard.createInvoice')}
-          </Link>
+          </LinkButton>
+          <LinkButton to="/invoices/new">{t('admin.dashboard.createInvoice')}</LinkButton>
         </div>
       </div>
 
