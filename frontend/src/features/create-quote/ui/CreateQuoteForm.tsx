@@ -6,8 +6,8 @@ import {
   Button,
   Field,
   FormRow,
+  InlineAlert,
   Input,
-  MutationError,
   Select,
   Stack,
   Text,
@@ -195,7 +195,7 @@ export function CreateQuoteForm() {
             </div>
           </div>
 
-          <MutationError message={errorMessage} />
+          {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
 
           <div className="form-actions-end">
             <Button type="submit" disabled={isPending}>

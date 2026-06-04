@@ -12,9 +12,9 @@ import {
   Badge,
   Button,
   ErrorState,
+  InlineAlert,
   LineItemsTable,
   LoadingState,
-  MutationError,
   Stack,
   Text,
   TotalRow,
@@ -90,7 +90,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                     ? t('admin.invoices.detail.downloadingPdf')
                     : t('admin.invoices.detail.downloadPdf')}
                 </Button>
-                <MutationError message={pdf.errorMessage} />
+                {pdf.errorMessage !== null && (
+                  <InlineAlert tone="error" message={pdf.errorMessage} />
+                )}
               </Stack>
             )}
             {isIssued && (
@@ -154,7 +156,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
                     </Stack>
                   </Stack>
                 )}
-                <MutationError message={link.errorMessage} />
+                {link.errorMessage !== null && (
+                  <InlineAlert tone="error" message={link.errorMessage} />
+                )}
               </Stack>
             )}
           </div>

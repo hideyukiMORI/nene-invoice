@@ -1,5 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
-import { Button, Field, FormLayout, Input, MutationError, Select, Stack, Text } from '@/shared/ui'
+import { Button, Field, FormLayout, InlineAlert, Input, Select, Stack, Text } from '@/shared/ui'
 import { useCreateUser } from '../hooks/use-create-user'
 
 /** Create-user form. On success navigates to the user list. */
@@ -53,7 +53,7 @@ export function CreateUserForm() {
             </Select>
           </Field>
 
-          <MutationError message={errorMessage} />
+          {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
 
           <div>
             <Button type="submit" disabled={isPending}>

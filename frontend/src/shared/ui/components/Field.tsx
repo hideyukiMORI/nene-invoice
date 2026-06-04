@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { cloneElement, isValidElement, type ReactNode } from 'react'
 import { Stack } from '../primitives/Stack'
 
 export interface FieldProps {
@@ -9,16 +9,36 @@ export interface FieldProps {
   children: ReactNode
 }
 
-/** Label + control + optional error message, wired for accessibility. */
+type AriaControlProps = {
+  'aria-invalid'?: boolean
+  'aria-describedby'?: string
+}
+
+/**
+ * Label + control + optional error message, wired for accessibility.
+ *
+ * 型1 field error (Issue #258): when `error` is set the control is marked
+ * `aria-invalid` (red border via the primitives) and linked to the message,
+ * which renders as `.err-text` directly beneath the field.
+ */
 export function Field({ id, label, error, children }: FieldProps) {
+  const errorId = `${id}-error`
+  const control =
+    error !== undefined && isValidElement<AriaControlProps>(children)
+      ? cloneElement(children, {
+          'aria-invalid': true,
+          'aria-describedby': errorId,
+        } satisfies AriaControlProps)
+      : children
+
   return (
     <Stack gap="sm">
       <label htmlFor={id} className="text-body text-fg-muted">
         {label}
       </label>
-      {children}
+      {control}
       {error !== undefined && (
-        <p id={`${id}-error`} role="alert" className="text-body text-danger">
+        <p id={errorId} role="alert" className="err-text">
           {error}
         </p>
       )}
