@@ -36,6 +36,13 @@ export default defineConfig(({ command, mode }) => {
         '/auth': { target, changeOrigin: true },
         '/admin': { target, changeOrigin: true },
         '/health': { target, changeOrigin: true },
+        // Public, unauthenticated PDF download (client-facing token link). It
+        // lives under the SPA's /invoices namespace, so it must be proxied to
+        // the API explicitly — otherwise Vite serves the SPA shell and the link
+        // bounces to the login screen. The prefix is narrow enough that SPA
+        // routes (/invoices, /invoices/:id) are unaffected. Prod routes this via
+        // .htaccess → index.php, so this is a dev-only concern.
+        '/invoices/download': { target, changeOrigin: true },
       },
     },
   }
