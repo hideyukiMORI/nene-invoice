@@ -18,6 +18,7 @@ import {
   Input,
   LinkButton,
   LoadingState,
+  SortableTh,
   Stack,
   Text,
 } from '@/shared/ui'
@@ -58,22 +59,15 @@ export function ListClients() {
     view.resetFilters()
   }
 
-  const sortIndicator = (field: ClientSortField): string =>
-    view.sort.field === field ? (view.sort.order === 'asc' ? ' ▲' : ' ▼') : ''
-
   const sortableTh = (field: ClientSortField, label: string): ReactNode => (
-    <th>
-      <button
-        type="button"
-        className="th-sort"
-        onClick={() => {
-          view.toggleSort(field)
-        }}
-      >
-        {label}
-        {sortIndicator(field)}
-      </button>
-    </th>
+    <SortableTh
+      label={label}
+      active={view.sort.field === field}
+      order={view.sort.order}
+      onToggle={() => {
+        view.toggleSort(field)
+      }}
+    />
   )
 
   return (

@@ -31,11 +31,19 @@
     text-align: right;
   }
   /* clickable sort header: a button that inherits the th typography */
-  .th-sort {
+  /* Sortable column headers (design 03): chevron + aria-sort + active green */
+  .data-table thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  .data-table thead th.sortable .th-in {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font: inherit;
-    color: inherit;
     letter-spacing: inherit;
     text-transform: inherit;
+    color: inherit;
     background: none;
     border: 0;
     padding: 0;
@@ -43,8 +51,33 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .th-sort:hover {
+  .data-table thead th.tr.sortable .th-in {
+    flex-direction: row-reverse;
+  }
+  .data-table thead th.sortable:hover .th-in {
     color: var(--color-fg);
+  }
+  .data-table thead th.sortable .sort-ico {
+    width: 11px;
+    height: 11px;
+    flex: none;
+    display: block;
+  }
+  .data-table thead th.sortable .sort-ico .up,
+  .data-table thead th.sortable .sort-ico .dn {
+    fill: currentColor;
+    opacity: 0.3;
+    transition: opacity 0.12s;
+  }
+  .data-table thead th[aria-sort='ascending'],
+  .data-table thead th[aria-sort='descending'] {
+    color: var(--color-accent-deep);
+  }
+  .data-table thead th[aria-sort='ascending'] .sort-ico .up {
+    opacity: 1;
+  }
+  .data-table thead th[aria-sort='descending'] .sort-ico .dn {
+    opacity: 1;
   }
   .data-table tbody td {
     padding: 0.25rem 0.5625rem; /* 4px 9px — spec dir-c row padding (dense) */
