@@ -62,6 +62,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
           { caps: ['o'], join: 'none' },
         ],
       },
+      { ja: '一覧へ戻る', en: 'Back to list', combos: [{ caps: ['u'], join: 'none' }] },
     ],
   },
   {
@@ -69,7 +70,11 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     en: 'Actions',
     rows: [
       { ja: '新規作成', en: 'New', combos: [{ caps: ['n'], join: 'none' }] },
-      { ja: '検索にフォーカス', en: 'Focus search', combos: [{ caps: ['/'], join: 'none' }] },
+      {
+        ja: '検索 / 先頭欄へ',
+        en: 'Focus search / field',
+        combos: [{ caps: ['/'], join: 'none' }],
+      },
     ],
   },
   {

@@ -48,6 +48,7 @@ export const enMessages: MessageCatalog = {
   'admin.nav.users': 'Users',
   'admin.nav.auditLogs': 'Audit logs',
   'admin.nav.settings': 'Settings',
+  'admin.nav.shortcuts': 'Keyboard shortcuts',
   'admin.nav.primary': 'Primary navigation',
   'admin.bottomNav.dashboard': 'Dashboard',
   'admin.bottomNav.quotes': 'Quotes',

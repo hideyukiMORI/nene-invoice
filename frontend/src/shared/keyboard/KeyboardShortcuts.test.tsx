@@ -1,8 +1,9 @@
-import { fireEvent, waitFor } from '@testing-library/react'
+import { act, fireEvent, waitFor } from '@testing-library/react'
 import { useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
+import { openShortcutsOverlay } from './overlay-control'
 import { useRowCursor } from './use-row-cursor'
 
 function LocationProbe() {
@@ -37,6 +38,37 @@ describe('KeyboardShortcuts', () => {
     await waitFor(() => {
       expect(getByTestId('loc')).toHaveTextContent('/invoices')
     })
+  })
+
+  it('returns to the parent list with u', async () => {
+    const { getByTestId } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <LocationProbe />
+      </>,
+    )
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 'i' })
+    fireEvent.keyDown(document.body, { key: 'n' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/invoices/new')
+    })
+
+    fireEvent.keyDown(document.body, { key: 'u' })
+    await waitFor(() => {
+      expect(getByTestId('loc').textContent).toBe('/invoices')
+    })
+  })
+
+  it('opens the cheat-sheet via openShortcutsOverlay()', () => {
+    const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
+    expect(queryByRole('dialog')).not.toBeInTheDocument()
+
+    act(() => {
+      openShortcutsOverlay()
+    })
+    expect(getByRole('dialog')).toBeInTheDocument()
   })
 
   it('opens the cheat-sheet on ? and closes it on Esc', () => {
