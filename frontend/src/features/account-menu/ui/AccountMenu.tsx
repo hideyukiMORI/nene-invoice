@@ -1,25 +1,43 @@
 import { LOCALES, useTranslation } from '@/shared/i18n'
+import { openShortcutsOverlay } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
 import { useAccountMenu } from '../hooks/use-account-menu'
 
-/** Sidebar account summary + language switch + sign-out, themed for the chrome. */
+/** Sidebar footer (design 04 `.side-foot`): user identity + keyboard-shortcut
+ *  launcher + language segment + sign-out, themed for the deep-green chrome. */
 export function AccountMenu() {
   const { t, locale, setLocale } = useTranslation()
-  const { email, onSignOut } = useAccountMenu()
+  const { email, role, onSignOut } = useAccountMenu()
+
+  const initial = email !== null && email.length > 0 ? email[0].toUpperCase() : '—'
 
   return (
-    <div className="flex flex-col gap-stack-sm">
-      {email !== null && (
-        <span className="truncate text-caption text-side-fg-muted" title={email}>
-          {t('admin.account.signedInAs', { email })}
+    <div className="side-foot">
+      <div className="sf-user">
+        <span className="side-avatar" aria-hidden="true">
+          {initial}
         </span>
-      )}
+        <div className="min-w-0">
+          {email !== null && (
+            <div className="sf-mail truncate" title={email}>
+              {email}
+            </div>
+          )}
+          {role !== null && <div className="sf-role">{t(`admin.users.role.${role}`)}</div>}
+        </div>
+      </div>
 
-      <div
-        className="flex border border-side-border"
-        role="group"
-        aria-label={t('common.locale.label')}
+      <button
+        type="button"
+        className="sf-help"
+        onClick={openShortcutsOverlay}
+        aria-keyshortcuts="?"
       >
+        <span>{t('admin.nav.shortcuts')}</span>
+        <span className="sf-help-k">?</span>
+      </button>
+
+      <div className="sf-lang" role="group" aria-label={t('common.locale.label')}>
         {LOCALES.map((loc) => {
           const active = locale === loc.id
           return (
@@ -30,13 +48,7 @@ export function AccountMenu() {
               onClick={() => {
                 setLocale(loc.id)
               }}
-              className={cn(
-                'flex-1 px-inline-sm py-stack-xs text-caption transition-colors',
-                'focus-visible:outline-2 focus-visible:outline-focus-ring',
-                active
-                  ? 'bg-side-active font-medium text-side-fg'
-                  : 'text-side-fg-muted hover:bg-side-active/60 hover:text-side-fg',
-              )}
+              className={cn('sf-lang-btn', active && 'is-on')}
             >
               {t(loc.labelKey)}
             </button>
@@ -44,11 +56,7 @@ export function AccountMenu() {
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={onSignOut}
-        className="w-full border border-side-border px-inline-sm py-stack-xs text-body text-side-fg transition-colors hover:bg-side-active focus-visible:outline-2 focus-visible:outline-focus-ring"
-      >
+      <button type="button" className="sf-logout" onClick={onSignOut}>
         {t('common.actions.signOut')}
       </button>
     </div>
