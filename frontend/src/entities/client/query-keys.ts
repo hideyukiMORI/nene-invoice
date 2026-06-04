@@ -1,6 +1,10 @@
+import type { ClientListFilters, ClientSort } from './model'
+
 export interface ClientListParams {
   limit: number
   offset: number
+  filters: ClientListFilters
+  sort: ClientSort
 }
 
 export const clientKeys = {

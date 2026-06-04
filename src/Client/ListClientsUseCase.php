@@ -18,4 +18,17 @@ final readonly class ListClientsUseCase
             $this->clients->count(),
         );
     }
+
+    /** Admin list: search + sort. */
+    public function executeAdmin(
+        ClientListFilter $filter,
+        ClientSort $sort,
+        int $limit,
+        int $offset,
+    ): ListClientsResult {
+        return new ListClientsResult(
+            $this->clients->findForAdminList($filter, $sort, $limit, $offset),
+            $this->clients->countForAdminList($filter),
+        );
+    }
 }

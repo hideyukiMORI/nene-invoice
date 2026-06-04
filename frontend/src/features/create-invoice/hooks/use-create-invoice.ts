@@ -49,7 +49,12 @@ export function useCreateInvoice(): UseCreateInvoice {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const create = useCreateInvoiceMutation()
-  const clientList = useClientList({ limit: 100, offset: 0 })
+  const clientList = useClientList({
+    limit: 100,
+    offset: 0,
+    filters: { q: null },
+    sort: { field: null, order: 'asc' },
+  })
 
   const form = useForm<CreateInvoiceFormValues>({
     resolver: zodResolver(schema),

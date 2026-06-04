@@ -234,7 +234,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List clients */
+        /**
+         * List clients
+         * @description Lists clients with optional search / sort (admin). `q` matches name, contact, email, or registration number; `sort` ∈ name|contact|email| registration with `order` asc|desc.
+         */
         get: operations["listClients"];
         put?: never;
         /** Create client */
@@ -1515,6 +1518,9 @@ export interface operations {
                 limit?: components["parameters"]["LimitParam"];
                 /** @description Number of items to skip (default 0). */
                 offset?: components["parameters"]["OffsetParam"];
+                q?: string;
+                sort?: "name" | "contact" | "email" | "registration";
+                order?: "asc" | "desc";
             };
             header?: never;
             path?: never;

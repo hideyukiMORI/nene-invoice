@@ -462,9 +462,16 @@ paths:
       tags: [Clients]
       summary: List clients
       operationId: listClients
+      description: >
+        Lists clients with optional search / sort (admin). `q` matches name,
+        contact, email, or registration number; `sort` ∈ name|contact|email|
+        registration with `order` asc|desc.
       parameters:
         - $ref: '#/components/parameters/LimitParam'
         - $ref: '#/components/parameters/OffsetParam'
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [name, contact, email, registration] } }
+        - { name: order, in: query, required: false, schema: { type: string, enum: [asc, desc] } }
       responses:
         '200':
           description: Client page

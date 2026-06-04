@@ -50,7 +50,12 @@ export function useCreateQuote(): UseCreateQuote {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const create = useCreateQuoteMutation()
-  const clientList = useClientList({ limit: 100, offset: 0 })
+  const clientList = useClientList({
+    limit: 100,
+    offset: 0,
+    filters: { q: null },
+    sort: { field: null, order: 'asc' },
+  })
 
   const form = useForm<CreateQuoteFormValues>({
     resolver: zodResolver(schema),
