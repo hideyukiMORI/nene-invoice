@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Invoice;
 
+use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\CompanySettings;
+use NeneInvoice\Company\PaymentTerms;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -92,6 +94,36 @@ final class IssueInvoiceUseCaseTest extends TestCase
         self::assertSame('INV-' . date('Y') . '-001', $result->invoice->invoiceNumber);
         self::assertNotNull($result->invoice->issuedAt);
         self::assertSame('invoice.issued', $this->audit->records[0]['action']);
+    }
+
+    public function test_applies_company_payment_terms_default_due_date(): void
+    {
+        // 月末締め翌月末払い (closing/pay null = 末日).
+        $this->companySettings->save(new CompanySettings(
+            organizationId: 1,
+            legalName: 'Example KK',
+            defaultPaymentMonthOffset: 1,
+        ));
+        $id = $this->draftInvoice();
+
+        $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: false));
+
+        $expected = (new PaymentTerms(null, 1, null))->dueDateFrom(new DateTimeImmutable('today'));
+        self::assertSame($expected, substr((string) $result->invoice->dueAt, 0, 10));
+    }
+
+    public function test_explicit_due_at_overrides_payment_terms_default(): void
+    {
+        $this->companySettings->save(new CompanySettings(
+            organizationId: 1,
+            legalName: 'Example KK',
+            defaultPaymentMonthOffset: 1,
+        ));
+        $id = $this->draftInvoice();
+
+        $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: false, dueAt: '2026-09-30'));
+
+        self::assertSame('2026-09-30', substr((string) $result->invoice->dueAt, 0, 10));
     }
 
     public function test_issues_non_qualified_invoice_without_registration_number(): void

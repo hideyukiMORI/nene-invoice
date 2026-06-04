@@ -53,6 +53,10 @@ final class InMemoryCompanySettingsRepository implements CompanySettingsReposito
             accountType: $settings->accountType,
             accountNumber: $settings->accountNumber,
             logoUrl: $settings->logoUrl,
+            defaultQuoteValidityDays: $settings->defaultQuoteValidityDays,
+            defaultPaymentClosingDay: $settings->defaultPaymentClosingDay,
+            defaultPaymentMonthOffset: $settings->defaultPaymentMonthOffset,
+            defaultPaymentPayDay: $settings->defaultPaymentPayDay,
             createdAt: $settings->createdAt,
             updatedAt: $settings->updatedAt,
         );
