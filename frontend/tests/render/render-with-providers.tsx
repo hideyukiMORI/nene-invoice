@@ -8,6 +8,7 @@ import {
 import { useState, type ReactElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '@/shared/i18n'
+import { ToastProvider } from '@/shared/ui'
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -23,7 +24,9 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>{children}</MemoryRouter>
+        <ToastProvider>
+          <MemoryRouter>{children}</MemoryRouter>
+        </ToastProvider>
       </QueryClientProvider>
     </I18nProvider>
   )

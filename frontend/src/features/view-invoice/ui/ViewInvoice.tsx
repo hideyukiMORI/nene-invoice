@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   invoiceStatusTone,
   useDownloadInvoicePdf,
@@ -8,6 +8,7 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import {
+  ActionError,
   Badge,
   Button,
   ErrorState,
@@ -17,6 +18,7 @@ import {
   Stack,
   Text,
   TotalRow,
+  useToast,
 } from '@/shared/ui'
 import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
 import { useViewInvoice } from '../hooks/use-view-invoice'
@@ -28,6 +30,8 @@ export interface ViewInvoiceProps {
 /** Invoice detail: header summary, line items, and totals. */
 export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { showToast } = useToast()
   const state = useViewInvoice(invoiceId)
   // Hooks must be called unconditionally — before any early return.
   const invoiceNumber = state.kind === 'ready' ? state.invoice.invoice_number : null
@@ -52,6 +56,22 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
 
   const invoice = state.invoice
 
+  // 型3 success toast on send; reused by the 型2 "resend" recovery action.
+  const sendInvoiceEmail = () => {
+    sendEmail.mutate(invoiceId, {
+      onSuccess: () => {
+        showToast({
+          tone: 'ok',
+          title: t('admin.invoices.detail.emailSentTitle'),
+          description:
+            invoice.client_name !== null
+              ? t('admin.invoices.detail.emailSentBody', { client: invoice.client_name })
+              : t('admin.invoices.detail.emailSentBodyNoClient'),
+        })
+      },
+    })
+  }
+
   return (
     <Stack gap="lg">
       <Stack gap="sm">
@@ -75,24 +95,37 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
             )}
             {isIssued && (
               <Stack gap="sm">
-                <Button
-                  onClick={() => {
-                    sendEmail.mutate(invoiceId)
-                  }}
-                  disabled={sendEmail.isPending}
-                >
+                <Button onClick={sendInvoiceEmail} disabled={sendEmail.isPending}>
                   {sendEmail.isPending
                     ? t('admin.invoices.detail.sendingEmail')
                     : t('admin.invoices.detail.sendEmail')}
                 </Button>
-                {sendEmail.isSuccess && (
-                  <Text variant="muted" role="status">
-                    {t('admin.invoices.detail.emailSent')}
-                  </Text>
+                {sendEmail.isError && (
+                  <div className="max-w-md">
+                    <ActionError
+                      title={t('admin.invoices.detail.emailErrorTitle')}
+                      description={t('admin.invoices.detail.emailErrorBody')}
+                      actions={[
+                        {
+                          label: t('admin.invoices.detail.emailRetry'),
+                          variant: 'solid',
+                          onClick: sendInvoiceEmail,
+                        },
+                        {
+                          label: t('admin.invoices.detail.emailCheckClient'),
+                          variant: 'outline',
+                          onClick: () => {
+                            void navigate(`/clients/${String(invoice.client_id)}/edit`)
+                          },
+                        },
+                      ]}
+                      onClose={() => {
+                        sendEmail.reset()
+                      }}
+                      closeLabel={t('common.actions.close')}
+                    />
+                  </div>
                 )}
-                <MutationError
-                  message={sendEmail.isError ? t('admin.invoices.detail.emailError') : null}
-                />
               </Stack>
             )}
             {link.canGenerate && (

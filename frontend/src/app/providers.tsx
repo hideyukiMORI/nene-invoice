@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react'
 import { AppError } from '@/shared/api/errors'
 import { env } from '@/shared/config/env'
 import { I18nProvider } from '@/shared/i18n'
+import { ToastProvider } from '@/shared/ui'
 import { AuthGate } from './auth-gate'
 import { RootErrorBoundary } from './root-error-boundary'
 
@@ -26,9 +27,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
-        <RootErrorBoundary>
-          <AuthGate>{children}</AuthGate>
-        </RootErrorBoundary>
+        <ToastProvider>
+          <RootErrorBoundary>
+            <AuthGate>{children}</AuthGate>
+          </RootErrorBoundary>
+        </ToastProvider>
       </QueryClientProvider>
     </I18nProvider>
   )
