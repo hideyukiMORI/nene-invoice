@@ -162,10 +162,20 @@
     align-items: start;
   }
 
+  /* Content width (final spec): lists/dashboard full-width; forms = narrow. */
+  .content-narrow {
+    width: 100%;
+    max-width: 47.5rem; /* 760px — spec .content.narrow */
+  }
+  .content-mid {
+    width: 100%;
+    max-width: 58.75rem; /* 940px — spec .content.mid */
+  }
+
   /* Form layout: constrained, left-aligned column + even paired-field rows */
   .form-layout {
     width: 100%;
-    max-width: 40rem;
+    max-width: 47.5rem; /* 760px — spec .content.narrow */
   }
   .form-row {
     display: grid;
@@ -678,8 +688,9 @@
       opacity: 1;
       pointer-events: auto;
     }
+    /* Bottom tab bar is the primary mobile nav; the burger is hidden (spec). */
     .tb-burger {
-      display: inline-flex;
+      display: none;
     }
     .topbar {
       padding: 0 0.875rem;
@@ -691,7 +702,8 @@
       text-overflow: ellipsis;
     }
     .app-content {
-      padding: 1rem 0.875rem 2rem;
+      /* extra bottom padding so content is never hidden behind the tab bar */
+      padding: 1rem 0.875rem 4.75rem;
     }
     .page-head {
       flex-direction: column;
@@ -776,6 +788,68 @@
   @media (max-width: 420px) {
     .stats {
       grid-template-columns: 1fr;
+    }
+  }
+
+  /* ============================================================
+     BOTTOM TAB BAR (mobile, thumb-reachable) — final spec
+     ============================================================ */
+  .bottom-nav {
+    display: none;
+  }
+  @media (max-width: 760px) {
+    .bottom-nav {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      /* fixed to the viewport (the app uses body scroll, not an internal
+         100vh scroll container like the reference SPA) */
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      /* below the drawer (z-40) and its backdrop (z-30) so the menu covers it */
+      z-index: 25;
+      background: var(--color-surface-raised);
+      border-top: 1px solid var(--color-border-strong);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-shadow: 0 -3px 14px oklch(20% 0.02 165 / 0.07);
+    }
+    .bn-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 56px;
+      padding: 0.5rem 0.25rem 0.4375rem;
+      font-family: inherit;
+      font-size: 0.65625rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--color-fg-muted);
+      text-decoration: none;
+      background: none;
+      border: none;
+      border-top: 2px solid transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .bn-item .bn-ico {
+      width: 22px;
+      height: 22px;
+    }
+    .bn-item .bn-ico svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .bn-item:active {
+      background: var(--color-surface-overlay);
+    }
+    .bn-item.active {
+      color: var(--color-accent-hover);
+      border-top-color: var(--color-accent);
     }
   }
 }

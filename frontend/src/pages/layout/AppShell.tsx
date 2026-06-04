@@ -97,6 +97,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M7.5 13.5h5" />
     </>,
   ),
+  more: icon(
+    <>
+      <circle cx="4" cy="10" r="1.4" />
+      <circle cx="10" cy="10" r="1.4" />
+      <circle cx="16" cy="10" r="1.4" />
+    </>,
+  ),
 }
 
 /** Hamburger (mobile drawer toggle). */
@@ -145,6 +152,55 @@ const NAV: NavGroup[] = [
     ],
   },
 ]
+
+/** Primary tabs for the mobile bottom bar (thumb-reachable). The remaining nav
+ *  items (users / settings / audit) live behind the 「メニュー」 tab, which opens
+ *  the sidebar drawer. */
+interface BottomTab {
+  to: string
+  label: MessageKey
+  iconKey: string
+}
+const BOTTOM_TABS: BottomTab[] = [
+  { to: '/dashboard', label: 'admin.bottomNav.dashboard', iconKey: 'dashboard' },
+  { to: '/quotes', label: 'admin.bottomNav.quotes', iconKey: 'quotes' },
+  { to: '/invoices', label: 'admin.bottomNav.invoices', iconKey: 'invoices' },
+  { to: '/clients', label: 'admin.bottomNav.clients', iconKey: 'clients' },
+]
+/** Routes that live behind the 「メニュー」 tab (not direct bottom tabs). */
+const DRAWER_ROUTES = ['/users', '/audit-logs', '/settings']
+
+interface BottomNavProps {
+  pathname: string
+  menuActive: boolean
+  onMenu: () => void
+}
+
+function BottomNav({ pathname, menuActive, onMenu }: BottomNavProps) {
+  const { t } = useTranslation()
+  return (
+    <nav className="bottom-nav" aria-label={t('admin.nav.primary')}>
+      {BOTTOM_TABS.map((tab) => {
+        const active = pathname === tab.to || pathname.startsWith(`${tab.to}/`)
+        return (
+          <NavLink key={tab.to} to={tab.to} className={cn('bn-item', active && 'active')}>
+            <span className="bn-ico">{ICONS[tab.iconKey]}</span>
+            {t(tab.label)}
+          </NavLink>
+        )
+      })}
+      <button
+        type="button"
+        className={cn('bn-item', menuActive && 'active')}
+        aria-label={t('admin.bottomNav.menu')}
+        onClick={onMenu}
+      >
+        <span className="bn-ico">{ICONS.more}</span>
+        {t('admin.bottomNav.menu')}
+      </button>
+    </nav>
+  )
+}
 
 /** Authenticated app chrome: deep-green sidebar (off-canvas drawer on mobile)
  *  + topbar + routed content. Responsive styling lives in the theme layer. */
@@ -226,10 +282,20 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main className="app-content w-full max-w-6xl flex-1">
+        <main className="app-content w-full min-w-0 flex-1">
           <Outlet />
         </main>
       </div>
+
+      <BottomNav
+        pathname={pathname}
+        menuActive={DRAWER_ROUTES.some(
+          (route) => pathname === route || pathname.startsWith(`${route}/`),
+        )}
+        onMenu={() => {
+          setNavOpen(true)
+        }}
+      />
     </div>
   )
 }
