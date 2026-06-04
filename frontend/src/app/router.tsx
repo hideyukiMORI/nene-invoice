@@ -6,6 +6,7 @@ import { ClientEditPage } from '@/pages/client-edit'
 import { ClientsPage } from '@/pages/clients'
 import { CompanySettingsPage } from '@/pages/company-settings'
 import { DashboardPage } from '@/pages/dashboard'
+import { HelpPage } from '@/pages/help'
 import { InvoiceCreatePage } from '@/pages/invoice-create'
 import { QuoteCreatePage } from '@/pages/quote-create'
 import { QuoteDetailPage } from '@/pages/quote-detail'
@@ -37,6 +38,7 @@ const router = createBrowserRouter([
       { path: 'users/new', element: <UserCreatePage /> },
       { path: 'users/:id/edit', element: <UserEditPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: 'help', element: <HelpPage /> },
     ],
   },
   { path: '*', element: <Navigate to="/invoices" replace /> },
