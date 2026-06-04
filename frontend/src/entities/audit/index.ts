@@ -1,4 +1,5 @@
 export { useAuditLogList } from './queries'
+export { useExportAuditLogsCsv } from './export'
 export { auditKeys, type AuditLogListParams } from './query-keys'
 export {
   EMPTY_AUDIT_LOG_FILTERS,
