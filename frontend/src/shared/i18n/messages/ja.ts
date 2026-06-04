@@ -7,6 +7,7 @@ export const jaMessages = {
   'common.actions.retry': '再試行',
   'common.actions.signOut': 'ログアウト',
   'common.error.generic': 'エラーが発生しました。',
+  'common.locale.label': '言語',
   'common.locale.ja': '日本語',
   'common.locale.en': 'English',
   'common.pagination.prev': '前のページ',
