@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/audit-logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export audit logs as CSV
+         * @description Downloads the (optionally filtered) audit trail as a UTF-8 BOM CSV file. Accepts the same filters as the list endpoint. Requires the manage_users capability (admin / superadmin).
+         */
+        get: operations["exportAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/organizations": {
         parameters: {
             query?: never;
@@ -1132,6 +1152,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditLogList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    exportAuditLogs: {
+        parameters: {
+            query?: {
+                entity_type?: string;
+                action?: string;
+                actor_user_id?: number;
+                created_from?: string;
+                created_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
             401: components["responses"]["Unauthorized"];

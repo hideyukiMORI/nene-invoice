@@ -11,6 +11,7 @@ use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -57,15 +58,29 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ExportAuditLogsCsvUseCase::class,
+                static fn (ContainerInterface $c): ExportAuditLogsCsvUseCase => new ExportAuditLogsCsvUseCase(
+                    self::resolve($c, AuditLogRepositoryInterface::class),
+                ),
+            )
+            ->set(
+                ExportAuditLogsCsvHandler::class,
+                static fn (ContainerInterface $c): ExportAuditLogsCsvHandler => new ExportAuditLogsCsvHandler(
+                    self::resolve($c, ExportAuditLogsCsvUseCase::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 AuditRouteRegistrar::class,
                 static function (ContainerInterface $c): AuditRouteRegistrar {
-                    $list = $c->get(ListAuditLogsHandler::class);
+                    $list   = $c->get(ListAuditLogsHandler::class);
+                    $export = $c->get(ExportAuditLogsCsvHandler::class);
 
-                    if (!$list instanceof ListAuditLogsHandler) {
-                        throw new LogicException('Audit log handler service is invalid.');
+                    if (!$list instanceof ListAuditLogsHandler || !$export instanceof ExportAuditLogsCsvHandler) {
+                        throw new LogicException('Audit log handler services are invalid.');
                     }
 
-                    return new AuditRouteRegistrar($list);
+                    return new AuditRouteRegistrar($list, $export);
                 },
             );
     }

@@ -27,6 +27,7 @@ final class OpenApiContractTest extends TestCase
         'login',
         'getCurrentUser',
         'listAuditLogs',
+        'exportAuditLogs',
         'listOrganizations',
         'getOrganizationById',
         'createOrganization',

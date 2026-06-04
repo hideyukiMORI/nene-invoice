@@ -5,6 +5,7 @@ import {
   auditActionLabelKey,
   auditEntityLabelKey,
   EMPTY_AUDIT_LOG_FILTERS,
+  useExportAuditLogsCsv,
   type AuditLog,
   type AuditLogFilters,
 } from '@/entities/audit'
@@ -31,6 +32,7 @@ function trimmedOrNull(value: string): string | null {
 export function ListAuditLogs() {
   const { t } = useTranslation()
   const view = useListAuditLogs()
+  const exportCsv = useExportAuditLogsCsv(view.filters)
   const [expanded, setExpanded] = useState<number | null>(null)
 
   // Local draft of the filter form; committed to the query on submit.
@@ -48,9 +50,25 @@ export function ListAuditLogs() {
 
   return (
     <Stack gap="md">
-      <Text as="h1" variant="heading-md">
-        {t('admin.audit.title')}
-      </Text>
+      <div className="flex items-center justify-between">
+        <Text as="h1" variant="heading-md">
+          {t('admin.audit.title')}
+        </Text>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={exportCsv.download}
+          disabled={exportCsv.isDownloading}
+        >
+          {exportCsv.isDownloading ? t('admin.audit.exporting') : t('admin.audit.export')}
+        </Button>
+      </div>
+
+      {exportCsv.errorMessage !== null && (
+        <Text variant="muted" role="alert">
+          {exportCsv.errorMessage}
+        </Text>
+      )}
 
       <form onSubmit={onSubmit}>
         <Stack gap="sm">
