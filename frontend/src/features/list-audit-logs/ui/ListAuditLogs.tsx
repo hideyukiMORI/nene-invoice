@@ -1,5 +1,13 @@
 import { useState, type SyntheticEvent } from 'react'
-import { EMPTY_AUDIT_LOG_FILTERS, type AuditLog, type AuditLogFilters } from '@/entities/audit'
+import {
+  AUDIT_ACTIONS,
+  AUDIT_ENTITY_TYPES,
+  auditActionLabelKey,
+  auditEntityLabelKey,
+  EMPTY_AUDIT_LOG_FILTERS,
+  type AuditLog,
+  type AuditLogFilters,
+} from '@/entities/audit'
 import { useTranslation } from '@/shared/i18n'
 import {
   Button,
@@ -13,17 +21,6 @@ import {
   Text,
 } from '@/shared/ui'
 import { useListAuditLogs } from '../hooks/use-list-audit-logs'
-
-/** Entity types that can appear in the trail (terminology registry §1). */
-const ENTITY_TYPES = [
-  'organization',
-  'user',
-  'client',
-  'company_settings',
-  'quote',
-  'invoice',
-  'payment',
-] as const
 
 function trimmedOrNull(value: string): string | null {
   const trimmed = value.trim()
@@ -67,23 +64,35 @@ export function ListAuditLogs() {
                 }}
               >
                 <option value="">{t('admin.audit.filter.any')}</option>
-                {ENTITY_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
+                {AUDIT_ENTITY_TYPES.map((type) => {
+                  const key = auditEntityLabelKey(type)
+                  return (
+                    <option key={type} value={type}>
+                      {key ? t(key) : type}
+                    </option>
+                  )
+                })}
               </Select>
             </Field>
 
             <Field id="audit-action" label={t('admin.audit.filter.action')}>
-              <Input
+              <Select
                 id="audit-action"
                 value={draft.action ?? ''}
-                placeholder="invoice.issued"
                 onChange={(e) => {
                   setDraft({ ...draft, action: trimmedOrNull(e.target.value) })
                 }}
-              />
+              >
+                <option value="">{t('admin.audit.filter.any')}</option>
+                {AUDIT_ACTIONS.map((action) => {
+                  const key = auditActionLabelKey(action)
+                  return (
+                    <option key={action} value={action}>
+                      {key ? t(key) : action}
+                    </option>
+                  )
+                })}
+              </Select>
             </Field>
 
             <Field id="audit-actor" label={t('admin.audit.filter.actor')}>
@@ -202,15 +211,21 @@ interface AuditRowProps {
 function AuditRow({ log, expanded, onToggle }: AuditRowProps) {
   const { t } = useTranslation()
 
+  const actionKey = auditActionLabelKey(log.action)
+  const actionLabel = actionKey ? t(actionKey) : log.action
+  const entityKey = auditEntityLabelKey(log.entity_type)
+  const entityLabel = entityKey ? t(entityKey) : log.entity_type
+
   return (
     <>
       <tr>
         <td data-label={t('admin.audit.col.createdAt')}>{log.created_at ?? '—'}</td>
         <td data-label={t('admin.audit.col.action')}>
-          <code>{log.action}</code>
+          {/* Accounting-term label; the raw code stays available on hover. */}
+          <span title={log.action}>{actionLabel}</span>
         </td>
         <td data-label={t('admin.audit.col.entity')}>
-          {log.entity_type}
+          {entityLabel}
           {log.entity_id !== null ? ` #${String(log.entity_id)}` : ''}
         </td>
         <td data-label={t('admin.audit.col.actor')}>
