@@ -372,6 +372,8 @@ export const enMessages: MessageCatalog = {
   'admin.dashboard.invoiceCount': '{{count}} invoices',
   'admin.dashboard.due': 'Due {{date}}',
   'admin.dashboard.receivedThisMonth': 'Received this month',
+  'admin.dashboard.billedThisMonth': 'Billed this month',
+  'admin.dashboard.billedTrend': 'Billing trend',
   'admin.dashboard.momChange': 'MoM {{change}}',
   'admin.dashboard.aging': 'Receivable aging',
   'admin.dashboard.agingCurrent': 'Current',

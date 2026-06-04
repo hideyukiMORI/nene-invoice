@@ -32,6 +32,9 @@ describe('useViewDashboard', () => {
           received_this_month_cents: 0,
           received_last_month_cents: 0,
           aging: { current: 0, overdue_1_30: 0, overdue_31_plus: 0 },
+          billed_this_month_cents: 0,
+          billed_last_month_cents: 0,
+          monthly_billed: [],
         }),
       ),
     )

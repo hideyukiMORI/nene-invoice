@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import type { MonthlyBilled } from '@/entities/dashboard'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
@@ -41,6 +42,18 @@ export function ViewDashboard() {
     momDir = pct >= 0 ? 'up' : 'down'
   }
 
+  // Same month-over-month, for invoices issued (billed) this month.
+  const billedLast = state.billedLastMonthCents
+  let billedMomText: string | undefined
+  let billedMomDir: 'up' | 'down' | undefined
+  if (billedLast > 0) {
+    const pct = Math.round(((state.billedThisMonthCents - billedLast) / billedLast) * 100)
+    billedMomText = t('admin.dashboard.momChange', {
+      change: `${pct > 0 ? '+' : ''}${String(pct)}%`,
+    })
+    billedMomDir = pct >= 0 ? 'up' : 'down'
+  }
+
   const aging = state.aging
   const agingTotal = aging.current + aging.overdue_1_30 + aging.overdue_31_plus
   const pct = (n: number): number => (agingTotal > 0 ? Math.round((n / agingTotal) * 100) : 0)
@@ -75,6 +88,12 @@ export function ViewDashboard() {
           tone="c-danger"
         />
         <StatCard
+          label={t('admin.dashboard.billedThisMonth')}
+          value={formatYen(state.billedThisMonthCents)}
+          foot={billedMomText}
+          footClass={billedMomDir}
+        />
+        <StatCard
           label={t('admin.dashboard.receivedThisMonth')}
           value={formatYen(state.receivedThisMonthCents)}
           foot={momText}
@@ -85,6 +104,15 @@ export function ViewDashboard() {
           value={formatYen(state.outstandingTotalCents)}
           foot={t('admin.dashboard.invoiceCount', { count: state.unpaidCount })}
         />
+      </div>
+
+      <div className="panel">
+        <div className="panel-head">
+          <h3>{t('admin.dashboard.billedTrend')}</h3>
+        </div>
+        <div className="panel-body">
+          <BilledTrend months={state.monthlyBilled} locale={locale} />
+        </div>
       </div>
 
       <div className="dash-grid">
@@ -167,6 +195,33 @@ export function ViewDashboard() {
         </div>
       </div>
     </Stack>
+  )
+}
+
+/** (B) Monthly issued-invoice trend — simple CSS bar chart (no chart lib). */
+function BilledTrend({ months, locale }: { months: MonthlyBilled[]; locale: string }) {
+  const max = Math.max(1, ...months.map((m) => m.billed_cents))
+  const monthLabel = (ym: string): string =>
+    new Date(`${ym}-01T00:00:00`).toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+      month: 'short',
+    })
+
+  return (
+    <div className="bar-chart">
+      {months.map((m) => (
+        <div className="bar-col" key={m.month}>
+          <span className="bar-cap num">{formatYen(m.billed_cents)}</span>
+          <div className="bar-track">
+            <div
+              className="bar"
+              style={{ height: `${String(Math.round((m.billed_cents / max) * 100))}%` }}
+              title={formatYen(m.billed_cents)}
+            />
+          </div>
+          <span className="bar-label">{monthLabel(m.month)}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 

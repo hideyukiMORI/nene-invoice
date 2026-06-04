@@ -7,6 +7,13 @@ export interface ReceivableAging {
   overdue_31_plus: number
 }
 
+/** Issued-invoice total for one calendar month (Issue #272). */
+export interface MonthlyBilled {
+  month: string
+  billed_cents: number
+  count: number
+}
+
 export interface DashboardSummary {
   unpaid_count: number
   overdue_count: number
@@ -15,4 +22,7 @@ export interface DashboardSummary {
   received_this_month_cents: number
   received_last_month_cents: number
   aging: ReceivableAging
+  billed_this_month_cents: number
+  billed_last_month_cents: number
+  monthly_billed: MonthlyBilled[]
 }
