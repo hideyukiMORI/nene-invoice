@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use DateTimeImmutable;
 use LogicException;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
@@ -59,15 +60,28 @@ final readonly class IssueInvoiceUseCase
             throw new InvoiceValidationException('An invoice cannot be issued without line items.');
         }
 
-        if ($input->qualified) {
-            $settings = $this->companySettings->find();
+        $settings = $this->companySettings->find();
 
+        if ($input->qualified) {
             if ($settings === null || $settings->registrationNumber === null) {
                 throw new QualifiedInvoiceIncompleteException('A qualified invoice requires the issuer registration number to be configured in company settings.');
             }
         }
 
         $number = $this->numbers->next(DocumentType::Invoice, (int) date('Y'));
+
+        $issuedAt = date('Y-m-d H:i:s');
+
+        // Due date: explicit input wins, then any pre-set value, else the
+        // company payment-terms default (締め日＋支払サイト) from the issue date.
+        $dueAt = $input->dueAt ?? $invoice->dueAt;
+
+        if ($dueAt === null) {
+            $terms = $settings?->paymentTerms();
+            if ($terms !== null) {
+                $dueAt = $terms->dueDateFrom(new DateTimeImmutable($issuedAt));
+            }
+        }
 
         $this->invoices->update(new Invoice(
             organizationId: $invoice->organizationId,
@@ -79,8 +93,8 @@ final readonly class IssueInvoiceUseCase
             isQualifiedInvoice: $input->qualified,
             quoteId: $invoice->quoteId,
             invoiceNumber: $number,
-            issuedAt: date('Y-m-d H:i:s'),
-            dueAt: $input->dueAt ?? $invoice->dueAt,
+            issuedAt: $issuedAt,
+            dueAt: $dueAt,
             notes: $invoice->notes,
             id: $invoice->id,
             createdAt: $invoice->createdAt,

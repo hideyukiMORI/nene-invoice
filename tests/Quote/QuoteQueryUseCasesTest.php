@@ -15,6 +15,7 @@ use NeneInvoice\Quote\GetQuoteByIdUseCase;
 use NeneInvoice\Quote\ListQuotesUseCase;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
+use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
@@ -49,6 +50,7 @@ final class QuoteQueryUseCasesTest extends TestCase
             $this->quotes,
             $this->lineItems,
             $this->clients,
+            new InMemoryCompanySettingsRepository($this->holder),
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             new RecordingAuditRecorder(),

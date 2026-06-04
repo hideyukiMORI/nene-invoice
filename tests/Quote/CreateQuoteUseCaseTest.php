@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Quote;
 
+use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
+use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemInput;
 use NeneInvoice\LineItem\LineItemParent;
@@ -15,6 +17,7 @@ use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\QuoteStatus;
 use NeneInvoice\Quote\QuoteValidationException;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
+use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
@@ -28,6 +31,7 @@ final class CreateQuoteUseCaseTest extends TestCase
     private InMemoryQuoteRepository $quotes;
     private InMemoryLineItemRepository $lineItems;
     private InMemoryClientRepository $clients;
+    private InMemoryCompanySettingsRepository $companySettings;
     private RecordingAuditRecorder $audit;
     private CreateQuoteUseCase $useCase;
     private int $clientId;
@@ -39,6 +43,7 @@ final class CreateQuoteUseCaseTest extends TestCase
         $this->quotes = new InMemoryQuoteRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->clients = new InMemoryClientRepository($this->holder);
+        $this->companySettings = new InMemoryCompanySettingsRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
         $this->clientId = $this->clients->save(new Client(organizationId: 1, name: 'Acme'));
 
@@ -46,11 +51,46 @@ final class CreateQuoteUseCaseTest extends TestCase
             $this->quotes,
             $this->lineItems,
             $this->clients,
+            $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             $this->audit,
             $this->holder,
         );
+    }
+
+    public function test_applies_company_default_validity_when_not_provided(): void
+    {
+        $this->companySettings->save(new CompanySettings(
+            organizationId: 1,
+            legalName: 'X',
+            defaultQuoteValidityDays: 30,
+        ));
+
+        $result = $this->useCase->execute(1, new CreateQuoteInput(
+            clientId: $this->clientId,
+            lines: [new LineItemInput('X', 1, 1000, 1000)],
+        ));
+
+        $expected = (new DateTimeImmutable('today'))->modify('+30 day')->format('Y-m-d');
+        self::assertSame($expected, substr((string) $result->quote->validUntil, 0, 10));
+    }
+
+    public function test_explicit_valid_until_overrides_company_default(): void
+    {
+        $this->companySettings->save(new CompanySettings(
+            organizationId: 1,
+            legalName: 'X',
+            defaultQuoteValidityDays: 30,
+        ));
+
+        $result = $this->useCase->execute(1, new CreateQuoteInput(
+            clientId: $this->clientId,
+            lines: [new LineItemInput('X', 1, 1000, 1000)],
+            validUntil: '2026-12-31',
+        ));
+
+        self::assertSame('2026-12-31', substr((string) $result->quote->validUntil, 0, 10));
     }
 
     public function test_creates_quote_with_computed_totals_number_lines_and_audit(): void

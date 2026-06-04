@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
+use DateTimeImmutable;
 use LogicException;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
+use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\DocumentSequence\DocumentType;
 use NeneInvoice\LineItem\LineItem;
@@ -32,6 +34,7 @@ final readonly class CreateQuoteUseCase
         private QuoteRepositoryInterface $quotes,
         private LineItemRepositoryInterface $lineItems,
         private ClientRepositoryInterface $clients,
+        private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
         private TaxCalculator $taxCalculator,
         private AuditRecorderInterface $audit,
@@ -72,6 +75,11 @@ final readonly class CreateQuoteUseCase
         $totals = $this->taxCalculator->calculate($input->lines);
         $number = $this->numbers->next(DocumentType::Quote, (int) date('Y'));
 
+        // Validity: explicit input wins, else the company default period (有効期限)
+        // measured from today (the draft's creation date).
+        $validUntil = $input->validUntil
+            ?? $this->companySettings->find()?->quoteValidUntilFrom(new DateTimeImmutable('today'));
+
         $quoteId = $this->quotes->save(new Quote(
             organizationId: $organizationId,
             clientId: $input->clientId,
@@ -80,7 +88,7 @@ final readonly class CreateQuoteUseCase
             subtotalCents: $totals->subtotalCents,
             taxCents: $totals->taxCents,
             totalCents: $totals->totalCents,
-            validUntil: $input->validUntil,
+            validUntil: $validUntil,
             notes: $input->notes,
         ));
 

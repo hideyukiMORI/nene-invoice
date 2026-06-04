@@ -50,6 +50,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     self::quotes($c),
                     self::resolve($c, LineItemRepositoryInterface::class),
                     self::resolve($c, ClientRepositoryInterface::class),
+                    self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, DocumentNumberGenerator::class),
                     self::resolve($c, TaxCalculator::class),
                     self::resolve($c, AuditRecorderInterface::class),
