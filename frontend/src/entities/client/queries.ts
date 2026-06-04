@@ -16,6 +16,11 @@ export function useClientList(params: ClientListParams): UseQueryResult<ClientPa
         limit: String(params.limit),
         offset: String(params.offset),
       })
+      if (params.filters.q !== null) search.set('q', params.filters.q)
+      if (params.sort.field !== null) {
+        search.set('sort', params.sort.field)
+        search.set('order', params.sort.order)
+      }
       const dto = await apiClient.get<ClientListDto>(`/admin/clients?${search.toString()}`)
       return toClientPage(dto)
     },

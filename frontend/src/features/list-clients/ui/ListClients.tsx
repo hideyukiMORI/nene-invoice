@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useState, type ReactNode, type SyntheticEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { useDeleteClient, type Client } from '@/entities/client'
+import {
+  EMPTY_CLIENT_FILTERS,
+  useDeleteClient,
+  type Client,
+  type ClientListFilters,
+  type ClientSortField,
+} from '@/entities/client'
 import { useTranslation } from '@/shared/i18n'
 import {
   Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
+  Field,
+  Input,
   LinkButton,
   LoadingState,
   Stack,
@@ -14,12 +22,15 @@ import {
 } from '@/shared/ui'
 import { useListClients } from '../hooks/use-list-clients'
 
-/** Client (取引先) list screen with per-row delete (confirmed). */
+const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? null : value.trim())
+
+/** Client (取引先) list screen with search / sort and per-row delete. */
 export function ListClients() {
   const { t } = useTranslation()
-  const state = useListClients()
+  const view = useListClients()
   const deleteClient = useDeleteClient()
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null)
+  const [draft, setDraft] = useState<ClientListFilters>(EMPTY_CLIENT_FILTERS)
 
   const confirmDelete = (): void => {
     if (pendingDelete === null) return
@@ -29,6 +40,33 @@ export function ListClients() {
       },
     })
   }
+
+  const onSubmit = (event: SyntheticEvent): void => {
+    event.preventDefault()
+    view.applyFilters(draft)
+  }
+  const onReset = (): void => {
+    setDraft(EMPTY_CLIENT_FILTERS)
+    view.resetFilters()
+  }
+
+  const sortIndicator = (field: ClientSortField): string =>
+    view.sort.field === field ? (view.sort.order === 'asc' ? ' ▲' : ' ▼') : ''
+
+  const sortableTh = (field: ClientSortField, label: string): ReactNode => (
+    <th>
+      <button
+        type="button"
+        className="th-sort"
+        onClick={() => {
+          view.toggleSort(field)
+        }}
+      >
+        {label}
+        {sortIndicator(field)}
+      </button>
+    </th>
+  )
 
   return (
     <Stack gap="md">
@@ -41,32 +79,54 @@ export function ListClients() {
         </LinkButton>
       </div>
 
-      {state.kind === 'loading' && <LoadingState message={t('admin.clients.loading')} />}
+      <form onSubmit={onSubmit}>
+        <div className="flex flex-wrap items-end gap-inline-sm">
+          <Field id="client-q" label={t('admin.clients.filter.search')}>
+            <Input
+              id="client-q"
+              className="w-72"
+              value={draft.q ?? ''}
+              placeholder={t('admin.clients.filter.searchPlaceholder')}
+              onChange={(e) => {
+                setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+              }}
+            />
+          </Field>
+          <Button type="submit" size="sm">
+            {t('admin.clients.filter.apply')}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onReset}>
+            {t('admin.clients.filter.reset')}
+          </Button>
+        </div>
+      </form>
 
-      {state.kind === 'error' && (
+      {view.state.kind === 'loading' && <LoadingState message={t('admin.clients.loading')} />}
+
+      {view.state.kind === 'error' && (
         <ErrorState
           message={t('admin.clients.error')}
           retryLabel={t('common.actions.retry')}
-          onRetry={state.retry}
+          onRetry={view.state.retry}
         />
       )}
 
-      {state.kind === 'empty' && <EmptyState message={t('admin.clients.empty')} />}
+      {view.state.kind === 'empty' && <EmptyState message={t('admin.clients.empty')} />}
 
-      {state.kind === 'ready' && (
+      {view.state.kind === 'ready' && (
         <div className="table-scroll">
           <table className="data-table">
             <thead>
               <tr>
-                <th>{t('admin.clients.col.name')}</th>
-                <th>{t('admin.clients.col.contact')}</th>
-                <th>{t('admin.clients.col.email')}</th>
-                <th>{t('admin.clients.col.registration')}</th>
+                {sortableTh('name', t('admin.clients.col.name'))}
+                {sortableTh('contact', t('admin.clients.col.contact'))}
+                {sortableTh('email', t('admin.clients.col.email'))}
+                {sortableTh('registration', t('admin.clients.col.registration'))}
                 <th className="tr">{t('admin.clients.col.actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {state.clients.map((client) => (
+              {view.state.clients.map((client) => (
                 <tr key={client.id}>
                   <td data-label={t('admin.clients.col.name')}>{client.name}</td>
                   <td data-label={t('admin.clients.col.contact')}>{client.contact_name ?? '—'}</td>

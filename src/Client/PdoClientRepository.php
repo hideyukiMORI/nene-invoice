@@ -51,6 +51,80 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         return $row !== null ? (int) $row['cnt'] : 0;
     }
 
+    /**
+     * Admin list: searched + sorted.
+     *
+     * @return list<Client>
+     */
+    public function findForAdminList(ClientListFilter $filter, ClientSort $sort, int $limit, int $offset): array
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . ' FROM clients WHERE ' . $where
+                . ' ORDER BY ' . self::orderByClause($sort) . ' LIMIT ? OFFSET ?',
+            [...$params, $limit, $offset],
+        );
+
+        return array_map(fn (array $row): Client => $this->mapRow($row), $rows);
+    }
+
+    public function countForAdminList(ClientListFilter $filter): int
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $row = $this->query->fetchOne('SELECT COUNT(*) AS cnt FROM clients WHERE ' . $where, $params);
+
+        return $row !== null ? (int) $row['cnt'] : 0;
+    }
+
+    /**
+     * @return array{0: string, 1: list<int|string>}
+     */
+    private function buildAdminWhere(ClientListFilter $filter): array
+    {
+        $clauses = ['organization_id = ?', 'is_deleted = 0'];
+        /** @var list<int|string> $params */
+        $params = [$this->orgId->get()];
+
+        if ($filter->search !== null) {
+            $clauses[] = "(name LIKE ? ESCAPE '!' OR contact_name LIKE ? ESCAPE '!'"
+                . " OR email LIKE ? ESCAPE '!' OR registration_number LIKE ? ESCAPE '!')";
+            $like = '%' . self::escapeLike($filter->search) . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        return [implode(' AND ', $clauses), $params];
+    }
+
+    /** Maps a whitelisted sort field to a SQL ORDER BY, with `id` as tiebreak. */
+    private static function orderByClause(ClientSort $sort): string
+    {
+        $columns = [
+            'name'         => 'name',
+            'contact'      => 'contact_name',
+            'email'        => 'email',
+            'registration' => 'registration_number',
+        ];
+
+        $direction = $sort->descending ? 'DESC' : 'ASC';
+
+        if ($sort->field === null || !isset($columns[$sort->field])) {
+            return 'name ' . $direction . ', id ASC';
+        }
+
+        return $columns[$sort->field] . ' ' . $direction . ', id ASC';
+    }
+
+    /** Escapes LIKE wildcards (ESCAPE '!') so user input is matched literally. */
+    private static function escapeLike(string $value): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+    }
+
     public function save(Client $client): int
     {
         $now = date('Y-m-d H:i:s');

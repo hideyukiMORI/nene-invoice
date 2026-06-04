@@ -19,6 +19,15 @@ interface ClientRepositoryInterface
 
     public function count(): int;
 
+    /**
+     * Admin list: searched + sorted.
+     *
+     * @return list<Client>
+     */
+    public function findForAdminList(ClientListFilter $filter, ClientSort $sort, int $limit, int $offset): array;
+
+    public function countForAdminList(ClientListFilter $filter): int;
+
     public function save(Client $client): int;
 
     /** @throws ClientNotFoundException */

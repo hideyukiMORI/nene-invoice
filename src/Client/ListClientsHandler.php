@@ -34,7 +34,16 @@ final readonly class ListClientsHandler implements RequestHandlerInterface
         $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
         $offset = max(0, $offset);
 
-        $result = $this->useCase->execute($limit, $offset);
+        $searchValue = $query['q'] ?? null;
+        $search      = is_string($searchValue) && trim($searchValue) !== '' ? trim($searchValue) : null;
+        $sortValue   = $query['sort'] ?? null;
+        $orderValue  = $query['order'] ?? null;
+        $sort        = ClientSort::fromInput(
+            is_string($sortValue) ? $sortValue : null,
+            is_string($orderValue) ? $orderValue : null,
+        );
+
+        $result = $this->useCase->executeAdmin(new ClientListFilter($search), $sort, $limit, $offset);
 
         return $this->json->create([
             'items' => array_map(static fn (Client $c): array => ClientResponse::toArray($c), $result->items),

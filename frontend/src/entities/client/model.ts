@@ -17,6 +17,20 @@ export interface ClientPage {
   offset: number
 }
 
+/** Applied search for the admin client list. */
+export interface ClientListFilters {
+  q: string | null
+}
+
+export const EMPTY_CLIENT_FILTERS: ClientListFilters = { q: null }
+
+export type ClientSortField = 'name' | 'contact' | 'email' | 'registration'
+
+export interface ClientSort {
+  field: ClientSortField | null
+  order: 'asc' | 'desc'
+}
+
 export interface CreateClientInput {
   name: string
   contact_name: string | null

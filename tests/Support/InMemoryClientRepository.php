@@ -6,8 +6,10 @@ namespace NeneInvoice\Tests\Support;
 
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
+use NeneInvoice\Client\ClientListFilter;
 use NeneInvoice\Client\ClientNotFoundException;
 use NeneInvoice\Client\ClientRepositoryInterface;
+use NeneInvoice\Client\ClientSort;
 
 /**
  * In-memory fake for use-case tests (no database). Reads are scoped to the
@@ -64,6 +66,50 @@ final class InMemoryClientRepository implements ClientRepositoryInterface
             $this->byId,
             fn (Client $c): bool => $c->organizationId === $this->orgId->get() && !$c->isDeleted,
         ));
+    }
+
+    /** @return list<Client> */
+    public function findForAdminList(ClientListFilter $filter, ClientSort $sort, int $limit, int $offset): array
+    {
+        $matches = $this->adminFiltered($filter);
+
+        usort($matches, static function (Client $a, Client $b) use ($sort): int {
+            $cmp = match ($sort->field) {
+                'contact'      => strcmp((string) $a->contactName, (string) $b->contactName),
+                'email'        => strcmp((string) $a->email, (string) $b->email),
+                'registration' => strcmp((string) $a->registrationNumber, (string) $b->registrationNumber),
+                default        => strcmp($a->name, $b->name),
+            };
+
+            return $sort->descending ? -$cmp : $cmp;
+        });
+
+        return array_slice($matches, $offset, $limit);
+    }
+
+    public function countForAdminList(ClientListFilter $filter): int
+    {
+        return count($this->adminFiltered($filter));
+    }
+
+    /** @return list<Client> */
+    private function adminFiltered(ClientListFilter $filter): array
+    {
+        $orgId  = $this->orgId->get();
+        $search = $filter->search;
+
+        return array_values(array_filter($this->byId, static function (Client $c) use ($orgId, $search): bool {
+            if ($c->organizationId !== $orgId || $c->isDeleted) {
+                return false;
+            }
+            if ($search === null) {
+                return true;
+            }
+            $haystack = $c->name . ' ' . ($c->contactName ?? '') . ' ' . ($c->email ?? '')
+                . ' ' . ($c->registrationNumber ?? '');
+
+            return stripos($haystack, $search) !== false;
+        }));
     }
 
     public function save(Client $client): int
