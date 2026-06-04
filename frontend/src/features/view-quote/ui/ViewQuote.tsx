@@ -53,14 +53,11 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             {quote.quote_number}
           </Text>
           <Stack direction="row" gap="sm" className="flex-wrap justify-end">
-            <Stack gap="sm">
-              <Button onClick={pdf.download} disabled={pdf.isDownloading}>
-                {pdf.isDownloading
-                  ? t('admin.quotes.detail.downloadingPdf')
-                  : t('admin.quotes.detail.downloadPdf')}
-              </Button>
-              {pdf.errorMessage !== null && <InlineAlert tone="error" message={pdf.errorMessage} />}
-            </Stack>
+            <Button onClick={pdf.download} disabled={pdf.isDownloading}>
+              {pdf.isDownloading
+                ? t('admin.quotes.detail.downloadingPdf')
+                : t('admin.quotes.detail.downloadPdf')}
+            </Button>
             {state.canSend && (
               <Button
                 onClick={() => {
@@ -110,6 +107,14 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             )}
           </Stack>
         </div>
+
+        {/* Feedback sits outside the button row (Issue #266). */}
+        {pdf.errorMessage !== null && (
+          <div className="ar-banner">
+            <InlineAlert tone="error" message={pdf.errorMessage} />
+          </div>
+        )}
+
         <Stack direction="row" gap="md">
           <Badge tone={quoteStatusTone[quote.status]}>
             {t(`admin.quotes.status.${quote.status}`)}
@@ -125,7 +130,11 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
             </Text>
           )}
         </Stack>
-        {state.actionError !== null && <InlineAlert tone="error" message={state.actionError} />}
+        {state.actionError !== null && (
+          <div className="ar-banner">
+            <InlineAlert tone="error" message={state.actionError} />
+          </div>
+        )}
       </Stack>
 
       <LineItemsTable items={quote.line_items} />

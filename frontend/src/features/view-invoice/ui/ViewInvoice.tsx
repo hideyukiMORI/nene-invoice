@@ -84,85 +84,86 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
           </Text>
           <div className="flex flex-wrap items-start gap-inline-sm">
             {pdf.canDownload && (
-              <Stack gap="sm">
-                <Button onClick={pdf.download} disabled={pdf.isDownloading}>
-                  {pdf.isDownloading
-                    ? t('admin.invoices.detail.downloadingPdf')
-                    : t('admin.invoices.detail.downloadPdf')}
-                </Button>
-                {pdf.errorMessage !== null && (
-                  <InlineAlert tone="error" message={pdf.errorMessage} />
-                )}
-              </Stack>
+              <Button onClick={pdf.download} disabled={pdf.isDownloading}>
+                {pdf.isDownloading
+                  ? t('admin.invoices.detail.downloadingPdf')
+                  : t('admin.invoices.detail.downloadPdf')}
+              </Button>
             )}
             {isIssued && (
-              <Stack gap="sm">
-                <Button onClick={sendInvoiceEmail} disabled={sendEmail.isPending}>
-                  {sendEmail.isPending
-                    ? t('admin.invoices.detail.sendingEmail')
-                    : t('admin.invoices.detail.sendEmail')}
-                </Button>
-                {sendEmail.isError && (
-                  <div className="max-w-md">
-                    <ActionError
-                      title={t('admin.invoices.detail.emailErrorTitle')}
-                      description={t('admin.invoices.detail.emailErrorBody')}
-                      actions={[
-                        {
-                          label: t('admin.invoices.detail.emailRetry'),
-                          variant: 'solid',
-                          onClick: sendInvoiceEmail,
-                        },
-                        {
-                          label: t('admin.invoices.detail.emailCheckClient'),
-                          variant: 'outline',
-                          onClick: () => {
-                            void navigate(`/clients/${String(invoice.client_id)}/edit`)
-                          },
-                        },
-                      ]}
-                      onClose={() => {
-                        sendEmail.reset()
-                      }}
-                      closeLabel={t('common.actions.close')}
-                    />
-                  </div>
-                )}
-              </Stack>
+              <Button onClick={sendInvoiceEmail} disabled={sendEmail.isPending}>
+                {sendEmail.isPending
+                  ? t('admin.invoices.detail.sendingEmail')
+                  : t('admin.invoices.detail.sendEmail')}
+              </Button>
             )}
             {link.canGenerate && (
-              <Stack gap="sm">
-                <Button onClick={link.generate} disabled={link.isGenerating}>
-                  {link.isGenerating
-                    ? t('admin.invoices.detail.generatingLink')
-                    : t('admin.invoices.detail.generateLink')}
-                </Button>
-                {link.downloadUrl !== null && (
-                  <Stack gap="sm">
-                    <Text variant="muted" className="break-all text-caption">
-                      {`${window.location.origin}${link.downloadUrl}`}
-                    </Text>
-                    <Stack direction="row" gap="sm">
-                      <Button onClick={link.copy}>
-                        {link.copied
-                          ? t('admin.invoices.detail.linkCopied')
-                          : t('admin.invoices.detail.linkCopy')}
-                      </Button>
-                      {link.expiresAt !== null && (
-                        <Text variant="muted">
-                          {t('admin.invoices.detail.linkExpiry', { expiresAt: link.expiresAt })}
-                        </Text>
-                      )}
-                    </Stack>
-                  </Stack>
-                )}
-                {link.errorMessage !== null && (
-                  <InlineAlert tone="error" message={link.errorMessage} />
-                )}
-              </Stack>
+              <Button onClick={link.generate} disabled={link.isGenerating}>
+                {link.isGenerating
+                  ? t('admin.invoices.detail.generatingLink')
+                  : t('admin.invoices.detail.generateLink')}
+              </Button>
             )}
           </div>
         </div>
+
+        {/* Feedback sits outside the button row so a failing action never
+            stretches one button's column (Issue #266). */}
+        {pdf.errorMessage !== null && (
+          <div className="ar-banner">
+            <InlineAlert tone="error" message={pdf.errorMessage} />
+          </div>
+        )}
+        {sendEmail.isError && (
+          <div className="ar-banner">
+            <ActionError
+              title={t('admin.invoices.detail.emailErrorTitle')}
+              description={t('admin.invoices.detail.emailErrorBody')}
+              actions={[
+                {
+                  label: t('admin.invoices.detail.emailRetry'),
+                  variant: 'solid',
+                  onClick: sendInvoiceEmail,
+                },
+                {
+                  label: t('admin.invoices.detail.emailCheckClient'),
+                  variant: 'outline',
+                  onClick: () => {
+                    void navigate(`/clients/${String(invoice.client_id)}/edit`)
+                  },
+                },
+              ]}
+              onClose={() => {
+                sendEmail.reset()
+              }}
+              closeLabel={t('common.actions.close')}
+            />
+          </div>
+        )}
+        {link.downloadUrl !== null && (
+          <Stack gap="sm" className="ar-banner">
+            <Text variant="muted" className="break-all text-caption">
+              {`${window.location.origin}${link.downloadUrl}`}
+            </Text>
+            <Stack direction="row" gap="sm">
+              <Button onClick={link.copy}>
+                {link.copied
+                  ? t('admin.invoices.detail.linkCopied')
+                  : t('admin.invoices.detail.linkCopy')}
+              </Button>
+              {link.expiresAt !== null && (
+                <Text variant="muted">
+                  {t('admin.invoices.detail.linkExpiry', { expiresAt: link.expiresAt })}
+                </Text>
+              )}
+            </Stack>
+          </Stack>
+        )}
+        {link.errorMessage !== null && (
+          <div className="ar-banner">
+            <InlineAlert tone="error" message={link.errorMessage} />
+          </div>
+        )}
         <Stack direction="row" gap="md">
           <Badge tone={invoiceStatusTone[invoice.status]}>
             {t(`admin.invoices.status.${invoice.status}`)}
