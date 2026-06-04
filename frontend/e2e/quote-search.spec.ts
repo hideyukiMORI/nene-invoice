@@ -15,10 +15,7 @@ const q = (id: number, num: string, name: string, total: number) => ({
   total_cents: total,
 })
 
-const ALL = [
-  q(1, 'EST-001', '株式会社アルファ', 100000),
-  q(2, 'EST-002', '合同会社ベータ', 300000),
-]
+const ALL = [q(1, 'EST-001', '株式会社アルファ', 100000), q(2, 'EST-002', '合同会社ベータ', 300000)]
 
 test.describe('Quote list search / sort', () => {
   test('searches, shows client names, and sorts on header click', async ({ page }) => {
