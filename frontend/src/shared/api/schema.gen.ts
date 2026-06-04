@@ -1106,6 +1106,16 @@ export interface operations {
                 limit?: components["parameters"]["LimitParam"];
                 /** @description Number of items to skip (default 0). */
                 offset?: components["parameters"]["OffsetParam"];
+                /** @description Filter by entity type (exact match), e.g. invoice, client. */
+                entity_type?: string;
+                /** @description Filter by action (exact match), e.g. invoice.issued. */
+                action?: string;
+                /** @description Filter by the acting user id (exact match). */
+                actor_user_id?: number;
+                /** @description Inclusive lower bound on created_at (YYYY-MM-DD or full datetime). */
+                created_from?: string;
+                /** @description Inclusive upper bound on created_at. A date-only value covers the whole day (expanded to 23:59:59). */
+                created_to?: string;
             };
             header?: never;
             path?: never;

@@ -17,7 +17,7 @@ interface AuditLogRepositoryInterface
     public function append(AuditLog $log): int;
 
     /** @return list<AuditLog> */
-    public function findAll(int $limit, int $offset): array;
+    public function findAll(AuditLogFilter $filter, int $limit, int $offset): array;
 
-    public function count(): int;
+    public function count(AuditLogFilter $filter): int;
 }

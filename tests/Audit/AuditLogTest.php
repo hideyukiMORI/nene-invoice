@@ -8,6 +8,7 @@ use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Audit\AuditLogFilter;
 use NeneInvoice\Audit\AuditRecorder;
 use NeneInvoice\Audit\PdoAuditLogRepository;
 use PHPUnit\Framework\TestCase;
@@ -49,7 +50,7 @@ final class AuditLogTest extends TestCase
 
         $recorder->record(7, 1, 'client.updated', 'client', 42, ['name' => '前'], ['name' => '後']);
 
-        $logs = $this->repository->findAll(10, 0);
+        $logs = $this->repository->findAll(new AuditLogFilter(), 10, 0);
         self::assertCount(1, $logs);
         self::assertSame('client.updated', $logs[0]->action);
         self::assertSame(7, $logs[0]->actorUserId);
@@ -68,13 +69,33 @@ final class AuditLogTest extends TestCase
         $recorder->record(1, 2, 'client.created', 'client', 9, null, ['name' => 'B']);
 
         $this->holder->set(1);
-        self::assertSame(2, $this->repository->count());
+        self::assertSame(2, $this->repository->count(new AuditLogFilter()));
         $this->holder->set(2);
-        self::assertSame(1, $this->repository->count());
+        self::assertSame(1, $this->repository->count(new AuditLogFilter()));
 
         // Most recent first (org 1).
         $this->holder->set(1);
-        $logs = $this->repository->findAll(10, 0);
+        $logs = $this->repository->findAll(new AuditLogFilter(), 10, 0);
         self::assertSame('client.deleted', $logs[0]->action);
+    }
+
+    public function test_filters_by_entity_type_action_actor_and_date_range(): void
+    {
+        $recorder = new AuditRecorder($this->repository);
+        $recorder->record(5, 1, 'invoice.created', 'invoice', 1, null, ['status' => 'draft']);
+        $recorder->record(6, 1, 'invoice.issued', 'invoice', 1, null, ['status' => 'issued']);
+        $recorder->record(5, 1, 'client.created', 'client', 2, null, ['name' => 'A']);
+
+        self::assertSame(2, $this->repository->count(new AuditLogFilter(entityType: 'invoice')));
+        self::assertSame(1, $this->repository->count(new AuditLogFilter(action: 'invoice.issued')));
+        self::assertSame(2, $this->repository->count(new AuditLogFilter(actorUserId: 5)));
+
+        // A future lower bound excludes everything; a wide range includes all.
+        self::assertSame(0, $this->repository->count(new AuditLogFilter(createdFrom: '2999-01-01 00:00:00')));
+        self::assertSame(3, $this->repository->count(new AuditLogFilter(createdFrom: '2000-01-01 00:00:00', createdTo: '2999-12-31 23:59:59')));
+
+        $filtered = $this->repository->findAll(new AuditLogFilter(entityType: 'invoice', actorUserId: 5), 10, 0);
+        self::assertCount(1, $filtered);
+        self::assertSame('invoice.created', $filtered[0]->action);
     }
 }

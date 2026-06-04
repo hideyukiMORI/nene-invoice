@@ -6,6 +6,7 @@ namespace NeneInvoice\Tests\Support;
 
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditLog;
+use NeneInvoice\Audit\AuditLogFilter;
 use NeneInvoice\Audit\AuditLogRepositoryInterface;
 
 /**
@@ -53,26 +54,49 @@ final class InMemoryAuditLogRepository implements AuditLogRepositoryInterface
     }
 
     /** @return list<AuditLog> */
-    public function findAll(int $limit, int $offset): array
+    public function findAll(AuditLogFilter $filter, int $limit, int $offset): array
     {
-        $organizationId = $this->orgId->get();
-        $matches = array_values(array_filter(
-            $this->byId,
-            static fn (AuditLog $log): bool => $log->organizationId === $organizationId,
-        ));
+        $matches = $this->matching($filter);
 
         usort($matches, static fn (AuditLog $a, AuditLog $b): int => ($b->id ?? 0) <=> ($a->id ?? 0));
 
         return array_slice($matches, $offset, $limit);
     }
 
-    public function count(): int
+    public function count(AuditLogFilter $filter): int
+    {
+        return count($this->matching($filter));
+    }
+
+    /** @return list<AuditLog> */
+    private function matching(AuditLogFilter $filter): array
     {
         $organizationId = $this->orgId->get();
 
-        return count(array_filter(
+        return array_values(array_filter(
             $this->byId,
-            static fn (AuditLog $log): bool => $log->organizationId === $organizationId,
+            static function (AuditLog $log) use ($organizationId, $filter): bool {
+                if ($log->organizationId !== $organizationId) {
+                    return false;
+                }
+                if ($filter->entityType !== null && $log->entityType !== $filter->entityType) {
+                    return false;
+                }
+                if ($filter->action !== null && $log->action !== $filter->action) {
+                    return false;
+                }
+                if ($filter->actorUserId !== null && $log->actorUserId !== $filter->actorUserId) {
+                    return false;
+                }
+                if ($filter->createdFrom !== null && ($log->createdAt ?? '') < $filter->createdFrom) {
+                    return false;
+                }
+                if ($filter->createdTo !== null && ($log->createdAt ?? '') > $filter->createdTo) {
+                    return false;
+                }
+
+                return true;
+            },
         ));
     }
 }
