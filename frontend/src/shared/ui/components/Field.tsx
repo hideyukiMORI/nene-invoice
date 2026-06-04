@@ -6,6 +6,8 @@ export interface FieldProps {
   id: string
   label: string
   error?: string | undefined
+  /** Optional trailing adornment beside the label (e.g. a keyboard hint). */
+  hint?: ReactNode
   children: ReactNode
 }
 
@@ -21,7 +23,7 @@ type AriaControlProps = {
  * `aria-invalid` (red border via the primitives) and linked to the message,
  * which renders as `.err-text` directly beneath the field.
  */
-export function Field({ id, label, error, children }: FieldProps) {
+export function Field({ id, label, error, hint, children }: FieldProps) {
   const errorId = `${id}-error`
   const control =
     error !== undefined && isValidElement<AriaControlProps>(children)
@@ -33,8 +35,9 @@ export function Field({ id, label, error, children }: FieldProps) {
 
   return (
     <Stack gap="sm">
-      <label htmlFor={id} className="text-body text-fg-muted">
+      <label htmlFor={id} className="flex items-center gap-inline-xs text-body text-fg-muted">
         {label}
+        {hint}
       </label>
       {control}
       {error !== undefined && (

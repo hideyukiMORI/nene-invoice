@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ShortcutsOverlay } from './ShortcutsOverlay'
 
 /** g-prefix sequence timeout (spec §02-D). */
@@ -14,6 +14,14 @@ const GOTO: Record<string, string> = {
   u: '/users',
   s: '/settings',
   a: '/audit-logs',
+}
+
+/** Layer 2 — `n` (new) resolves by the current list route (spec §06). */
+const NEW_ROUTE: Record<string, string> = {
+  '/quotes': '/quotes/new',
+  '/invoices': '/invoices/new',
+  '/clients': '/clients/new',
+  '/users': '/users/new',
 }
 
 /** True when focus sits in an editable control — single keys must not fire. */
@@ -32,6 +40,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
  */
 export function KeyboardShortcuts() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [overlayOpen, setOverlayOpen] = useState(false)
   const [pendingG, setPendingG] = useState(false)
 
@@ -39,6 +48,7 @@ export function KeyboardShortcuts() {
   // values without re-binding on every keystroke.
   const overlayRef = useRef(false)
   const pendingRef = useRef(false)
+  const pathRef = useRef(location.pathname)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -47,6 +57,9 @@ export function KeyboardShortcuts() {
   useEffect(() => {
     pendingRef.current = pendingG
   }, [pendingG])
+  useEffect(() => {
+    pathRef.current = location.pathname
+  }, [location.pathname])
 
   useEffect(() => {
     const clearPending = (): void => {
@@ -114,7 +127,27 @@ export function KeyboardShortcuts() {
         return
       }
 
-      // Single-key actions (n / / / e / j / k / o) land in later phases.
+      // Layer 2 — focus the list search box (`/`).
+      if (e.key === '/') {
+        const search = document.querySelector('[data-kbd="search"]')
+        if (search instanceof HTMLElement) {
+          e.preventDefault()
+          search.focus()
+        }
+        return
+      }
+
+      // Layer 2 — context-sensitive new (`n`), resolved by the current route.
+      if (e.key === 'n') {
+        const dest = NEW_ROUTE[pathRef.current]
+        if (dest !== undefined) {
+          e.preventDefault()
+          void navigate(dest)
+        }
+        return
+      }
+
+      // List/grid navigation (j / k / o / Enter) lands in the next phase.
     }
 
     document.addEventListener('keydown', onKeydown)

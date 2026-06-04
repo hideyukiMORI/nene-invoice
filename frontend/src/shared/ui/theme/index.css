@@ -1309,6 +1309,21 @@
   .kbd.wide {
     padding: 0 9px;
   }
+  /* inline hint keycap (spec §04) — smaller, muted, hidden on touch */
+  .kbd-hint {
+    height: 18px;
+    min-width: 18px;
+    padding: 0 5px;
+    font-size: 10.5px;
+    border-bottom-width: 1px;
+    box-shadow: none;
+    color: var(--color-fg-muted);
+  }
+  @media (hover: none) {
+    .kbd-hint {
+      display: none;
+    }
+  }
 
   /* g… prefix indicator (spec §02-D) — bottom-left while awaiting the 2nd key */
   .kbd-gind {

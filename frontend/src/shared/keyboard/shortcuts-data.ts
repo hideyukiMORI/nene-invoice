@@ -43,6 +43,14 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     ],
   },
   {
+    ja: 'アクション',
+    en: 'Actions',
+    rows: [
+      { ja: '新規作成', en: 'New', combos: [{ caps: ['n'], join: 'none' }] },
+      { ja: '検索にフォーカス', en: 'Focus search', combos: [{ caps: ['/'], join: 'none' }] },
+    ],
+  },
+  {
     ja: 'フォーム',
     en: 'Form',
     rows: [
