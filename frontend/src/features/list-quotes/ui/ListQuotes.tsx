@@ -2,7 +2,16 @@ import { Link } from 'react-router-dom'
 import { quoteStatusTone } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
-import { Badge, Button, EmptyState, ErrorState, LoadingState, Stack, Text } from '@/shared/ui'
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  LinkButton,
+  LoadingState,
+  Stack,
+  Text,
+} from '@/shared/ui'
 import { useListQuotes } from '../hooks/use-list-quotes'
 
 export function ListQuotes() {
@@ -15,9 +24,9 @@ export function ListQuotes() {
         <Text as="h1" variant="heading-md">
           {t('admin.quotes.title')}
         </Text>
-        <Link to="/quotes/new" className="text-body text-accent">
+        <LinkButton to="/quotes/new" size="sm">
           {t('admin.quotes.newButton')}
-        </Link>
+        </LinkButton>
       </div>
 
       {state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}

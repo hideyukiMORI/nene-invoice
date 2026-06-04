@@ -1,4 +1,6 @@
 export { Button, type ButtonProps } from './primitives/Button'
+export { buttonClassNames, type ButtonVariant, type ButtonSize } from './primitives/button-styles'
+export { LinkButton, type LinkButtonProps } from './primitives/LinkButton'
 export { Input, type InputProps } from './primitives/Input'
 export { Select, type SelectProps } from './primitives/Select'
 export { Text, type TextProps } from './primitives/Text'

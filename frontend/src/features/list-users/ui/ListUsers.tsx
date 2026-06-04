@@ -9,6 +9,7 @@ import {
   ConfirmDialog,
   EmptyState,
   ErrorState,
+  LinkButton,
   LoadingState,
   Stack,
   Text,
@@ -49,9 +50,9 @@ export function ListUsers() {
         <Text as="h1" variant="heading-md">
           {t('admin.users.title')}
         </Text>
-        <Link to="/users/new" className="text-body text-accent">
+        <LinkButton to="/users/new" size="sm">
           {t('admin.users.newButton')}
-        </Link>
+        </LinkButton>
       </div>
 
       {state.kind === 'loading' && <LoadingState message={t('admin.users.loading')} />}

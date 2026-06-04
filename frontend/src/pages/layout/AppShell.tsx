@@ -226,7 +226,7 @@ export function AppShell() {
             </div>
           </div>
         </header>
-        <main className="app-content mx-auto w-full max-w-5xl flex-1">
+        <main className="app-content w-full max-w-6xl flex-1">
           <Outlet />
         </main>
       </div>
