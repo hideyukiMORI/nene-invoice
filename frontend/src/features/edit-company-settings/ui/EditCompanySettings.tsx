@@ -1,3 +1,4 @@
+import { useWatch, type Control } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
 import {
   Button,
@@ -11,10 +12,85 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useEditCompanySettings } from '../hooks/use-edit-company-settings'
+import {
+  useEditCompanySettings,
+  type EditCompanySettingsFormValues,
+} from '../hooks/use-edit-company-settings'
 
-/** 1–31 for the closing-day / pay-day selects (末日 is the empty option). */
-const DAY_OPTIONS = Array.from({ length: 31 }, (_, i) => i + 1)
+/** Curated closing/pay days (design 03); 末日 is the empty option. */
+const DAY_OPTIONS = [25, 20, 15, 10, 5]
+
+const lastDayOfMonth = (year: number, monthIndex: number): number =>
+  new Date(year, monthIndex + 1, 0).getDate()
+
+/**
+ * Live preview of the payment-terms rule and a worked example from today's date
+ * (design 03). Mirrors the backend PaymentTerms math; the issued due date stays
+ * backend-authoritative.
+ */
+function PayPreview({ control }: { control: Control<EditCompanySettingsFormValues> }) {
+  const { t } = useTranslation()
+  const closing = useWatch({ control, name: 'default_payment_closing_day' })
+  const offset = useWatch({ control, name: 'default_payment_month_offset' })
+  const pay = useWatch({ control, name: 'default_payment_pay_day' })
+
+  const calIcon = (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <rect x="3" y="4" width="14" height="13" rx="1.5" />
+      <path d="M3 8h14M7 2.5v3M13 2.5v3" />
+    </svg>
+  )
+
+  if (offset === '') {
+    return (
+      <div className="pay-preview" role="status" style={{ opacity: 0.72 }}>
+        {calIcon}
+        <span className="pp-rule">{t('admin.settings.payPreviewNone')}</span>
+      </div>
+    )
+  }
+
+  const dayLabel = (v: string): string =>
+    v === '' ? t('admin.settings.monthEnd') : t('admin.settings.dayNth', { n: Number(v) })
+  const monthLabel = (v: string): string =>
+    ({ '0': t('admin.settings.offsetCurrent'), '1': t('admin.settings.offsetNext') })[v] ??
+    t('admin.settings.offsetNext2')
+
+  const now = new Date()
+  const cy = now.getFullYear()
+  const cm = now.getMonth()
+  const cutD = closing === '' ? lastDayOfMonth(cy, cm) : Number(closing)
+  const closeStr = `${String(cm + 1)}/${String(cutD)}`
+
+  let py = cy
+  let pmo = cm + Number(offset)
+  while (pmo > 11) {
+    pmo -= 12
+    py += 1
+  }
+  const payD = pay === '' ? lastDayOfMonth(py, pmo) : Number(pay)
+  const payStr = `${String(pmo + 1)}/${String(payD)}`
+
+  return (
+    <div className="pay-preview" role="status">
+      {calIcon}
+      <span className="pp-rule">
+        {t('admin.settings.payPreviewRule', {
+          closing: dayLabel(closing),
+          month: monthLabel(offset),
+          pay: dayLabel(pay),
+        })}
+      </span>
+      <span className="pp-eg">
+        {t('admin.settings.payPreviewExamplePrefix')}
+        <b>{closeStr}</b>
+        {t('admin.settings.payPreviewExampleMid')}
+        <b>{payStr}</b>
+        {t('admin.settings.payPreviewExampleSuffix')}
+      </span>
+    </div>
+  )
+}
 
 /** Company settings (自社情報) edit form — upserts on submit, stays on page. */
 export function EditCompanySettings() {
@@ -107,6 +183,7 @@ export function EditCompanySettings() {
             </Field>
           </FormRow>
 
+          <div className="field-sep" />
           <Text variant="heading-sm">{t('admin.settings.billingSection')}</Text>
 
           <Field id="default_quote_validity_days" label={t('admin.settings.quoteValidityDays')}>
@@ -127,26 +204,38 @@ export function EditCompanySettings() {
           <Text variant="muted" className="text-caption">
             {t('admin.settings.paymentTermsHint')}
           </Text>
-          <FormRow>
+          <div className="pay-site">
             <Field id="default_payment_closing_day" label={t('admin.settings.closingDay')}>
               <Select id="default_payment_closing_day" {...register('default_payment_closing_day')}>
                 <option value="">{t('admin.settings.monthEnd')}</option>
                 {DAY_OPTIONS.map((d) => (
                   <option key={d} value={d}>
-                    {d}
+                    {t('admin.settings.dayNth', { n: d })}
                   </option>
                 ))}
               </Select>
             </Field>
+            <div className="ps-arrow" aria-hidden="true">
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 8h11M9 4l4 4-4 4" />
+              </svg>
+            </div>
             <Field id="default_payment_month_offset" label={t('admin.settings.monthOffset')}>
               <Select
                 id="default_payment_month_offset"
                 {...register('default_payment_month_offset')}
               >
-                <option value="">{t('admin.settings.paymentTermsOff')}</option>
                 <option value="0">{t('admin.settings.offsetCurrent')}</option>
                 <option value="1">{t('admin.settings.offsetNext')}</option>
                 <option value="2">{t('admin.settings.offsetNext2')}</option>
+                <option value="">{t('admin.settings.paymentTermsOff')}</option>
               </Select>
             </Field>
             <Field id="default_payment_pay_day" label={t('admin.settings.payDay')}>
@@ -154,12 +243,14 @@ export function EditCompanySettings() {
                 <option value="">{t('admin.settings.monthEnd')}</option>
                 {DAY_OPTIONS.map((d) => (
                   <option key={d} value={d}>
-                    {d}
+                    {t('admin.settings.dayNth', { n: d })}
                   </option>
                 ))}
               </Select>
             </Field>
-          </FormRow>
+          </div>
+
+          <PayPreview control={state.form.control} />
 
           {state.errorMessage !== null && (
             <Text variant="muted" role="alert">
