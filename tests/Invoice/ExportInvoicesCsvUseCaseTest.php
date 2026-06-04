@@ -133,6 +133,15 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             {
                 return 0;
             }
+            /** @return list<\NeneInvoice\Invoice\InvoiceListRow> */
+            public function findForAdminList(InvoiceListFilter $filter, \NeneInvoice\Invoice\InvoiceSort $sort, int $limit, int $offset): array
+            {
+                return [];
+            }
+            public function countForAdminList(InvoiceListFilter $filter): int
+            {
+                return 0;
+            }
             /** @return array{unpaid_count: int, overdue_count: int, recent_unpaid: list<Invoice>} */
             public function getDashboardData(string $now): array
             {

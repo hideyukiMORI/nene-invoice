@@ -24,6 +24,14 @@ final readonly class InvoiceListFilter
         public bool $outstandingOnly = false,
         /** Reference date for `overdueOnly` (YYYY-MM-DD); defaults to today. */
         public ?string $today = null,
+        /** Admin search: matches invoice_number OR client name (substring). */
+        public ?string $search = null,
+        /** Admin total-amount range (integer cents, inclusive). */
+        public ?int $totalMin = null,
+        public ?int $totalMax = null,
+        /** Admin due-date range (YYYY-MM-DD, inclusive). */
+        public ?string $dueFrom = null,
+        public ?string $dueTo = null,
     ) {
     }
 
@@ -34,7 +42,12 @@ final readonly class InvoiceListFilter
             && $this->dueBefore === null
             && $this->dueAfter === null
             && !$this->overdueOnly
-            && !$this->outstandingOnly;
+            && !$this->outstandingOnly
+            && $this->search === null
+            && $this->totalMin === null
+            && $this->totalMax === null
+            && $this->dueFrom === null
+            && $this->dueTo === null;
     }
 
     public function todayOrNow(): string

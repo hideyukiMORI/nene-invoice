@@ -7,7 +7,11 @@ export type {
   LineItemInput,
   CreateInvoiceInput,
   IssueInvoiceInput,
+  InvoiceListFilters,
+  InvoiceSort,
+  InvoiceSortField,
 } from './model'
+export { EMPTY_INVOICE_FILTERS } from './model'
 export { INVOICE_STATUSES, type InvoiceStatus } from './enum'
 export { invoiceStatusTone } from './status-tone'
 export { invoiceKeys, type InvoiceListParams } from './query-keys'

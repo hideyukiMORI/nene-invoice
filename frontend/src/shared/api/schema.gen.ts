@@ -405,7 +405,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List invoices */
+        /**
+         * List invoices
+         * @description Lists invoices with optional search / filters / sort (admin). `q` matches invoice number or client name; `status` is a comma-separated subset; `sort` ∈ number|client|status|issued_at|due_at|total with `order` asc|desc.
+         */
         get: operations["listInvoices"];
         put?: never;
         /**
@@ -799,6 +802,8 @@ export interface components {
             id: number;
             organization_id: number;
             client_id: number;
+            /** @description Client display name (list responses only; null elsewhere). */
+            client_name?: string | null;
             quote_id?: number | null;
             /** @description Null until issued; format INV-YYYY-NNN. */
             invoice_number?: string | null;
@@ -1872,6 +1877,15 @@ export interface operations {
                 limit?: components["parameters"]["LimitParam"];
                 /** @description Number of items to skip (default 0). */
                 offset?: components["parameters"]["OffsetParam"];
+                q?: string;
+                status?: string;
+                overdue?: "1";
+                due_from?: string;
+                due_to?: string;
+                total_min?: number;
+                total_max?: number;
+                sort?: "number" | "client" | "status" | "issued_at" | "due_at" | "total";
+                order?: "asc" | "desc";
             };
             header?: never;
             path?: never;
