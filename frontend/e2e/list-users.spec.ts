@@ -54,7 +54,7 @@ test.describe('User management', () => {
 
       await login(page)
       await page.getByRole('link', { name: 'ユーザー' }).click()
-      await page.getByRole('link', { name: '新規作成' }).click()
+      await page.getByRole('link', { name: 'ユーザーを作成' }).click()
       await expect(page.getByRole('heading', { name: 'ユーザーの作成' })).toBeVisible()
     })
 
