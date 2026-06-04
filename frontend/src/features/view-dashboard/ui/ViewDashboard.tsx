@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { DailyBilled, MonthlyBilled } from '@/entities/dashboard'
 import { invoiceStatusTone } from '@/entities/invoice'
@@ -12,7 +12,6 @@ import { useViewDashboard } from '../hooks/use-view-dashboard'
 export function ViewDashboard() {
   const { t, locale } = useTranslation()
   const state = useViewDashboard()
-  const [trendView, setTrendView] = useState<'monthly' | 'daily'>('monthly')
 
   if (state.kind === 'loading') {
     return <LoadingState message={t('admin.dashboard.loading')} />
@@ -44,17 +43,17 @@ export function ViewDashboard() {
     momDir = pct >= 0 ? 'up' : 'down'
   }
 
-  // Year-over-year change in invoices issued (billed) this month (design 04).
-  const billedPrevYear = state.billedPrevYearMonthCents
-  let billedYoyText: string | undefined
-  let billedYoyDir: 'up' | 'down' | undefined
-  if (billedPrevYear > 0) {
-    const pct = Math.round(((state.billedThisMonthCents - billedPrevYear) / billedPrevYear) * 100)
-    billedYoyText = t('admin.dashboard.yoyChange', {
-      change: `${pct > 0 ? '+' : ''}${String(pct)}%`,
-    })
-    billedYoyDir = pct >= 0 ? 'up' : 'down'
-  }
+  // Issuance KPI metrics (design 04): projected landing + same-day / landing /
+  // year-over-year comparisons from the daily-cumulative data.
+  const issuanceNow = new Date()
+  const todayDay = issuanceNow.getDate()
+  const daysInMonth = new Date(issuanceNow.getFullYear(), issuanceNow.getMonth() + 1, 0).getDate()
+  const projectedBilled =
+    todayDay > 0
+      ? Math.round(state.billedThisMonthCents / (todayDay / daysInMonth))
+      : state.billedThisMonthCents
+  const prevMonthSameDay =
+    state.billedDailyPrevMonth.find((d) => d.day === todayDay)?.cumulative_cents ?? 0
 
   const aging = state.aging
   const agingTotal = aging.current + aging.overdue_1_30 + aging.overdue_31_plus
@@ -90,12 +89,6 @@ export function ViewDashboard() {
           tone="c-danger"
         />
         <StatCard
-          label={t('admin.dashboard.billedThisMonth')}
-          value={formatYen(state.billedThisMonthCents)}
-          foot={billedYoyText}
-          footClass={billedYoyDir}
-        />
-        <StatCard
           label={t('admin.dashboard.receivedThisMonth')}
           value={formatYen(state.receivedThisMonthCents)}
           foot={momText}
@@ -108,41 +101,51 @@ export function ViewDashboard() {
         />
       </div>
 
-      <div className="panel">
-        <div className="panel-head">
-          <h3>{t('admin.dashboard.billedTrend')}</h3>
-          <div className="seg" role="group" aria-label={t('admin.dashboard.billedTrend')}>
-            <button
-              type="button"
-              className={cn('seg-btn', trendView === 'monthly' && 'is-on')}
-              aria-pressed={trendView === 'monthly'}
-              onClick={() => {
-                setTrendView('monthly')
-              }}
-            >
-              {t('admin.dashboard.viewMonthly')}
-            </button>
-            <button
-              type="button"
-              className={cn('seg-btn', trendView === 'daily' && 'is-on')}
-              aria-pressed={trendView === 'daily'}
-              onClick={() => {
-                setTrendView('daily')
-              }}
-            >
-              {t('admin.dashboard.viewDaily')}
-            </button>
+      <div className="iss-grid3">
+        <div className="iss-kpi card">
+          <div className="k">{t('admin.dashboard.billedThisMonth')}</div>
+          <div className="kdate">{t('admin.dashboard.asOfShort', { date: asOf })}</div>
+          <div className="now">
+            <span className="amt num">{formatYen(state.billedThisMonthCents)}</span>
+            <span className="iss-prog">
+              <span className="dot" />
+              {t('admin.dashboard.inProgress')}
+            </span>
+          </div>
+          <div className="kpi-list">
+            <KpiRow label={t('admin.dashboard.landing')} value={formatYen(projectedBilled)} />
+            <KpiRow
+              label={t('admin.dashboard.vsLastMonthSameDay')}
+              delta={pctDelta(state.billedThisMonthCents, prevMonthSameDay)}
+            />
+            <KpiRow
+              label={t('admin.dashboard.vsLastMonthLanding')}
+              delta={pctDelta(projectedBilled, state.billedLastMonthCents)}
+            />
+            <KpiRow
+              label={t('admin.dashboard.yoy')}
+              delta={pctDelta(state.billedThisMonthCents, state.billedPrevYearMonthCents)}
+            />
           </div>
         </div>
-        <div className="panel-body">
-          {trendView === 'monthly' ? (
-            <IssuanceTrend months={state.monthlyBilled} />
-          ) : (
-            <DailyCumulativeView
-              current={state.billedDailyCurrent}
-              prevMonth={state.billedDailyPrevMonth}
-            />
-          )}
+
+        <div className="iss-sub card">
+          <div className="iss-sub-h">
+            {t('admin.dashboard.monthlyTrend')}
+            <span className="sm">{t('admin.dashboard.last6Months')}</span>
+          </div>
+          <IssuanceTrend months={state.monthlyBilled} />
+        </div>
+
+        <div className="iss-sub card">
+          <div className="iss-sub-h">
+            {t('admin.dashboard.dailyTrend')}
+            <span className="sm">{t('admin.dashboard.towardClose')}</span>
+          </div>
+          <DailyCumulativeView
+            current={state.billedDailyCurrent}
+            prevMonth={state.billedDailyPrevMonth}
+          />
         </div>
       </div>
 
@@ -468,6 +471,43 @@ function DailyCumulativeView({
         )}
       </div>
     </>
+  )
+}
+
+interface PctDelta {
+  text: string
+  dir: 'up' | 'down'
+}
+
+/** Percentage change vs a base, or null when there is no comparable base. */
+function pctDelta(current: number, base: number): PctDelta | null {
+  if (base <= 0) return null
+  const pct = Math.round(((current - base) / base) * 1000) / 10
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : ''
+  return { text: `${sign}${String(Math.abs(pct))}%`, dir: pct >= 0 ? 'up' : 'down' }
+}
+
+/** A KPI comparison row in the issuance card: label + value or delta. */
+function KpiRow({
+  label,
+  value,
+  delta,
+}: {
+  label: string
+  value?: string
+  delta?: PctDelta | null
+}) {
+  return (
+    <div className="kpi-row">
+      <span className="kl">{label}</span>
+      {value !== undefined ? (
+        <span className="kv">{value}</span>
+      ) : delta !== null && delta !== undefined ? (
+        <span className={cn('kv', delta.dir)}>{delta.text}</span>
+      ) : (
+        <span className="kv">—</span>
+      )}
+    </div>
   )
 }
 

@@ -802,6 +802,120 @@
     color: var(--color-fg-muted);
   }
 
+  /* Issuance section — 3-column grid: KPI / monthly / daily (design 04) */
+  .iss-grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 6px;
+    align-items: stretch;
+  }
+  .iss-grid3 > .card {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+  }
+  .iss-grid3 .iss-plot,
+  .iss-grid3 .iss-line {
+    margin-top: auto;
+  }
+  @media (max-width: 900px) {
+    .iss-grid3 {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .iss-grid3 .iss-plot,
+    .iss-grid3 .iss-line {
+      margin-top: 10px;
+    }
+  }
+  .iss-sub-h {
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--color-fg-muted);
+  }
+  .iss-sub-h .sm {
+    margin-left: 6px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--color-fg-muted);
+  }
+  .iss-kpi .k {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-fg-muted);
+  }
+  .iss-kpi .kdate {
+    margin-top: 2px;
+    font-size: 10.5px;
+    color: var(--color-fg-muted);
+  }
+  .iss-kpi .now {
+    display: flex;
+    align-items: baseline;
+    gap: 11px;
+    margin-top: 9px;
+  }
+  .iss-kpi .amt {
+    font-family: var(--font-num);
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .iss-prog {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: var(--color-bdg-part-bg);
+    color: var(--color-bdg-part-fg);
+  }
+  .iss-prog .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .kpi-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
+  }
+  .kpi-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .kpi-row:first-child {
+    border-top: none;
+  }
+  .kpi-row .kl {
+    font-size: 12px;
+    color: var(--color-fg-muted);
+  }
+  .kpi-row .kv {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-num);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .kpi-row .kv.up {
+    color: var(--color-bdg-acc-fg);
+  }
+  .kpi-row .kv.down {
+    color: var(--color-bdg-rej-fg);
+  }
+
   /* Dashboard — bar/line view toggle + daily-cumulative line chart (design 04) */
   .seg {
     display: inline-flex;
