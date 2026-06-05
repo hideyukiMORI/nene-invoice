@@ -10,11 +10,11 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import {
-  Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   Field,
+  FilterBar,
   Input,
   LinkButton,
   LoadingState,
@@ -81,32 +81,24 @@ export function ListClients() {
         </LinkButton>
       </div>
 
-      <form onSubmit={onSubmit}>
-        <div className="flex flex-wrap items-end gap-inline-sm">
-          <Field id="client-q" label={t('admin.clients.filter.search')}>
-            <div className="field-kbd w-72">
-              <Input
-                id="client-q"
-                data-kbd="search"
-                aria-keyshortcuts="/"
-                className="w-full pr-9"
-                value={draft.q ?? ''}
-                placeholder={t('admin.clients.filter.searchPlaceholder')}
-                onChange={(e) => {
-                  setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-                }}
-              />
-              <KbdHint>/</KbdHint>
-            </div>
-          </Field>
-          <Button type="submit" size="sm">
-            {t('admin.clients.filter.apply')}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-            {t('admin.clients.filter.reset')}
-          </Button>
-        </div>
-      </form>
+      <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
+        <Field id="client-q" label={t('admin.clients.filter.search')}>
+          <div className="field-kbd">
+            <Input
+              id="client-q"
+              data-kbd="search"
+              aria-keyshortcuts="/"
+              className="pr-9"
+              value={draft.q ?? ''}
+              placeholder={t('admin.clients.filter.searchPlaceholder')}
+              onChange={(e) => {
+                setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+              }}
+            />
+            <KbdHint>/</KbdHint>
+          </div>
+        </Field>
+      </FilterBar>
 
       {view.state.kind === 'loading' && <LoadingState message={t('admin.clients.loading')} />}
 

@@ -665,17 +665,29 @@
     margin-top: 1.5rem;
   }
 
-  /* Audit-log filter bar: wraps responsively without JSX breakpoints */
-  .audit-filters {
+  /* Shared search/filter panel (spec design 04 id="audit" .filter-bar).
+     A .card wraps the field grid + a ruled foot with count and actions. */
+  .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 0.75rem 0.875rem; /* spec 12px 14px */
     align-items: end;
   }
-  .audit-filters-actions {
+  .filter-foot {
     display: flex;
-    gap: 0.5rem;
-    align-items: end;
+    align-items: center;
+    gap: 0.625rem; /* spec 10px */
+    margin-top: 0.875rem;
+    padding-top: 0.875rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .filter-count {
+    font-size: 0.75rem; /* spec 12px */
+    color: var(--color-fg-muted);
+  }
+  .filter-count b {
+    color: var(--color-fg);
+    font-weight: 600;
   }
 
   /* Audit-log before/after diff (two columns, collapses on mobile) */
@@ -1591,6 +1603,21 @@
   @media (max-width: 640px) {
     .form-row {
       grid-template-columns: 1fr;
+    }
+    /* filter foot wraps: count on its own row, actions stretch full width */
+    .filter-foot {
+      flex-wrap: wrap;
+    }
+    .filter-foot .filter-count {
+      width: 100%;
+      order: -1;
+      margin-bottom: 0.25rem;
+    }
+    .filter-foot .flex-1 {
+      display: none;
+    }
+    .filter-foot button {
+      flex: 1;
     }
   }
 

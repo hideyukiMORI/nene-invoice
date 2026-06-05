@@ -19,6 +19,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  FilterBar,
   Input,
   LinkButton,
   LoadingState,
@@ -111,108 +112,100 @@ export function ListInvoices() {
         </Text>
       )}
 
-      <form onSubmit={onSubmit}>
-        <Stack gap="sm">
-          <div className="audit-filters">
-            <Field id="inv-q" label={t('admin.invoices.filter.search')}>
-              <div className="field-kbd">
-                <Input
-                  id="inv-q"
-                  data-kbd="search"
-                  aria-keyshortcuts="/"
-                  className="pr-9"
-                  value={draft.q ?? ''}
-                  placeholder={t('admin.invoices.filter.searchPlaceholder')}
-                  onChange={(e) => {
-                    setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-                  }}
-                />
-                <KbdHint>/</KbdHint>
-              </div>
-            </Field>
-            <Field id="inv-status" label={t('admin.invoices.filter.status')}>
-              <Select
-                id="inv-status"
-                value={draft.statuses[0] ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setDraft({
-                    ...draft,
-                    statuses: v === '' ? [] : [v as (typeof INVOICE_STATUSES)[number]],
-                  })
-                }}
-              >
-                <option value="">{t('admin.invoices.filter.statusAny')}</option>
-                {INVOICE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {t(`admin.invoices.status.${s}`)}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field id="inv-due-from" label={t('admin.invoices.filter.dueFrom')}>
-              <DatePicker
-                id="inv-due-from"
-                value={draft.due_from ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, due_from: v === '' ? null : v })
-                }}
-              />
-            </Field>
-            <Field id="inv-due-to" label={t('admin.invoices.filter.dueTo')}>
-              <DatePicker
-                id="inv-due-to"
-                value={draft.due_to ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, due_to: v === '' ? null : v })
-                }}
-              />
-            </Field>
-            <Field id="inv-total-min" label={t('admin.invoices.filter.totalMin')}>
-              <Input
-                id="inv-total-min"
-                type="number"
-                inputMode="numeric"
-                value={draft.total_min ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, total_min: toNullableInt(e.target.value) })
-                }}
-              />
-            </Field>
-            <Field id="inv-total-max" label={t('admin.invoices.filter.totalMax')}>
-              <Input
-                id="inv-total-max"
-                type="number"
-                inputMode="numeric"
-                value={draft.total_max ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, total_max: toNullableInt(e.target.value) })
-                }}
-              />
-            </Field>
+      <FilterBar
+        count={view.total}
+        onSubmit={onSubmit}
+        onReset={onReset}
+        footStart={
+          <label className="flex items-center gap-inline-xs text-body text-fg-muted">
+            <input
+              type="checkbox"
+              checked={draft.overdue}
+              onChange={(e) => {
+                setDraft({ ...draft, overdue: e.target.checked })
+              }}
+            />
+            {t('admin.invoices.filter.overdue')}
+          </label>
+        }
+      >
+        <Field id="inv-q" label={t('admin.invoices.filter.search')}>
+          <div className="field-kbd">
+            <Input
+              id="inv-q"
+              data-kbd="search"
+              aria-keyshortcuts="/"
+              className="pr-9"
+              value={draft.q ?? ''}
+              placeholder={t('admin.invoices.filter.searchPlaceholder')}
+              onChange={(e) => {
+                setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+              }}
+            />
+            <KbdHint>/</KbdHint>
           </div>
-
-          <div className="audit-filters-actions">
-            <label className="flex items-center gap-inline-xs text-body text-fg-muted">
-              <input
-                type="checkbox"
-                checked={draft.overdue}
-                onChange={(e) => {
-                  setDraft({ ...draft, overdue: e.target.checked })
-                }}
-              />
-              {t('admin.invoices.filter.overdue')}
-            </label>
-            <span className="flex-1" />
-            <Button type="submit" size="sm">
-              {t('admin.invoices.filter.apply')}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-              {t('admin.invoices.filter.reset')}
-            </Button>
-          </div>
-        </Stack>
-      </form>
+        </Field>
+        <Field id="inv-status" label={t('admin.invoices.filter.status')}>
+          <Select
+            id="inv-status"
+            value={draft.statuses[0] ?? ''}
+            onChange={(e) => {
+              const v = e.target.value
+              setDraft({
+                ...draft,
+                statuses: v === '' ? [] : [v as (typeof INVOICE_STATUSES)[number]],
+              })
+            }}
+          >
+            <option value="">{t('admin.invoices.filter.statusAny')}</option>
+            {INVOICE_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {t(`admin.invoices.status.${s}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="inv-due-from" label={t('admin.invoices.filter.dueFrom')}>
+          <DatePicker
+            id="inv-due-from"
+            value={draft.due_from ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, due_from: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="inv-due-to" label={t('admin.invoices.filter.dueTo')}>
+          <DatePicker
+            id="inv-due-to"
+            value={draft.due_to ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, due_to: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="inv-total-min" label={t('admin.invoices.filter.totalMin')}>
+          <Input
+            id="inv-total-min"
+            type="number"
+            inputMode="numeric"
+            value={draft.total_min ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, total_min: toNullableInt(e.target.value) })
+            }}
+          />
+        </Field>
+        <Field id="inv-total-max" label={t('admin.invoices.filter.totalMax')}>
+          <Input
+            id="inv-total-max"
+            type="number"
+            inputMode="numeric"
+            value={draft.total_max ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, total_max: toNullableInt(e.target.value) })
+            }}
+          />
+        </Field>
+      </FilterBar>
 
       {view.state.kind === 'loading' && <LoadingState message={t('admin.invoices.loading')} />}
 

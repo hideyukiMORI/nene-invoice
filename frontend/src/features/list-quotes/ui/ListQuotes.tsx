@@ -18,6 +18,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  FilterBar,
   Input,
   LinkButton,
   LoadingState,
@@ -78,94 +79,81 @@ export function ListQuotes() {
         </LinkButton>
       </div>
 
-      <form onSubmit={onSubmit}>
-        <Stack gap="sm">
-          <div className="audit-filters">
-            <Field id="q-q" label={t('admin.quotes.filter.search')}>
-              <div className="field-kbd">
-                <Input
-                  id="q-q"
-                  data-kbd="search"
-                  aria-keyshortcuts="/"
-                  className="pr-9"
-                  value={draft.q ?? ''}
-                  placeholder={t('admin.quotes.filter.searchPlaceholder')}
-                  onChange={(e) => {
-                    setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
-                  }}
-                />
-                <KbdHint>/</KbdHint>
-              </div>
-            </Field>
-            <Field id="q-status" label={t('admin.quotes.filter.status')}>
-              <Select
-                id="q-status"
-                value={draft.statuses[0] ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value
-                  setDraft({ ...draft, statuses: v === '' ? [] : [v as QuoteStatus] })
-                }}
-              >
-                <option value="">{t('admin.quotes.filter.statusAny')}</option>
-                {QUOTE_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {t(`admin.quotes.status.${s}`)}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field id="q-valid-from" label={t('admin.quotes.filter.validFrom')}>
-              <DatePicker
-                id="q-valid-from"
-                value={draft.valid_from ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, valid_from: v === '' ? null : v })
-                }}
-              />
-            </Field>
-            <Field id="q-valid-to" label={t('admin.quotes.filter.validTo')}>
-              <DatePicker
-                id="q-valid-to"
-                value={draft.valid_to ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, valid_to: v === '' ? null : v })
-                }}
-              />
-            </Field>
-            <Field id="q-total-min" label={t('admin.quotes.filter.totalMin')}>
-              <Input
-                id="q-total-min"
-                type="number"
-                inputMode="numeric"
-                value={draft.total_min ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, total_min: toNullableInt(e.target.value) })
-                }}
-              />
-            </Field>
-            <Field id="q-total-max" label={t('admin.quotes.filter.totalMax')}>
-              <Input
-                id="q-total-max"
-                type="number"
-                inputMode="numeric"
-                value={draft.total_max ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, total_max: toNullableInt(e.target.value) })
-                }}
-              />
-            </Field>
+      <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
+        <Field id="q-q" label={t('admin.quotes.filter.search')}>
+          <div className="field-kbd">
+            <Input
+              id="q-q"
+              data-kbd="search"
+              aria-keyshortcuts="/"
+              className="pr-9"
+              value={draft.q ?? ''}
+              placeholder={t('admin.quotes.filter.searchPlaceholder')}
+              onChange={(e) => {
+                setDraft({ ...draft, q: trimmedOrNull(e.target.value) })
+              }}
+            />
+            <KbdHint>/</KbdHint>
           </div>
-          <div className="audit-filters-actions">
-            <span className="flex-1" />
-            <Button type="submit" size="sm">
-              {t('admin.quotes.filter.apply')}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-              {t('admin.quotes.filter.reset')}
-            </Button>
-          </div>
-        </Stack>
-      </form>
+        </Field>
+        <Field id="q-status" label={t('admin.quotes.filter.status')}>
+          <Select
+            id="q-status"
+            value={draft.statuses[0] ?? ''}
+            onChange={(e) => {
+              const v = e.target.value
+              setDraft({ ...draft, statuses: v === '' ? [] : [v as QuoteStatus] })
+            }}
+          >
+            <option value="">{t('admin.quotes.filter.statusAny')}</option>
+            {QUOTE_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {t(`admin.quotes.status.${s}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field id="q-valid-from" label={t('admin.quotes.filter.validFrom')}>
+          <DatePicker
+            id="q-valid-from"
+            value={draft.valid_from ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, valid_from: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="q-valid-to" label={t('admin.quotes.filter.validTo')}>
+          <DatePicker
+            id="q-valid-to"
+            value={draft.valid_to ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, valid_to: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="q-total-min" label={t('admin.quotes.filter.totalMin')}>
+          <Input
+            id="q-total-min"
+            type="number"
+            inputMode="numeric"
+            value={draft.total_min ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, total_min: toNullableInt(e.target.value) })
+            }}
+          />
+        </Field>
+        <Field id="q-total-max" label={t('admin.quotes.filter.totalMax')}>
+          <Input
+            id="q-total-max"
+            type="number"
+            inputMode="numeric"
+            value={draft.total_max ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, total_max: toNullableInt(e.target.value) })
+            }}
+          />
+        </Field>
+      </FilterBar>
 
       {view.state.kind === 'loading' && <LoadingState message={t('admin.quotes.loading')} />}
 

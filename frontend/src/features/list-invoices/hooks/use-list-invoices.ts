@@ -33,6 +33,8 @@ export interface ListInvoicesView {
   sort: InvoiceSort
   toggleSort: (field: InvoiceSortField) => void
   pagination: Pagination
+  /** Total number of matching records across all pages. */
+  total: number
   state: ListInvoicesState
 }
 
@@ -97,6 +99,7 @@ export function useListInvoices(): ListInvoicesView {
         setPage((p) => Math.min(totalPages, p + 1))
       },
     },
+    total,
     state,
   }
 }
