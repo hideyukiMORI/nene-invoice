@@ -7,6 +7,7 @@ export const jaMessages = {
   'common.actions.retry': '再試行',
   'common.actions.close': '閉じる',
   'common.datePicker.placeholder': '日付を選択',
+  'common.datePicker.open': 'カレンダーを開く',
   'common.datePicker.title': '{{year}}年 {{month}}月',
   'common.datePicker.prevMonth': '前の月',
   'common.datePicker.nextMonth': '次の月',

@@ -5,8 +5,10 @@ import { cn } from '@/shared/lib/cn'
 /**
  * Custom date picker (design 04) — replaces the native OS date control with a
  * themed calendar popover. Controlled: `value` is a `YYYY-MM-DD` string (or '');
- * `onChange` emits the same. Closes on outside click / Esc; flips up/right near
- * the viewport edge.
+ * `onChange` emits the same. The field accepts **direct keyboard input** (#317):
+ * type a date (`2026-06-06`, `2026/6/6`, …) and commit on Enter/blur; the
+ * calendar icon opens the popover for mouse users. Closes on outside click / Esc;
+ * flips up/right near the viewport edge.
  */
 export interface DatePickerProps {
   id?: string
@@ -19,8 +21,8 @@ export interface DatePickerProps {
 const pad = (n: number): string => (n < 10 ? `0${String(n)}` : String(n))
 const isoOf = (d: Date): string =>
   `${String(d.getFullYear())}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const fmt = (d: Date): string =>
-  `${String(d.getFullYear())} / ${pad(d.getMonth() + 1)} / ${pad(d.getDate())}`
+/** Editable display: `YYYY/MM/DD` (or '' when unset). */
+const display = (iso: string): string => iso.replaceAll('-', '/')
 const parseIso = (s: string): Date | null => {
   const p = s.split('-')
   if (p.length !== 3) return null
@@ -28,6 +30,23 @@ const parseIso = (s: string): Date | null => {
   return Number.isNaN(d.getTime()) ? null : d
 }
 const midnight = (d: Date): number => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+
+/**
+ * Parses typed input into an ISO date. Accepts `-`, `/`, or `.` separators and
+ * 1–2 digit month/day. Returns the `YYYY-MM-DD` string, `''` for empty input
+ * (clears), or `null` when the text is not a valid date.
+ */
+const parseInput = (s: string): string | null => {
+  const t = s.trim()
+  if (t === '') return ''
+  const m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(t)
+  if (m === null) return null
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])]
+  const dt = new Date(y, mo - 1, d)
+  // Reject overflow like 2026/02/30 (which JS would roll over to March).
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null
+  return isoOf(dt)
+}
 
 export function DatePicker({
   id,
@@ -42,8 +61,30 @@ export function DatePicker({
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => selected ?? new Date())
   const [flip, setFlip] = useState({ up: false, right: false })
+  // Editable text mirrors `value`; kept local while typing, normalized on commit.
+  const [text, setText] = useState(() => display(value))
+  // Re-sync the field when the committed value changes (calendar pick, form
+  // reset, parent update) — the React "adjust state during render" pattern, so
+  // it never fires mid-typing (we commit only on Enter/blur).
+  const [lastValue, setLastValue] = useState(value)
+  if (value !== lastValue) {
+    setLastValue(value)
+    setText(display(value))
+  }
   const wrapRef = useRef<HTMLDivElement>(null)
   const popRef = useRef<HTMLDivElement>(null)
+
+  /** Commits the typed text on blur/Enter: set, clear, or revert if invalid. */
+  const commitText = (): void => {
+    const parsed = parseInput(text)
+    if (parsed === null) {
+      setText(display(value)) // invalid → revert to last committed
+    } else if (parsed !== value) {
+      onChange(parsed) // valid change (set or clear) — effect normalizes text
+    } else {
+      setText(display(value)) // unchanged → tidy formatting
+    }
+  }
 
   const dow =
     locale === 'ja'
@@ -105,32 +146,54 @@ export function DatePicker({
 
   return (
     <div ref={wrapRef} className={cn('dp', open && 'open')}>
-      <button
-        type="button"
-        id={id}
-        className="dp-field input"
-        aria-describedby={ariaDescribedBy}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => {
-          if (open) setOpen(false)
-          else openPicker()
-        }}
-      >
-        <span className={cn('dp-val', selected === null && 'is-ph')}>
-          {selected !== null ? fmt(selected) : (placeholder ?? t('common.datePicker.placeholder'))}
-        </span>
-        <svg
-          className="dp-ico"
-          viewBox="0 0 18 18"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
+      <div className="dp-field">
+        <input
+          type="text"
+          id={id}
+          className="dp-input"
+          value={text}
+          placeholder={placeholder ?? t('common.datePicker.placeholder')}
+          inputMode="numeric"
+          autoComplete="off"
+          aria-describedby={ariaDescribedBy}
+          onChange={(e) => {
+            setText(e.target.value)
+          }}
+          onBlur={commitText}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              // Don't submit the surrounding form; just commit the date.
+              e.preventDefault()
+              commitText()
+            } else if (e.key === 'ArrowDown' && !open) {
+              e.preventDefault()
+              openPicker()
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="dp-ico-btn"
+          aria-label={t('common.datePicker.open')}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => {
+            if (open) setOpen(false)
+            else openPicker()
+          }}
         >
-          <rect x="2.5" y="3.8" width="13" height="11.7" rx="1.6" />
-          <path d="M2.5 7.2h13M6 2.2v3M12 2.2v3" />
-        </svg>
-      </button>
+          <svg
+            className="dp-ico"
+            viewBox="0 0 18 18"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          >
+            <rect x="2.5" y="3.8" width="13" height="11.7" rx="1.6" />
+            <path d="M2.5 7.2h13M6 2.2v3M12 2.2v3" />
+          </svg>
+        </button>
+      </div>
 
       <div
         ref={popRef}
