@@ -466,7 +466,7 @@
     color: var(--color-fg);
   }
   .page-sub {
-    font-size: var(--text-caption);
+    font-size: 0.75rem; /* 12px — spec .page-sub */
     color: var(--color-fg-muted);
     margin-top: 0.1875rem;
   }

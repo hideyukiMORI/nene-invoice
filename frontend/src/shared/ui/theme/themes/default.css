@@ -118,4 +118,6 @@ body {
   font-size: var(--text-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Japanese proportional kerning (spec body): tightens kana/punctuation spacing. */
+  font-feature-settings: 'palt' 1;
 }
