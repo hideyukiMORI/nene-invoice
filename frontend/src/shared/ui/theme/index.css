@@ -780,9 +780,10 @@
   }
   .help-toc {
     position: sticky;
-    top: 0.5rem;
+    /* sits below the sticky 56px topbar (#312) */
+    top: 4rem;
     align-self: start;
-    max-height: calc(100vh - 1rem);
+    max-height: calc(100vh - 4.5rem);
     overflow: auto;
     padding: 1.25rem 0;
     border-right: 1px solid var(--color-border);
@@ -845,7 +846,8 @@
     padding: 0.5rem 0 4rem;
   }
   .hsec {
-    scroll-margin-top: 0.75rem;
+    /* clears the sticky topbar when jumping to an anchor (#312) */
+    scroll-margin-top: 4.5rem;
     padding-top: 1.625rem;
     margin-top: 1.625rem;
     border-top: 1px solid var(--color-border);
@@ -2016,7 +2018,21 @@
   .app-main {
     min-width: 0;
   }
+  /* Desktop: pin the sidebar to the viewport so it stays put while the content
+     scrolls. align-self:start keeps it from stretching so sticky has room to
+     move; the inner nav scrolls if it overflows. The mobile @media further
+     below overrides this to an off-canvas drawer. (#312) */
+  .side {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+  }
+  /* Pin the topbar too, so the breadcrumb stays visible while scrolling. */
   .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
     padding: 0 var(--spacing-inline-lg);
     height: 56px;
   }
