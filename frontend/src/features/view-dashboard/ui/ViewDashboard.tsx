@@ -357,7 +357,9 @@ function DailyCumulativeView({
     500000,
   )
 
-  // viewBox 0 -12 520 208 — plot x 40..508, baseline y 170, top y 20.
+  // viewBox -16 -12 536 208 — plot x 40..508, baseline y 170, top y 20.
+  // The left edge is pulled out to -16 so the Y-axis tick labels (right-aligned
+  // at x=34, e.g. 「1000万」) have gutter room instead of clipping at x=0 (#304).
   const x = (day: number): number =>
     daysInMonth > 1 ? 40 + ((day - 1) / (daysInMonth - 1)) * 468 : 40
   const y = (v: number): number => 170 - (v / niceMax) * 150
@@ -396,7 +398,7 @@ function DailyCumulativeView({
     <>
       <svg
         className="iss-line"
-        viewBox="0 -12 520 208"
+        viewBox="-16 -12 536 208"
         preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label={t('admin.dashboard.billedTrend')}

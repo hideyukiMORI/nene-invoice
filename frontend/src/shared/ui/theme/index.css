@@ -1015,6 +1015,11 @@
     font-family: var(--font-num);
     font-size: 14px;
   }
+  /* Y-axis tick labels: smaller than data labels so multi-digit 万 values fit
+     the left gutter without clipping (#304). */
+  .lc-tx.axis {
+    font-size: 12px;
+  }
   .lc-tx.now,
   .lc-tx.proj {
     fill: var(--color-accent-deep);
