@@ -33,6 +33,8 @@ export const enMessages: MessageCatalog = {
   'admin.auth.forgotPasswordPrompt': 'Forgot your password?',
   'admin.auth.forgotPasswordLink': 'Forgot your password?',
   'admin.auth.secNote': 'Passwords are stored hashed, never in plain text.',
+  'admin.auth.disclaimer':
+    'Provided without warranty under the MIT License. Final tax and accounting checks are your responsibility.',
   'admin.auth.brandTagline': 'Billing, done right — from quote to payment, end to end.',
   'admin.auth.brandLead':
     'Robust quote, invoice & payment management built for the Japanese qualified-invoice system. Close your back office accurately and on time.',
@@ -62,6 +64,7 @@ export const enMessages: MessageCatalog = {
   'admin.nav.auditLogs': 'Audit logs',
   'admin.nav.settings': 'Settings',
   'admin.nav.help': 'Help',
+  'admin.nav.disclaimer': 'Disclaimer',
   'admin.nav.shortcuts': 'Keyboard shortcuts',
   'admin.help.title': 'Help',
   'admin.help.subtitle': 'Guides & FAQ',
@@ -337,7 +340,7 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.issue.successBodyNoNumber': 'The invoice has been issued.',
   'admin.invoices.issue.confirmTitle': 'Issue this invoice?',
   'admin.invoices.issue.confirmMessage':
-    'Issuing allocates the invoice number and locks the contents (no further edits).',
+    'Issuing allocates the invoice number and locks the contents (no further edits). The accuracy of the contents and their tax treatment are your responsibility to verify.',
   'admin.payments.title': 'Payments',
   'admin.payments.loading': 'Loading payments…',
   'admin.payments.empty': 'No payments yet.',

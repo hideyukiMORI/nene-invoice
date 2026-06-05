@@ -36,6 +36,8 @@ export const jaMessages = {
   'admin.auth.forgotPasswordPrompt': 'パスワードをお忘れですか？',
   'admin.auth.forgotPasswordLink': 'パスワードをお忘れですか？',
   'admin.auth.secNote': 'パスワードはハッシュ化して安全に保管されます。',
+  'admin.auth.disclaimer':
+    '本ソフトウェアは MIT ライセンスに基づき無保証で提供されます。税務・会計上の最終確認はご利用者の責任で行ってください。',
   'admin.auth.brandTagline': '請求業務を、確実に。見積から入金まで一気通貫で。',
   'admin.auth.brandLead':
     '適格請求書（インボイス）制度に対応した、堅牢な見積・請求・入金管理。バックオフィスの締め作業を、正確かつ滞りなく。',
@@ -65,6 +67,7 @@ export const jaMessages = {
   'admin.nav.auditLogs': '監査ログ',
   'admin.nav.settings': '設定',
   'admin.nav.help': 'ヘルプ',
+  'admin.nav.disclaimer': '免責事項',
   'admin.nav.shortcuts': 'キーボードショートカット',
   'admin.help.title': 'ヘルプ',
   'admin.help.subtitle': '操作ガイド・よくある質問',
@@ -342,7 +345,7 @@ export const jaMessages = {
   'admin.invoices.issue.successBodyNoNumber': '請求書を発行しました。',
   'admin.invoices.issue.confirmTitle': '請求書を発行しますか？',
   'admin.invoices.issue.confirmMessage':
-    '発行すると番号が採番され、内容は確定（変更不可）になります。',
+    '発行すると番号が採番され、内容は確定（変更不可）になります。内容の正確性および税務上の取り扱いは、ご利用者の責任でご確認ください。',
   'admin.payments.title': '入金',
   'admin.payments.loading': '入金を読み込み中…',
   'admin.payments.empty': '入金はまだありません。',

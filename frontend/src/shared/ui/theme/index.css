@@ -1506,6 +1506,13 @@
     margin-top: 1px;
     color: var(--color-success);
   }
+  /* Sign-in disclaimer line (#308): smaller, muted, below the security note. */
+  .auth-disclaimer {
+    margin-top: 0.625rem;
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+    line-height: 1.6;
+  }
   .auth-foot {
     display: flex;
     gap: 1rem;
@@ -1687,6 +1694,19 @@
   .sf-logout:hover {
     background: var(--color-side-active);
     color: var(--color-side-fg);
+  }
+  /* Disclaimer link in the sidebar footer (#308): quiet, links to /help#disclaimer. */
+  .sf-legal {
+    display: block;
+    margin-top: 8px;
+    text-align: center;
+    font-size: 10.5px;
+    color: var(--color-side-fg-muted);
+    text-decoration: none;
+  }
+  .sf-legal:hover {
+    color: var(--color-side-fg);
+    text-decoration: underline;
   }
 
   /* Spec .tbl-wrap: the table sits inside a bordered box (square, no radius). */
