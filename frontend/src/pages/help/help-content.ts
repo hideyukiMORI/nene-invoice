@@ -413,6 +413,33 @@ export const HELP_SECTIONS: HelpSection[] = [
       },
     ],
   },
+  {
+    id: 'disclaimer',
+    title: { ja: '免責事項・ご利用にあたって', en: 'Disclaimer & terms of use' },
+    blocks: [
+      {
+        kind: 'p',
+        text: {
+          ja: '本ソフトウェア（NeNe Invoice）は、見積・請求・入金管理の作成を補助するツールであり、税務・会計・法務に関する助言を提供するものではありません。作成された請求書・帳票の内容、税率・税区分・登録番号の正確性、適格請求書としての要件充足、税務申告および帳簿・書類の保存（電子帳簿保存法等）については、最終的にご利用者ご自身および顧問税理士の責任でご確認ください。',
+          en: 'This software (NeNe Invoice) is a tool that helps you prepare quotes, invoices, and payment records. It does not provide tax, accounting, or legal advice. The contents of the invoices and documents it produces, the accuracy of tax rates / categories / registration numbers, whether they meet qualified-invoice requirements, and tax filing and record retention (including under the Electronic Books Preservation Act) are ultimately your responsibility and that of your tax accountant.',
+        },
+      },
+      {
+        kind: 'p',
+        text: {
+          ja: '本ソフトウェアは MIT ライセンスに基づき「現状有姿（AS IS）」で提供され、明示・黙示を問わずいかなる保証も行いません。本ソフトウェアの使用または使用不能から生じたいかなる損害についても、作者および権利者は責任を負いません。',
+          en: 'This software is provided “AS IS” under the MIT License, without warranty of any kind, express or implied. The authors and copyright holders are not liable for any damages arising from the use of, or inability to use, this software.',
+        },
+      },
+      {
+        kind: 'p',
+        text: {
+          ja: '自己ホスト型のため、データのバックアップ・保管・セキュリティおよび法定保存期間の遵守は、運用される事業者の責任となります。また、法令・制度の改正への追随を保証するものではありません。',
+          en: 'Because it is self-hosted, backing up, storing, and securing your data, and complying with statutory retention periods, are the responsibility of the operating business. Nor does it guarantee that it stays up to date with changes in laws or regulations.',
+        },
+      },
+    ],
+  },
 ]
 
 export const HELP_FAQ: HelpFaqItem[] = [

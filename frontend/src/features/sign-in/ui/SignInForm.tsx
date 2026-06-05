@@ -74,6 +74,8 @@ export function SignInForm() {
           </svg>
           {t('admin.auth.secNote')}
         </p>
+
+        <p className="auth-disclaimer">{t('admin.auth.disclaimer')}</p>
       </Stack>
     </form>
   )

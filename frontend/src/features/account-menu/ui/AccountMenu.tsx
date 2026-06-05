@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { LOCALES, useTranslation } from '@/shared/i18n'
 import { openShortcutsOverlay } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
@@ -59,6 +60,10 @@ export function AccountMenu() {
       <button type="button" className="sf-logout" onClick={onSignOut}>
         {t('common.actions.signOut')}
       </button>
+
+      <Link to="/help#disclaimer" className="sf-legal">
+        {t('admin.nav.disclaimer')}
+      </Link>
     </div>
   )
 }
