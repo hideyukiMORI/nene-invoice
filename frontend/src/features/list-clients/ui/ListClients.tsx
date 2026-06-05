@@ -131,7 +131,12 @@ export function ListClients() {
                   data-kbd-row={index}
                   className={cursor === index ? 'is-cursor' : undefined}
                 >
-                  <td data-label={t('admin.clients.col.name')}>{client.name}</td>
+                  <td data-label={t('admin.clients.col.name')}>
+                    {client.name}
+                    {client.name_kana !== null && (
+                      <span className="block text-caption text-fg-muted">{client.name_kana}</span>
+                    )}
+                  </td>
                   <td data-label={t('admin.clients.col.contact')}>{client.contact_name ?? '—'}</td>
                   <td data-label={t('admin.clients.col.email')}>{client.email ?? '—'}</td>
                   <td className="num" data-label={t('admin.clients.col.registration')}>

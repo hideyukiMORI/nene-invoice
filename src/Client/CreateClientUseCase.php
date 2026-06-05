@@ -38,6 +38,7 @@ final readonly class CreateClientUseCase
         $id = $this->clients->save(new Client(
             organizationId: $organizationId,
             name: $input->name,
+            nameKana: $input->nameKana,
             contactName: $input->contactName,
             email: $input->email,
             billingAddress: $input->billingAddress,

@@ -44,6 +44,7 @@ final readonly class UpdateClientUseCase
         $this->clients->update(new Client(
             organizationId: $existing->organizationId,
             name: $input->name,
+            nameKana: $input->nameKana,
             contactName: $input->contactName,
             email: $input->email,
             billingAddress: $input->billingAddress,
