@@ -708,6 +708,127 @@
     background: var(--color-surface-overlay);
   }
 
+  /* ── Help page (#306): long-form guide + table of contents + FAQ ────────── */
+  .help-intro {
+    max-width: 64rem;
+    color: var(--color-fg-muted);
+    line-height: 1.7;
+  }
+  .help-toc {
+    padding: 1rem 1.25rem;
+  }
+  .help-toc-h {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .help-toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+  .help-toc li {
+    padding: 0.1875rem 0;
+    break-inside: avoid;
+  }
+  .help-toc a {
+    color: var(--color-accent);
+  }
+  .help-section {
+    max-width: 64rem;
+    scroll-margin-top: 1rem;
+  }
+  .help-h {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-fg);
+    padding-bottom: 0.625rem;
+    margin-bottom: 0.875rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .help-lead {
+    color: var(--color-fg-muted);
+    line-height: 1.7;
+    margin-bottom: 0.875rem;
+  }
+  .help-p {
+    line-height: 1.8;
+    margin-bottom: 0.75rem;
+  }
+  .help-steps,
+  .help-list {
+    margin: 0 0 0.875rem;
+    padding-left: 1.5rem;
+    line-height: 1.8;
+  }
+  .help-steps {
+    list-style: decimal;
+  }
+  .help-list {
+    list-style: disc;
+  }
+  .help-steps li,
+  .help-list li {
+    margin-bottom: 0.375rem;
+    padding-left: 0.25rem;
+  }
+  .help-note {
+    margin: 0 0 0.875rem;
+    padding: 0.6875rem 0.875rem;
+    background: var(--color-accent-soft);
+    border-left: 3px solid var(--color-accent);
+    line-height: 1.7;
+  }
+  .help-defs {
+    margin: 0;
+  }
+  .help-defs > div {
+    padding: 0.625rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .help-defs > div:last-child {
+    border-bottom: none;
+  }
+  .help-defs dt {
+    font-weight: 700;
+    margin-bottom: 0.1875rem;
+  }
+  .help-defs dd {
+    margin: 0;
+    color: var(--color-fg-muted);
+    line-height: 1.7;
+  }
+  .help-faq {
+    margin: 0;
+  }
+  .help-faq-item {
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .help-faq-item:last-child {
+    border-bottom: none;
+  }
+  .help-faq dt {
+    font-weight: 700;
+    margin-bottom: 0.375rem;
+  }
+  .help-faq dt::before {
+    content: 'Q. ';
+    color: var(--color-accent);
+  }
+  .help-faq dd {
+    margin: 0;
+    color: var(--color-fg-muted);
+    line-height: 1.8;
+  }
+  .help-top {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+  }
+
   /* Receivable-aging progress bar */
   .pay-bar {
     height: 7px;

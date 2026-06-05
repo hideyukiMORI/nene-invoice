@@ -65,8 +65,6 @@ export const enMessages: MessageCatalog = {
   'admin.nav.shortcuts': 'Keyboard shortcuts',
   'admin.help.title': 'Help',
   'admin.help.subtitle': 'Guides & FAQ',
-  'admin.help.comingSoon':
-    'Operation guides and FAQ are coming soon. Press ? for the keyboard shortcuts.',
   'admin.nav.primary': 'Primary navigation',
   'admin.bottomNav.dashboard': 'Dashboard',
   'admin.bottomNav.quotes': 'Quotes',
