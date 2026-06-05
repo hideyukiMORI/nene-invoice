@@ -80,7 +80,8 @@
   --font-sans: 'Noto Sans JP', system-ui, sans-serif;
   --font-num: 'Roboto Mono', 'Noto Sans JP', monospace;
   --text-caption: 0.6875rem;
-  --text-body: 0.8125rem;
+  /* spec 案C(.dir-c) base = 12.5px。16px ルート換算 0.78125rem。 */
+  --text-body: 0.78125rem;
   --text-heading-sm: 1.125rem;
   --text-heading-md: 1.5rem;
   --font-weight-medium: 500;
