@@ -220,6 +220,91 @@
     font-weight: 700;
   }
 
+  /* ── Client combobox (typeahead + inline register, #314) ───────────────── */
+  .combo {
+    position: relative;
+  }
+  .combo-input {
+    display: block;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    color: var(--color-fg);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    font-size: var(--text-body);
+    outline: none;
+  }
+  .combo-input:focus,
+  .combo.open .combo-input {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 28%, transparent);
+  }
+  .combo-input[aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+  .combo-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .combo-pop {
+    position: absolute;
+    z-index: 320;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    max-height: 16rem;
+    overflow-y: auto;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-pop);
+  }
+  .combo-opt {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+    text-align: left;
+    padding: 0.375rem 0.5rem;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: var(--color-fg);
+  }
+  .combo-opt.hl {
+    background: var(--color-accent-soft);
+  }
+  .combo-opt .combo-name {
+    font-size: var(--text-body);
+  }
+  .combo-opt .combo-sub {
+    font-size: var(--text-caption);
+    color: var(--color-fg-muted);
+  }
+  .combo-create {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.375rem 0.5rem;
+    margin-top: 0.125rem;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    font-size: var(--text-caption);
+    font-weight: 600;
+    color: var(--color-accent-hover);
+  }
+  .combo-create.hl {
+    background: var(--color-accent-soft);
+  }
+  .combo-create:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
   /* ── Custom date picker (design 04) ────────────────────────────────────── */
   .dp {
     position: relative;

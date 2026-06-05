@@ -5,6 +5,7 @@ import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
 import {
   Button,
+  ClientCombobox,
   DatePicker,
   Field,
   FormRow,
@@ -34,8 +35,17 @@ const trashIcon = (
  */
 export function CreateQuoteForm() {
   const { t } = useTranslation()
-  const { form, lines, clients, clientsLoading, onSubmit, addLine, isPending, errorMessage } =
-    useCreateQuote()
+  const {
+    form,
+    lines,
+    clients,
+    clientsLoading,
+    createClient,
+    onSubmit,
+    addLine,
+    isPending,
+    errorMessage,
+  } = useCreateQuote()
   const {
     control,
     register,
@@ -69,19 +79,23 @@ export function CreateQuoteForm() {
                 label={t('admin.quotes.create.client')}
                 error={errors.client_id ? t('admin.quotes.create.invalid') : undefined}
               >
-                <Select
-                  id="client_id"
-                  disabled={clientsLoading}
-                  aria-invalid={errors.client_id ? true : undefined}
-                  {...register('client_id', { setValueAs: toNumber })}
-                >
-                  <option value="">{t('admin.quotes.create.clientPlaceholder')}</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </Select>
+                <Controller
+                  control={control}
+                  name="client_id"
+                  render={({ field }) => (
+                    <ClientCombobox
+                      id="client_id"
+                      clients={clients}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onCreate={createClient}
+                      loading={clientsLoading}
+                      invalid={errors.client_id !== undefined}
+                      placeholder={t('admin.clientPicker.placeholder')}
+                      createLabel={(name) => t('admin.clientPicker.create', { name })}
+                    />
+                  )}
+                />
               </Field>
               <Field id="valid_until" label={t('admin.quotes.create.validUntil')}>
                 <Controller

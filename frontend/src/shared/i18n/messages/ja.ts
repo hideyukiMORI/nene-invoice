@@ -178,6 +178,11 @@ export const jaMessages = {
   'admin.clients.col.email': 'メール',
   'admin.clients.col.registration': '登録番号',
   'admin.clients.newButton': '取引先を作成',
+  // Shared client picker (combobox) — quote & invoice forms.
+  'admin.clientPicker.placeholder': '取引先を検索（名称・読み・登録番号）',
+  'admin.clientPicker.create': '「{{name}}」を新規取引先として登録',
+  'admin.clientPicker.registered': '「{{name}}」を取引先に登録しました',
+  'admin.clientPicker.registerError': '取引先を登録できませんでした。',
   'admin.clients.filter.search': '検索',
   'admin.clients.filter.searchPlaceholder': '名称・読み・担当者・メールで検索',
   'admin.clients.create.title': '取引先の作成',

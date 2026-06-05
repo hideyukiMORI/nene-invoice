@@ -10,6 +10,11 @@ export { Spinner, type SpinnerProps } from './primitives/Spinner'
 export { Badge, type BadgeProps, type BadgeTone } from './primitives/Badge'
 export { Field, type FieldProps } from './components/Field'
 export { FilterBar, type FilterBarProps } from './components/FilterBar'
+export {
+  ClientCombobox,
+  type ClientComboboxProps,
+  type ClientOption,
+} from './components/ClientCombobox'
 export { DatePicker, type DatePickerProps } from './components/DatePicker'
 export {
   FormLayout,
