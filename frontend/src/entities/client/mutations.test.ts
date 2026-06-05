@@ -27,6 +27,7 @@ describe('useCreateClient', () => {
     const { result } = renderHookWithProviders(() => useCreateClient())
     result.current.mutate({
       name: '新規取引先',
+      name_kana: null,
       contact_name: null,
       email: null,
       billing_address: null,
@@ -59,6 +60,7 @@ describe('useCreateClient', () => {
     const { result } = renderHookWithProviders(() => useCreateClient())
     result.current.mutate({
       name: 'X',
+      name_kana: null,
       contact_name: null,
       email: null,
       billing_address: null,
@@ -106,6 +108,7 @@ describe('useUpdateClient', () => {
     result.current.mutate({
       id: toClientId(5),
       name: '更新後',
+      name_kana: null,
       contact_name: '佐藤',
       email: null,
       billing_address: null,

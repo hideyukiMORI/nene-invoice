@@ -16,6 +16,7 @@ final class ClientResponse
             'id' => $client->id,
             'organization_id' => $client->organizationId,
             'name' => $client->name,
+            'name_kana' => $client->nameKana,
             'contact_name' => $client->contactName,
             'email' => $client->email,
             'billing_address' => $client->billingAddress,

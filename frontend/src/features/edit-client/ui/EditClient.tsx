@@ -57,6 +57,14 @@ export function EditClient({ clientId }: EditClientProps) {
             <Input id="name" aria-invalid={errors.name ? true : undefined} {...register('name')} />
           </Field>
 
+          <Field id="name_kana" label={t('admin.clients.create.nameKana')}>
+            <Input
+              id="name_kana"
+              placeholder={t('admin.clients.create.nameKanaPlaceholder')}
+              {...register('name_kana')}
+            />
+          </Field>
+
           <FormRow>
             <Field id="contact_name" label={t('admin.clients.create.contact')}>
               <Input id="contact_name" {...register('contact_name')} />

@@ -39,6 +39,7 @@ final readonly class CreateClientHandler implements RequestHandlerInterface
 
         $client = $this->useCase->execute(AuthContext::userId($request), new CreateClientInput(
             name: $name,
+            nameKana: ClientField::optionalString($decoded, 'name_kana'),
             contactName: ClientField::optionalString($decoded, 'contact_name'),
             email: ClientField::optionalString($decoded, 'email'),
             billingAddress: ClientField::optionalString($decoded, 'billing_address'),

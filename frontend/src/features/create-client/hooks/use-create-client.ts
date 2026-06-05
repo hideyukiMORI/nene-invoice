@@ -9,6 +9,7 @@ import { emptyToNull } from '@/shared/lib/form-utils'
 
 const schema = z.object({
   name: z.string().min(1),
+  name_kana: z.string(),
   contact_name: z.string(),
   email: z.string(),
   billing_address: z.string(),
@@ -33,6 +34,7 @@ export function useCreateClient(): UseCreateClient {
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
+      name_kana: '',
       contact_name: '',
       email: '',
       billing_address: '',
@@ -44,6 +46,7 @@ export function useCreateClient(): UseCreateClient {
     create.mutate(
       {
         name: values.name,
+        name_kana: emptyToNull(values.name_kana),
         contact_name: emptyToNull(values.contact_name),
         email: emptyToNull(values.email),
         billing_address: emptyToNull(values.billing_address),

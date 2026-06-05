@@ -43,6 +43,7 @@ final readonly class UpdateClientHandler implements RequestHandlerInterface
 
         $client = $this->useCase->execute(AuthContext::userId($request), $id, new UpdateClientInput(
             name: $name,
+            nameKana: ClientField::optionalString($decoded, 'name_kana'),
             contactName: ClientField::optionalString($decoded, 'contact_name'),
             email: ClientField::optionalString($decoded, 'email'),
             billingAddress: ClientField::optionalString($decoded, 'billing_address'),

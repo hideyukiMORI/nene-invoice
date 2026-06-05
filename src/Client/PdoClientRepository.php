@@ -9,7 +9,7 @@ use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoClientRepository implements ClientRepositoryInterface
 {
-    private const COLUMNS = 'id, organization_id, name, contact_name, email, billing_address, registration_number, is_deleted, created_at, updated_at';
+    private const COLUMNS = 'id, organization_id, name, name_kana, contact_name, email, billing_address, registration_number, is_deleted, created_at, updated_at';
 
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
@@ -88,9 +88,11 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         $params = [$this->orgId->get()];
 
         if ($filter->search !== null) {
-            $clauses[] = "(name LIKE ? ESCAPE '!' OR contact_name LIKE ? ESCAPE '!'"
+            $clauses[] = "(name LIKE ? ESCAPE '!' OR name_kana LIKE ? ESCAPE '!'"
+                . " OR contact_name LIKE ? ESCAPE '!'"
                 . " OR email LIKE ? ESCAPE '!' OR registration_number LIKE ? ESCAPE '!')";
             $like = '%' . self::escapeLike($filter->search) . '%';
+            $params[] = $like;
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -132,11 +134,12 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         // The organization is forced from the request-scoped holder, never from
         // the entity — a write always lands in the caller's resolved org.
         $this->query->execute(
-            'INSERT INTO clients (organization_id, name, contact_name, email, billing_address, registration_number, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
+            'INSERT INTO clients (organization_id, name, name_kana, contact_name, email, billing_address, registration_number, is_deleted, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
             [
                 $this->orgId->get(),
                 $client->name,
+                $client->nameKana,
                 $client->contactName,
                 $client->email,
                 $client->billingAddress,
@@ -158,9 +161,10 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE clients SET name = ?, contact_name = ?, email = ?, billing_address = ?, registration_number = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE clients SET name = ?, name_kana = ?, contact_name = ?, email = ?, billing_address = ?, registration_number = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
             [
                 $client->name,
+                $client->nameKana,
                 $client->contactName,
                 $client->email,
                 $client->billingAddress,
@@ -194,6 +198,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         return new Client(
             organizationId: (int) $row['organization_id'],
             name: (string) $row['name'],
+            nameKana: isset($row['name_kana']) && $row['name_kana'] !== '' ? (string) $row['name_kana'] : null,
             contactName: isset($row['contact_name']) && $row['contact_name'] !== '' ? (string) $row['contact_name'] : null,
             email: isset($row['email']) && $row['email'] !== '' ? (string) $row['email'] : null,
             billingAddress: isset($row['billing_address']) && $row['billing_address'] !== '' ? (string) $row['billing_address'] : null,

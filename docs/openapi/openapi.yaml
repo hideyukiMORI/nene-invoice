@@ -1485,6 +1485,8 @@ components:
           type: integer
         name:
           type: string
+        name_kana:
+          type: [string, 'null']
         contact_name:
           type: [string, 'null']
         email:
@@ -1505,6 +1507,8 @@ components:
       properties:
         name:
           type: string
+        name_kana:
+          type: [string, 'null']
         contact_name:
           type: [string, 'null']
         email:
@@ -1519,6 +1523,8 @@ components:
       properties:
         name:
           type: string
+        name_kana:
+          type: [string, 'null']
         contact_name:
           type: [string, 'null']
         email:

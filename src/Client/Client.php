@@ -9,13 +9,16 @@ namespace NeneInvoice\Client;
  *
  * `registrationNumber` is the buyer's Japan invoice registration number
  * (optional; format `T` + 13 digits when present — see accounting-compliance).
- * Clients are soft-deleted so issued documents that reference them stay intact.
+ * `nameKana` is an optional reading/index (furigana or latin) used for sorting
+ * and suggestions. Clients are soft-deleted so issued documents that reference
+ * them stay intact.
  */
 final readonly class Client
 {
     public function __construct(
         public int $organizationId,
         public string $name,
+        public ?string $nameKana = null,
         public ?string $contactName = null,
         public ?string $email = null,
         public ?string $billingAddress = null,

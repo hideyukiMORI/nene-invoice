@@ -179,9 +179,12 @@ export const jaMessages = {
   'admin.clients.col.registration': '登録番号',
   'admin.clients.newButton': '取引先を作成',
   'admin.clients.filter.search': '検索',
-  'admin.clients.filter.searchPlaceholder': '名称・担当者・メールで検索',
+  'admin.clients.filter.searchPlaceholder': '名称・読み・担当者・メールで検索',
   'admin.clients.create.title': '取引先の作成',
   'admin.clients.create.name': '名称',
+  'admin.clients.create.nameKana': 'フリガナ／読み',
+  'admin.clients.create.nameKanaPlaceholder':
+    'かな・英字どちらも可（例: カブシキガイシャ… / acme）',
   'admin.clients.create.contact': '担当者',
   'admin.clients.create.email': 'メール',
   'admin.clients.create.billingAddress': '請求先住所',

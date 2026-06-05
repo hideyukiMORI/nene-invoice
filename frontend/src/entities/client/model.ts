@@ -4,6 +4,8 @@ import type { ClientId } from './ids'
 export interface Client {
   id: ClientId
   name: string
+  /** Reading/index (furigana or latin) for sorting and suggestions. */
+  name_kana: string | null
   contact_name: string | null
   email: string | null
   billing_address: string | null
@@ -33,6 +35,7 @@ export interface ClientSort {
 
 export interface CreateClientInput {
   name: string
+  name_kana: string | null
   contact_name: string | null
   email: string | null
   billing_address: string | null

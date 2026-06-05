@@ -8,6 +8,7 @@ final readonly class CreateClientInput
 {
     public function __construct(
         public string $name,
+        public ?string $nameKana = null,
         public ?string $contactName = null,
         public ?string $email = null,
         public ?string $billingAddress = null,

@@ -775,6 +775,7 @@ export interface components {
             id: number;
             organization_id: number;
             name: string;
+            name_kana?: string | null;
             contact_name?: string | null;
             email?: string | null;
             billing_address?: string | null;
@@ -785,6 +786,7 @@ export interface components {
         ClientList: components["schemas"]["PageEnvelope"];
         CreateClientRequest: {
             name: string;
+            name_kana?: string | null;
             contact_name?: string | null;
             email?: string | null;
             billing_address?: string | null;
@@ -792,6 +794,7 @@ export interface components {
         };
         UpdateClientRequest: {
             name?: string;
+            name_kana?: string | null;
             contact_name?: string | null;
             email?: string | null;
             billing_address?: string | null;
