@@ -68,8 +68,6 @@ export const jaMessages = {
   'admin.nav.shortcuts': 'キーボードショートカット',
   'admin.help.title': 'ヘルプ',
   'admin.help.subtitle': '操作ガイド・よくある質問',
-  'admin.help.comingSoon':
-    '操作ガイドとよくある質問を準備中です。キーボードショートカットの一覧は ? キーで開けます。',
   'admin.nav.primary': '主要ナビゲーション',
   'admin.bottomNav.dashboard': 'ダッシュボード',
   'admin.bottomNav.quotes': '見積',
