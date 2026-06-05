@@ -6,6 +6,7 @@ export const enMessages: MessageCatalog = {
   'common.actions.retry': 'Retry',
   'common.actions.close': 'Close',
   'common.datePicker.placeholder': 'Select date',
+  'common.datePicker.open': 'Open calendar',
   'common.datePicker.title': '{{month}}/{{year}}',
   'common.datePicker.prevMonth': 'Previous month',
   'common.datePicker.nextMonth': 'Next month',

@@ -227,39 +227,59 @@
   .dp-field {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
     width: 100%;
     padding: 0.25rem 0.5rem;
-    text-align: left;
     line-height: 1.2;
-    cursor: pointer;
     color: var(--color-fg);
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     font-size: var(--text-body);
   }
-  .dp-field .dp-val {
+  /* Editable text field (#317): borderless, fills the box; the box owns the
+     border and focus ring via :focus-within. */
+  .dp-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
     font-family: var(--font-num);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
+    outline: none;
   }
-  .dp-field .dp-val.is-ph {
+  .dp-input::placeholder {
     color: var(--color-fg-muted);
     font-family: var(--font-sans);
     letter-spacing: 0;
   }
-  .dp-field .dp-ico {
-    width: 16px;
-    height: 16px;
+  .dp-ico-btn {
     flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
     color: var(--color-fg-muted);
   }
+  .dp-ico {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .dp-field:focus-within,
   .dp.open .dp-field {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 28%, transparent);
   }
-  .dp.open .dp-field .dp-ico {
+  .dp-field:focus-within .dp-ico-btn,
+  .dp.open .dp-ico-btn {
     color: var(--color-accent);
   }
   .dp-pop {
