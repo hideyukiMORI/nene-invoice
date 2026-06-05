@@ -16,6 +16,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  FilterBar,
   Input,
   LoadingState,
   Select,
@@ -71,94 +72,81 @@ export function ListAuditLogs() {
         </Text>
       )}
 
-      <form onSubmit={onSubmit}>
-        <Stack gap="sm">
-          <div className="audit-filters">
-            <Field id="audit-entity-type" label={t('admin.audit.filter.entityType')}>
-              <Select
-                id="audit-entity-type"
-                value={draft.entity_type ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, entity_type: trimmedOrNull(e.target.value) })
-                }}
-              >
-                <option value="">{t('admin.audit.filter.any')}</option>
-                {AUDIT_ENTITY_TYPES.map((type) => {
-                  const key = auditEntityLabelKey(type)
-                  return (
-                    <option key={type} value={type}>
-                      {key ? t(key) : type}
-                    </option>
-                  )
-                })}
-              </Select>
-            </Field>
+      <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
+        <Field id="audit-entity-type" label={t('admin.audit.filter.entityType')}>
+          <Select
+            id="audit-entity-type"
+            value={draft.entity_type ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, entity_type: trimmedOrNull(e.target.value) })
+            }}
+          >
+            <option value="">{t('admin.audit.filter.any')}</option>
+            {AUDIT_ENTITY_TYPES.map((type) => {
+              const key = auditEntityLabelKey(type)
+              return (
+                <option key={type} value={type}>
+                  {key ? t(key) : type}
+                </option>
+              )
+            })}
+          </Select>
+        </Field>
 
-            <Field id="audit-action" label={t('admin.audit.filter.action')}>
-              <Select
-                id="audit-action"
-                value={draft.action ?? ''}
-                onChange={(e) => {
-                  setDraft({ ...draft, action: trimmedOrNull(e.target.value) })
-                }}
-              >
-                <option value="">{t('admin.audit.filter.any')}</option>
-                {AUDIT_ACTIONS.map((action) => {
-                  const key = auditActionLabelKey(action)
-                  return (
-                    <option key={action} value={action}>
-                      {key ? t(key) : action}
-                    </option>
-                  )
-                })}
-              </Select>
-            </Field>
+        <Field id="audit-action" label={t('admin.audit.filter.action')}>
+          <Select
+            id="audit-action"
+            value={draft.action ?? ''}
+            onChange={(e) => {
+              setDraft({ ...draft, action: trimmedOrNull(e.target.value) })
+            }}
+          >
+            <option value="">{t('admin.audit.filter.any')}</option>
+            {AUDIT_ACTIONS.map((action) => {
+              const key = auditActionLabelKey(action)
+              return (
+                <option key={action} value={action}>
+                  {key ? t(key) : action}
+                </option>
+              )
+            })}
+          </Select>
+        </Field>
 
-            <Field id="audit-actor" label={t('admin.audit.filter.actor')}>
-              <Input
-                id="audit-actor"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                value={draft.actor_user_id ?? ''}
-                onChange={(e) => {
-                  const n = Number.parseInt(e.target.value, 10)
-                  setDraft({ ...draft, actor_user_id: Number.isNaN(n) ? null : n })
-                }}
-              />
-            </Field>
+        <Field id="audit-actor" label={t('admin.audit.filter.actor')}>
+          <Input
+            id="audit-actor"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            value={draft.actor_user_id ?? ''}
+            onChange={(e) => {
+              const n = Number.parseInt(e.target.value, 10)
+              setDraft({ ...draft, actor_user_id: Number.isNaN(n) ? null : n })
+            }}
+          />
+        </Field>
 
-            <Field id="audit-from" label={t('admin.audit.filter.from')}>
-              <DatePicker
-                id="audit-from"
-                value={draft.created_from ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, created_from: v === '' ? null : v })
-                }}
-              />
-            </Field>
+        <Field id="audit-from" label={t('admin.audit.filter.from')}>
+          <DatePicker
+            id="audit-from"
+            value={draft.created_from ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, created_from: v === '' ? null : v })
+            }}
+          />
+        </Field>
 
-            <Field id="audit-to" label={t('admin.audit.filter.to')}>
-              <DatePicker
-                id="audit-to"
-                value={draft.created_to ?? ''}
-                onChange={(v) => {
-                  setDraft({ ...draft, created_to: v === '' ? null : v })
-                }}
-              />
-            </Field>
-          </div>
-
-          <div className="audit-filters-actions">
-            <Button type="submit" size="sm">
-              {t('admin.audit.filter.apply')}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-              {t('admin.audit.filter.reset')}
-            </Button>
-          </div>
-        </Stack>
-      </form>
+        <Field id="audit-to" label={t('admin.audit.filter.to')}>
+          <DatePicker
+            id="audit-to"
+            value={draft.created_to ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, created_to: v === '' ? null : v })
+            }}
+          />
+        </Field>
+      </FilterBar>
 
       {view.state.kind === 'loading' && <LoadingState message={t('admin.audit.loading')} />}
 

@@ -23,6 +23,8 @@ export interface ListClientsView {
   resetFilters: () => void
   sort: ClientSort
   toggleSort: (field: ClientSortField) => void
+  /** Total number of matching records. */
+  total: number
   state: ListClientsState
 }
 
@@ -62,5 +64,7 @@ export function useListClients(): ListClientsView {
     state = { kind: 'ready', clients: query.data.items }
   }
 
-  return { filters, applyFilters, resetFilters, sort, toggleSort, state }
+  const total = query.data?.total ?? 0
+
+  return { filters, applyFilters, resetFilters, sort, toggleSort, total, state }
 }

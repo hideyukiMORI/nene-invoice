@@ -32,6 +32,8 @@ export interface ListQuotesView {
   sort: QuoteSort
   toggleSort: (field: QuoteSortField) => void
   pagination: QuotePagination
+  /** Total number of matching records across all pages. */
+  total: number
   state: ListQuotesState
 }
 
@@ -96,6 +98,7 @@ export function useListQuotes(): ListQuotesView {
         setPage((p) => Math.min(totalPages, p + 1))
       },
     },
+    total,
     state,
   }
 }

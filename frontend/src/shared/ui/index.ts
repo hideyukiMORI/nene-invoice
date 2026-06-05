@@ -9,6 +9,7 @@ export { Stack, type StackProps } from './primitives/Stack'
 export { Spinner, type SpinnerProps } from './primitives/Spinner'
 export { Badge, type BadgeProps, type BadgeTone } from './primitives/Badge'
 export { Field, type FieldProps } from './components/Field'
+export { FilterBar, type FilterBarProps } from './components/FilterBar'
 export { DatePicker, type DatePickerProps } from './components/DatePicker'
 export {
   FormLayout,
