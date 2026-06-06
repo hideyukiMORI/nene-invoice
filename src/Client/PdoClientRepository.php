@@ -6,6 +6,7 @@ namespace NeneInvoice\Client;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Support\SqlLike;
 
 final readonly class PdoClientRepository implements ClientRepositoryInterface
 {
@@ -70,7 +71,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
             $clauses[] = "(name LIKE ? ESCAPE '!' OR name_kana LIKE ? ESCAPE '!'"
                 . " OR contact_name LIKE ? ESCAPE '!'"
                 . " OR email LIKE ? ESCAPE '!' OR registration_number LIKE ? ESCAPE '!')";
-            $like = '%' . self::escapeLike($filter->search) . '%';
+            $like = '%' . SqlLike::escape($filter->search) . '%';
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -98,12 +99,6 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         }
 
         return $columns[$sort->field] . ' ' . $direction . ', id ASC';
-    }
-
-    /** Escapes LIKE wildcards (ESCAPE '!') so user input is matched literally. */
-    private static function escapeLike(string $value): string
-    {
-        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 
     public function save(Client $client): int

@@ -6,6 +6,7 @@ namespace NeneInvoice\Quote;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Support\SqlLike;
 
 final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
 {
@@ -98,7 +99,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
 
         if ($filter->search !== null) {
             $clauses[] = "(q.quote_number LIKE ? ESCAPE '!' OR c.name LIKE ? ESCAPE '!')";
-            $like = '%' . self::escapeLike($filter->search) . '%';
+            $like = '%' . SqlLike::escape($filter->search) . '%';
             $params[] = $like;
             $params[] = $like;
         }
@@ -145,12 +146,6 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         }
 
         return $columns[$sort->field] . ' ' . $direction . ', q.id DESC';
-    }
-
-    /** Escapes LIKE wildcards (ESCAPE '!') so user input is matched literally. */
-    private static function escapeLike(string $value): string
-    {
-        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 
     public function save(Quote $quote): int

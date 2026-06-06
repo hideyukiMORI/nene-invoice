@@ -6,6 +6,7 @@ namespace NeneInvoice\Item;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Support\SqlLike;
 
 final readonly class PdoItemRepository implements ItemRepositoryInterface
 {
@@ -79,7 +80,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
 
         if ($filter->search !== null) {
             $clauses[] = "description LIKE ? ESCAPE '!'";
-            $params[] = '%' . self::escapeLike($filter->search) . '%';
+            $params[] = '%' . SqlLike::escape($filter->search) . '%';
         }
 
         return [implode(' AND ', $clauses), $params];
@@ -101,12 +102,6 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         }
 
         return $columns[$sort->field] . ' ' . $direction . ', id ASC';
-    }
-
-    /** Escapes LIKE wildcards (ESCAPE '!') so user input is matched literally. */
-    private static function escapeLike(string $value): string
-    {
-        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
     }
 
     public function save(Item $item): int

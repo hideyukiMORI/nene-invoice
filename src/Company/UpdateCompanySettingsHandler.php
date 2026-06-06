@@ -9,6 +9,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
+use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -39,38 +40,22 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
 
         $settings = $this->useCase->execute(AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
-            address: $this->optional($decoded, 'address'),
-            phone: $this->optional($decoded, 'phone'),
-            email: $this->optional($decoded, 'email'),
-            registrationNumber: $this->optional($decoded, 'registration_number'),
-            bankName: $this->optional($decoded, 'bank_name'),
-            bankBranch: $this->optional($decoded, 'bank_branch'),
-            accountType: $this->optional($decoded, 'account_type'),
-            accountNumber: $this->optional($decoded, 'account_number'),
-            logoUrl: $this->optional($decoded, 'logo_url'),
-            defaultQuoteValidityDays: $this->optionalInt($decoded, 'default_quote_validity_days'),
-            defaultPaymentClosingDay: $this->optionalInt($decoded, 'default_payment_closing_day'),
-            defaultPaymentMonthOffset: $this->optionalInt($decoded, 'default_payment_month_offset'),
-            defaultPaymentPayDay: $this->optionalInt($decoded, 'default_payment_pay_day'),
+            address: RequestField::optionalString($decoded, 'address'),
+            phone: RequestField::optionalString($decoded, 'phone'),
+            email: RequestField::optionalString($decoded, 'email'),
+            registrationNumber: RequestField::optionalString($decoded, 'registration_number'),
+            bankName: RequestField::optionalString($decoded, 'bank_name'),
+            bankBranch: RequestField::optionalString($decoded, 'bank_branch'),
+            accountType: RequestField::optionalString($decoded, 'account_type'),
+            accountNumber: RequestField::optionalString($decoded, 'account_number'),
+            logoUrl: RequestField::optionalString($decoded, 'logo_url'),
+            defaultQuoteValidityDays: RequestField::optionalInt($decoded, 'default_quote_validity_days'),
+            defaultPaymentClosingDay: RequestField::optionalInt($decoded, 'default_payment_closing_day'),
+            defaultPaymentMonthOffset: RequestField::optionalInt($decoded, 'default_payment_month_offset'),
+            defaultPaymentPayDay: RequestField::optionalInt($decoded, 'default_payment_pay_day'),
         ));
 
         return $this->json->create(CompanySettingsResponse::toArray($settings));
-    }
-
-    /** @param array<string, mixed> $body */
-    private function optional(array $body, string $key): ?string
-    {
-        $value = $body[$key] ?? null;
-
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    /** @param array<string, mixed> $body */
-    private function optionalInt(array $body, string $key): ?int
-    {
-        $value = $body[$key] ?? null;
-
-        return is_int($value) ? $value : null;
     }
 
     /**

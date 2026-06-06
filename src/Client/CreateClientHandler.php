@@ -9,6 +9,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
+use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -36,11 +37,11 @@ final readonly class CreateClientHandler implements RequestHandlerInterface
 
         $client = $this->useCase->execute(AuthContext::userId($request), new CreateClientInput(
             name: $name,
-            nameKana: ClientField::optionalString($body, 'name_kana'),
-            contactName: ClientField::optionalString($body, 'contact_name'),
-            email: ClientField::optionalString($body, 'email'),
-            billingAddress: ClientField::optionalString($body, 'billing_address'),
-            registrationNumber: ClientField::optionalString($body, 'registration_number'),
+            nameKana: RequestField::optionalString($body, 'name_kana'),
+            contactName: RequestField::optionalString($body, 'contact_name'),
+            email: RequestField::optionalString($body, 'email'),
+            billingAddress: RequestField::optionalString($body, 'billing_address'),
+            registrationNumber: RequestField::optionalString($body, 'registration_number'),
         ));
 
         return $this->json->create(ClientResponse::toArray($client), 201);
