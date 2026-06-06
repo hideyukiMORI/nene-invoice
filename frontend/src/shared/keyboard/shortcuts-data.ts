@@ -91,6 +91,11 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     ja: '全般',
     en: 'General',
     rows: [
+      {
+        ja: 'コマンドパレット',
+        en: 'Command palette',
+        combos: [{ caps: [MOD, 'K'], join: 'plus' }],
+      },
       { ja: 'ショートカット一覧', en: 'Show shortcuts', combos: [{ caps: ['?'], join: 'none' }] },
     ],
   },

@@ -138,6 +138,36 @@ describe('KeyboardShortcuts', () => {
     expect(document.activeElement).toBe(search)
   })
 
+  it('opens the command palette on Ctrl/⌘+K and navigates with j + Enter (#370)', async () => {
+    const { getByRole, getByTestId, queryByRole } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <LocationProbe />
+      </>,
+    )
+    expect(queryByRole('dialog')).not.toBeInTheDocument()
+
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    expect(getByRole('dialog')).toBeInTheDocument()
+
+    // cursor starts on the first command (dashboard); j → quotes, Enter goes.
+    fireEvent.keyDown(document.body, { key: 'j' })
+    fireEvent.keyDown(document.body, { key: 'Enter' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/quotes')
+    })
+    expect(queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('closes the command palette on Esc (#370)', () => {
+    const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
+    fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
+    expect(getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    expect(queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('opens the cheat-sheet via openShortcutsOverlay()', () => {
     const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
     expect(queryByRole('dialog')).not.toBeInTheDocument()
