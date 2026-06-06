@@ -135,14 +135,40 @@ describe('ClientCombobox', () => {
     const input = container.querySelector('#c') as HTMLInputElement
     fireEvent.change(input, { target: { value: '新規取引先' } })
 
-    // Enter that confirms the IME conversion (keyCode 229) must NOT open the
-    // create form — it belongs to the IME.
+    // Enter that confirms the IME conversion (keyCode 229) must NOT act — it
+    // belongs to the IME.
     fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 })
     expect(container.querySelector('.combo-createform')).toBeNull()
 
-    // The next Enter (composition done) opens the inline-create form.
+    // Nothing is auto-highlighted (#366): the committed Enter alone does nothing.
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(container.querySelector('.combo-createform')).toBeNull()
+
+    // Move to the create row with ↓, then Enter opens the inline-create form.
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
     fireEvent.keyDown(input, { key: 'Enter' })
     expect(container.querySelector('.combo-createform')).not.toBeNull()
+  })
+
+  it('does not auto-highlight a suggestion; ↓ enters the list, Enter picks (#366)', () => {
+    const onChange = vi.fn()
+    const { container } = renderWithProviders(
+      <ClientCombobox id="c" clients={CLIENTS} value={0} onChange={onChange} />,
+    )
+    const input = container.querySelector('#c') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'a' } }) // matches Acme Foods
+
+    // Suggestions are shown but nothing is highlighted — the field keeps the cursor.
+    expect(container.querySelector('.combo-opt.hl')).toBeNull()
+    // A bare Enter does not pick anything.
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onChange).not.toHaveBeenCalled()
+
+    // ↓ highlights the first suggestion, Enter picks it.
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    expect(container.querySelector('.combo-opt.hl')).not.toBeNull()
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onChange).toHaveBeenCalledWith(2)
   })
 
   it('shows the selected client name when value is set', () => {
