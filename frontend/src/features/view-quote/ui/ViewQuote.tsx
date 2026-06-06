@@ -6,6 +6,7 @@ import {
   type QuoteId,
 } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
+import { formatCalendarDate, formatJstDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -147,12 +148,12 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
           </Badge>
           {quote.issued_at !== null && (
             <Text variant="muted">
-              {t('admin.quotes.detail.issuedAt')}: {quote.issued_at.slice(0, 10)}
+              {t('admin.quotes.detail.issuedAt')}: {formatJstDate(quote.issued_at)}
             </Text>
           )}
           {quote.valid_until !== null && (
             <Text variant="muted">
-              {t('admin.quotes.detail.validUntil')}: {quote.valid_until.slice(0, 10)}
+              {t('admin.quotes.detail.validUntil')}: {formatCalendarDate(quote.valid_until)}
             </Text>
           )}
         </Stack>

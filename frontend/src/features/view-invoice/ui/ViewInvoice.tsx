@@ -7,6 +7,7 @@ import {
   type InvoiceId,
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { formatCalendarDate, formatJstDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   ActionError,
@@ -196,12 +197,12 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
           )}
           {invoice.issued_at !== null && (
             <Text variant="muted">
-              {t('admin.invoices.detail.issuedAt')}: {invoice.issued_at}
+              {t('admin.invoices.detail.issuedAt')}: {formatJstDate(invoice.issued_at)}
             </Text>
           )}
           {invoice.due_at !== null && (
             <Text variant="muted">
-              {t('admin.invoices.detail.dueAt')}: {invoice.due_at}
+              {t('admin.invoices.detail.dueAt')}: {formatCalendarDate(invoice.due_at)}
             </Text>
           )}
         </Stack>
