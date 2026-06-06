@@ -39,6 +39,39 @@ test.describe('Create invoice', () => {
     await page.route('**/admin/line-items/suggestions*', (route) =>
       route.fulfill(json({ items: [SUGGESTION] })),
     )
+    await page.route('**/admin/templates*', (route, request) => {
+      if (request.method() === 'GET') {
+        route.fulfill(
+          json({
+            items: [{ id: 9, organization_id: 1, name: '月次保守', notes: null, line_items: [] }],
+            total: 1,
+            limit: 100,
+            offset: 0,
+          }),
+        )
+      } else {
+        route.fallback()
+      }
+    })
+    await page.route('**/admin/templates/9', (route) =>
+      route.fulfill(
+        json({
+          id: 9,
+          organization_id: 1,
+          name: '月次保守',
+          notes: 'テンプレ備考',
+          line_items: [
+            {
+              id: 1,
+              description: '保守サポート',
+              quantity: 1,
+              unit_price_cents: 50000,
+              tax_rate_bps: 1000,
+            },
+          ],
+        }),
+      ),
+    )
     await page.route('**/admin/invoices*', (route, request) => {
       if (request.method() === 'GET') {
         route.fulfill(json({ items: [], total: 0, limit: 20, offset: 0 }))
@@ -94,5 +127,12 @@ test.describe('Create invoice', () => {
 
     await expect(page.locator('#line-0-description')).toHaveValue('コンサルティング（10時間）')
     await expect(page.locator('#line-0-unit')).toHaveValue('30000')
+  })
+
+  test('applies a template to fill the lines', async ({ page }) => {
+    await page.locator('#template-pick').selectOption({ label: '月次保守' })
+
+    await expect(page.locator('#line-0-description')).toHaveValue('保守サポート')
+    await expect(page.locator('#line-0-unit')).toHaveValue('50000')
   })
 })

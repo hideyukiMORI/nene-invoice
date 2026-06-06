@@ -34,3 +34,9 @@ export function useTemplate(id: TemplateId): UseQueryResult<TemplateWithLines, A
     },
   })
 }
+
+/** One-shot fetch of a template with lines (for applying it to a form). */
+export async function fetchTemplate(id: TemplateId): Promise<TemplateWithLines> {
+  const dto = await apiClient.get<TemplateDto>(`/admin/templates/${String(id)}`)
+  return toTemplateWithLines(dto)
+}

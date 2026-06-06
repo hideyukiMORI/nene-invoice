@@ -1,4 +1,6 @@
 import { Controller, useWatch } from 'react-hook-form'
+import type { TemplateWithLines } from '@/entities/template'
+import { TemplateBar } from '@/features/template-bar'
 import { useTranslation } from '@/shared/i18n'
 import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
@@ -54,9 +56,36 @@ export function CreateQuoteForm() {
     control,
     register,
     setValue,
+    getValues,
     formState: { errors },
   } = form
   const { gridRef } = useLineGridEnter(lines.fields.length, addLine)
+
+  // Template bar: snapshot current lines/notes to save; replace on apply.
+  const templateSnapshot = () => ({
+    notes: getValues('notes') === '' ? null : getValues('notes'),
+    line_items: getValues('line_items')
+      .filter((l) => l.description.trim() !== '')
+      .map((l) => ({
+        description: l.description.trim(),
+        quantity: l.quantity,
+        unit_price_cents: l.unit_price_cents,
+        tax_rate_bps: l.tax_rate_bps,
+      })),
+  })
+  const applyTemplate = (template: TemplateWithLines): void => {
+    setValue('notes', template.notes ?? '')
+    lines.replace(
+      template.line_items.length > 0
+        ? template.line_items.map((l) => ({
+            description: l.description,
+            quantity: l.quantity,
+            unit_price_cents: l.unit_price_cents,
+            tax_rate_bps: l.tax_rate_bps === 800 ? 800 : 1000,
+          }))
+        : [{ description: '', quantity: 1, unit_price_cents: 0, tax_rate_bps: 1000 }],
+    )
+  }
 
   // Picking a suggestion fills the row's description and its default unit price
   // / tax rate (still editable). The rate guard keeps the value within the
@@ -93,6 +122,8 @@ export function CreateQuoteForm() {
           <Text as="h1" variant="heading-md">
             {t('admin.quotes.create.title')}
           </Text>
+
+          <TemplateBar getSnapshot={templateSnapshot} onApply={applyTemplate} />
 
           {/* Client + valid-until */}
           <div className="card">

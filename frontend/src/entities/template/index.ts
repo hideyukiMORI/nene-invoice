@@ -8,5 +8,5 @@ export type {
   UpdateTemplateInput,
 } from './model'
 export { templateKeys, type TemplateListParams } from './query-keys'
-export { useTemplateList, useTemplate } from './queries'
+export { useTemplateList, useTemplate, fetchTemplate } from './queries'
 export { useCreateTemplate, useUpdateTemplate, useDeleteTemplate } from './mutations'

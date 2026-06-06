@@ -37,6 +37,13 @@ test.describe('Create quote', () => {
     await page.route('**/admin/line-items/suggestions*', (route) =>
       route.fulfill(json({ items: [SUGGESTION] })),
     )
+    await page.route('**/admin/templates*', (route, request) => {
+      if (request.method() === 'GET') {
+        route.fulfill(json({ items: [], total: 0, limit: 100, offset: 0 }))
+      } else {
+        route.fallback()
+      }
+    })
     await page.route('**/admin/quotes*', (route, request) => {
       if (request.method() === 'GET') {
         route.fulfill(json({ items: [], total: 0, limit: 20, offset: 0 }))
