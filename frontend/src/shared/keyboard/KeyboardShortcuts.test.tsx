@@ -40,6 +40,32 @@ describe('KeyboardShortcuts', () => {
     })
   })
 
+  it('navigates to items (g m) and templates (g t), and n opens new item', async () => {
+    const { getByTestId } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <LocationProbe />
+      </>,
+    )
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 'm' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/items')
+    })
+
+    fireEvent.keyDown(document.body, { key: 'n' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/items/new')
+    })
+
+    fireEvent.keyDown(document.body, { key: 'g' })
+    fireEvent.keyDown(document.body, { key: 't' })
+    await waitFor(() => {
+      expect(getByTestId('loc')).toHaveTextContent('/templates')
+    })
+  })
+
   it('returns to the parent list with u', async () => {
     const { getByTestId } = renderWithProviders(
       <>

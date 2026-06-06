@@ -37,6 +37,8 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { ja: '見積書', en: 'Quotes', combos: [{ caps: ['g', 'q'], join: 'then' }] },
       { ja: '請求書', en: 'Invoices', combos: [{ caps: ['g', 'i'], join: 'then' }] },
       { ja: '取引先', en: 'Clients', combos: [{ caps: ['g', 'c'], join: 'then' }] },
+      { ja: '品目マスタ', en: 'Items', combos: [{ caps: ['g', 'm'], join: 'then' }] },
+      { ja: 'テンプレート', en: 'Templates', combos: [{ caps: ['g', 't'], join: 'then' }] },
       { ja: 'ユーザー', en: 'Users', combos: [{ caps: ['g', 'u'], join: 'then' }] },
       { ja: '会社設定', en: 'Settings', combos: [{ caps: ['g', 's'], join: 'then' }] },
       { ja: '監査ログ', en: 'Audit log', combos: [{ caps: ['g', 'a'], join: 'then' }] },

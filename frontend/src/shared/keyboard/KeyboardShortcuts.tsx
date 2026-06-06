@@ -17,6 +17,8 @@ const GOTO: Record<string, string> = {
   q: '/quotes',
   i: '/invoices',
   c: '/clients',
+  m: '/items',
+  t: '/templates',
   u: '/users',
   s: '/settings',
   a: '/audit-logs',
@@ -27,11 +29,21 @@ const NEW_ROUTE: Record<string, string> = {
   '/quotes': '/quotes/new',
   '/invoices': '/invoices/new',
   '/clients': '/clients/new',
+  '/items': '/items/new',
+  '/templates': '/templates/new',
   '/users': '/users/new',
 }
 
 /** Parent list roots for `u` (back to list). */
-const LIST_ROOTS = ['/invoices', '/quotes', '/clients', '/users', '/audit-logs']
+const LIST_ROOTS = [
+  '/invoices',
+  '/quotes',
+  '/clients',
+  '/items',
+  '/templates',
+  '/users',
+  '/audit-logs',
+]
 
 function parentListOf(path: string): string | null {
   return LIST_ROOTS.find((root) => path.startsWith(`${root}/`)) ?? null
