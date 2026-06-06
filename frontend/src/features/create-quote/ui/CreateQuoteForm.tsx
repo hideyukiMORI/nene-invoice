@@ -44,6 +44,7 @@ export function CreateQuoteForm() {
     clientsLoading,
     createClient,
     lineSuggestions,
+    onClientQueryChange,
     onSubmit,
     addLine,
     isPending,
@@ -111,6 +112,7 @@ export function CreateQuoteForm() {
                       value={field.value}
                       onChange={field.onChange}
                       onCreate={createClient}
+                      onQueryChange={onClientQueryChange}
                       loading={clientsLoading}
                       invalid={errors.client_id !== undefined}
                       placeholder={t('admin.clientPicker.placeholder')}

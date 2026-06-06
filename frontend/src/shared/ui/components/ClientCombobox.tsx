@@ -25,6 +25,12 @@ export interface ClientComboboxProps {
   loading?: boolean
   invalid?: boolean
   placeholder?: string
+  /**
+   * Server-search mode (#328): when set, the typed text is reported here
+   * (debounce in the parent) and local filtering is skipped — `clients` is shown
+   * as already filtered by the server. Omit for the default local-filter mode.
+   */
+  onQueryChange?: (query: string) => void
   /** Label for the inline-create row, e.g. `「{name}」を新規登録`. */
   createLabel?: (name: string) => string
   /** Placeholder for the inline furigana (reading) input. */
@@ -53,11 +59,13 @@ export function ClientCombobox({
   loading = false,
   invalid = false,
   placeholder,
+  onQueryChange,
   createLabel,
   createKanaPlaceholder,
   createConfirmLabel,
   'aria-describedby': ariaDescribedBy,
 }: ClientComboboxProps) {
+  const serverFiltered = onQueryChange !== undefined
   const selected = clients.find((c) => c.id === value) ?? null
 
   const [text, setText] = useState(selected?.name ?? '')
@@ -80,8 +88,10 @@ export function ClientCombobox({
   const kanaRef = useRef<HTMLInputElement>(null)
 
   const q = norm(text)
+  // In server-search mode the parent already filtered `clients`; otherwise match
+  // by name / reading / registration number locally.
   const matches = (
-    q === ''
+    serverFiltered || q === ''
       ? clients
       : clients.filter(
           (c) =>
@@ -204,6 +214,7 @@ export function ClientCombobox({
           setOpen(true)
           setHighlight(0)
           resetCreate()
+          onQueryChange?.(e.target.value)
         }}
         onFocus={() => {
           setOpen(true)

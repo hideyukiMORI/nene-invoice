@@ -97,6 +97,27 @@ describe('ClientCombobox', () => {
     expect(onCreate).toHaveBeenCalledWith('読みなし商店', null)
   })
 
+  it('reports the query and skips local filtering in server-search mode', () => {
+    const onQueryChange = vi.fn()
+    const { container, getByRole } = renderWithProviders(
+      <ClientCombobox
+        id="c"
+        clients={CLIENTS}
+        value={0}
+        onChange={vi.fn()}
+        onQueryChange={onQueryChange}
+      />,
+    )
+    const input = container.querySelector('#c') as HTMLInputElement
+
+    // Text that matches neither client locally; the server (parent) decides.
+    fireEvent.change(input, { target: { value: 'zzz' } })
+    expect(onQueryChange).toHaveBeenCalledWith('zzz')
+    // The parent-provided list is shown as-is — no client-side narrowing.
+    expect(getByRole('option', { name: /株式会社サンプル/ })).toBeTruthy()
+    expect(getByRole('option', { name: /Acme Foods/ })).toBeTruthy()
+  })
+
   it('shows the selected client name when value is set', () => {
     const { container } = renderWithProviders(
       <ClientCombobox id="c" clients={CLIENTS} value={2} onChange={vi.fn()} />,
