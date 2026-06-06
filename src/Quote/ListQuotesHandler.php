@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -15,9 +17,6 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final readonly class ListQuotesHandler implements RequestHandlerInterface
 {
-    private const DEFAULT_LIMIT = 20;
-    private const MAX_LIMIT = 100;
-
     public function __construct(
         private ListQuotesUseCase $useCase,
         private JsonResponseFactory $json,
@@ -26,22 +25,17 @@ final readonly class ListQuotesHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        $pagination = PaginationQueryParser::parse($request);
         $query = $request->getQueryParams();
-
-        $limit = isset($query['limit']) && is_numeric($query['limit']) ? (int) $query['limit'] : self::DEFAULT_LIMIT;
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
-
-        $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
-        $offset = max(0, $offset);
 
         $filter = $this->buildFilter($query);
         $sort   = QuoteSort::fromInput(self::stringParam($query, 'sort'), self::stringParam($query, 'order'));
 
-        $result      = $this->useCase->executeAdmin($filter, $sort, $limit, $offset);
+        $result      = $this->useCase->executeAdmin($filter, $sort, $pagination->limit, $pagination->offset);
         $clientNames = $result->clientNameByQuoteId;
 
-        return $this->json->create([
-            'items' => array_map(
+        return $this->json->create((new PaginationResponse(
+            items: array_map(
                 static fn (Quote $q): array => QuoteResponse::toArray(
                     $q,
                     null,
@@ -49,10 +43,10 @@ final readonly class ListQuotesHandler implements RequestHandlerInterface
                 ),
                 $result->items,
             ),
-            'total' => $result->total,
-            'limit' => $limit,
-            'offset' => $offset,
-        ]);
+            limit: $pagination->limit,
+            offset: $pagination->offset,
+            total: $result->total,
+        ))->toArray());
     }
 
     /**

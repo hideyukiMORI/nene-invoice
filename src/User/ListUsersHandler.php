@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NeneInvoice\User;
 
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -16,9 +18,6 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final readonly class ListUsersHandler implements RequestHandlerInterface
 {
-    private const DEFAULT_LIMIT = 20;
-    private const MAX_LIMIT = 100;
-
     public function __construct(
         private ListUsersUseCase $useCase,
         private JsonResponseFactory $json,
@@ -27,21 +26,15 @@ final readonly class ListUsersHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $query = $request->getQueryParams();
+        $pagination = PaginationQueryParser::parse($request);
 
-        $limit = isset($query['limit']) && is_numeric($query['limit']) ? (int) $query['limit'] : self::DEFAULT_LIMIT;
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
+        $result = $this->useCase->execute($pagination->limit, $pagination->offset);
 
-        $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
-        $offset = max(0, $offset);
-
-        $result = $this->useCase->execute($limit, $offset);
-
-        return $this->json->create([
-            'items' => array_map(static fn (User $u): array => UserResponse::toArray($u), $result->items),
-            'total' => $result->total,
-            'limit' => $limit,
-            'offset' => $offset,
-        ]);
+        return $this->json->create((new PaginationResponse(
+            items: array_map(static fn (User $u): array => UserResponse::toArray($u), $result->items),
+            limit: $pagination->limit,
+            offset: $pagination->offset,
+            total: $result->total,
+        ))->toArray());
     }
 }
