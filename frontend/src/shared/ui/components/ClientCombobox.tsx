@@ -148,6 +148,14 @@ export function ClientCombobox({
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    // Let the IME own keys while composing — the Enter that confirms a Japanese
+    // conversion (and ↑↓ that move candidates) must not be hijacked into picking
+    // a suggestion or opening the create form (#360). keyCode 229 is the legacy
+    // IME signal some browsers emit before isComposing flips, mirroring the
+    // global dispatcher's guard.
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return
+
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       if (!open) {
@@ -177,6 +185,11 @@ export function ClientCombobox({
   }
 
   const onKanaKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    // Same IME guard as the name field: the conversion-confirming Enter on the
+    // furigana input must reach the IME, not trigger the create (#360).
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return
+
     if (e.key === 'Enter') {
       e.preventDefault()
       void runCreate()

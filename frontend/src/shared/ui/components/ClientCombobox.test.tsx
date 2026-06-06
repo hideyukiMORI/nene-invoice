@@ -118,6 +118,33 @@ describe('ClientCombobox', () => {
     expect(getByRole('option', { name: /Acme Foods/ })).toBeTruthy()
   })
 
+  it('ignores the IME conversion-confirm Enter, then acts on the committed Enter (#360)', () => {
+    const onChange = vi.fn()
+    const onCreate = vi.fn(() => Promise.resolve(99))
+    const { container } = renderWithProviders(
+      <ClientCombobox
+        id="c"
+        clients={CLIENTS}
+        value={0}
+        onChange={onChange}
+        onCreate={onCreate}
+        createLabel={(name) => `「${name}」を登録`}
+        createConfirmLabel="登録"
+      />,
+    )
+    const input = container.querySelector('#c') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '新規取引先' } })
+
+    // Enter that confirms the IME conversion (keyCode 229) must NOT open the
+    // create form — it belongs to the IME.
+    fireEvent.keyDown(input, { key: 'Enter', keyCode: 229 })
+    expect(container.querySelector('.combo-createform')).toBeNull()
+
+    // The next Enter (composition done) opens the inline-create form.
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(container.querySelector('.combo-createform')).not.toBeNull()
+  })
+
   it('shows the selected client name when value is set', () => {
     const { container } = renderWithProviders(
       <ClientCombobox id="c" clients={CLIENTS} value={2} onChange={vi.fn()} />,
