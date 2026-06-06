@@ -47,13 +47,13 @@ const LIST_ROOTS = [
 ]
 
 /**
- * The parent list for `u` (back to list) — but only from a **detail** view, not
- * a create/edit form. Firing `u` on `/new` or `/edit` would navigate away mid-edit
- * and lose unsaved input (e.g. when focus sits on a form button), so forms opt out
- * (#362). Detail routes like `/invoices/123` still resolve to their list.
+ * The parent list for `u` (back to list), from detail / create / edit views.
+ * Whether `u` fires at all is left to the editable-field guard: while a form
+ * field is focused, single keys (incl. `u`) never fire, so it can't steal typed
+ * input; once focus leaves the field (e.g. via Esc, #364), `u` returns to the
+ * list — including from an edit form (#374).
  */
 function parentListOf(path: string): string | null {
-  if (path.endsWith('/new') || path.endsWith('/edit')) return null
   return LIST_ROOTS.find((root) => path.startsWith(`${root}/`)) ?? null
 }
 
