@@ -12,6 +12,7 @@ use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Payment\Payment;
 use NeneInvoice\Payment\VoidPaymentUseCase;
 use NeneInvoice\ServiceApi\VoidServicePaymentHandler;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryPaymentRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -57,7 +58,7 @@ final class VoidServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new VoidServicePaymentHandler(
-            new VoidPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder(), $holder),
+            new VoidPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => new RecordingAuditRecorder(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );

@@ -14,7 +14,7 @@ use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
-use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -60,7 +60,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                         self::resolve($c, CompanySettingsRepositoryInterface::class),
                         self::resolve($c, DocumentNumberGenerator::class),
                         self::resolve($c, TaxCalculator::class),
-                        self::resolve($c, AuditRecorderInterface::class),
+                        AuditServiceProvider::recorderFactory($c),
                         self::resolve($c, ClockInterface::class),
                         $orgHolder,
                     );
@@ -68,12 +68,18 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 ChangeQuoteStatusUseCaseInterface::class,
-                static fn (ContainerInterface $c): ChangeQuoteStatusUseCase => new ChangeQuoteStatusUseCase(
-                    self::quotes($c),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::resolve($c, ClockInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): ChangeQuoteStatusUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new ChangeQuoteStatusUseCase(
+                        self::quotes($c),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        self::resolve($c, ClockInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(ListQuotesUseCaseInterface::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
             ->set(

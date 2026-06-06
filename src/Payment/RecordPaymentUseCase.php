@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
@@ -27,12 +30,18 @@ use NeneInvoice\Support\Jst;
 final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterface
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): PaymentRepositoryInterface $paymentsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private PaymentRepositoryInterface $payments,
         private InvoiceRepositoryInterface $invoices,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $paymentsFactory,
+        private Closure $invoicesFactory,
+        private Closure $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -96,19 +105,7 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
 
         $before = InvoiceResponse::toArray($invoice);
 
-        $paidAt = $input->paidAt ?? $this->clock->now()->format('Y-m-d H:i:s');
-
-        $paymentId = $this->payments->save(new Payment(
-            organizationId: $organizationId,
-            invoiceId: $invoiceId,
-            amountCents: $input->amountCents,
-            paidAt: $paidAt,
-            method: $input->method,
-            note: $input->note,
-            externalReference: $input->externalReference,
-            idempotencyKey: $input->idempotencyKey,
-        ));
-
+        $paidAt    = $input->paidAt ?? $this->clock->now()->format('Y-m-d H:i:s');
         $totalPaid = $alreadyPaid + $input->amountCents;
         $newStatus = $totalPaid >= $invoice->totalCents ? InvoiceStatus::Paid : InvoiceStatus::PartiallyPaid;
 
@@ -130,32 +127,58 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
             updatedAt: $invoice->updatedAt,
         );
 
-        $this->invoices->update($updatedInvoice);
-
-        $stored = $this->payments->findByInvoice($invoiceId);
-        $payment = null;
-
-        foreach ($stored as $candidate) {
-            if ($candidate->id === $paymentId) {
-                $payment = $candidate;
-
-                break;
-            }
-        }
-
-        if ($payment === null) {
-            throw new LogicException('Payment disappeared immediately after recording.');
-        }
-
-        $this->audit->record(
+        // The payment insert, the invoice status update, and the audit record all
+        // commit atomically — a partial write (e.g. payment saved but status stale)
+        // can no longer occur (Issue #352).
+        $payment = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
             $actorUserId,
             $organizationId,
-            'payment.recorded',
-            'invoice',
             $invoiceId,
+            $input,
+            $paidAt,
+            $updatedInvoice,
             $before,
-            InvoiceResponse::toArray($updatedInvoice),
-        );
+        ): Payment {
+            $payments = ($this->paymentsFactory)($exec);
+
+            $paymentId = $payments->save(new Payment(
+                organizationId: $organizationId,
+                invoiceId: $invoiceId,
+                amountCents: $input->amountCents,
+                paidAt: $paidAt,
+                method: $input->method,
+                note: $input->note,
+                externalReference: $input->externalReference,
+                idempotencyKey: $input->idempotencyKey,
+            ));
+
+            ($this->invoicesFactory)($exec)->update($updatedInvoice);
+
+            $payment = null;
+            foreach ($payments->findByInvoice($invoiceId) as $candidate) {
+                if ($candidate->id === $paymentId) {
+                    $payment = $candidate;
+
+                    break;
+                }
+            }
+
+            if ($payment === null) {
+                throw new LogicException('Payment disappeared immediately after recording.');
+            }
+
+            ($this->auditFactory)($exec)->record(
+                $actorUserId,
+                $organizationId,
+                'payment.recorded',
+                'invoice',
+                $invoiceId,
+                $before,
+                InvoiceResponse::toArray($updatedInvoice),
+            );
+
+            return $payment;
+        });
 
         return new RecordPaymentResult($payment, $updatedInvoice, $totalPaid);
     }

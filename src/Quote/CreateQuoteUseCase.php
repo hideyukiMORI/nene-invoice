@@ -39,6 +39,7 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
     /**
      * @param Closure(DatabaseQueryExecutorInterface): QuoteRepositoryInterface $quotesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -49,7 +50,7 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
         private TaxCalculator $taxCalculator,
-        private AuditRecorderInterface $audit,
+        private Closure $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -97,7 +98,8 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
         $validUntil = $input->validUntil
             ?? $this->companySettings->find()?->quoteValidUntilFrom($todayJst);
 
-        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
             $organizationId,
             $input,
             $number,
@@ -140,11 +142,13 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
                 throw new LogicException('Quote disappeared immediately after creation.');
             }
 
-            return new QuoteWithLines($saved, $lineItems->findByParent(LineItemParent::Quote, $quoteId));
+            $result = new QuoteWithLines($saved, $lineItems->findByParent(LineItemParent::Quote, $quoteId));
+
+            // Audit inside the transaction: the record commits or rolls back with
+            // the quote, so an unaudited creation cannot occur (Issue #352).
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'quote.created', 'quote', $result->quote->id, null, QuoteResponse::toArray($result->quote, $result->lines));
+
+            return $result;
         });
-
-        $this->audit->record($actorUserId, $organizationId, 'quote.created', 'quote', $result->quote->id, null, QuoteResponse::toArray($result->quote, $result->lines));
-
-        return $result;
     }
 }

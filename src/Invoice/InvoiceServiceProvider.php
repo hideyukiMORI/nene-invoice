@@ -15,6 +15,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -59,7 +60,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
                         static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
                         static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
-                        self::resolve($c, AuditRecorderInterface::class),
+                        AuditServiceProvider::recorderFactory($c),
                         $orgHolder,
                     );
                 },
@@ -75,22 +76,28 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                         static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
                         self::resolve($c, ClientRepositoryInterface::class),
                         self::resolve($c, TaxCalculator::class),
-                        self::resolve($c, AuditRecorderInterface::class),
+                        AuditServiceProvider::recorderFactory($c),
                         $orgHolder,
                     );
                 },
             )
             ->set(
                 IssueInvoiceUseCaseInterface::class,
-                static fn (ContainerInterface $c): IssueInvoiceUseCase => new IssueInvoiceUseCase(
-                    self::resolve($c, InvoiceRepositoryInterface::class),
-                    self::resolve($c, LineItemRepositoryInterface::class),
-                    self::resolve($c, CompanySettingsRepositoryInterface::class),
-                    self::resolve($c, DocumentNumberGenerator::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::resolve($c, ClockInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): IssueInvoiceUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new IssueInvoiceUseCase(
+                        self::resolve($c, InvoiceRepositoryInterface::class),
+                        self::resolve($c, LineItemRepositoryInterface::class),
+                        self::resolve($c, CompanySettingsRepositoryInterface::class),
+                        self::resolve($c, DocumentNumberGenerator::class),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        self::resolve($c, ClockInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 ListInvoicesUseCaseInterface::class,

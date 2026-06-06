@@ -11,6 +11,7 @@ use NeneInvoice\Quote\Quote;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteStatus;
 use NeneInvoice\Tests\Support\FixedClock;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
@@ -29,7 +30,7 @@ final class ChangeQuoteStatusUseCaseTest extends TestCase
         $this->holder->set(1);
         $this->quotes = new InMemoryQuoteRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new ChangeQuoteStatusUseCase($this->quotes, $this->audit, new FixedClock(), $this->holder);
+        $this->useCase = new ChangeQuoteStatusUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->quotes, fn () => $this->audit, new FixedClock(), $this->holder);
     }
 
     private function draft(): int

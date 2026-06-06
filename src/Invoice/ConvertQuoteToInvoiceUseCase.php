@@ -31,6 +31,7 @@ final readonly class ConvertQuoteToInvoiceUseCase implements ConvertQuoteToInvoi
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -38,7 +39,7 @@ final readonly class ConvertQuoteToInvoiceUseCase implements ConvertQuoteToInvoi
         private DatabaseTransactionManagerInterface $tx,
         private Closure $invoicesFactory,
         private Closure $lineItemsFactory,
-        private AuditRecorderInterface $audit,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -62,7 +63,8 @@ final readonly class ConvertQuoteToInvoiceUseCase implements ConvertQuoteToInvoi
             throw new QuoteValidationException('Only an accepted quote can be converted to an invoice.');
         }
 
-        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
             $organizationId,
             $quote,
             $quoteId,
@@ -108,11 +110,12 @@ final readonly class ConvertQuoteToInvoiceUseCase implements ConvertQuoteToInvoi
                 throw new LogicException('Invoice disappeared immediately after conversion.');
             }
 
-            return new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
+            $result = new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
+
+            // Audit inside the transaction (Issue #352).
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
+
+            return $result;
         });
-
-        $this->audit->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
-
-        return $result;
     }
 }

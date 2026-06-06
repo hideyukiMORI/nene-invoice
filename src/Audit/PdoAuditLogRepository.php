@@ -33,7 +33,7 @@ final readonly class PdoAuditLogRepository implements AuditLogRepositoryInterfac
                 $log->entityId,
                 self::encode($log->before),
                 self::encode($log->after),
-                date('Y-m-d H:i:s'),
+                $log->createdAt ?? date('Y-m-d H:i:s'),
             ],
         );
 

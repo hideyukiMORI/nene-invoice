@@ -34,6 +34,7 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -42,7 +43,7 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
         private Closure $lineItemsFactory,
         private ClientRepositoryInterface $clients,
         private TaxCalculator $taxCalculator,
-        private AuditRecorderInterface $audit,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -79,7 +80,8 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
 
         $totals = $this->taxCalculator->calculate($input->lines);
 
-        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
             $organizationId,
             $input,
             $totals,
@@ -118,11 +120,12 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
                 throw new LogicException('Invoice disappeared immediately after creation.');
             }
 
-            return new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
+            $result = new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
+
+            // Audit inside the transaction (Issue #352).
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
+
+            return $result;
         });
-
-        $this->audit->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
-
-        return $result;
     }
 }

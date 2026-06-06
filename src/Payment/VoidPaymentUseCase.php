@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
@@ -22,12 +25,18 @@ use NeneInvoice\Invoice\InvoiceStatus;
 final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): PaymentRepositoryInterface $paymentsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private PaymentRepositoryInterface $payments,
         private InvoiceRepositoryInterface $invoices,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $paymentsFactory,
+        private Closure $invoicesFactory,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -62,42 +71,58 @@ final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
             return new RecordPaymentResult($payment, $invoice, $this->payments->totalPaidForInvoice($invoiceId));
         }
 
-        $before = InvoiceResponse::toArray($invoice);
+        $before          = InvoiceResponse::toArray($invoice);
+        $organizationId  = $this->orgId->get();
 
-        $this->payments->markVoided($paymentId);
+        // The void, the recomputed invoice status, and the audit record commit
+        // atomically — the two writes can no longer diverge (Issue #352).
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
+            $organizationId,
+            $invoiceId,
+            $paymentId,
+            $invoice,
+            $payment,
+            $reason,
+            $before,
+        ): RecordPaymentResult {
+            $payments = ($this->paymentsFactory)($exec);
 
-        $totalPaid = $this->payments->totalPaidForInvoice($invoiceId);
-        $newStatus = $this->recomputeStatus($invoice, $totalPaid);
+            $payments->markVoided($paymentId);
 
-        $updatedInvoice = new Invoice(
-            organizationId: $invoice->organizationId,
-            clientId: $invoice->clientId,
-            status: $newStatus,
-            subtotalCents: $invoice->subtotalCents,
-            taxCents: $invoice->taxCents,
-            totalCents: $invoice->totalCents,
-            isQualifiedInvoice: $invoice->isQualifiedInvoice,
-            quoteId: $invoice->quoteId,
-            invoiceNumber: $invoice->invoiceNumber,
-            issuedAt: $invoice->issuedAt,
-            dueAt: $invoice->dueAt,
-            notes: $invoice->notes,
-            id: $invoice->id,
-            createdAt: $invoice->createdAt,
-            updatedAt: $invoice->updatedAt,
-        );
+            $totalPaid = $payments->totalPaidForInvoice($invoiceId);
+            $newStatus = $this->recomputeStatus($invoice, $totalPaid);
 
-        $this->invoices->update($updatedInvoice);
+            $updatedInvoice = new Invoice(
+                organizationId: $invoice->organizationId,
+                clientId: $invoice->clientId,
+                status: $newStatus,
+                subtotalCents: $invoice->subtotalCents,
+                taxCents: $invoice->taxCents,
+                totalCents: $invoice->totalCents,
+                isQualifiedInvoice: $invoice->isQualifiedInvoice,
+                quoteId: $invoice->quoteId,
+                invoiceNumber: $invoice->invoiceNumber,
+                issuedAt: $invoice->issuedAt,
+                dueAt: $invoice->dueAt,
+                notes: $invoice->notes,
+                id: $invoice->id,
+                createdAt: $invoice->createdAt,
+                updatedAt: $invoice->updatedAt,
+            );
 
-        $after = InvoiceResponse::toArray($updatedInvoice);
-        $after['voided_payment_id'] = $paymentId;
-        $after['void_reason'] = $reason;
+            ($this->invoicesFactory)($exec)->update($updatedInvoice);
 
-        $this->audit->record($actorUserId, $this->orgId->get(), 'payment.voided', 'invoice', $invoiceId, $before, $after);
+            $after = InvoiceResponse::toArray($updatedInvoice);
+            $after['voided_payment_id'] = $paymentId;
+            $after['void_reason'] = $reason;
 
-        $voided = $this->payments->findById($paymentId) ?? $payment;
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'payment.voided', 'invoice', $invoiceId, $before, $after);
 
-        return new RecordPaymentResult($voided, $updatedInvoice, $totalPaid);
+            $voided = $payments->findById($paymentId) ?? $payment;
+
+            return new RecordPaymentResult($voided, $updatedInvoice, $totalPaid);
+        });
     }
 
     /**

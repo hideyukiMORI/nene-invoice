@@ -38,7 +38,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->invoices, fn () => $this->lineItems, $this->audit, $this->holder);
+        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->invoices, fn () => $this->lineItems, fn () => $this->audit, $this->holder);
     }
 
     private function quote(QuoteStatus $status): int

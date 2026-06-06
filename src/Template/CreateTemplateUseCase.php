@@ -19,13 +19,14 @@ final readonly class CreateTemplateUseCase implements CreateTemplateUseCaseInter
     /**
      * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $templatesFactory,
         private Closure $lineItemsFactory,
-        private AuditRecorderInterface $audit,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -35,7 +36,8 @@ final readonly class CreateTemplateUseCase implements CreateTemplateUseCaseInter
     {
         $organizationId = $this->orgId->get();
 
-        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
             $organizationId,
             $input,
         ): TemplateWithLines {
@@ -55,12 +57,13 @@ final readonly class CreateTemplateUseCase implements CreateTemplateUseCaseInter
                 throw new LogicException('Template disappeared immediately after creation.');
             }
 
-            return new TemplateWithLines($created, $lineItems->findByParent(LineItemParent::Template, $id));
+            $result = new TemplateWithLines($created, $lineItems->findByParent(LineItemParent::Template, $id));
+
+            // Audit inside the transaction (Issue #352).
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'template.created', 'template', $result->template->id, null, TemplateResponse::toArray($result->template, $result->lines));
+
+            return $result;
         });
-
-        $this->audit->record($actorUserId, $organizationId, 'template.created', 'template', $result->template->id, null, TemplateResponse::toArray($result->template, $result->lines));
-
-        return $result;
     }
 
     /**

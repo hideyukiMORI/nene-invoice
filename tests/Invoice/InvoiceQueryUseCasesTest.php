@@ -52,7 +52,7 @@ final class InvoiceQueryUseCasesTest extends TestCase
             fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
-            new RecordingAuditRecorder(),
+            fn () => new RecordingAuditRecorder(),
             $this->holder,
         );
     }
