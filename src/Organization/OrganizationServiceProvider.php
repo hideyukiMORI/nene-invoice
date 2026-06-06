@@ -34,10 +34,10 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                     return new PdoOrganizationRepository($query);
                 },
             )
-            ->set(ListOrganizationsUseCase::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
-            ->set(GetOrganizationByIdUseCase::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
-            ->set(CreateOrganizationUseCase::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::repository($c), self::audit($c)))
-            ->set(DeleteOrganizationUseCase::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::audit($c)))
+            ->set(ListOrganizationsUseCaseInterface::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
+            ->set(GetOrganizationByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
+            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::repository($c), self::audit($c)))
+            ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::audit($c)))
             ->set(
                 ListOrganizationsHandler::class,
                 static fn (ContainerInterface $c): ListOrganizationsHandler => new ListOrganizationsHandler(
@@ -119,7 +119,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
 
     private static function listUseCase(ContainerInterface $c): ListOrganizationsUseCase
     {
-        $u = $c->get(ListOrganizationsUseCase::class);
+        $u = $c->get(ListOrganizationsUseCaseInterface::class);
 
         if (!$u instanceof ListOrganizationsUseCase) {
             throw new LogicException('List organizations use case service is invalid.');
@@ -130,7 +130,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
 
     private static function getUseCase(ContainerInterface $c): GetOrganizationByIdUseCase
     {
-        $u = $c->get(GetOrganizationByIdUseCase::class);
+        $u = $c->get(GetOrganizationByIdUseCaseInterface::class);
 
         if (!$u instanceof GetOrganizationByIdUseCase) {
             throw new LogicException('Get organization use case service is invalid.');
@@ -141,7 +141,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
 
     private static function createUseCase(ContainerInterface $c): CreateOrganizationUseCase
     {
-        $u = $c->get(CreateOrganizationUseCase::class);
+        $u = $c->get(CreateOrganizationUseCaseInterface::class);
 
         if (!$u instanceof CreateOrganizationUseCase) {
             throw new LogicException('Create organization use case service is invalid.');
@@ -152,7 +152,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
 
     private static function deleteUseCase(ContainerInterface $c): DeleteOrganizationUseCase
     {
-        $u = $c->get(DeleteOrganizationUseCase::class);
+        $u = $c->get(DeleteOrganizationUseCaseInterface::class);
 
         if (!$u instanceof DeleteOrganizationUseCase) {
             throw new LogicException('Delete organization use case service is invalid.');

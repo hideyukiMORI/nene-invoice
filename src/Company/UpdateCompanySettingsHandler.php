@@ -21,7 +21,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class UpdateCompanySettingsHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private UpdateCompanySettingsUseCase $useCase,
+        private UpdateCompanySettingsUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

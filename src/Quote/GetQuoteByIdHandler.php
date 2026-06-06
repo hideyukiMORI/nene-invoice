@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetQuoteByIdHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetQuoteByIdUseCase $useCase,
+        private GetQuoteByIdUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

@@ -24,11 +24,11 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
     public function register(ContainerBuilder $builder): void
     {
         $builder
-            ->set(ListUsersUseCase::class, static fn (ContainerInterface $c): ListUsersUseCase => new ListUsersUseCase(self::repository($c)))
-            ->set(GetUserByIdUseCase::class, static fn (ContainerInterface $c): GetUserByIdUseCase => new GetUserByIdUseCase(self::repository($c)))
-            ->set(CreateUserUseCase::class, static fn (ContainerInterface $c): CreateUserUseCase => new CreateUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(UpdateUserUseCase::class, static fn (ContainerInterface $c): UpdateUserUseCase => new UpdateUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(DeleteUserUseCase::class, static fn (ContainerInterface $c): DeleteUserUseCase => new DeleteUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(ListUsersUseCaseInterface::class, static fn (ContainerInterface $c): ListUsersUseCase => new ListUsersUseCase(self::repository($c)))
+            ->set(GetUserByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetUserByIdUseCase => new GetUserByIdUseCase(self::repository($c)))
+            ->set(CreateUserUseCaseInterface::class, static fn (ContainerInterface $c): CreateUserUseCase => new CreateUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(UpdateUserUseCaseInterface::class, static fn (ContainerInterface $c): UpdateUserUseCase => new UpdateUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteUserUseCaseInterface::class, static fn (ContainerInterface $c): DeleteUserUseCase => new DeleteUserUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListUsersHandler::class,
                 static fn (ContainerInterface $c): ListUsersHandler => new ListUsersHandler(
@@ -140,7 +140,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
     private static function listUseCase(ContainerInterface $c): ListUsersUseCase
     {
-        $u = $c->get(ListUsersUseCase::class);
+        $u = $c->get(ListUsersUseCaseInterface::class);
 
         if (!$u instanceof ListUsersUseCase) {
             throw new LogicException('List users use case service is invalid.');
@@ -151,7 +151,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
     private static function getUseCase(ContainerInterface $c): GetUserByIdUseCase
     {
-        $u = $c->get(GetUserByIdUseCase::class);
+        $u = $c->get(GetUserByIdUseCaseInterface::class);
 
         if (!$u instanceof GetUserByIdUseCase) {
             throw new LogicException('Get user use case service is invalid.');
@@ -162,7 +162,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
     private static function createUseCase(ContainerInterface $c): CreateUserUseCase
     {
-        $u = $c->get(CreateUserUseCase::class);
+        $u = $c->get(CreateUserUseCaseInterface::class);
 
         if (!$u instanceof CreateUserUseCase) {
             throw new LogicException('Create user use case service is invalid.');
@@ -173,7 +173,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
     private static function updateUseCase(ContainerInterface $c): UpdateUserUseCase
     {
-        $u = $c->get(UpdateUserUseCase::class);
+        $u = $c->get(UpdateUserUseCaseInterface::class);
 
         if (!$u instanceof UpdateUserUseCase) {
             throw new LogicException('Update user use case service is invalid.');
@@ -184,7 +184,7 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
 
     private static function deleteUseCase(ContainerInterface $c): DeleteUserUseCase
     {
-        $u = $c->get(DeleteUserUseCase::class);
+        $u = $c->get(DeleteUserUseCaseInterface::class);
 
         if (!$u instanceof DeleteUserUseCase) {
             throw new LogicException('Delete user use case service is invalid.');

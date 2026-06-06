@@ -19,7 +19,7 @@ use NeneInvoice\Invoice\InvoiceStatus;
  * remaining valid payments. Idempotent: voiding an already-voided payment is a
  * no-op success.
  */
-final readonly class VoidPaymentUseCase
+final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

@@ -22,7 +22,7 @@ use NeneInvoice\Mailer\MailMessage;
  * Only issued / partially_paid invoices can be sent (draft has no number).
  * Requires the client to have an email address.
  */
-final readonly class SendInvoiceEmailUseCase
+final readonly class SendInvoiceEmailUseCase implements SendInvoiceEmailUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

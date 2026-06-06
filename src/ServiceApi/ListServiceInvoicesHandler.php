@@ -11,7 +11,7 @@ use Nene2\Http\PaginationResponse;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceStatus;
-use NeneInvoice\Invoice\ListInvoicesUseCase;
+use NeneInvoice\Invoice\ListInvoicesUseCaseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -25,7 +25,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ListServiceInvoicesHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ListInvoicesUseCase $useCase,
+        private ListInvoicesUseCaseInterface $useCase,
         private JsonResponseFactory $json,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {

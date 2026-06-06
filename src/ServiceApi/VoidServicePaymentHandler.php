@@ -7,7 +7,7 @@ namespace NeneInvoice\ServiceApi;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
-use NeneInvoice\Payment\VoidPaymentUseCase;
+use NeneInvoice\Payment\VoidPaymentUseCaseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class VoidServicePaymentHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private VoidPaymentUseCase $useCase,
+        private VoidPaymentUseCaseInterface $useCase,
         private JsonResponseFactory $json,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {

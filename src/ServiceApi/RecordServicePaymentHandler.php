@@ -11,7 +11,7 @@ use Nene2\Routing\Router;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Payment\RecordPaymentInput;
-use NeneInvoice\Payment\RecordPaymentUseCase;
+use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
 use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,7 +27,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class RecordServicePaymentHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private RecordPaymentUseCase $useCase,
+        private RecordPaymentUseCaseInterface $useCase,
         private JsonResponseFactory $json,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {

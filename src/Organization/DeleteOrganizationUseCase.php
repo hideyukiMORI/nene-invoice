@@ -6,7 +6,7 @@ namespace NeneInvoice\Organization;
 
 use NeneInvoice\Audit\AuditRecorderInterface;
 
-final readonly class DeleteOrganizationUseCase
+final readonly class DeleteOrganizationUseCase implements DeleteOrganizationUseCaseInterface
 {
     public function __construct(
         private OrganizationRepositoryInterface $organizations,

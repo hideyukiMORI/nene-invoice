@@ -36,7 +36,7 @@ final readonly class LineItemServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                ListLineItemSuggestionsUseCase::class,
+                ListLineItemSuggestionsUseCaseInterface::class,
                 static fn (ContainerInterface $c): ListLineItemSuggestionsUseCase => new ListLineItemSuggestionsUseCase(
                     self::resolve($c, LineItemRepositoryInterface::class),
                     self::resolve($c, ItemRepositoryInterface::class),
@@ -45,7 +45,7 @@ final readonly class LineItemServiceProvider implements ServiceProviderInterface
             ->set(
                 ListLineItemSuggestionsHandler::class,
                 static fn (ContainerInterface $c): ListLineItemSuggestionsHandler => new ListLineItemSuggestionsHandler(
-                    self::resolve($c, ListLineItemSuggestionsUseCase::class),
+                    self::resolve($c, ListLineItemSuggestionsUseCaseInterface::class),
                     self::resolve($c, JsonResponseFactory::class),
                 ),
             )

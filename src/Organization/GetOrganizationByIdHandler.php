@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetOrganizationByIdHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetOrganizationByIdUseCase $useCase,
+        private GetOrganizationByIdUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

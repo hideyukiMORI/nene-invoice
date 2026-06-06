@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class SendInvoiceEmailHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private SendInvoiceEmailUseCase $useCase,
+        private SendInvoiceEmailUseCaseInterface $useCase,
         private Psr17Factory $psr17,
     ) {
     }

@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetInvoicePdfHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GenerateInvoicePdfUseCase $useCase,
+        private GenerateInvoicePdfUseCaseInterface $useCase,
         private InvoicePdfGenerator $generator,
         private Psr17Factory $psr17,
     ) {

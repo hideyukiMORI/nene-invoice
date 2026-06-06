@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\User;
 
-final readonly class GetUserByIdUseCase
+final readonly class GetUserByIdUseCase implements GetUserByIdUseCaseInterface
 {
     public function __construct(
         private UserRepositoryInterface $users,

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Organization;
 
-final readonly class GetOrganizationByIdUseCase
+final readonly class GetOrganizationByIdUseCase implements GetOrganizationByIdUseCaseInterface
 {
     public function __construct(
         private OrganizationRepositoryInterface $organizations,

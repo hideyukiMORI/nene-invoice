@@ -40,9 +40,9 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     return new PdoTemplateRepository($query, self::orgHolder($c));
                 },
             )
-            ->set(ListTemplatesUseCase::class, static fn (ContainerInterface $c): ListTemplatesUseCase => new ListTemplatesUseCase(self::repository($c)))
-            ->set(GetTemplateByIdUseCase::class, static fn (ContainerInterface $c): GetTemplateByIdUseCase => new GetTemplateByIdUseCase(self::repository($c), self::lineItems($c)))
-            ->set(CreateTemplateUseCase::class, static function (ContainerInterface $c): CreateTemplateUseCase {
+            ->set(ListTemplatesUseCaseInterface::class, static fn (ContainerInterface $c): ListTemplatesUseCase => new ListTemplatesUseCase(self::repository($c)))
+            ->set(GetTemplateByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetTemplateByIdUseCase => new GetTemplateByIdUseCase(self::repository($c), self::lineItems($c)))
+            ->set(CreateTemplateUseCaseInterface::class, static function (ContainerInterface $c): CreateTemplateUseCase {
                 $orgHolder = self::orgHolder($c);
 
                 return new CreateTemplateUseCase(
@@ -53,7 +53,7 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     $orgHolder,
                 );
             })
-            ->set(UpdateTemplateUseCase::class, static function (ContainerInterface $c): UpdateTemplateUseCase {
+            ->set(UpdateTemplateUseCaseInterface::class, static function (ContainerInterface $c): UpdateTemplateUseCase {
                 $orgHolder = self::orgHolder($c);
 
                 return new UpdateTemplateUseCase(
@@ -64,26 +64,26 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     $orgHolder,
                 );
             })
-            ->set(DeleteTemplateUseCase::class, static fn (ContainerInterface $c): DeleteTemplateUseCase => new DeleteTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteTemplateUseCaseInterface::class, static fn (ContainerInterface $c): DeleteTemplateUseCase => new DeleteTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListTemplatesHandler::class,
-                static fn (ContainerInterface $c): ListTemplatesHandler => new ListTemplatesHandler(self::resolve($c, ListTemplatesUseCase::class), self::json($c)),
+                static fn (ContainerInterface $c): ListTemplatesHandler => new ListTemplatesHandler(self::resolve($c, ListTemplatesUseCaseInterface::class), self::json($c)),
             )
             ->set(
                 GetTemplateByIdHandler::class,
-                static fn (ContainerInterface $c): GetTemplateByIdHandler => new GetTemplateByIdHandler(self::resolve($c, GetTemplateByIdUseCase::class), self::json($c)),
+                static fn (ContainerInterface $c): GetTemplateByIdHandler => new GetTemplateByIdHandler(self::resolve($c, GetTemplateByIdUseCaseInterface::class), self::json($c)),
             )
             ->set(
                 CreateTemplateHandler::class,
-                static fn (ContainerInterface $c): CreateTemplateHandler => new CreateTemplateHandler(self::resolve($c, CreateTemplateUseCase::class), self::json($c)),
+                static fn (ContainerInterface $c): CreateTemplateHandler => new CreateTemplateHandler(self::resolve($c, CreateTemplateUseCaseInterface::class), self::json($c)),
             )
             ->set(
                 UpdateTemplateHandler::class,
-                static fn (ContainerInterface $c): UpdateTemplateHandler => new UpdateTemplateHandler(self::resolve($c, UpdateTemplateUseCase::class), self::json($c)),
+                static fn (ContainerInterface $c): UpdateTemplateHandler => new UpdateTemplateHandler(self::resolve($c, UpdateTemplateUseCaseInterface::class), self::json($c)),
             )
             ->set(
                 DeleteTemplateHandler::class,
-                static fn (ContainerInterface $c): DeleteTemplateHandler => new DeleteTemplateHandler(self::resolve($c, DeleteTemplateUseCase::class), self::json($c)),
+                static fn (ContainerInterface $c): DeleteTemplateHandler => new DeleteTemplateHandler(self::resolve($c, DeleteTemplateUseCaseInterface::class), self::json($c)),
             )
             ->set(
                 TemplateNotFoundExceptionHandler::class,

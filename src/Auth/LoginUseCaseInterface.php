@@ -6,6 +6,5 @@ namespace NeneInvoice\Auth;
 
 interface LoginUseCaseInterface
 {
-    /** @throws InvalidCredentialsException */
     public function execute(LoginInput $input): LoginOutput;
 }

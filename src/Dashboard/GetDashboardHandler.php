@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetDashboardHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetDashboardSummaryUseCase $useCase,
+        private GetDashboardSummaryUseCaseInterface $useCase,
         private PaymentRepositoryInterface $payments,
         private JsonResponseFactory $json,
     ) {

@@ -47,7 +47,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             )
             ->set(TaxCalculator::class, static fn (ContainerInterface $c): TaxCalculator => new TaxCalculator())
             ->set(
-                CreateQuoteUseCase::class,
+                CreateQuoteUseCaseInterface::class,
                 static function (ContainerInterface $c): CreateQuoteUseCase {
                     $orgHolder = self::orgHolder($c);
 
@@ -65,16 +65,16 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                ChangeQuoteStatusUseCase::class,
+                ChangeQuoteStatusUseCaseInterface::class,
                 static fn (ContainerInterface $c): ChangeQuoteStatusUseCase => new ChangeQuoteStatusUseCase(
                     self::quotes($c),
                     self::resolve($c, AuditRecorderInterface::class),
                     self::orgHolder($c),
                 ),
             )
-            ->set(ListQuotesUseCase::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
+            ->set(ListQuotesUseCaseInterface::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
             ->set(
-                GetQuoteByIdUseCase::class,
+                GetQuoteByIdUseCaseInterface::class,
                 static fn (ContainerInterface $c): GetQuoteByIdUseCase => new GetQuoteByIdUseCase(
                     self::quotes($c),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -83,33 +83,33 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             ->set(
                 CreateQuoteHandler::class,
                 static fn (ContainerInterface $c): CreateQuoteHandler => new CreateQuoteHandler(
-                    self::resolve($c, CreateQuoteUseCase::class),
+                    self::resolve($c, CreateQuoteUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 ListQuotesHandler::class,
                 static fn (ContainerInterface $c): ListQuotesHandler => new ListQuotesHandler(
-                    self::resolve($c, ListQuotesUseCase::class),
+                    self::resolve($c, ListQuotesUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 GetQuoteByIdHandler::class,
                 static fn (ContainerInterface $c): GetQuoteByIdHandler => new GetQuoteByIdHandler(
-                    self::resolve($c, GetQuoteByIdUseCase::class),
+                    self::resolve($c, GetQuoteByIdUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 ChangeQuoteStatusHandler::class,
                 static fn (ContainerInterface $c): ChangeQuoteStatusHandler => new ChangeQuoteStatusHandler(
-                    self::resolve($c, ChangeQuoteStatusUseCase::class),
+                    self::resolve($c, ChangeQuoteStatusUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
-                GenerateQuotePdfUseCase::class,
+                GenerateQuotePdfUseCaseInterface::class,
                 static fn (ContainerInterface $c): GenerateQuotePdfUseCase => new GenerateQuotePdfUseCase(
                     self::quotes($c),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -127,7 +127,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             ->set(
                 GetQuotePdfHandler::class,
                 static fn (ContainerInterface $c): GetQuotePdfHandler => new GetQuotePdfHandler(
-                    self::resolve($c, GenerateQuotePdfUseCase::class),
+                    self::resolve($c, GenerateQuotePdfUseCaseInterface::class),
                     self::resolve($c, QuotePdfGenerator::class),
                     self::resolve($c, Psr17Factory::class),
                 ),

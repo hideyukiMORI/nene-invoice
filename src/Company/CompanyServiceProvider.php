@@ -36,8 +36,8 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                     return new PdoCompanySettingsRepository($query, self::orgHolder($c));
                 },
             )
-            ->set(GetCompanySettingsUseCase::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c), self::orgHolder($c)))
-            ->set(UpdateCompanySettingsUseCase::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(GetCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c), self::orgHolder($c)))
+            ->set(UpdateCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 GetCompanySettingsHandler::class,
                 static fn (ContainerInterface $c): GetCompanySettingsHandler => new GetCompanySettingsHandler(
@@ -99,7 +99,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
 
     private static function getUseCase(ContainerInterface $c): GetCompanySettingsUseCase
     {
-        $u = $c->get(GetCompanySettingsUseCase::class);
+        $u = $c->get(GetCompanySettingsUseCaseInterface::class);
 
         if (!$u instanceof GetCompanySettingsUseCase) {
             throw new LogicException('Get company settings use case service is invalid.');
@@ -110,7 +110,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
 
     private static function updateUseCase(ContainerInterface $c): UpdateCompanySettingsUseCase
     {
-        $u = $c->get(UpdateCompanySettingsUseCase::class);
+        $u = $c->get(UpdateCompanySettingsUseCaseInterface::class);
 
         if (!$u instanceof UpdateCompanySettingsUseCase) {
             throw new LogicException('Update company settings use case service is invalid.');

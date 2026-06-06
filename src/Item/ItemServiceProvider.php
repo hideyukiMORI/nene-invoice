@@ -36,11 +36,11 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
                     return new PdoItemRepository($query, self::orgHolder($c));
                 },
             )
-            ->set(ListItemsUseCase::class, static fn (ContainerInterface $c): ListItemsUseCase => new ListItemsUseCase(self::repository($c)))
-            ->set(GetItemByIdUseCase::class, static fn (ContainerInterface $c): GetItemByIdUseCase => new GetItemByIdUseCase(self::repository($c)))
-            ->set(CreateItemUseCase::class, static fn (ContainerInterface $c): CreateItemUseCase => new CreateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(UpdateItemUseCase::class, static fn (ContainerInterface $c): UpdateItemUseCase => new UpdateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(DeleteItemUseCase::class, static fn (ContainerInterface $c): DeleteItemUseCase => new DeleteItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(ListItemsUseCaseInterface::class, static fn (ContainerInterface $c): ListItemsUseCase => new ListItemsUseCase(self::repository($c)))
+            ->set(GetItemByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetItemByIdUseCase => new GetItemByIdUseCase(self::repository($c)))
+            ->set(CreateItemUseCaseInterface::class, static fn (ContainerInterface $c): CreateItemUseCase => new CreateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(UpdateItemUseCaseInterface::class, static fn (ContainerInterface $c): UpdateItemUseCase => new UpdateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteItemUseCaseInterface::class, static fn (ContainerInterface $c): DeleteItemUseCase => new DeleteItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListItemsHandler::class,
                 static fn (ContainerInterface $c): ListItemsHandler => new ListItemsHandler(
@@ -105,7 +105,7 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
 
     private static function createUseCase(ContainerInterface $c): CreateItemUseCase
     {
-        $u = $c->get(CreateItemUseCase::class);
+        $u = $c->get(CreateItemUseCaseInterface::class);
 
         if (!$u instanceof CreateItemUseCase) {
             throw new LogicException('Create item use case service is invalid.');
@@ -116,7 +116,7 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
 
     private static function updateUseCase(ContainerInterface $c): UpdateItemUseCase
     {
-        $u = $c->get(UpdateItemUseCase::class);
+        $u = $c->get(UpdateItemUseCaseInterface::class);
 
         if (!$u instanceof UpdateItemUseCase) {
             throw new LogicException('Update item use case service is invalid.');
@@ -127,7 +127,7 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
 
     private static function deleteUseCase(ContainerInterface $c): DeleteItemUseCase
     {
-        $u = $c->get(DeleteItemUseCase::class);
+        $u = $c->get(DeleteItemUseCaseInterface::class);
 
         if (!$u instanceof DeleteItemUseCase) {
             throw new LogicException('Delete item use case service is invalid.');
@@ -172,7 +172,7 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
 
     private static function listUseCase(ContainerInterface $c): ListItemsUseCase
     {
-        $u = $c->get(ListItemsUseCase::class);
+        $u = $c->get(ListItemsUseCaseInterface::class);
 
         if (!$u instanceof ListItemsUseCase) {
             throw new LogicException('List items use case service is invalid.');
@@ -183,7 +183,7 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
 
     private static function getUseCase(ContainerInterface $c): GetItemByIdUseCase
     {
-        $u = $c->get(GetItemByIdUseCase::class);
+        $u = $c->get(GetItemByIdUseCaseInterface::class);
 
         if (!$u instanceof GetItemByIdUseCase) {
             throw new LogicException('Get item use case service is invalid.');

@@ -47,18 +47,18 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                ListAuditLogsUseCase::class,
+                ListAuditLogsUseCaseInterface::class,
                 static fn (ContainerInterface $c): ListAuditLogsUseCase => new ListAuditLogsUseCase(self::resolve($c, AuditLogRepositoryInterface::class)),
             )
             ->set(
                 ListAuditLogsHandler::class,
                 static fn (ContainerInterface $c): ListAuditLogsHandler => new ListAuditLogsHandler(
-                    self::resolve($c, ListAuditLogsUseCase::class),
+                    self::resolve($c, ListAuditLogsUseCaseInterface::class),
                     self::resolve($c, JsonResponseFactory::class),
                 ),
             )
             ->set(
-                ExportAuditLogsCsvUseCase::class,
+                ExportAuditLogsCsvUseCaseInterface::class,
                 static fn (ContainerInterface $c): ExportAuditLogsCsvUseCase => new ExportAuditLogsCsvUseCase(
                     self::resolve($c, AuditLogRepositoryInterface::class),
                 ),
@@ -66,7 +66,7 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
             ->set(
                 ExportAuditLogsCsvHandler::class,
                 static fn (ContainerInterface $c): ExportAuditLogsCsvHandler => new ExportAuditLogsCsvHandler(
-                    self::resolve($c, ExportAuditLogsCsvUseCase::class),
+                    self::resolve($c, ExportAuditLogsCsvUseCaseInterface::class),
                     self::resolve($c, Psr17Factory::class),
                 ),
             )

@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class CreateItemHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private CreateItemUseCase $useCase,
+        private CreateItemUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

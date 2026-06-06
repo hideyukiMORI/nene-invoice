@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ListAuditLogsHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ListAuditLogsUseCase $useCase,
+        private ListAuditLogsUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

@@ -16,7 +16,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ExportInvoicesCsvHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ExportInvoicesCsvUseCase $useCase,
+        private ExportInvoicesCsvUseCaseInterface $useCase,
         private Psr17Factory $psr17,
     ) {
     }

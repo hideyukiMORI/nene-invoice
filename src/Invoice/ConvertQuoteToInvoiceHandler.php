@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ConvertQuoteToInvoiceHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ConvertQuoteToInvoiceUseCase $useCase,
+        private ConvertQuoteToInvoiceUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

@@ -13,7 +13,7 @@ use NeneInvoice\Payment\PaymentRepositoryInterface;
  * and the most recent 5 unpaid invoices. Both repositories are org-scoped via
  * the request holder, so no organization id is threaded here (ADR 0006).
  */
-final readonly class GetDashboardSummaryUseCase
+final readonly class GetDashboardSummaryUseCase implements GetDashboardSummaryUseCaseInterface
 {
     public function __construct(
         private InvoiceRepositoryInterface $invoices,

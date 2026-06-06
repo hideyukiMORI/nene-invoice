@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class RecordPaymentHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private RecordPaymentUseCase $useCase,
+        private RecordPaymentUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

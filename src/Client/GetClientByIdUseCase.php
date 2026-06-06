@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Client;
 
-final readonly class GetClientByIdUseCase
+final readonly class GetClientByIdUseCase implements GetClientByIdUseCaseInterface
 {
     public function __construct(
         private ClientRepositoryInterface $clients,

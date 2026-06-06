@@ -8,7 +8,7 @@ use LogicException;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
-final readonly class ChangeQuoteStatusUseCase
+final readonly class ChangeQuoteStatusUseCase implements ChangeQuoteStatusUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

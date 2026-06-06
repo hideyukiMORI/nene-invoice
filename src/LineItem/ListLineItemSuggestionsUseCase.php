@@ -15,7 +15,7 @@ use NeneInvoice\Item\ItemRepositoryInterface;
  * defaults (the master is the source of truth) and the history usage count for
  * the same description, so a frequently-used master item still sorts high.
  */
-final readonly class ListLineItemSuggestionsUseCase
+final readonly class ListLineItemSuggestionsUseCase implements ListLineItemSuggestionsUseCaseInterface
 {
     /**
      * How many recent rows to scan. Generous enough to surface real repeats

@@ -7,7 +7,7 @@ namespace NeneInvoice\Client;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
-final readonly class DeleteClientUseCase
+final readonly class DeleteClientUseCase implements DeleteClientUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

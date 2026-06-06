@@ -7,7 +7,7 @@ namespace NeneInvoice\Quote;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 
-final readonly class GetQuoteByIdUseCase
+final readonly class GetQuoteByIdUseCase implements GetQuoteByIdUseCaseInterface
 {
     public function __construct(
         private QuoteRepositoryInterface $quotes,

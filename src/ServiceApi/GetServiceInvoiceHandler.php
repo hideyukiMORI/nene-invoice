@@ -7,8 +7,8 @@ namespace NeneInvoice\ServiceApi;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
-use NeneInvoice\Invoice\GetInvoiceByIdUseCase;
-use NeneInvoice\Payment\ListPaymentsUseCase;
+use NeneInvoice\Invoice\GetInvoiceByIdUseCaseInterface;
+use NeneInvoice\Payment\ListPaymentsUseCaseInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -21,8 +21,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetServiceInvoiceHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetInvoiceByIdUseCase $getInvoice,
-        private ListPaymentsUseCase $listPayments,
+        private GetInvoiceByIdUseCaseInterface $getInvoice,
+        private ListPaymentsUseCaseInterface $listPayments,
         private JsonResponseFactory $json,
         private ProblemDetailsResponseFactory $problemDetails,
     ) {

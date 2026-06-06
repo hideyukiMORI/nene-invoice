@@ -6,7 +6,7 @@ namespace NeneInvoice\Company;
 
 use Nene2\Http\RequestScopedHolder;
 
-final readonly class GetCompanySettingsUseCase
+final readonly class GetCompanySettingsUseCase implements GetCompanySettingsUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

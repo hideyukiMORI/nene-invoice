@@ -26,7 +26,7 @@ use NeneInvoice\LineItem\TaxCalculator;
  * header + line writes run inside the transaction manager, so the repositories are
  * rebuilt from the transaction-bound executor via the injected factories.
  */
-final readonly class CreateInvoiceUseCase
+final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterface
 {
     /** Allowed consumption tax rates in basis points (accounting-compliance §3). */
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];

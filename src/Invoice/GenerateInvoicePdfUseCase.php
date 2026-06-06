@@ -16,7 +16,7 @@ use NeneInvoice\Payment\PaymentRepositoryInterface;
  * Assembles all data needed to render an invoice PDF: invoice with lines,
  * company settings (issuer), and client (buyer).
  */
-final readonly class GenerateInvoicePdfUseCase
+final readonly class GenerateInvoicePdfUseCase implements GenerateInvoicePdfUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

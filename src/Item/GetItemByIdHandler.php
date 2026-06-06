@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetItemByIdHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetItemByIdUseCase $useCase,
+        private GetItemByIdUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

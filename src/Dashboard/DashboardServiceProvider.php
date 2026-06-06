@@ -18,7 +18,7 @@ final readonly class DashboardServiceProvider implements ServiceProviderInterfac
     {
         $builder
             ->set(
-                GetDashboardSummaryUseCase::class,
+                GetDashboardSummaryUseCaseInterface::class,
                 static fn (ContainerInterface $c): GetDashboardSummaryUseCase => new GetDashboardSummaryUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, PaymentRepositoryInterface::class),
@@ -27,7 +27,7 @@ final readonly class DashboardServiceProvider implements ServiceProviderInterfac
             ->set(
                 GetDashboardHandler::class,
                 static fn (ContainerInterface $c): GetDashboardHandler => new GetDashboardHandler(
-                    self::resolve($c, GetDashboardSummaryUseCase::class),
+                    self::resolve($c, GetDashboardSummaryUseCaseInterface::class),
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, JsonResponseFactory::class),
                 ),

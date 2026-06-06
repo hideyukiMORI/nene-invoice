@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class UpdateItemHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private UpdateItemUseCase $useCase,
+        private UpdateItemUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Organization;
 
-final readonly class ListOrganizationsUseCase
+final readonly class ListOrganizationsUseCase implements ListOrganizationsUseCaseInterface
 {
     public function __construct(
         private OrganizationRepositoryInterface $organizations,
