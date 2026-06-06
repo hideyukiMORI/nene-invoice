@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { CommandPalette } from './CommandPalette'
 import { SHOW_SHORTCUTS_EVENT } from './overlay-control'
 import { ShortcutsOverlay } from './ShortcutsOverlay'
 import { KBD_LIST_EVENT, type RowCursorAction } from './use-row-cursor'
@@ -75,11 +76,13 @@ export function KeyboardShortcuts() {
   const navigate = useNavigate()
   const location = useLocation()
   const [overlayOpen, setOverlayOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [pendingG, setPendingG] = useState(false)
 
   // Refs mirror state so the document listener (attached once) reads fresh
   // values without re-binding on every keystroke.
   const overlayRef = useRef(false)
+  const paletteRef = useRef(false)
   const pendingRef = useRef(false)
   const pathRef = useRef(location.pathname)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -87,6 +90,9 @@ export function KeyboardShortcuts() {
   useEffect(() => {
     overlayRef.current = overlayOpen
   }, [overlayOpen])
+  useEffect(() => {
+    paletteRef.current = paletteOpen
+  }, [paletteOpen])
   // The sidebar "shortcuts" button opens the cheat-sheet via this event.
   useEffect(() => {
     const open = (): void => {
@@ -124,6 +130,20 @@ export function KeyboardShortcuts() {
         }
         return
       }
+      // ⌘K / Ctrl+K — toggle the command palette. Handled before the modifier
+      // guard and works even inside fields, so it's reachable from anywhere (#370).
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        clearPending()
+        setOverlayOpen(false)
+        setPaletteOpen((open) => !open)
+        return
+      }
+
+      // While the palette is open it owns the keyboard (its own listener drives
+      // j/k / ↑↓ / Enter / Esc) — the rest of the dispatcher stands down.
+      if (paletteRef.current) return
+
       if (e.key === 'Escape') {
         if (overlayRef.current) setOverlayOpen(false)
         else if (pendingRef.current) clearPending()
@@ -248,6 +268,13 @@ export function KeyboardShortcuts() {
         <ShortcutsOverlay
           onClose={() => {
             setOverlayOpen(false)
+          }}
+        />
+      )}
+      {paletteOpen && (
+        <CommandPalette
+          onClose={() => {
+            setPaletteOpen(false)
           }}
         />
       )}
