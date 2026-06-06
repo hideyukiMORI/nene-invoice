@@ -7,6 +7,7 @@ export interface LineSuggestion {
   unit_price_cents: number
   tax_rate_bps: number
   usage_count: number
+  source?: 'master' | 'history'
 }
 
 export interface LineItemSuggestInputProps {

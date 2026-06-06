@@ -25,6 +25,7 @@ const SUGGESTION = {
   unit_price_cents: 30000,
   tax_rate_bps: 1000,
   usage_count: 4,
+  source: 'history',
 }
 
 /** Reaches /quotes/new through login → quotes list → "見積書を作成". */

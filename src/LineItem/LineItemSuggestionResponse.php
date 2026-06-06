@@ -10,7 +10,7 @@ namespace NeneInvoice\LineItem;
  */
 final readonly class LineItemSuggestionResponse
 {
-    /** @return array{description: string, unit_price_cents: int, tax_rate_bps: int, usage_count: int} */
+    /** @return array{description: string, unit_price_cents: int, tax_rate_bps: int, usage_count: int, source: string} */
     public static function toArray(LineItemSuggestion $suggestion): array
     {
         return [
@@ -18,6 +18,7 @@ final readonly class LineItemSuggestionResponse
             'unit_price_cents' => $suggestion->unitPriceCents,
             'tax_rate_bps'     => $suggestion->taxRateBps,
             'usage_count'      => $suggestion->usageCount,
+            'source'           => $suggestion->source->value,
         ];
     }
 }

@@ -747,6 +747,11 @@ export interface components {
             tax_rate_bps: number;
             /** @description How many times this description appears in recent history. */
             usage_count: number;
+            /**
+             * @description Where the suggestion came from — `master` (item master, authoritative) or `history` (derived from past documents).
+             * @enum {string}
+             */
+            source: "master" | "history";
         };
         LineItemSuggestionList: {
             items: components["schemas"]["LineItemSuggestion"][];

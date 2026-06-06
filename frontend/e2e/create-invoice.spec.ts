@@ -27,6 +27,7 @@ const SUGGESTION = {
   unit_price_cents: 30000,
   tax_rate_bps: 1000,
   usage_count: 4,
+  source: 'history',
 }
 
 /** Reaches /invoices/new through login → invoices list → "請求書を作成". */
