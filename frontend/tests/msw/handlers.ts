@@ -93,6 +93,23 @@ export const handlers = [
     HttpResponse.json({ items: [buildClientDto()], total: 1, limit: 100, offset: 0 }),
   ),
 
+  http.get('/admin/items', () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: 1,
+          organization_id: 1,
+          description: '保守サポート（月額）',
+          default_unit_price_cents: 50000,
+          default_tax_rate_bps: 1000,
+        },
+      ],
+      total: 1,
+      limit: 100,
+      offset: 0,
+    }),
+  ),
+
   http.get('/admin/quotes', () => HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 })),
 
   http.post('/admin/quotes', () =>

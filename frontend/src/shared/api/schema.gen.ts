@@ -290,6 +290,49 @@ export interface paths {
         patch: operations["updateClient"];
         trace?: never;
     };
+    "/admin/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List items
+         * @description Lists item-master rows with optional search / sort (admin). `q` matches the description; `sort` ∈ description|unit_price|tax_rate with `order` asc|desc. Requires ViewBilling.
+         */
+        get: operations["listItems"];
+        put?: never;
+        /** Create item */
+        post: operations["createItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /** Get item by id */
+        get: operations["getItemById"];
+        put?: never;
+        post?: never;
+        /** Delete item */
+        delete: operations["deleteItem"];
+        options?: never;
+        head?: never;
+        /** Update item */
+        patch: operations["updateItem"];
+        trace?: never;
+    };
     "/admin/quotes": {
         parameters: {
             query?: never;
@@ -832,6 +875,31 @@ export interface components {
             email?: string | null;
             billing_address?: string | null;
             registration_number?: string | null;
+        };
+        /** @description An item-master row (品目). Money is integer cents; tax in bps. */
+        Item: {
+            id: number;
+            organization_id: number;
+            description: string;
+            /** @description Default unit price in integer cents (seeds lines; editable). */
+            default_unit_price_cents: number;
+            /** @description Default tax rate in basis points (1000 = 10%, 800 = 8%). */
+            default_tax_rate_bps: number;
+            created_at?: string | null;
+            updated_at?: string | null;
+        };
+        ItemList: components["schemas"]["PageEnvelope"];
+        CreateItemRequest: {
+            description: string;
+            default_unit_price_cents: number;
+            /** @enum {integer} */
+            default_tax_rate_bps: 800 | 1000;
+        };
+        UpdateItemRequest: {
+            description: string;
+            default_unit_price_cents: number;
+            /** @enum {integer} */
+            default_tax_rate_bps: 800 | 1000;
         };
         /** @description A line on a quote or invoice. Money is integer cents. */
         LineItem: {
@@ -1755,6 +1823,151 @@ export interface operations {
             403: components["responses"]["InsufficientCapability"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["InvalidRegistrationNumber"];
+        };
+    };
+    listItems: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of items to return (1–100, default 20). */
+                limit?: components["parameters"]["LimitParam"];
+                /** @description Number of items to skip (default 0). */
+                offset?: components["parameters"]["OffsetParam"];
+                q?: string;
+                sort?: "description" | "unit_price" | "tax_rate";
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Item page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    createItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "description": "保守サポート（月額）",
+                 *       "default_unit_price_cents": 50000,
+                 *       "default_tax_rate_bps": 1000
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Item created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getItemById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Item */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Item deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Item updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     listQuotes: {

@@ -8,6 +8,9 @@ import { CompanySettingsPage } from '@/pages/company-settings'
 import { DashboardPage } from '@/pages/dashboard'
 import { HelpPage } from '@/pages/help'
 import { InvoiceCreatePage } from '@/pages/invoice-create'
+import { ItemCreatePage } from '@/pages/item-create'
+import { ItemEditPage } from '@/pages/item-edit'
+import { ItemsPage } from '@/pages/items'
 import { QuoteCreatePage } from '@/pages/quote-create'
 import { QuoteDetailPage } from '@/pages/quote-detail'
 import { QuotesPage } from '@/pages/quotes'
@@ -30,6 +33,9 @@ const router = createBrowserRouter([
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/new', element: <ClientCreatePage /> },
       { path: 'clients/:id/edit', element: <ClientEditPage /> },
+      { path: 'items', element: <ItemsPage /> },
+      { path: 'items/new', element: <ItemCreatePage /> },
+      { path: 'items/:id/edit', element: <ItemEditPage /> },
       { path: 'quotes', element: <QuotesPage /> },
       { path: 'quotes/new', element: <QuoteCreatePage /> },
       { path: 'quotes/:id', element: <QuoteDetailPage /> },
