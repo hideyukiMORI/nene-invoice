@@ -50,7 +50,6 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): UpdateCompanySettingsHandler => new UpdateCompanySettingsHandler(
                     self::updateUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

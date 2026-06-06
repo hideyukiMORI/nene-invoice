@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Client;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,31 +21,26 @@ final readonly class CreateClientHandler implements RequestHandlerInterface
     public function __construct(
         private CreateClientUseCase $useCase,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $decoded = json_decode((string) $request->getBody(), true);
+        $body = JsonRequestBodyParser::parse($request);
 
-        if (!is_array($decoded)) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'Request body must be a JSON object.');
-        }
-
-        $name = $decoded['name'] ?? null;
+        $name = $body['name'] ?? null;
 
         if (!is_string($name) || $name === '') {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"name" is required.');
+            throw new ValidationException([new ValidationError('body.name', 'Name is required.', 'required')]);
         }
 
         $client = $this->useCase->execute(AuthContext::userId($request), new CreateClientInput(
             name: $name,
-            nameKana: ClientField::optionalString($decoded, 'name_kana'),
-            contactName: ClientField::optionalString($decoded, 'contact_name'),
-            email: ClientField::optionalString($decoded, 'email'),
-            billingAddress: ClientField::optionalString($decoded, 'billing_address'),
-            registrationNumber: ClientField::optionalString($decoded, 'registration_number'),
+            nameKana: ClientField::optionalString($body, 'name_kana'),
+            contactName: ClientField::optionalString($body, 'contact_name'),
+            email: ClientField::optionalString($body, 'email'),
+            billingAddress: ClientField::optionalString($body, 'billing_address'),
+            registrationNumber: ClientField::optionalString($body, 'registration_number'),
         ));
 
         return $this->json->create(ClientResponse::toArray($client), 201);

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Item;
 
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
+
 /**
  * Parses + validates the item write payload shared by create and update.
  *
@@ -19,25 +22,34 @@ final class ItemField
     /**
      * @param array<string, mixed> $body
      *
-     * @return array{error: ?string, input: ?ItemWriteValues}
+     * @throws ValidationException
      */
-    public static function parse(array $body): array
+    public static function parse(array $body): ItemWriteValues
     {
+        $errors = [];
+
         $description = $body['description'] ?? null;
         if (!is_string($description) || trim($description) === '') {
-            return ['error' => '"description" is required.', 'input' => null];
+            $errors[] = new ValidationError('body.description', 'Description is required.', 'required');
+            $description = '';
         }
 
         $price = $body['default_unit_price_cents'] ?? null;
         if (!is_int($price) || $price < 0) {
-            return ['error' => '"default_unit_price_cents" must be a non-negative integer.', 'input' => null];
+            $errors[] = new ValidationError('body.default_unit_price_cents', 'Default unit price must be a non-negative integer.', 'invalid');
+            $price = 0;
         }
 
         $tax = $body['default_tax_rate_bps'] ?? null;
         if (!is_int($tax) || !in_array($tax, self::ALLOWED_TAX_RATES, true)) {
-            return ['error' => '"default_tax_rate_bps" must be one of 800 or 1000.', 'input' => null];
+            $errors[] = new ValidationError('body.default_tax_rate_bps', 'Default tax rate must be one of 800 or 1000.', 'invalid');
+            $tax = 1000;
         }
 
-        return ['error' => null, 'input' => new ItemWriteValues(trim($description), $price, $tax)];
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+
+        return new ItemWriteValues(trim($description), $price, $tax);
     }
 }

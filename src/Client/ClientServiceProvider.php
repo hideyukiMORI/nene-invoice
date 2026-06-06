@@ -60,7 +60,6 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateClientHandler => new CreateClientHandler(
                     self::createUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -68,7 +67,6 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): UpdateClientHandler => new UpdateClientHandler(
                     self::updateUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

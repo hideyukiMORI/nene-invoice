@@ -119,7 +119,6 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateInvoiceHandler => new CreateInvoiceHandler(
                     self::resolve($c, CreateInvoiceUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

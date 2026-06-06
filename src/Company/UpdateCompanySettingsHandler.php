@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Company;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,29 +22,20 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
     public function __construct(
         private UpdateCompanySettingsUseCase $useCase,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $decoded = json_decode((string) $request->getBody(), true);
-
-        if (!is_array($decoded)) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'Request body must be a JSON object.');
-        }
+        $decoded = JsonRequestBodyParser::parse($request);
 
         $legalName = $decoded['legal_name'] ?? null;
 
         if (!is_string($legalName) || $legalName === '') {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"legal_name" is required.');
+            throw new ValidationException([new ValidationError('body.legal_name', 'Legal name is required.', 'required')]);
         }
 
-        $rangeError = $this->validateBillingDefaults($decoded);
-
-        if ($rangeError !== null) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, $rangeError);
-        }
+        $this->validateBillingDefaults($decoded);
 
         $settings = $this->useCase->execute(AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
@@ -81,27 +74,32 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
     }
 
     /**
-     * Validates the billing-default integers (Issue #268). Returns an error
-     * message, or null when all are absent / null / valid.
+     * Validates the billing-default integers (Issue #268). Absent / null values
+     * are allowed; out-of-range values raise a 422 with field-scoped errors.
      *
      * @param array<string, mixed> $body
+     *
+     * @throws ValidationException
      */
-    private function validateBillingDefaults(array $body): ?string
+    private function validateBillingDefaults(array $body): void
     {
-        if (!$this->isNullOrIntInRange($body['default_quote_validity_days'] ?? null, 1, 3650)) {
-            return '"default_quote_validity_days" must be an integer between 1 and 3650.';
-        }
-        if (!$this->isNullOrIntInRange($body['default_payment_closing_day'] ?? null, 1, 31)) {
-            return '"default_payment_closing_day" must be an integer between 1 and 31.';
-        }
-        if (!$this->isNullOrIntInRange($body['default_payment_month_offset'] ?? null, 0, 12)) {
-            return '"default_payment_month_offset" must be an integer between 0 and 12.';
-        }
-        if (!$this->isNullOrIntInRange($body['default_payment_pay_day'] ?? null, 1, 31)) {
-            return '"default_payment_pay_day" must be an integer between 1 and 31.';
+        $ranges = [
+            'default_quote_validity_days'  => [1, 3650],
+            'default_payment_closing_day'  => [1, 31],
+            'default_payment_month_offset' => [0, 12],
+            'default_payment_pay_day'      => [1, 31],
+        ];
+
+        $errors = [];
+        foreach ($ranges as $key => [$min, $max]) {
+            if (!$this->isNullOrIntInRange($body[$key] ?? null, $min, $max)) {
+                $errors[] = new ValidationError('body.' . $key, sprintf('%s must be an integer between %d and %d.', $key, $min, $max), 'out_of_range');
+            }
         }
 
-        return null;
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
     }
 
     private function isNullOrIntInRange(mixed $value, int $min, int $max): bool

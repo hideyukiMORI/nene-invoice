@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace NeneInvoice\ServiceApi;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\Payment\RecordPaymentInput;
 use NeneInvoice\Payment\RecordPaymentUseCase;
 use Psr\Http\Message\ResponseInterface;
@@ -40,20 +43,19 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $invoiceId = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $decoded = json_decode((string) $request->getBody(), true);
-        $decoded = is_array($decoded) ? $decoded : [];
+        $decoded = JsonRequestBodyParser::parse($request);
 
         $amountValue = $decoded['amount_cents'] ?? null;
         $amountCents = is_int($amountValue) ? $amountValue : (is_numeric($amountValue) ? (int) $amountValue : 0);
 
         $paidAt = $this->stringOrNull($decoded, 'paid_at');
         if ($paidAt === null) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"paid_at" (bank value date) is required.');
+            throw new ValidationException([new ValidationError('body.paid_at', 'paid_at (bank value date) is required.', 'required')]);
         }
 
         $idempotencyKey = $this->stringOrNull($decoded, 'idempotency_key');
         if ($idempotencyKey === null) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"idempotency_key" is required.');
+            throw new ValidationException([new ValidationError('body.idempotency_key', 'idempotency_key is required.', 'required')]);
         }
 
         $result = $this->useCase->execute(null, $invoiceId, new RecordPaymentInput(

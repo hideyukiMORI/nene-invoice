@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
-use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,7 +22,6 @@ final readonly class ChangeQuoteStatusHandler implements RequestHandlerInterface
     public function __construct(
         private ChangeQuoteStatusUseCase $useCase,
         private JsonResponseFactory $json,
-        private ProblemDetailsResponseFactory $problemDetails,
     ) {
     }
 
@@ -29,12 +30,12 @@ final readonly class ChangeQuoteStatusHandler implements RequestHandlerInterface
         $params = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $id = is_array($params) && isset($params['id']) ? (int) $params['id'] : 0;
 
-        $decoded = json_decode((string) $request->getBody(), true);
-        $statusValue = is_array($decoded) ? ($decoded['status'] ?? null) : null;
+        $body = JsonRequestBodyParser::parse($request);
+        $statusValue = $body['status'] ?? null;
         $target = is_string($statusValue) ? QuoteStatus::tryFrom($statusValue) : null;
 
         if ($target === null) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, '"status" must be one of: draft, sent, accepted, rejected, expired.');
+            throw new ValidationException([new ValidationError('body.status', 'Status must be one of: draft, sent, accepted, rejected, expired.', 'invalid')]);
         }
 
         $quote = $this->useCase->execute(AuthContext::userId($request), $id, $target);

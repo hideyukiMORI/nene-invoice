@@ -60,7 +60,6 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateItemHandler => new CreateItemHandler(
                     self::createUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -68,7 +67,6 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): UpdateItemHandler => new UpdateItemHandler(
                     self::updateUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
