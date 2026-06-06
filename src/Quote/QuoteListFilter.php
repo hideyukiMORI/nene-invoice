@@ -25,14 +25,4 @@ final readonly class QuoteListFilter
         public ?int $totalMax = null,
     ) {
     }
-
-    public function isEmpty(): bool
-    {
-        return $this->statuses === []
-            && $this->search === null
-            && $this->validFrom === null
-            && $this->validTo === null
-            && $this->totalMin === null
-            && $this->totalMax === null;
-    }
 }

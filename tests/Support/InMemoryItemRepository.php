@@ -60,14 +60,6 @@ final class InMemoryItemRepository implements ItemRepositoryInterface
         return array_slice($matches, $offset, $limit);
     }
 
-    public function count(): int
-    {
-        return count(array_filter(
-            $this->byId,
-            fn (Item $i): bool => $i->organizationId === $this->orgId->get() && !$i->isDeleted,
-        ));
-    }
-
     /** @return list<Item> */
     public function findForAdminList(ItemListFilter $filter, ItemSort $sort, int $limit, int $offset): array
     {

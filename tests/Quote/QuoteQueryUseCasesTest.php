@@ -13,7 +13,9 @@ use NeneInvoice\Quote\CreateQuoteInput;
 use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\GetQuoteByIdUseCase;
 use NeneInvoice\Quote\ListQuotesUseCase;
+use NeneInvoice\Quote\QuoteListFilter;
 use NeneInvoice\Quote\QuoteNotFoundException;
+use NeneInvoice\Quote\QuoteSort;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
@@ -99,10 +101,10 @@ final class QuoteQueryUseCasesTest extends TestCase
         $useCase = new ListQuotesUseCase($this->quotes);
 
         // org 1 has the quote from setUp; org 2 sees none (holder-scoped)
-        self::assertSame(1, $useCase->execute(20, 0)->total);
+        self::assertSame(1, $useCase->executeAdmin(new QuoteListFilter(), new QuoteSort(), 20, 0)->total);
 
         $this->holder->set(2);
-        self::assertSame(0, $useCase->execute(20, 0)->total);
+        self::assertSame(0, $useCase->executeAdmin(new QuoteListFilter(), new QuoteSort(), 20, 0)->total);
     }
 
     public function test_list_pagination_limit_and_offset(): void
@@ -118,11 +120,11 @@ final class QuoteQueryUseCasesTest extends TestCase
         }
 
         $useCase = new ListQuotesUseCase($this->quotes);
-        $page    = $useCase->execute(3, 0);
+        $page    = $useCase->executeAdmin(new QuoteListFilter(), new QuoteSort(), 3, 0);
         self::assertSame(5, $page->total);
         self::assertCount(3, $page->items);
 
-        $page2 = $useCase->execute(3, 3);
+        $page2 = $useCase->executeAdmin(new QuoteListFilter(), new QuoteSort(), 3, 3);
         self::assertCount(2, $page2->items);
     }
 }

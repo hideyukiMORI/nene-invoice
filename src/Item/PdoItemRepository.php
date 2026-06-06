@@ -41,16 +41,6 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         return array_map(fn (array $row): Item => $this->mapRow($row), $rows);
     }
 
-    public function count(): int
-    {
-        $row = $this->query->fetchOne(
-            'SELECT COUNT(*) AS cnt FROM items WHERE organization_id = ? AND is_deleted = 0',
-            [$this->orgId->get()],
-        );
-
-        return $row !== null ? (int) $row['cnt'] : 0;
-    }
-
     /**
      * Admin list: searched + sorted.
      *

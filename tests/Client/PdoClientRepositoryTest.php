@@ -9,7 +9,9 @@ use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
+use NeneInvoice\Client\ClientListFilter;
 use NeneInvoice\Client\ClientNotFoundException;
+use NeneInvoice\Client\ClientSort;
 use NeneInvoice\Client\PdoClientRepository;
 use PHPUnit\Framework\TestCase;
 
@@ -71,11 +73,11 @@ final class PdoClientRepositoryTest extends TestCase
         $this->repository->save(new Client(organizationId: 2, name: 'C'));
 
         $this->orgId->set(1);
-        self::assertSame(2, $this->repository->count());
-        self::assertCount(2, $this->repository->findAll(10, 0));
+        self::assertSame(2, $this->repository->countForAdminList(new ClientListFilter()));
+        self::assertCount(2, $this->repository->findForAdminList(new ClientListFilter(), new ClientSort(), 10, 0));
 
         $this->orgId->set(2);
-        self::assertSame(1, $this->repository->count());
+        self::assertSame(1, $this->repository->countForAdminList(new ClientListFilter()));
     }
 
     public function test_find_by_id_is_scoped_to_organization(): void
@@ -97,8 +99,8 @@ final class PdoClientRepositoryTest extends TestCase
         $this->repository->delete($id);
 
         self::assertNull($this->repository->findById($id));
-        self::assertSame(0, $this->repository->count());
-        self::assertCount(0, $this->repository->findAll(10, 0));
+        self::assertSame(0, $this->repository->countForAdminList(new ClientListFilter()));
+        self::assertCount(0, $this->repository->findForAdminList(new ClientListFilter(), new ClientSort(), 10, 0));
     }
 
     public function test_delete_throws_for_unknown_client(): void

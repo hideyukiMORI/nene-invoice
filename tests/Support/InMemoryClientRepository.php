@@ -50,25 +50,6 @@ final class InMemoryClientRepository implements ClientRepositoryInterface
     }
 
     /** @return list<Client> */
-    public function findAll(int $limit, int $offset): array
-    {
-        $matches = array_values(array_filter(
-            $this->byId,
-            fn (Client $c): bool => $c->organizationId === $this->orgId->get() && !$c->isDeleted,
-        ));
-
-        return array_slice($matches, $offset, $limit);
-    }
-
-    public function count(): int
-    {
-        return count(array_filter(
-            $this->byId,
-            fn (Client $c): bool => $c->organizationId === $this->orgId->get() && !$c->isDeleted,
-        ));
-    }
-
-    /** @return list<Client> */
     public function findForAdminList(ClientListFilter $filter, ClientSort $sort, int $limit, int $offset): array
     {
         $matches = $this->adminFiltered($filter);

@@ -62,7 +62,7 @@ final class PdoItemRepositoryTest extends TestCase
         $this->repository->save(new Item(organizationId: 1, description: 'Mine', defaultUnitPriceCents: 1000, defaultTaxRateBps: 1000));
 
         $this->orgId->set(2);
-        self::assertSame(0, $this->repository->count());
+        self::assertSame(0, $this->repository->countForAdminList(new ItemListFilter()));
         self::assertCount(0, $this->repository->findAll(20, 0));
     }
 
@@ -96,7 +96,7 @@ final class PdoItemRepositoryTest extends TestCase
         $this->repository->delete($id);
 
         self::assertNull($this->repository->findById($id));
-        self::assertSame(0, $this->repository->count());
+        self::assertSame(0, $this->repository->countForAdminList(new ItemListFilter()));
     }
 
     public function test_delete_missing_throws(): void

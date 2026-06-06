@@ -14,11 +14,6 @@ interface ClientRepositoryInterface
 {
     public function findById(int $id): ?Client;
 
-    /** @return list<Client> */
-    public function findAll(int $limit, int $offset): array;
-
-    public function count(): int;
-
     /**
      * Admin list: searched + sorted.
      *

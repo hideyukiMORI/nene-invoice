@@ -11,14 +11,6 @@ final readonly class ListQuotesUseCase
     ) {
     }
 
-    public function execute(int $limit, int $offset): ListQuotesResult
-    {
-        return new ListQuotesResult(
-            $this->quotes->findAll($limit, $offset),
-            $this->quotes->count(),
-        );
-    }
-
     /**
      * Admin list: search / filter / sort, with client names resolved by the
      * query's join (so the UI shows names, not ids).
