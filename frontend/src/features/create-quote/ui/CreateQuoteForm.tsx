@@ -68,8 +68,12 @@ export function CreateQuoteForm() {
     }
   }
 
-  const suggestionMeta = (s: LineSuggestion): string =>
-    `${formatYen(s.unit_price_cents)} · ${formatTaxRate(s.tax_rate_bps)} · ${t('admin.lineItemSuggest.usage', { count: s.usage_count })}`
+  const suggestionMeta = (s: LineSuggestion): string => {
+    const parts = [formatYen(s.unit_price_cents), formatTaxRate(s.tax_rate_bps)]
+    if (s.source === 'master') parts.push(t('admin.lineItemSuggest.master'))
+    if (s.usage_count > 0) parts.push(t('admin.lineItemSuggest.usage', { count: s.usage_count }))
+    return parts.join(' · ')
+  }
 
   // Live totals preview (backend stays authoritative; mirrors TaxCalculator).
   const watched = useWatch({ control, name: 'line_items' })

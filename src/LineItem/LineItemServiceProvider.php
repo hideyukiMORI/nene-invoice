@@ -11,6 +11,7 @@ use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
+use NeneInvoice\Item\ItemRepositoryInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -38,6 +39,7 @@ final readonly class LineItemServiceProvider implements ServiceProviderInterface
                 ListLineItemSuggestionsUseCase::class,
                 static fn (ContainerInterface $c): ListLineItemSuggestionsUseCase => new ListLineItemSuggestionsUseCase(
                     self::resolve($c, LineItemRepositoryInterface::class),
+                    self::resolve($c, ItemRepositoryInterface::class),
                 ),
             )
             ->set(

@@ -1448,7 +1448,13 @@ components:
         usage_count:
           type: integer
           description: How many times this description appears in recent history.
-      required: [description, unit_price_cents, tax_rate_bps, usage_count]
+        source:
+          type: string
+          enum: [master, history]
+          description: >
+            Where the suggestion came from — `master` (item master, authoritative)
+            or `history` (derived from past documents).
+      required: [description, unit_price_cents, tax_rate_bps, usage_count, source]
     LineItemSuggestionList:
       type: object
       properties:

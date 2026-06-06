@@ -58,6 +58,7 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | invoice computed | `overdue` (computed flag, not a stored status in Phase 1) |
 | `payment.method` | `bank_transfer`, `cash`, `other` |
 | `line_item.parent_type` | `quote`, `invoice` |
+| `line_item_suggestion.source` | `master`, `history` |
 | `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
 | `user.status` | `active`, `invited` |
 | Capability (enum) | `manage_organizations`, `manage_users`, `manage_company_settings`, `manage_billing`, `view_billing` |
@@ -99,7 +100,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
 | Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents`, `billed_this_month_cents`, `billed_last_month_cents`, `monthly_billed` (→ `month`, `billed_cents`, `count`), `billed_prev_year_month_cents`, `billed_daily_current` / `billed_daily_prev_month` (→ `day`, `cumulative_cents`) | `monthly_received_cents`, `received_this_month`, `mtd_cents`, `issued_this_month_cents`, `invoiced_cents`, `yoy_cents`, `daily_billed` |
 | Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
-| Line-item suggestion read model | `items` → `description`, `unit_price_cents`, `tax_rate_bps`, `usage_count` | `count`, `times_used`, `frequency`, `default_price_cents` |
+| Line-item suggestion read model | `items` → `description`, `unit_price_cents`, `tax_rate_bps`, `usage_count`, `source` (`master`/`history`) | `count`, `times_used`, `frequency`, `default_price_cents`, `origin`, `kind` |
 
 Rules: money columns end in `_cents` (integer); timestamps end in `_at` (except
 the documented `valid_until`); booleans use `is_` / `has_`; foreign keys are

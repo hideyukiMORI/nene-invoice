@@ -7,5 +7,6 @@ export function toLineItemSuggestion(dto: LineItemSuggestionDto): LineItemSugges
     unit_price_cents: dto.unit_price_cents,
     tax_rate_bps: dto.tax_rate_bps,
     usage_count: dto.usage_count,
+    source: dto.source,
   }
 }
