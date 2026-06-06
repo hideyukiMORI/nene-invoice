@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
 import type { AppError } from '@/shared/api/errors'
 import type { ClientDto, ClientListDto } from './api-types'
@@ -11,6 +11,11 @@ import { clientKeys, type ClientListParams } from './query-keys'
 export function useClientList(params: ClientListParams): UseQueryResult<ClientPage, AppError> {
   return useQuery<ClientPage, AppError>({
     queryKey: clientKeys.list(params),
+    // Keep the previous page while a new query (e.g. the combobox's per-keystroke
+    // server search) loads, so status stays 'success' instead of flipping to
+    // 'pending'. Without this, `isPending` toggling true on every keystroke
+    // disabled the client picker input mid-typing (#368).
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const search = new URLSearchParams({
         limit: String(params.limit),
