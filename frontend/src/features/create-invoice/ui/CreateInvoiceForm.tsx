@@ -1,9 +1,19 @@
-import { useWatch } from 'react-hook-form'
+import { Controller, useWatch } from 'react-hook-form'
 import { useTranslation } from '@/shared/i18n'
 import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import { computeDocumentTotals } from '@/shared/lib/tax'
-import { Button, Field, InlineAlert, Input, Select, Stack, Text, Textarea } from '@/shared/ui'
+import {
+  Button,
+  ClientCombobox,
+  Field,
+  InlineAlert,
+  Input,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+} from '@/shared/ui'
 import { useCreateInvoice } from '../hooks/use-create-invoice'
 
 const TAX_RATES = [1000, 800] as const
@@ -23,8 +33,17 @@ const trashIcon = (
  */
 export function CreateInvoiceForm() {
   const { t } = useTranslation()
-  const { form, lines, clients, clientsLoading, onSubmit, addLine, isPending, errorMessage } =
-    useCreateInvoice()
+  const {
+    form,
+    lines,
+    clients,
+    clientsLoading,
+    createClient,
+    onSubmit,
+    addLine,
+    isPending,
+    errorMessage,
+  } = useCreateInvoice()
   const {
     control,
     register,
@@ -58,19 +77,23 @@ export function CreateInvoiceForm() {
               label={t('admin.invoices.create.client')}
               error={errors.client_id ? t('admin.invoices.create.invalid') : undefined}
             >
-              <Select
-                id="client_id"
-                disabled={clientsLoading}
-                aria-invalid={errors.client_id ? true : undefined}
-                {...register('client_id', { setValueAs: toNumber })}
-              >
-                <option value="">{t('admin.invoices.create.clientPlaceholder')}</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </Select>
+              <Controller
+                control={control}
+                name="client_id"
+                render={({ field }) => (
+                  <ClientCombobox
+                    id="client_id"
+                    clients={clients}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onCreate={createClient}
+                    loading={clientsLoading}
+                    invalid={errors.client_id !== undefined}
+                    placeholder={t('admin.clientPicker.placeholder')}
+                    createLabel={(name) => t('admin.clientPicker.create', { name })}
+                  />
+                )}
+              />
             </Field>
             {!clientsLoading && clients.length === 0 && (
               <Text variant="muted">{t('admin.invoices.create.noClients')}</Text>

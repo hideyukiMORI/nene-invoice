@@ -8,9 +8,10 @@ import {
 } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { useClientList, type Client } from '@/entities/client'
+import { useClientList, useCreateClient, type Client } from '@/entities/client'
 import { useCreateInvoice as useCreateInvoiceMutation } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { useToast } from '@/shared/ui'
 
 const lineSchema = z.object({
   description: z.string().min(1),
@@ -39,6 +40,8 @@ export interface UseCreateInvoice {
   lines: UseFieldArrayReturn<CreateInvoiceFormValues, 'line_items'>
   clients: Client[]
   clientsLoading: boolean
+  /** Inline-registers a new client by name; resolves to its id (or null). */
+  createClient: (name: string) => Promise<number | null>
   onSubmit: (event: SyntheticEvent) => void
   addLine: () => void
   isPending: boolean
@@ -47,8 +50,10 @@ export interface UseCreateInvoice {
 
 export function useCreateInvoice(): UseCreateInvoice {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const create = useCreateInvoiceMutation()
+  const createClientMutation = useCreateClient()
   const clientList = useClientList({
     limit: 100,
     offset: 0,
@@ -78,11 +83,30 @@ export function useCreateInvoice(): UseCreateInvoice {
     )
   })
 
+  const createClient = async (name: string): Promise<number | null> => {
+    try {
+      const client = await createClientMutation.mutateAsync({
+        name,
+        name_kana: null,
+        contact_name: null,
+        email: null,
+        billing_address: null,
+        registration_number: null,
+      })
+      showToast({ tone: 'ok', title: t('admin.clientPicker.registered', { name }) })
+      return client.id
+    } catch {
+      showToast({ tone: 'err', title: t('admin.clientPicker.registerError') })
+      return null
+    }
+  }
+
   return {
     form,
     lines,
     clients: clientList.data?.items ?? [],
     clientsLoading: clientList.isPending,
+    createClient,
     onSubmit: (event) => {
       void submit(event)
     },

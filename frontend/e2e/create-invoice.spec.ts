@@ -69,7 +69,8 @@ test.describe('Create invoice', () => {
       route.fulfill(json({ items: [], total_paid_cents: 0 })),
     )
 
-    await page.locator('#client_id').selectOption('5')
+    await page.locator('#client_id').fill('得意先')
+    await page.getByRole('option', { name: '得意先ABC' }).click()
     await page.locator('#line-0-description').fill('設計作業')
     await page.locator('#line-0-unit').fill('100000')
     await page.getByRole('button', { name: '作成する' }).click()
