@@ -10,6 +10,7 @@ use NeneInvoice\Dashboard\GetDashboardHandler;
 use NeneInvoice\Dashboard\GetDashboardSummaryUseCase;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceStatus;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryPaymentRepository;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -31,7 +32,7 @@ final class GetDashboardHandlerTest extends TestCase
         $this->payments = new InMemoryPaymentRepository($holder);
 
         $this->handler = new GetDashboardHandler(
-            new GetDashboardSummaryUseCase($this->invoices, $this->payments),
+            new GetDashboardSummaryUseCase($this->invoices, $this->payments, new FixedClock()),
             $this->payments,
             new JsonResponseFactory($this->psr17, $this->psr17),
         );

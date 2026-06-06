@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
+use NeneInvoice\Support\Jst;
+
 /**
  * Assembles CSV bytes for all valid (non-voided) payments in the organization.
  * UTF-8 BOM is prepended so Excel opens the file without encoding issues.
@@ -43,7 +45,7 @@ final readonly class ExportPaymentsCsvUseCase implements ExportPaymentsCsvUseCas
             fputcsv($handle, [
                 $row['invoice_number'],
                 $row['client_name'],
-                $row['paid_at'],
+                Jst::date($row['paid_at']),
                 $row['amount_cents'],
                 self::METHOD_LABELS[$row['method']] ?? $row['method'],
                 $row['note'],

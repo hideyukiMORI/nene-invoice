@@ -12,6 +12,7 @@ use NeneInvoice\Payment\PaymentExceedsOutstandingException;
 use NeneInvoice\Payment\PaymentValidationException;
 use NeneInvoice\Payment\RecordPaymentInput;
 use NeneInvoice\Payment\RecordPaymentUseCase;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryPaymentRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -33,7 +34,7 @@ final class RecordPaymentUseCaseTest extends TestCase
         $this->payments = new InMemoryPaymentRepository($this->holder);
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new RecordPaymentUseCase($this->payments, $this->invoices, $this->audit, $this->holder);
+        $this->useCase = new RecordPaymentUseCase($this->payments, $this->invoices, $this->audit, new FixedClock(), $this->holder);
     }
 
     private function issuedInvoice(int $totalCents = 2200): int

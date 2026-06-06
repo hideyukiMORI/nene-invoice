@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use Closure;
-use DateTimeImmutable;
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
@@ -19,6 +19,7 @@ use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Support\Jst;
 
 /**
  * Creates a draft quote: validates the client and lines, computes totals
@@ -49,6 +50,7 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
         private DocumentNumberGenerator $numbers,
         private TaxCalculator $taxCalculator,
         private AuditRecorderInterface $audit,
+        private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -84,12 +86,16 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
         }
 
         $totals = $this->taxCalculator->calculate($input->lines);
-        $number = $this->numbers->next(DocumentType::Quote, (int) date('Y'));
+
+        // Fiscal year and the "today" the validity period is measured from use the
+        // JST wall clock so the Japanese calendar date is correct (ADR 0010).
+        $todayJst = Jst::of($this->clock->now())->setTime(0, 0);
+        $number   = $this->numbers->next(DocumentType::Quote, (int) $todayJst->format('Y'));
 
         // Validity: explicit input wins, else the company default period (有効期限)
         // measured from today (the draft's creation date).
         $validUntil = $input->validUntil
-            ?? $this->companySettings->find()?->quoteValidUntilFrom(new DateTimeImmutable('today'));
+            ?? $this->companySettings->find()?->quoteValidUntilFrom($todayJst);
 
         $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
             $organizationId,

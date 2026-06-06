@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\Dashboard;
 use NeneInvoice\Dashboard\GetDashboardSummaryUseCase;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceStatus;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryPaymentRepository;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +26,7 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         $holder->set(1);
         $this->invoices = new InMemoryInvoiceRepository($holder);
         $this->payments = new InMemoryPaymentRepository($holder);
-        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, $this->payments);
+        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, $this->payments, new FixedClock());
     }
 
     public function test_empty_organization_returns_zeros(): void

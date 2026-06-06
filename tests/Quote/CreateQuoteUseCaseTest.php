@@ -16,6 +16,7 @@ use NeneInvoice\Quote\CreateQuoteInput;
 use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\QuoteStatus;
 use NeneInvoice\Quote\QuoteValidationException;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
@@ -57,6 +58,7 @@ final class CreateQuoteUseCaseTest extends TestCase
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             $this->audit,
+            new FixedClock(),
             $this->holder,
         );
     }

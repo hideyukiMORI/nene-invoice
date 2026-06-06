@@ -18,9 +18,11 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\DomainExceptionHandlerInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\ResponseEmitter;
 use Nene2\Http\RuntimeApplicationFactory;
+use Nene2\Http\UtcClock;
 use Nene2\Routing\Router;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
@@ -134,6 +136,10 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
 
                     return new PdoDatabaseQueryExecutor($connectionFactory);
                 },
+            )
+            ->set(
+                ClockInterface::class,
+                static fn (): ClockInterface => new UtcClock(),
             )
             ->set(
                 DatabaseTransactionManagerInterface::class,
