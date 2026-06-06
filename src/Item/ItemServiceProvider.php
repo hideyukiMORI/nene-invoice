@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Item;
 
+use Closure;
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
-use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -38,9 +40,9 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
             )
             ->set(ListItemsUseCaseInterface::class, static fn (ContainerInterface $c): ListItemsUseCase => new ListItemsUseCase(self::repository($c)))
             ->set(GetItemByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetItemByIdUseCase => new GetItemByIdUseCase(self::repository($c)))
-            ->set(CreateItemUseCaseInterface::class, static fn (ContainerInterface $c): CreateItemUseCase => new CreateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(UpdateItemUseCaseInterface::class, static fn (ContainerInterface $c): UpdateItemUseCase => new UpdateItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(DeleteItemUseCaseInterface::class, static fn (ContainerInterface $c): DeleteItemUseCase => new DeleteItemUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(CreateItemUseCaseInterface::class, static fn (ContainerInterface $c): CreateItemUseCase => new CreateItemUseCase(self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
+            ->set(UpdateItemUseCaseInterface::class, static fn (ContainerInterface $c): UpdateItemUseCase => new UpdateItemUseCase(self::repository($c), self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
+            ->set(DeleteItemUseCaseInterface::class, static fn (ContainerInterface $c): DeleteItemUseCase => new DeleteItemUseCase(self::repository($c), self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(
                 ListItemsHandler::class,
                 static fn (ContainerInterface $c): ListItemsHandler => new ListItemsHandler(
@@ -159,15 +161,23 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
         return $holder;
     }
 
-    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
     {
-        $recorder = $c->get(AuditRecorderInterface::class);
+        $tx = $c->get(DatabaseTransactionManagerInterface::class);
 
-        if (!$recorder instanceof AuditRecorderInterface) {
-            throw new LogicException('Audit recorder service is invalid.');
+        if (!$tx instanceof DatabaseTransactionManagerInterface) {
+            throw new LogicException('Transaction manager service is invalid.');
         }
 
-        return $recorder;
+        return $tx;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): ItemRepositoryInterface */
+    private static function itemsFactory(ContainerInterface $c): Closure
+    {
+        $orgHolder = self::orgHolder($c);
+
+        return static fn (DatabaseQueryExecutorInterface $exec): ItemRepositoryInterface => new PdoItemRepository($exec, $orgHolder);
     }
 
     private static function listUseCase(ContainerInterface $c): ListItemsUseCase

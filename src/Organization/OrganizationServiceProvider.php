@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Organization;
 
+use Closure;
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
-use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -36,8 +38,8 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             )
             ->set(ListOrganizationsUseCaseInterface::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
             ->set(GetOrganizationByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
-            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::repository($c), self::audit($c)))
-            ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::audit($c)))
+            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
+            ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
             ->set(
                 ListOrganizationsHandler::class,
                 static fn (ContainerInterface $c): ListOrganizationsHandler => new ListOrganizationsHandler(
@@ -106,15 +108,21 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
         return $repo;
     }
 
-    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
     {
-        $recorder = $c->get(AuditRecorderInterface::class);
+        $tx = $c->get(DatabaseTransactionManagerInterface::class);
 
-        if (!$recorder instanceof AuditRecorderInterface) {
-            throw new LogicException('Audit recorder service is invalid.');
+        if (!$tx instanceof DatabaseTransactionManagerInterface) {
+            throw new LogicException('Transaction manager service is invalid.');
         }
 
-        return $recorder;
+        return $tx;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface */
+    private static function organizationsFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => new PdoOrganizationRepository($exec);
     }
 
     private static function listUseCase(ContainerInterface $c): ListOrganizationsUseCase

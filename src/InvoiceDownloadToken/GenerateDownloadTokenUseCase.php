@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\InvoiceDownloadToken;
 
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
@@ -21,12 +24,15 @@ final readonly class GenerateDownloadTokenUseCase implements GenerateDownloadTok
     private const TTL_DAYS = 7;
 
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): InvoiceDownloadTokenRepositoryInterface $tokensFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
-        private InvoiceDownloadTokenRepositoryInterface $tokens,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $tokensFactory,
+        private Closure $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -56,26 +62,31 @@ final readonly class GenerateDownloadTokenUseCase implements GenerateDownloadTok
         $expiresAt = $now->modify('+' . self::TTL_DAYS . ' days')->format('Y-m-d H:i:s');
         $createdAt = $now->format('Y-m-d H:i:s');
 
-        $this->tokens->save(new InvoiceDownloadToken(
-            invoiceId: $invoiceId,
-            organizationId: $organizationId,
-            tokenHash: $tokenHash,
-            expiresAt: $expiresAt,
-            createdAt: $createdAt,
-        ));
+        // The token insert and its audit record commit atomically (Issue #352).
+        $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $organizationId, $invoiceId, $tokenHash, $expiresAt, $createdAt): null {
+            ($this->tokensFactory)($exec)->save(new InvoiceDownloadToken(
+                invoiceId: $invoiceId,
+                organizationId: $organizationId,
+                tokenHash: $tokenHash,
+                expiresAt: $expiresAt,
+                createdAt: $createdAt,
+            ));
 
-        // Audit (ADR 0008): issuing a public download link is an auditable event.
-        // `after` carries only the non-secret expiry — the raw token and its hash
-        // are never written to the audit trail.
-        $this->audit->record(
-            $actorUserId,
-            $organizationId,
-            'invoice.download_token_issued',
-            'invoice',
-            $invoiceId,
-            null,
-            ['expires_at' => $expiresAt],
-        );
+            // Audit (ADR 0008): issuing a public download link is an auditable event.
+            // `after` carries only the non-secret expiry — the raw token and its hash
+            // are never written to the audit trail.
+            ($this->auditFactory)($exec)->record(
+                $actorUserId,
+                $organizationId,
+                'invoice.download_token_issued',
+                'invoice',
+                $invoiceId,
+                null,
+                ['expires_at' => $expiresAt],
+            );
+
+            return null;
+        });
 
         return ['rawToken' => $rawToken, 'expiresAt' => $expiresAt];
     }

@@ -13,6 +13,7 @@ use NeneInvoice\Item\Item;
 use NeneInvoice\Item\ItemNotFoundException;
 use NeneInvoice\Item\UpdateItemInput;
 use NeneInvoice\Item\UpdateItemUseCase;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryItemRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
@@ -36,7 +37,7 @@ final class ItemWriteUseCasesTest extends TestCase
     {
         $this->holder->set(7);
 
-        $item = (new CreateItemUseCase($this->repo, $this->audit, $this->holder))
+        $item = (new CreateItemUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit, $this->holder))
             ->execute(42, new CreateItemInput(description: '保守', defaultUnitPriceCents: 50000, defaultTaxRateBps: 1000));
 
         self::assertSame(7, $item->organizationId);
@@ -63,7 +64,7 @@ final class ItemWriteUseCasesTest extends TestCase
     {
         $id = $this->repo->save(new Item(organizationId: 1, description: 'Before', defaultUnitPriceCents: 1000, defaultTaxRateBps: 1000));
 
-        (new UpdateItemUseCase($this->repo, $this->audit, $this->holder))
+        (new UpdateItemUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit, $this->holder))
             ->execute(9, $id, new UpdateItemInput(description: 'After', defaultUnitPriceCents: 2000, defaultTaxRateBps: 800));
 
         self::assertCount(1, $this->audit->records);
@@ -79,7 +80,7 @@ final class ItemWriteUseCasesTest extends TestCase
         $otherOrg = $this->repo->save(new Item(organizationId: 2, description: 'Other', defaultUnitPriceCents: 1, defaultTaxRateBps: 1000));
 
         $this->expectException(ItemNotFoundException::class);
-        (new UpdateItemUseCase($this->repo, $this->audit, $this->holder))
+        (new UpdateItemUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit, $this->holder))
             ->execute(1, $otherOrg, new UpdateItemInput(description: 'Hacked', defaultUnitPriceCents: 1, defaultTaxRateBps: 1000));
     }
 
@@ -87,7 +88,7 @@ final class ItemWriteUseCasesTest extends TestCase
     {
         $id = $this->repo->save(new Item(organizationId: 1, description: 'Doomed', defaultUnitPriceCents: 1000, defaultTaxRateBps: 1000));
 
-        (new DeleteItemUseCase($this->repo, $this->audit, $this->holder))->execute(5, $id);
+        (new DeleteItemUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit, $this->holder))->execute(5, $id);
 
         self::assertNull($this->repo->findById($id));
         self::assertSame('item.deleted', $this->audit->records[0]['action']);

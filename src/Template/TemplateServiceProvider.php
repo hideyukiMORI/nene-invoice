@@ -13,7 +13,6 @@ use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\PdoLineItemRepository;
@@ -65,7 +64,19 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     $orgHolder,
                 );
             })
-            ->set(DeleteTemplateUseCaseInterface::class, static fn (ContainerInterface $c): DeleteTemplateUseCase => new DeleteTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteTemplateUseCaseInterface::class, static function (ContainerInterface $c): DeleteTemplateUseCase {
+                $orgHolder = self::orgHolder($c);
+
+                return new DeleteTemplateUseCase(
+                    self::repository($c),
+                    self::lineItems($c),
+                    self::resolve($c, DatabaseTransactionManagerInterface::class),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    AuditServiceProvider::recorderFactory($c),
+                    $orgHolder,
+                );
+            })
             ->set(
                 ListTemplatesHandler::class,
                 static fn (ContainerInterface $c): ListTemplatesHandler => new ListTemplatesHandler(self::resolve($c, ListTemplatesUseCaseInterface::class), self::json($c)),
@@ -144,15 +155,6 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
         return $holder;
     }
 
-    private static function audit(ContainerInterface $c): AuditRecorderInterface
-    {
-        $recorder = $c->get(AuditRecorderInterface::class);
-        if (!$recorder instanceof AuditRecorderInterface) {
-            throw new LogicException('Audit recorder service is invalid.');
-        }
-
-        return $recorder;
-    }
 
     private static function json(ContainerInterface $c): JsonResponseFactory
     {

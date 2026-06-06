@@ -10,6 +10,7 @@ use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\InvoiceDownloadToken\GenerateDownloadTokenUseCase;
 use NeneInvoice\Tests\Support\FixedClock;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryInvoiceDownloadTokenRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -35,7 +36,7 @@ final class GenerateDownloadTokenUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->tokens   = new InMemoryInvoiceDownloadTokenRepository();
         $this->audit    = new RecordingAuditRecorder();
-        $this->useCase  = new GenerateDownloadTokenUseCase($this->invoices, $this->tokens, $this->audit, new FixedClock(), $this->holder);
+        $this->useCase  = new GenerateDownloadTokenUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $this->tokens, fn () => $this->audit, new FixedClock(), $this->holder);
     }
 
     public function test_generates_token_for_invoice_in_org(): void

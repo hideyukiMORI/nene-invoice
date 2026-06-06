@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Company;
 
+use Closure;
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
-use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -37,7 +39,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(GetCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c), self::orgHolder($c)))
-            ->set(UpdateCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(UpdateCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): UpdateCompanySettingsUseCase => new UpdateCompanySettingsUseCase(self::repository($c), self::tx($c), self::repositoryFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(
                 GetCompanySettingsHandler::class,
                 static fn (ContainerInterface $c): GetCompanySettingsHandler => new GetCompanySettingsHandler(
@@ -86,15 +88,23 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
         return $repo;
     }
 
-    private static function audit(ContainerInterface $c): AuditRecorderInterface
+    private static function tx(ContainerInterface $c): DatabaseTransactionManagerInterface
     {
-        $recorder = $c->get(AuditRecorderInterface::class);
+        $tx = $c->get(DatabaseTransactionManagerInterface::class);
 
-        if (!$recorder instanceof AuditRecorderInterface) {
-            throw new LogicException('Audit recorder service is invalid.');
+        if (!$tx instanceof DatabaseTransactionManagerInterface) {
+            throw new LogicException('Transaction manager service is invalid.');
         }
 
-        return $recorder;
+        return $tx;
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): CompanySettingsRepositoryInterface */
+    private static function repositoryFactory(ContainerInterface $c): Closure
+    {
+        $orgHolder = self::orgHolder($c);
+
+        return static fn (DatabaseQueryExecutorInterface $exec): CompanySettingsRepositoryInterface => new PdoCompanySettingsRepository($exec, $orgHolder);
     }
 
     private static function getUseCase(ContainerInterface $c): GetCompanySettingsUseCase
