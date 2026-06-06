@@ -40,6 +40,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Estimate | `Quote` | `quotes` | `quote_id` |
 | Bill | `Invoice` | `invoices` | `invoice_id` |
 | Document row | `LineItem` | `line_items` | `line_item_id` |
+| Template | `Template` | `templates` | `template_id` |
 | Receipt | `Payment` | `payments` | `payment_id` |
 | Number generator | `DocumentSequence` | `document_sequences` | — |
 
@@ -57,7 +58,7 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | `invoice.status` | `draft`, `issued`, `partially_paid`, `paid` |
 | invoice computed | `overdue` (computed flag, not a stored status in Phase 1) |
 | `payment.method` | `bank_transfer`, `cash`, `other` |
-| `line_item.parent_type` | `quote`, `invoice` |
+| `line_item.parent_type` | `quote`, `invoice`, `template` |
 | `line_item_suggestion.source` | `master`, `history` |
 | `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
 | `user.status` | `active`, `invited` |
@@ -119,6 +120,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `quote-not-found` | Quote id not found |
 | `client-not-found` | Client id not found |
 | `item-not-found` | Item-master id not found |
+| `template-not-found` | Template id not found |
 | `invalid-registration-number` | Registration number not `T` + 13 digits (422) |
 | `organization-not-found` | Organization id/slug not found |
 | `organization-slug-conflict` | Organization slug already in use (409) |
@@ -161,6 +163,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
 | `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem` | Item (品目マスタ) |
+| `listTemplates`, `getTemplateById`, `createTemplate`, `updateTemplate`, `deleteTemplate` | Template (雛形) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |

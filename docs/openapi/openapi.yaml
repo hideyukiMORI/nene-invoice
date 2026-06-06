@@ -27,6 +27,8 @@ tags:
     description: Buyers / trading partners (取引先).
   - name: Items
     description: Item master (品目) — reusable descriptions with default price / tax.
+  - name: Templates
+    description: Named quote/invoice templates (雛形) — reusable line presets + notes.
   - name: Quotes
     description: Estimates / quotes (見積).
   - name: Invoices
@@ -700,6 +702,117 @@ paths:
       responses:
         '204':
           description: Item deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/templates:
+    get:
+      tags: [Templates]
+      summary: List templates
+      operationId: listTemplates
+      description: >
+        Lists template headers (without line presets) for the caller's
+        organization, by name. Requires ViewBilling.
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Template page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Templates]
+      summary: Create template
+      operationId: createTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+            example:
+              name: 月次保守テンプレート
+              notes: 毎月の定期保守
+              line_items:
+                - description: 保守サポート（月額）
+                  quantity: 1
+                  unit_price_cents: 50000
+                  tax_rate_bps: 1000
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/templates/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Templates]
+      summary: Get template by id
+      operationId: getTemplateById
+      responses:
+        '200':
+          description: Template (with line presets)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Templates]
+      summary: Update template
+      operationId: updateTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [Templates]
+      summary: Delete template
+      operationId: deleteTemplate
+      responses:
+        '204':
+          description: Template deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1749,6 +1862,53 @@ components:
           type: integer
           enum: [800, 1000]
       required: [description, default_unit_price_cents, default_tax_rate_bps]
+    Template:
+      type: object
+      description: A named quote/invoice template (雛形) with its line presets.
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        name:
+          type: string
+        notes:
+          type: [string, 'null']
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItem'
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, name, line_items]
+    TemplateList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: [string, 'null']
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItemInput'
+      required: [name]
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        notes:
+          type: [string, 'null']
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItemInput'
+      required: [name]
     LineItem:
       type: object
       description: A line on a quote or invoice. Money is integer cents.
