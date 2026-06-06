@@ -1,5 +1,5 @@
-import { act, fireEvent, waitFor } from '@testing-library/react'
-import { useLocation } from 'react-router-dom'
+import { act, fireEvent, render, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
@@ -66,25 +66,57 @@ describe('KeyboardShortcuts', () => {
     })
   })
 
-  it('returns to the parent list with u', async () => {
-    const { getByTestId } = renderWithProviders(
-      <>
+  it('returns to the parent list with u from a detail view', () => {
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/invoices/42']}>
         <KeyboardShortcuts />
         <LocationProbe />
-      </>,
+      </MemoryRouter>,
     )
 
-    fireEvent.keyDown(document.body, { key: 'g' })
-    fireEvent.keyDown(document.body, { key: 'i' })
-    fireEvent.keyDown(document.body, { key: 'n' })
-    await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/invoices/new')
-    })
+    fireEvent.keyDown(document.body, { key: 'u' })
+    expect(getByTestId('loc').textContent).toBe('/invoices')
+  })
+
+  it('does NOT leave a create/edit form on u (avoids losing input) (#362)', () => {
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/invoices/new']}>
+        <KeyboardShortcuts />
+        <LocationProbe />
+      </MemoryRouter>,
+    )
 
     fireEvent.keyDown(document.body, { key: 'u' })
-    await waitFor(() => {
-      expect(getByTestId('loc').textContent).toBe('/invoices')
-    })
+    expect(getByTestId('loc').textContent).toBe('/invoices/new')
+  })
+
+  it('blurs the search field on Esc so j/k work again (#362)', () => {
+    const { container } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <input data-kbd="search" />
+      </>,
+    )
+    const search = container.querySelector('[data-kbd="search"]') as HTMLInputElement
+    search.focus()
+    expect(document.activeElement).toBe(search)
+
+    fireEvent.keyDown(search, { key: 'Escape' })
+    expect(document.activeElement).not.toBe(search)
+  })
+
+  it('keeps focus on Esc while composing in the search field (IME cancel) (#362)', () => {
+    const { container } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <input data-kbd="search" />
+      </>,
+    )
+    const search = container.querySelector('[data-kbd="search"]') as HTMLInputElement
+    search.focus()
+
+    fireEvent.keyDown(search, { key: 'Escape', isComposing: true })
+    expect(document.activeElement).toBe(search)
   })
 
   it('opens the cheat-sheet via openShortcutsOverlay()', () => {
