@@ -127,15 +127,13 @@ export function KeyboardShortcuts() {
       if (e.key === 'Escape') {
         if (overlayRef.current) setOverlayOpen(false)
         else if (pendingRef.current) clearPending()
-        // Esc leaves the search box (so j/k work again) without reaching for the
-        // mouse. Scoped to the search field only — combobox / date picker own
-        // their Esc — and skipped while composing, where Esc cancels the IME (#362).
-        else if (
-          !e.isComposing &&
-          e.target instanceof HTMLElement &&
-          e.target.matches('[data-kbd="search"]')
-        ) {
-          e.target.blur()
+        // Esc leaves any focused form field so navigation shortcuts work again
+        // without reaching for the mouse (single keys are suppressed while a field
+        // is focused — #364). Skipped while composing, where Esc cancels the IME.
+        // Combobox / date picker also close their popups on Esc (they don't stop
+        // propagation), so an open one closes and blurs together — fine.
+        else if (!e.isComposing && isEditableTarget(e.target)) {
+          ;(e.target as HTMLElement).blur()
         }
         return
       }
