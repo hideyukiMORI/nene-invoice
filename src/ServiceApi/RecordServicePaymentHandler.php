@@ -12,6 +12,7 @@ use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Payment\RecordPaymentInput;
 use NeneInvoice\Payment\RecordPaymentUseCase;
+use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -48,12 +49,12 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
         $amountValue = $decoded['amount_cents'] ?? null;
         $amountCents = is_int($amountValue) ? $amountValue : (is_numeric($amountValue) ? (int) $amountValue : 0);
 
-        $paidAt = $this->stringOrNull($decoded, 'paid_at');
+        $paidAt = RequestField::optionalString($decoded, 'paid_at');
         if ($paidAt === null) {
             throw new ValidationException([new ValidationError('body.paid_at', 'paid_at (bank value date) is required.', 'required')]);
         }
 
-        $idempotencyKey = $this->stringOrNull($decoded, 'idempotency_key');
+        $idempotencyKey = RequestField::optionalString($decoded, 'idempotency_key');
         if ($idempotencyKey === null) {
             throw new ValidationException([new ValidationError('body.idempotency_key', 'idempotency_key is required.', 'required')]);
         }
@@ -61,9 +62,9 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
         $result = $this->useCase->execute(null, $invoiceId, new RecordPaymentInput(
             amountCents: $amountCents,
             paidAt: $paidAt,
-            method: $this->stringOrNull($decoded, 'method'),
-            note: $this->stringOrNull($decoded, 'note'),
-            externalReference: $this->stringOrNull($decoded, 'external_reference'),
+            method: RequestField::optionalString($decoded, 'method'),
+            note: RequestField::optionalString($decoded, 'note'),
+            externalReference: RequestField::optionalString($decoded, 'external_reference'),
             idempotencyKey: $idempotencyKey,
         ));
 
@@ -80,13 +81,5 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
             'invoice' => ServiceInvoiceResponse::listItem($result->invoice, $outstanding),
             'total_paid_cents' => $result->totalPaidCents,
         ], 201);
-    }
-
-    /** @param array<string, mixed> $body */
-    private function stringOrNull(array $body, string $key): ?string
-    {
-        $value = $body[$key] ?? null;
-
-        return is_string($value) && $value !== '' ? $value : null;
     }
 }

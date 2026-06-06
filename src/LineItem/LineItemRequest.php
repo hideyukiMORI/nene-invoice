@@ -71,16 +71,4 @@ final class LineItemRequest
 
         return $lines;
     }
-
-    /**
-     * Returns a trimmed-non-empty string for the key, or null when missing/blank.
-     *
-     * @param array<string, mixed> $body
-     */
-    public static function optionalString(array $body, string $key): ?string
-    {
-        $value = $body[$key] ?? null;
-
-        return is_string($value) && $value !== '' ? $value : null;
-    }
 }

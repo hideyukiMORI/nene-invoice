@@ -8,6 +8,7 @@ use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\LineItem\LineItemRequest;
+use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -33,7 +34,7 @@ final readonly class CreateInvoiceHandler implements RequestHandlerInterface
             new CreateInvoiceInput(
                 clientId: LineItemRequest::requireClientId($body),
                 lines: LineItemRequest::parseLines($body),
-                notes: LineItemRequest::optionalString($body, 'notes'),
+                notes: RequestField::optionalString($body, 'notes'),
             ),
         );
 

@@ -8,6 +8,7 @@ use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\LineItem\LineItemRequest;
+use NeneInvoice\Support\RequestField;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -32,8 +33,8 @@ final readonly class CreateQuoteHandler implements RequestHandlerInterface
             new CreateQuoteInput(
                 clientId: LineItemRequest::requireClientId($body),
                 lines: LineItemRequest::parseLines($body),
-                validUntil: LineItemRequest::optionalString($body, 'valid_until'),
-                notes: LineItemRequest::optionalString($body, 'notes'),
+                validUntil: RequestField::optionalString($body, 'valid_until'),
+                notes: RequestField::optionalString($body, 'notes'),
             ),
         );
 
