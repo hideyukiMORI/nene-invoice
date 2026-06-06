@@ -9,7 +9,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
-final readonly class UpdateClientUseCase
+final readonly class UpdateClientUseCase implements UpdateClientUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Item;
 
-final readonly class GetItemByIdUseCase
+final readonly class GetItemByIdUseCase implements GetItemByIdUseCaseInterface
 {
     public function __construct(
         private ItemRepositoryInterface $items,

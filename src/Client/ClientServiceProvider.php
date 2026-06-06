@@ -36,11 +36,11 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                     return new PdoClientRepository($query, self::orgHolder($c));
                 },
             )
-            ->set(ListClientsUseCase::class, static fn (ContainerInterface $c): ListClientsUseCase => new ListClientsUseCase(self::repository($c)))
-            ->set(GetClientByIdUseCase::class, static fn (ContainerInterface $c): GetClientByIdUseCase => new GetClientByIdUseCase(self::repository($c)))
-            ->set(CreateClientUseCase::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(UpdateClientUseCase::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
-            ->set(DeleteClientUseCase::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(ListClientsUseCaseInterface::class, static fn (ContainerInterface $c): ListClientsUseCase => new ListClientsUseCase(self::repository($c)))
+            ->set(GetClientByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetClientByIdUseCase => new GetClientByIdUseCase(self::repository($c)))
+            ->set(CreateClientUseCaseInterface::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(UpdateClientUseCaseInterface::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
+            ->set(DeleteClientUseCaseInterface::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
@@ -109,7 +109,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
     private static function createUseCase(ContainerInterface $c): CreateClientUseCase
     {
-        $u = $c->get(CreateClientUseCase::class);
+        $u = $c->get(CreateClientUseCaseInterface::class);
 
         if (!$u instanceof CreateClientUseCase) {
             throw new LogicException('Create client use case service is invalid.');
@@ -120,7 +120,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
     private static function updateUseCase(ContainerInterface $c): UpdateClientUseCase
     {
-        $u = $c->get(UpdateClientUseCase::class);
+        $u = $c->get(UpdateClientUseCaseInterface::class);
 
         if (!$u instanceof UpdateClientUseCase) {
             throw new LogicException('Update client use case service is invalid.');
@@ -131,7 +131,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
     private static function deleteUseCase(ContainerInterface $c): DeleteClientUseCase
     {
-        $u = $c->get(DeleteClientUseCase::class);
+        $u = $c->get(DeleteClientUseCaseInterface::class);
 
         if (!$u instanceof DeleteClientUseCase) {
             throw new LogicException('Delete client use case service is invalid.');
@@ -176,7 +176,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
     private static function listUseCase(ContainerInterface $c): ListClientsUseCase
     {
-        $u = $c->get(ListClientsUseCase::class);
+        $u = $c->get(ListClientsUseCaseInterface::class);
 
         if (!$u instanceof ListClientsUseCase) {
             throw new LogicException('List clients use case service is invalid.');
@@ -187,7 +187,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
     private static function getUseCase(ContainerInterface $c): GetClientByIdUseCase
     {
-        $u = $c->get(GetClientByIdUseCase::class);
+        $u = $c->get(GetClientByIdUseCaseInterface::class);
 
         if (!$u instanceof GetClientByIdUseCase) {
             throw new LogicException('Get client use case service is invalid.');

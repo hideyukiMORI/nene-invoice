@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class DeleteItemHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private DeleteItemUseCase $useCase,
+        private DeleteItemUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

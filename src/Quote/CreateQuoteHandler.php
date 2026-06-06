@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class CreateQuoteHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private CreateQuoteUseCase $useCase,
+        private CreateQuoteUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

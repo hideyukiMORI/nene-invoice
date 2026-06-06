@@ -9,7 +9,7 @@ namespace NeneInvoice\Audit;
  * prepended so Excel opens the file without encoding issues. before/after are
  * emitted as JSON so the full snapshot is preserved for compliance.
  */
-final readonly class ExportAuditLogsCsvUseCase
+final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseCaseInterface
 {
     /** Safety cap on exported rows (a single CSV should stay bounded). */
     private const MAX_ROWS = 10000;

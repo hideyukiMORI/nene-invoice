@@ -11,7 +11,7 @@ use NeneInvoice\Invoice\InvoiceRepositoryInterface;
  * Lists the payments recorded against an invoice, scoped to the caller's
  * organization (cross-org access surfaces as not-found, never a leak).
  */
-final readonly class ListPaymentsUseCase
+final readonly class ListPaymentsUseCase implements ListPaymentsUseCaseInterface
 {
     public function __construct(
         private PaymentRepositoryInterface $payments,

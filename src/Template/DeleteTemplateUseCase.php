@@ -9,7 +9,7 @@ use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 
-final readonly class DeleteTemplateUseCase
+final readonly class DeleteTemplateUseCase implements DeleteTemplateUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

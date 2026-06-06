@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ChangeQuoteStatusHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ChangeQuoteStatusUseCase $useCase,
+        private ChangeQuoteStatusUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

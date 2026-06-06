@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
-final readonly class ListQuotesUseCase
+final readonly class ListQuotesUseCase implements ListQuotesUseCaseInterface
 {
     public function __construct(
         private QuoteRepositoryInterface $quotes,

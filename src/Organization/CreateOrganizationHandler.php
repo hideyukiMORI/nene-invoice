@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class CreateOrganizationHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private CreateOrganizationUseCase $useCase,
+        private CreateOrganizationUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class DeleteClientHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private DeleteClientUseCase $useCase,
+        private DeleteClientUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

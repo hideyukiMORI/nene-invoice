@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class DeleteTemplateHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private DeleteTemplateUseCase $useCase,
+        private DeleteTemplateUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

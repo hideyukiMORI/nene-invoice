@@ -7,7 +7,7 @@ namespace NeneInvoice\Organization;
 use LogicException;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
-final readonly class CreateOrganizationUseCase
+final readonly class CreateOrganizationUseCase implements CreateOrganizationUseCaseInterface
 {
     public function __construct(
         private OrganizationRepositoryInterface $organizations,

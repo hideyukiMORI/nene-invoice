@@ -9,7 +9,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Auth\Role;
 
-final readonly class CreateUserUseCase
+final readonly class CreateUserUseCase implements CreateUserUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

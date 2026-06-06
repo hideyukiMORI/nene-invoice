@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class ListClientsHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ListClientsUseCase $useCase,
+        private ListClientsUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

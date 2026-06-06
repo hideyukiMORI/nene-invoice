@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Template;
 
-final readonly class ListTemplatesUseCase
+final readonly class ListTemplatesUseCase implements ListTemplatesUseCaseInterface
 {
     public function __construct(
         private TemplateRepositoryInterface $templates,

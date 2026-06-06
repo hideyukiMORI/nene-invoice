@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetCompanySettingsHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GetCompanySettingsUseCase $useCase,
+        private GetCompanySettingsUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

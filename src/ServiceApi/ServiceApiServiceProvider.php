@@ -12,11 +12,11 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
-use NeneInvoice\Invoice\GetInvoiceByIdUseCase;
-use NeneInvoice\Invoice\ListInvoicesUseCase;
-use NeneInvoice\Payment\ListPaymentsUseCase;
-use NeneInvoice\Payment\RecordPaymentUseCase;
-use NeneInvoice\Payment\VoidPaymentUseCase;
+use NeneInvoice\Invoice\GetInvoiceByIdUseCaseInterface;
+use NeneInvoice\Invoice\ListInvoicesUseCaseInterface;
+use NeneInvoice\Payment\ListPaymentsUseCaseInterface;
+use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
+use NeneInvoice\Payment\VoidPaymentUseCaseInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -35,7 +35,7 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
             ->set(
                 ListServiceInvoicesHandler::class,
                 static fn (ContainerInterface $c): ListServiceInvoicesHandler => new ListServiceInvoicesHandler(
-                    self::resolve($c, ListInvoicesUseCase::class),
+                    self::resolve($c, ListInvoicesUseCaseInterface::class),
                     self::json($c),
                     self::problemDetails($c),
                 ),
@@ -43,8 +43,8 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
             ->set(
                 GetServiceInvoiceHandler::class,
                 static fn (ContainerInterface $c): GetServiceInvoiceHandler => new GetServiceInvoiceHandler(
-                    self::resolve($c, GetInvoiceByIdUseCase::class),
-                    self::resolve($c, ListPaymentsUseCase::class),
+                    self::resolve($c, GetInvoiceByIdUseCaseInterface::class),
+                    self::resolve($c, ListPaymentsUseCaseInterface::class),
                     self::json($c),
                     self::problemDetails($c),
                 ),
@@ -52,7 +52,7 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
             ->set(
                 RecordServicePaymentHandler::class,
                 static fn (ContainerInterface $c): RecordServicePaymentHandler => new RecordServicePaymentHandler(
-                    self::resolve($c, RecordPaymentUseCase::class),
+                    self::resolve($c, RecordPaymentUseCaseInterface::class),
                     self::json($c),
                     self::problemDetails($c),
                 ),
@@ -60,7 +60,7 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
             ->set(
                 VoidServicePaymentHandler::class,
                 static fn (ContainerInterface $c): VoidServicePaymentHandler => new VoidServicePaymentHandler(
-                    self::resolve($c, VoidPaymentUseCase::class),
+                    self::resolve($c, VoidPaymentUseCaseInterface::class),
                     self::json($c),
                     self::problemDetails($c),
                 ),

@@ -26,7 +26,7 @@ use NeneInvoice\Quote\QuoteValidationException;
  * rebuilt from the transaction-bound executor via the injected factories), so a
  * failure leaves no half-converted invoice.
  */
-final readonly class ConvertQuoteToInvoiceUseCase
+final readonly class ConvertQuoteToInvoiceUseCase implements ConvertQuoteToInvoiceUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory

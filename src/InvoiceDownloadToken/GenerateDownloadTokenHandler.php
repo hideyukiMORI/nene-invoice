@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GenerateDownloadTokenHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GenerateDownloadTokenUseCase $useCase,
+        private GenerateDownloadTokenUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

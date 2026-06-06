@@ -17,7 +17,7 @@ use NeneInvoice\Quote\Pdf\QuotePdfData;
  * Assembles all data needed to render a quote PDF: quote with lines,
  * company settings (issuer), and client (buyer).
  */
-final readonly class GenerateQuotePdfUseCase
+final readonly class GenerateQuotePdfUseCase implements GenerateQuotePdfUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

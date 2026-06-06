@@ -30,7 +30,7 @@ use NeneInvoice\LineItem\TaxCalculator;
  * injected factories (a pre-built repository would use a different connection and
  * escape the transaction). Reads/validation and audit stay outside.
  */
-final readonly class CreateQuoteUseCase
+final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
 {
     /** Allowed consumption tax rates in basis points (accounting-compliance §3). */
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];

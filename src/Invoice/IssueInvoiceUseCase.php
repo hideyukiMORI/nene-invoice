@@ -20,7 +20,7 @@ use NeneInvoice\LineItem\LineItemRepositoryInterface;
  * issued without an issuer registration number (accounting-compliance §2/§4),
  * and only draft invoices can be issued (issued documents are immutable).
  */
-final readonly class IssueInvoiceUseCase
+final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

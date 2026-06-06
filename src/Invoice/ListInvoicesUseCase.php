@@ -6,7 +6,7 @@ namespace NeneInvoice\Invoice;
 
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 
-final readonly class ListInvoicesUseCase
+final readonly class ListInvoicesUseCase implements ListInvoicesUseCaseInterface
 {
     public function __construct(
         private InvoiceRepositoryInterface $invoices,

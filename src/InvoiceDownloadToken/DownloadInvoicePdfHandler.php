@@ -9,7 +9,7 @@ use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
 use Nene2\Routing\Router;
-use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
+use NeneInvoice\Invoice\GenerateInvoicePdfUseCaseInterface;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -33,7 +33,7 @@ final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterfac
      */
     public function __construct(
         private InvoiceDownloadTokenRepositoryInterface $tokens,
-        private GenerateInvoicePdfUseCase $pdfData,
+        private GenerateInvoicePdfUseCaseInterface $pdfData,
         private InvoicePdfGenerator $pdfGenerator,
         private Psr17Factory $psr17,
         private ProblemDetailsResponseFactory $problemDetails,

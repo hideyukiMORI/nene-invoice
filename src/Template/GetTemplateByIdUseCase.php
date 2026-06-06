@@ -7,7 +7,7 @@ namespace NeneInvoice\Template;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 
-final readonly class GetTemplateByIdUseCase
+final readonly class GetTemplateByIdUseCase implements GetTemplateByIdUseCaseInterface
 {
     public function __construct(
         private TemplateRepositoryInterface $templates,

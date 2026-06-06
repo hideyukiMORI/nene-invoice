@@ -8,7 +8,7 @@ namespace NeneInvoice\Invoice;
  * Assembles CSV bytes for all issued invoices in the organization.
  * UTF-8 BOM is prepended so Excel opens the file without encoding issues.
  */
-final readonly class ExportInvoicesCsvUseCase
+final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCaseInterface
 {
     private const STATUS_LABELS = [
         'issued'         => '発行済み',

@@ -14,7 +14,7 @@ use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 
-final readonly class UpdateTemplateUseCase
+final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory

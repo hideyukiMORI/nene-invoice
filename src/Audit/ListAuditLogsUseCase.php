@@ -8,7 +8,7 @@ namespace NeneInvoice\Audit;
  * Lists the audit trail for the resolved organization, most recent first. The
  * organization is read from the request-scoped org holder by the repository.
  */
-final readonly class ListAuditLogsUseCase
+final readonly class ListAuditLogsUseCase implements ListAuditLogsUseCaseInterface
 {
     public function __construct(
         private AuditLogRepositoryInterface $logs,

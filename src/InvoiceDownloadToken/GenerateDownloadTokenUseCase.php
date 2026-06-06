@@ -16,7 +16,7 @@ use NeneInvoice\Invoice\InvoiceRepositoryInterface;
  * Returns the raw (un-hashed) token so the caller can embed it in the URL.
  * The raw token is never stored — only its SHA-256 hash is kept in the DB.
  */
-final readonly class GenerateDownloadTokenUseCase
+final readonly class GenerateDownloadTokenUseCase implements GenerateDownloadTokenUseCaseInterface
 {
     private const TTL_DAYS = 7;
 

@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class CreateUserHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private CreateUserUseCase $useCase,
+        private CreateUserUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

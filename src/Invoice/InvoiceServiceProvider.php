@@ -49,7 +49,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                ConvertQuoteToInvoiceUseCase::class,
+                ConvertQuoteToInvoiceUseCaseInterface::class,
                 static function (ContainerInterface $c): ConvertQuoteToInvoiceUseCase {
                     $orgHolder = self::orgHolder($c);
 
@@ -64,7 +64,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                CreateInvoiceUseCase::class,
+                CreateInvoiceUseCaseInterface::class,
                 static function (ContainerInterface $c): CreateInvoiceUseCase {
                     $orgHolder = self::orgHolder($c);
 
@@ -80,7 +80,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                IssueInvoiceUseCase::class,
+                IssueInvoiceUseCaseInterface::class,
                 static fn (ContainerInterface $c): IssueInvoiceUseCase => new IssueInvoiceUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -91,14 +91,14 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
-                ListInvoicesUseCase::class,
+                ListInvoicesUseCaseInterface::class,
                 static fn (ContainerInterface $c): ListInvoicesUseCase => new ListInvoicesUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, PaymentRepositoryInterface::class),
                 ),
             )
             ->set(
-                GetInvoiceByIdUseCase::class,
+                GetInvoiceByIdUseCaseInterface::class,
                 static fn (ContainerInterface $c): GetInvoiceByIdUseCase => new GetInvoiceByIdUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -108,35 +108,35 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             ->set(
                 ConvertQuoteToInvoiceHandler::class,
                 static fn (ContainerInterface $c): ConvertQuoteToInvoiceHandler => new ConvertQuoteToInvoiceHandler(
-                    self::resolve($c, ConvertQuoteToInvoiceUseCase::class),
+                    self::resolve($c, ConvertQuoteToInvoiceUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 ListInvoicesHandler::class,
                 static fn (ContainerInterface $c): ListInvoicesHandler => new ListInvoicesHandler(
-                    self::resolve($c, ListInvoicesUseCase::class),
+                    self::resolve($c, ListInvoicesUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 GetInvoiceByIdHandler::class,
                 static fn (ContainerInterface $c): GetInvoiceByIdHandler => new GetInvoiceByIdHandler(
-                    self::resolve($c, GetInvoiceByIdUseCase::class),
+                    self::resolve($c, GetInvoiceByIdUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 CreateInvoiceHandler::class,
                 static fn (ContainerInterface $c): CreateInvoiceHandler => new CreateInvoiceHandler(
-                    self::resolve($c, CreateInvoiceUseCase::class),
+                    self::resolve($c, CreateInvoiceUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 IssueInvoiceHandler::class,
                 static fn (ContainerInterface $c): IssueInvoiceHandler => new IssueInvoiceHandler(
-                    self::resolve($c, IssueInvoiceUseCase::class),
+                    self::resolve($c, IssueInvoiceUseCaseInterface::class),
                     self::json($c),
                 ),
             )
@@ -159,7 +159,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
-                GenerateInvoicePdfUseCase::class,
+                GenerateInvoicePdfUseCaseInterface::class,
                 static fn (ContainerInterface $c): GenerateInvoicePdfUseCase => new GenerateInvoicePdfUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -172,13 +172,13 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             ->set(
                 GetInvoicePdfHandler::class,
                 static fn (ContainerInterface $c): GetInvoicePdfHandler => new GetInvoicePdfHandler(
-                    self::resolve($c, GenerateInvoicePdfUseCase::class),
+                    self::resolve($c, GenerateInvoicePdfUseCaseInterface::class),
                     self::resolve($c, InvoicePdfGenerator::class),
                     self::resolve($c, Psr17Factory::class),
                 ),
             )
             ->set(
-                ExportInvoicesCsvUseCase::class,
+                ExportInvoicesCsvUseCaseInterface::class,
                 static fn (ContainerInterface $c): ExportInvoicesCsvUseCase => new ExportInvoicesCsvUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                 ),
@@ -186,12 +186,12 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             ->set(
                 ExportInvoicesCsvHandler::class,
                 static fn (ContainerInterface $c): ExportInvoicesCsvHandler => new ExportInvoicesCsvHandler(
-                    self::resolve($c, ExportInvoicesCsvUseCase::class),
+                    self::resolve($c, ExportInvoicesCsvUseCaseInterface::class),
                     self::resolve($c, Psr17Factory::class),
                 ),
             )
             ->set(
-                SendInvoiceEmailUseCase::class,
+                SendInvoiceEmailUseCaseInterface::class,
                 static fn (ContainerInterface $c): SendInvoiceEmailUseCase => new SendInvoiceEmailUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, LineItemRepositoryInterface::class),
@@ -207,7 +207,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             ->set(
                 SendInvoiceEmailHandler::class,
                 static fn (ContainerInterface $c): SendInvoiceEmailHandler => new SendInvoiceEmailHandler(
-                    self::resolve($c, SendInvoiceEmailUseCase::class),
+                    self::resolve($c, SendInvoiceEmailUseCaseInterface::class),
                     self::resolve($c, Psr17Factory::class),
                 ),
             )

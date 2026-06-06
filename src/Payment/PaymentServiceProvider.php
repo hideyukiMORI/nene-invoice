@@ -39,7 +39,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                RecordPaymentUseCase::class,
+                RecordPaymentUseCaseInterface::class,
                 static fn (ContainerInterface $c): RecordPaymentUseCase => new RecordPaymentUseCase(
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
@@ -48,14 +48,14 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
-                ListPaymentsUseCase::class,
+                ListPaymentsUseCaseInterface::class,
                 static fn (ContainerInterface $c): ListPaymentsUseCase => new ListPaymentsUseCase(
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
                 ),
             )
             ->set(
-                VoidPaymentUseCase::class,
+                VoidPaymentUseCaseInterface::class,
                 static fn (ContainerInterface $c): VoidPaymentUseCase => new VoidPaymentUseCase(
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, InvoiceRepositoryInterface::class),
@@ -66,14 +66,14 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
             ->set(
                 RecordPaymentHandler::class,
                 static fn (ContainerInterface $c): RecordPaymentHandler => new RecordPaymentHandler(
-                    self::resolve($c, RecordPaymentUseCase::class),
+                    self::resolve($c, RecordPaymentUseCaseInterface::class),
                     self::json($c),
                 ),
             )
             ->set(
                 ListPaymentsHandler::class,
                 static fn (ContainerInterface $c): ListPaymentsHandler => new ListPaymentsHandler(
-                    self::resolve($c, ListPaymentsUseCase::class),
+                    self::resolve($c, ListPaymentsUseCaseInterface::class),
                     self::json($c),
                 ),
             )
@@ -90,7 +90,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): PaymentNotFoundExceptionHandler => new PaymentNotFoundExceptionHandler(self::problemDetails($c)),
             )
             ->set(
-                ExportPaymentsCsvUseCase::class,
+                ExportPaymentsCsvUseCaseInterface::class,
                 static fn (ContainerInterface $c): ExportPaymentsCsvUseCase => new ExportPaymentsCsvUseCase(
                     self::payments($c),
                 ),
@@ -98,7 +98,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
             ->set(
                 ExportPaymentsCsvHandler::class,
                 static fn (ContainerInterface $c): ExportPaymentsCsvHandler => new ExportPaymentsCsvHandler(
-                    self::resolve($c, ExportPaymentsCsvUseCase::class),
+                    self::resolve($c, ExportPaymentsCsvUseCaseInterface::class),
                     self::resolve($c, Psr17Factory::class),
                 ),
             )

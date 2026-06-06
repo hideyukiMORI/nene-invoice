@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class IssueInvoiceHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private IssueInvoiceUseCase $useCase,
+        private IssueInvoiceUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

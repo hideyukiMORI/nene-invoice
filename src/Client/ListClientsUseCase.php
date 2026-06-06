@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Client;
 
-final readonly class ListClientsUseCase
+final readonly class ListClientsUseCase implements ListClientsUseCaseInterface
 {
     public function __construct(
         private ClientRepositoryInterface $clients,

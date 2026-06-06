@@ -22,7 +22,7 @@ use NeneInvoice\Invoice\InvoiceStatus;
  * Over-payment is rejected: the recorded total may not exceed the invoice total
  * (refunds / over-receipts are a separate operation, deliberately not handled here).
  */
-final readonly class RecordPaymentUseCase
+final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterface
 {
     /**
      * @param RequestScopedHolder<int> $orgId resolved organization for this request

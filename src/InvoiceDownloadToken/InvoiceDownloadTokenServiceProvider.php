@@ -13,7 +13,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
-use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
+use NeneInvoice\Invoice\GenerateInvoicePdfUseCaseInterface;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -37,7 +37,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                 },
             )
             ->set(
-                GenerateDownloadTokenUseCase::class,
+                GenerateDownloadTokenUseCaseInterface::class,
                 static fn (ContainerInterface $c): GenerateDownloadTokenUseCase => new GenerateDownloadTokenUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
@@ -48,7 +48,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
             ->set(
                 GenerateDownloadTokenHandler::class,
                 static fn (ContainerInterface $c): GenerateDownloadTokenHandler => new GenerateDownloadTokenHandler(
-                    self::resolve($c, GenerateDownloadTokenUseCase::class),
+                    self::resolve($c, GenerateDownloadTokenUseCaseInterface::class),
                     self::resolve($c, JsonResponseFactory::class),
                 ),
             )
@@ -56,7 +56,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                 DownloadInvoicePdfHandler::class,
                 static fn (ContainerInterface $c): DownloadInvoicePdfHandler => new DownloadInvoicePdfHandler(
                     self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
-                    self::resolve($c, GenerateInvoicePdfUseCase::class),
+                    self::resolve($c, GenerateInvoicePdfUseCaseInterface::class),
                     self::resolve($c, InvoicePdfGenerator::class),
                     self::resolve($c, Psr17Factory::class),
                     self::resolve($c, ProblemDetailsResponseFactory::class),

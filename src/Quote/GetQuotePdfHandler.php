@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class GetQuotePdfHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private GenerateQuotePdfUseCase $useCase,
+        private GenerateQuotePdfUseCaseInterface $useCase,
         private QuotePdfGenerator $generator,
         private Psr17Factory $psr17,
     ) {

@@ -24,7 +24,7 @@ final readonly class UpdateUserHandler implements RequestHandlerInterface
     private const ALLOWED_STATUSES = ['active', 'invited'];
 
     public function __construct(
-        private UpdateUserUseCase $useCase,
+        private UpdateUserUseCaseInterface $useCase,
         private JsonResponseFactory $json,
     ) {
     }

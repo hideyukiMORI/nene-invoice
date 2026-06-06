@@ -8,7 +8,7 @@ use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 
-final readonly class GetInvoiceByIdUseCase
+final readonly class GetInvoiceByIdUseCase implements GetInvoiceByIdUseCaseInterface
 {
     public function __construct(
         private InvoiceRepositoryInterface $invoices,

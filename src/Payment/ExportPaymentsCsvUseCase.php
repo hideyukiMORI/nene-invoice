@@ -8,7 +8,7 @@ namespace NeneInvoice\Payment;
  * Assembles CSV bytes for all valid (non-voided) payments in the organization.
  * UTF-8 BOM is prepended so Excel opens the file without encoding issues.
  */
-final readonly class ExportPaymentsCsvUseCase
+final readonly class ExportPaymentsCsvUseCase implements ExportPaymentsCsvUseCaseInterface
 {
     private const METHOD_LABELS = [
         'bank_transfer' => '銀行振込',
