@@ -36,6 +36,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Operator account | `User` | `users` | `user_id` |
 | Issuer profile | `Company` (folder); `CompanySettings` (entity) | `company_settings` | — (one per `organization_id`) |
 | Buyer | `Client` | `clients` | `client_id` |
+| Item master | `Item` | `items` | `item_id` |
 | Estimate | `Quote` | `quotes` | `quote_id` |
 | Bill | `Invoice` | `invoices` | `invoice_id` |
 | Document row | `LineItem` | `line_items` | `line_item_id` |
@@ -94,6 +95,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Issuer fields | `legal_name`, `bank_name`, `bank_branch`, `account_type`, `account_number`, `logo_url` | `company_name`, `branch`, `acct_no` |
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
+| Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
 | Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents`, `billed_this_month_cents`, `billed_last_month_cents`, `monthly_billed` (→ `month`, `billed_cents`, `count`), `billed_prev_year_month_cents`, `billed_daily_current` / `billed_daily_prev_month` (→ `day`, `cumulative_cents`) | `monthly_received_cents`, `received_this_month`, `mtd_cents`, `issued_this_month_cents`, `invoiced_cents`, `yoy_cents`, `daily_billed` |
 | Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
@@ -115,6 +117,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `invoice-not-found` | Invoice id/token not found |
 | `quote-not-found` | Quote id not found |
 | `client-not-found` | Client id not found |
+| `item-not-found` | Item-master id not found |
 | `invalid-registration-number` | Registration number not `T` + 13 digits (422) |
 | `organization-not-found` | Organization id/slug not found |
 | `organization-slug-conflict` | Organization slug already in use (409) |
@@ -156,6 +159,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
+| `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem` | Item (品目マスタ) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |

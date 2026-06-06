@@ -31,6 +31,7 @@ use NeneInvoice\Dashboard\DashboardServiceProvider;
 use NeneInvoice\DocumentSequence\DocumentSequenceServiceProvider;
 use NeneInvoice\Invoice\InvoiceServiceProvider;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenServiceProvider;
+use NeneInvoice\Item\ItemServiceProvider;
 use NeneInvoice\LineItem\LineItemServiceProvider;
 use NeneInvoice\Mailer\MailerServiceProvider;
 use NeneInvoice\Organization\OrganizationRepositoryInterface;
@@ -70,6 +71,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new OrganizationServiceProvider());
         $builder->addProvider(new UserServiceProvider());
         $builder->addProvider(new ClientServiceProvider());
+        $builder->addProvider(new ItemServiceProvider());
         $builder->addProvider(new CompanyServiceProvider());
         $builder->addProvider(new DocumentSequenceServiceProvider());
         $builder->addProvider(new LineItemServiceProvider());

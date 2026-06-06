@@ -22,6 +22,8 @@ use NeneInvoice\Invoice\InvoiceRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
 use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenRouteRegistrar;
+use NeneInvoice\Item\ItemNotFoundExceptionHandler;
+use NeneInvoice\Item\ItemRouteRegistrar;
 use NeneInvoice\LineItem\LineItemRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
@@ -87,6 +89,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
                     $downloadTokenRoutes = $container->get(InvoiceDownloadTokenRouteRegistrar::class);
                     $lineItemRoutes = $container->get(LineItemRouteRegistrar::class);
+                    $itemRoutes = $container->get(ItemRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -140,7 +143,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Line item route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes];
+                    if (!$itemRoutes instanceof ItemRouteRegistrar) {
+                        throw new LogicException('Item route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes];
                 },
             )
             ->set(
@@ -154,6 +161,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $cannotDeleteSelf = $container->get(CannotDeleteSelfExceptionHandler::class);
                     $clientNotFound = $container->get(ClientNotFoundExceptionHandler::class);
                     $invalidRegNumber = $container->get(InvalidRegistrationNumberExceptionHandler::class);
+                    $itemNotFound = $container->get(ItemNotFoundExceptionHandler::class);
                     $companySettingsNotFound = $container->get(CompanySettingsNotFoundExceptionHandler::class);
                     $companyInvalidRegNumber = $container->get(CompanyInvalidRegistrationNumberExceptionHandler::class);
                     $quoteNotFound = $container->get(QuoteNotFoundExceptionHandler::class);
@@ -197,6 +205,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
 
                     if (!$invalidRegNumber instanceof InvalidRegistrationNumberExceptionHandler) {
                         throw new LogicException('Invalid registration number exception handler service is invalid.');
+                    }
+
+                    if (!$itemNotFound instanceof ItemNotFoundExceptionHandler) {
+                        throw new LogicException('Item not-found exception handler service is invalid.');
                     }
 
                     if (!$companySettingsNotFound instanceof CompanySettingsNotFoundExceptionHandler) {
@@ -247,7 +259,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound];
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound];
                 },
             );
     }
