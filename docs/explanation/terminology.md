@@ -115,7 +115,8 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 
 | Slug | Use |
 | --- | --- |
-| `validation-failed` | Request body/field validation error |
+| `invalid-json` | Malformed / empty / non-object request body (400; framework `JsonRequestBodyParser`) |
+| `validation-failed` | Request body/field validation error (422; `errors[]` carries field + code) |
 | `invoice-not-found` | Invoice id/token not found |
 | `quote-not-found` | Quote id not found |
 | `client-not-found` | Client id not found |

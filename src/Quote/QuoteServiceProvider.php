@@ -78,7 +78,6 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): CreateQuoteHandler => new CreateQuoteHandler(
                     self::resolve($c, CreateQuoteUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(
@@ -100,7 +99,6 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ChangeQuoteStatusHandler => new ChangeQuoteStatusHandler(
                     self::resolve($c, ChangeQuoteStatusUseCase::class),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

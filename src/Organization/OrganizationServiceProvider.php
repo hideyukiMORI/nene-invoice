@@ -57,7 +57,6 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 static fn (ContainerInterface $c): CreateOrganizationHandler => new CreateOrganizationHandler(
                     self::createUseCase($c),
                     self::json($c),
-                    self::problemDetails($c),
                 ),
             )
             ->set(

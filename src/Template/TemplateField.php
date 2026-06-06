@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Template;
 
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\LineItem\LineItemInput;
 
 /**
@@ -21,26 +23,27 @@ final class TemplateField
     /**
      * @param array<string, mixed> $body
      *
-     * @return array{error: ?string, name: string, notes: ?string, lines: list<LineItemInput>}
+     * @return array{name: string, notes: ?string, lines: list<LineItemInput>}
+     * @throws ValidationException
      */
     public static function parse(array $body): array
     {
-        $fail = static fn (string $message): array => ['error' => $message, 'name' => '', 'notes' => null, 'lines' => []];
-
         $name = $body['name'] ?? null;
         if (!is_string($name) || trim($name) === '') {
-            return $fail('"name" is required.');
+            throw new ValidationException([new ValidationError('body.name', 'Name is required.', 'required')]);
         }
 
         $rawLines = $body['line_items'] ?? [];
         if (!is_array($rawLines)) {
-            return $fail('"line_items" must be an array.');
+            throw new ValidationException([new ValidationError('body.line_items', 'line_items must be an array.', 'invalid')]);
         }
 
         $lines = [];
-        foreach ($rawLines as $raw) {
+        foreach (array_values($rawLines) as $index => $raw) {
+            $field = 'body.line_items.' . $index;
+
             if (!is_array($raw)) {
-                return $fail('Each line item must be an object.');
+                throw new ValidationException([new ValidationError($field, 'Each line item must be an object.', 'invalid')]);
             }
 
             $description = $raw['description'] ?? null;
@@ -49,11 +52,11 @@ final class TemplateField
             $taxRate = $raw['tax_rate_bps'] ?? null;
 
             if (!is_string($description) || $description === '' || !is_int($quantity) || !is_int($unitPrice) || !is_int($taxRate)) {
-                return $fail('Each line item needs description (string) and quantity / unit_price_cents / tax_rate_bps (integers).');
+                throw new ValidationException([new ValidationError($field, 'Each line item needs description (string) and quantity / unit_price_cents / tax_rate_bps (integers).', 'invalid')]);
             }
 
             if ($quantity <= 0 || $unitPrice < 0 || !in_array($taxRate, self::ALLOWED_TAX_RATES, true)) {
-                return $fail('Line item quantity must be > 0, unit price >= 0, and tax rate one of 800 or 1000.');
+                throw new ValidationException([new ValidationError($field, 'Line item quantity must be > 0, unit price >= 0, and tax rate one of 800 or 1000.', 'invalid')]);
             }
 
             $lines[] = new LineItemInput($description, $quantity, $unitPrice, $taxRate);
@@ -62,7 +65,6 @@ final class TemplateField
         $notes = $body['notes'] ?? null;
 
         return [
-            'error' => null,
             'name' => trim($name),
             'notes' => is_string($notes) && $notes !== '' ? $notes : null,
             'lines' => $lines,

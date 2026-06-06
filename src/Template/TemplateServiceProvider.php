@@ -53,11 +53,11 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 CreateTemplateHandler::class,
-                static fn (ContainerInterface $c): CreateTemplateHandler => new CreateTemplateHandler(self::resolve($c, CreateTemplateUseCase::class), self::json($c), self::problemDetails($c)),
+                static fn (ContainerInterface $c): CreateTemplateHandler => new CreateTemplateHandler(self::resolve($c, CreateTemplateUseCase::class), self::json($c)),
             )
             ->set(
                 UpdateTemplateHandler::class,
-                static fn (ContainerInterface $c): UpdateTemplateHandler => new UpdateTemplateHandler(self::resolve($c, UpdateTemplateUseCase::class), self::json($c), self::problemDetails($c)),
+                static fn (ContainerInterface $c): UpdateTemplateHandler => new UpdateTemplateHandler(self::resolve($c, UpdateTemplateUseCase::class), self::json($c)),
             )
             ->set(
                 DeleteTemplateHandler::class,

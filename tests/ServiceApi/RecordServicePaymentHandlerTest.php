@@ -7,6 +7,7 @@ namespace NeneInvoice\Tests\ServiceApi;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
+use Nene2\Validation\ValidationException;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Payment\PaymentExceedsOutstandingException;
@@ -94,16 +95,17 @@ final class RecordServicePaymentHandlerTest extends TestCase
         self::assertSame(800, $this->payments->totalPaidForInvoice($this->invoiceId));
     }
 
-    public function test_missing_idempotency_key_is_422(): void
+    public function test_missing_idempotency_key_is_rejected(): void
     {
-        $response = $this->handler->handle($this->request(['amount_cents' => 800, 'paid_at' => '2026-04-20']));
-        self::assertSame(422, $response->getStatusCode());
+        // ValidationException is mapped to 422 (+ errors[]) by the error middleware.
+        $this->expectException(ValidationException::class);
+        $this->handler->handle($this->request(['amount_cents' => 800, 'paid_at' => '2026-04-20']));
     }
 
-    public function test_missing_paid_at_is_422(): void
+    public function test_missing_paid_at_is_rejected(): void
     {
-        $response = $this->handler->handle($this->request(['amount_cents' => 800, 'idempotency_key' => 'k1']));
-        self::assertSame(422, $response->getStatusCode());
+        $this->expectException(ValidationException::class);
+        $this->handler->handle($this->request(['amount_cents' => 800, 'idempotency_key' => 'k1']));
     }
 
     public function test_over_allocation_throws_exceeds_outstanding(): void

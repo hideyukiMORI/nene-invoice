@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\JsonRequestBodyParser;
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Validation\ValidationError;
+use Nene2\Validation\ValidationException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -24,17 +27,16 @@ final readonly class LoginHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $decoded = json_decode((string) $request->getBody(), true);
+        $body = JsonRequestBodyParser::parse($request);
 
-        if (!is_array($decoded)) {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'Request body must be a JSON object.');
+        $email = $body['email'] ?? null;
+        if (!is_string($email) || $email === '') {
+            throw new ValidationException([new ValidationError('body.email', 'Email is required.', 'required')]);
         }
 
-        $email = $decoded['email'] ?? null;
-        $password = $decoded['password'] ?? null;
-
-        if (!is_string($email) || $email === '' || !is_string($password) || $password === '') {
-            return $this->problemDetails->create($request, 'validation-failed', 'Validation Failed', 422, 'Both "email" and "password" are required.');
+        $password = $body['password'] ?? null;
+        if (!is_string($password) || $password === '') {
+            throw new ValidationException([new ValidationError('body.password', 'Password is required.', 'required')]);
         }
 
         $serverParams = $request->getServerParams();
