@@ -76,6 +76,49 @@ test.describe('View quote', () => {
     await expect(page).toHaveURL(/\/invoices\/10$/)
   })
 
+  test('duplicates a quote into a prefilled create form', async ({ page }) => {
+    await page.route('**/admin/quotes/1', (route) =>
+      route.fulfill(
+        json({
+          ...QUOTE,
+          client_id: 5,
+          notes: '毎月の保守',
+          line_items: [
+            {
+              description: '保守サポート',
+              quantity: 1,
+              unit_price_cents: 50000,
+              tax_rate_bps: 1000,
+              line_subtotal_cents: 50000,
+            },
+          ],
+        }),
+      ),
+    )
+    // The create form loads clients (for the picker) and line-item suggestions.
+    await page.route('**/admin/clients*', (route) =>
+      route.fulfill(
+        json({
+          items: [{ id: 5, organization_id: 1, name: '得意先ABC', name_kana: null }],
+          total: 1,
+          limit: 100,
+          offset: 0,
+        }),
+      ),
+    )
+    await page.route('**/admin/line-items/suggestions*', (route) =>
+      route.fulfill(json({ items: [] })),
+    )
+
+    await page.getByRole('link', { name: 'EST-2026-001' }).click()
+    await page.getByRole('button', { name: 'この内容で複製' }).click()
+
+    await expect(page).toHaveURL(/\/quotes\/new$/)
+    await expect(page.locator('#line-0-description')).toHaveValue('保守サポート')
+    await expect(page.locator('#line-0-unit')).toHaveValue('50000')
+    await expect(page.locator('#client_id')).toHaveValue('得意先ABC')
+  })
+
   test('triggers PDF download for a quote', async ({ page }) => {
     await page.route('**/admin/quotes/1', (route) => route.fulfill(json(QUOTE)))
     await page.route('**/admin/quotes/1/pdf', (route) =>

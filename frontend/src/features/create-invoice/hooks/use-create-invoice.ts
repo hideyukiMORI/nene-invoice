@@ -1,15 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { SyntheticEvent } from 'react'
+import { useEffect, useRef, type SyntheticEvent } from 'react'
 import {
   useFieldArray,
   useForm,
   type UseFieldArrayReturn,
   type UseFormReturn,
 } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useClientList, useCreateClient, type Client } from '@/entities/client'
-import { useCreateInvoice as useCreateInvoiceMutation } from '@/entities/invoice'
+import {
+  useCreateInvoice as useCreateInvoiceMutation,
+  type CreateInvoiceInput,
+} from '@/entities/invoice'
 import { useLineItemSuggestions, type LineItemSuggestion } from '@/entities/line-item'
 import { useTranslation } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
@@ -35,6 +38,38 @@ const EMPTY_LINE = {
   unit_price_cents: 0,
   tax_rate_bps: 1000,
 } as const satisfies CreateInvoiceFormValues['line_items'][number]
+
+/** Router state for "duplicate this invoice" (#316) — a create-input snapshot. */
+export interface CreateInvoiceLocationState {
+  duplicate?: CreateInvoiceInput
+}
+
+const toFormLine = (
+  line: CreateInvoiceInput['line_items'][number],
+): CreateInvoiceFormValues['line_items'][number] => ({
+  description: line.description,
+  quantity: line.quantity,
+  unit_price_cents: line.unit_price_cents,
+  // Tax rate is a default copied from the source; keep it within the form's set.
+  tax_rate_bps: line.tax_rate_bps === 800 ? 800 : 1000,
+})
+
+/**
+ * Default form values, optionally seeded from a duplicate snapshot. client_id
+ * starts at 0 and is applied after clients load (see hook) so the picker can
+ * show the name and a since-deleted client cleanly drops to "unselected".
+ */
+function buildDefaults(prefill: CreateInvoiceInput | undefined): CreateInvoiceFormValues {
+  if (prefill === undefined) {
+    return { client_id: 0, line_items: [EMPTY_LINE], notes: '' }
+  }
+
+  return {
+    client_id: 0,
+    line_items: prefill.line_items.length > 0 ? prefill.line_items.map(toFormLine) : [EMPTY_LINE],
+    notes: prefill.notes ?? '',
+  }
+}
 
 export interface UseCreateInvoice {
   form: UseFormReturn<CreateInvoiceFormValues>
@@ -65,12 +100,32 @@ export function useCreateInvoice(): UseCreateInvoice {
   })
   const lineSuggestions = useLineItemSuggestions()
 
+  const location = useLocation()
+  const prefill = (location.state as CreateInvoiceLocationState | null)?.duplicate
+
   const form = useForm<CreateInvoiceFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { client_id: 0, line_items: [EMPTY_LINE], notes: '' },
+    defaultValues: buildDefaults(prefill),
   })
 
   const lines = useFieldArray({ control: form.control, name: 'line_items' })
+
+  // Apply the duplicated client only once clients have loaded: this flips
+  // client_id 0 → id so the picker syncs the name, and a since-deleted client
+  // (not in the list) stays unselected so the operator re-picks. Runs once.
+  const clientApplied = useRef(false)
+  useEffect(() => {
+    if (clientApplied.current || clientList.isPending) return
+    clientApplied.current = true
+    const wanted = prefill?.client_id
+    if (
+      wanted !== undefined &&
+      wanted !== 0 &&
+      (clientList.data?.items ?? []).some((c) => c.id === wanted)
+    ) {
+      form.setValue('client_id', wanted)
+    }
+  }, [clientList.isPending, clientList.data, prefill, form])
 
   const submit = form.handleSubmit((values) => {
     create.mutate(
