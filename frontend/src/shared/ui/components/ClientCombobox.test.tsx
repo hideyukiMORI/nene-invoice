@@ -41,7 +41,7 @@ describe('ClientCombobox', () => {
     expect(onChange).toHaveBeenCalledWith(2)
   })
 
-  it('offers inline registration for an unknown name and selects the new id', async () => {
+  it('captures a reading and inline-registers an unknown name with it', async () => {
     const onChange = vi.fn()
     const onCreate = vi.fn(() => Promise.resolve(99))
     const { container, getByText } = renderWithProviders(
@@ -52,19 +52,49 @@ describe('ClientCombobox', () => {
         onChange={onChange}
         onCreate={onCreate}
         createLabel={(name) => `「${name}」を登録`}
+        createConfirmLabel="登録"
       />,
     )
     const input = container.querySelector('#c') as HTMLInputElement
 
     fireEvent.change(input, { target: { value: '新しい取引先' } })
-    const createButton = getByText('「新しい取引先」を登録')
-    fireEvent.mouseDown(createButton)
+    // Step 1: open the inline-create form (does not create yet).
+    fireEvent.mouseDown(getByText('「新しい取引先」を登録'))
+    expect(onCreate).not.toHaveBeenCalled()
 
-    expect(onCreate).toHaveBeenCalledWith('新しい取引先')
+    // Step 2: type a reading and confirm.
+    const kana = container.querySelector('.combo-createform .combo-input') as HTMLInputElement
+    fireEvent.change(kana, { target: { value: 'アタラシイトリヒキサキ' } })
+    fireEvent.mouseDown(getByText('登録'))
+
+    expect(onCreate).toHaveBeenCalledWith('新しい取引先', 'アタラシイトリヒキサキ')
     // onCreate resolves to 99 → selection committed.
     await vi.waitFor(() => {
       expect(onChange).toHaveBeenCalledWith(99)
     })
+  })
+
+  it('inline-registers with a null reading when none is entered', () => {
+    const onChange = vi.fn()
+    const onCreate = vi.fn(() => Promise.resolve(7))
+    const { container, getByText } = renderWithProviders(
+      <ClientCombobox
+        id="c"
+        clients={CLIENTS}
+        value={0}
+        onChange={onChange}
+        onCreate={onCreate}
+        createLabel={(name) => `「${name}」を登録`}
+        createConfirmLabel="登録"
+      />,
+    )
+    const input = container.querySelector('#c') as HTMLInputElement
+
+    fireEvent.change(input, { target: { value: '読みなし商店' } })
+    fireEvent.mouseDown(getByText('「読みなし商店」を登録'))
+    fireEvent.mouseDown(getByText('登録'))
+
+    expect(onCreate).toHaveBeenCalledWith('読みなし商店', null)
   })
 
   it('shows the selected client name when value is set', () => {

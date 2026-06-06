@@ -182,6 +182,8 @@ export const jaMessages = {
   // Shared client picker (combobox) — quote & invoice forms.
   'admin.clientPicker.placeholder': '取引先を検索（名称・読み・登録番号）',
   'admin.clientPicker.create': '「{{name}}」を新規取引先として登録',
+  'admin.clientPicker.kanaPlaceholder': 'フリガナ／読み（任意）',
+  'admin.clientPicker.createConfirm': '登録',
   'admin.clientPicker.registered': '「{{name}}」を取引先に登録しました',
   'admin.clientPicker.registerError': '取引先を登録できませんでした。',
   'admin.lineItemSuggest.usage': '{{count}}回使用',

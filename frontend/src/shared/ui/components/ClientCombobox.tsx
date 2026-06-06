@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { cn } from '@/shared/lib/cn'
 
 /** Minimal shape the combobox needs from a client (取引先). */
@@ -17,15 +17,20 @@ export interface ClientComboboxProps {
   value: number
   onChange: (clientId: number) => void
   /**
-   * Inline-registers the typed name as a new client and resolves to its id (or
-   * `null` on failure). When omitted, no "register" affordance is shown.
+   * Inline-registers the typed name (with an optional reading) as a new client
+   * and resolves to its id (or `null` on failure). When omitted, no "register"
+   * affordance is shown.
    */
-  onCreate?: (name: string) => Promise<number | null>
+  onCreate?: (name: string, nameKana: string | null) => Promise<number | null>
   loading?: boolean
   invalid?: boolean
   placeholder?: string
   /** Label for the inline-create row, e.g. `「{name}」を新規登録`. */
   createLabel?: (name: string) => string
+  /** Placeholder for the inline furigana (reading) input. */
+  createKanaPlaceholder?: string
+  /** Label for the inline-create confirm button. */
+  createConfirmLabel?: string
   'aria-describedby'?: string
 }
 
@@ -34,9 +39,10 @@ const norm = (s: string): string => s.trim().toLowerCase()
 /**
  * Typeahead client picker (#314): filter by name / reading (name_kana) /
  * registration number, pick with mouse or keyboard, and — when the typed name
- * matches nothing — register it as a new client inline (`onCreate`). Controlled
- * by `value` (a client id); presentational, so the create mutation lives in the
- * parent hook.
+ * matches nothing — register it as a new client inline (`onCreate`). The inline
+ * create expands to a small form so a reading (furigana) can be captured up
+ * front (#327). Controlled by `value` (a client id); presentational, so the
+ * create mutation lives in the parent hook.
  */
 export function ClientCombobox({
   id,
@@ -48,6 +54,8 @@ export function ClientCombobox({
   invalid = false,
   placeholder,
   createLabel,
+  createKanaPlaceholder,
+  createConfirmLabel,
   'aria-describedby': ariaDescribedBy,
 }: ClientComboboxProps) {
   const selected = clients.find((c) => c.id === value) ?? null
@@ -65,7 +73,11 @@ export function ClientCombobox({
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
   const [creating, setCreating] = useState(false)
+  // Inline-create sub-form (name is the typed text; capture an optional reading).
+  const [createMode, setCreateMode] = useState(false)
+  const [kana, setKana] = useState('')
   const wrapRef = useRef<HTMLDivElement>(null)
+  const kanaRef = useRef<HTMLInputElement>(null)
 
   const q = norm(text)
   const matches = (
@@ -82,8 +94,19 @@ export function ClientCombobox({
   const showCreate = onCreate !== undefined && q !== '' && !exact
   const rowCount = matches.length + (showCreate ? 1 : 0)
 
+  // Focus the reading input when the inline-create form opens.
+  useEffect(() => {
+    if (createMode) kanaRef.current?.focus()
+  }, [createMode])
+
+  const resetCreate = (): void => {
+    setCreateMode(false)
+    setKana('')
+  }
+
   const close = (): void => {
     setOpen(false)
+    resetCreate()
     setText(selected?.name ?? '')
   }
 
@@ -91,6 +114,12 @@ export function ClientCombobox({
     onChange(client.id)
     setText(client.name)
     setOpen(false)
+    resetCreate()
+  }
+
+  const enterCreateMode = (): void => {
+    setHighlight(matches.length)
+    setCreateMode(true)
   }
 
   const runCreate = async (): Promise<void> => {
@@ -98,12 +127,13 @@ export function ClientCombobox({
     const name = text.trim()
     if (name === '') return
     setCreating(true)
-    const newId = await onCreate(name)
+    const newId = await onCreate(name, kana.trim() === '' ? null : kana.trim())
     setCreating(false)
     if (newId !== null) {
       onChange(newId)
       setText(name)
       setOpen(false)
+      resetCreate()
     }
   }
 
@@ -126,13 +156,23 @@ export function ClientCombobox({
         const m = matches[highlight]
         if (m !== undefined) pick(m)
       } else if (showCreate) {
-        void runCreate()
+        enterCreateMode()
       }
     } else if (e.key === 'Escape') {
       if (open) {
         e.preventDefault()
         close()
       }
+    }
+  }
+
+  const onKanaKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      void runCreate()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      resetCreate()
     }
   }
 
@@ -163,6 +203,7 @@ export function ClientCombobox({
           setText(e.target.value)
           setOpen(true)
           setHighlight(0)
+          resetCreate()
         }}
         onFocus={() => {
           setOpen(true)
@@ -197,7 +238,7 @@ export function ClientCombobox({
             </li>
           ))}
 
-          {showCreate && (
+          {showCreate && !createMode && (
             <li>
               <button
                 type="button"
@@ -207,11 +248,42 @@ export function ClientCombobox({
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault()
-                  void runCreate()
+                  enterCreateMode()
                 }}
                 disabled={creating}
               >
                 {createLabel !== undefined ? createLabel(text.trim()) : `+ ${text.trim()}`}
+              </button>
+            </li>
+          )}
+
+          {showCreate && createMode && (
+            <li className="combo-createform">
+              <span className="combo-createform-label">
+                {createLabel !== undefined ? createLabel(text.trim()) : `+ ${text.trim()}`}
+              </span>
+              <input
+                ref={kanaRef}
+                type="text"
+                className="combo-input"
+                autoComplete="off"
+                placeholder={createKanaPlaceholder}
+                value={kana}
+                onChange={(e) => {
+                  setKana(e.target.value)
+                }}
+                onKeyDown={onKanaKeyDown}
+              />
+              <button
+                type="button"
+                className="combo-createform-confirm"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  void runCreate()
+                }}
+                disabled={creating}
+              >
+                {createConfirmLabel ?? '+'}
               </button>
             </li>
           )}

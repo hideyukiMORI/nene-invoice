@@ -76,8 +76,8 @@ export interface UseCreateInvoice {
   lines: UseFieldArrayReturn<CreateInvoiceFormValues, 'line_items'>
   clients: Client[]
   clientsLoading: boolean
-  /** Inline-registers a new client by name; resolves to its id (or null). */
-  createClient: (name: string) => Promise<number | null>
+  /** Inline-registers a new client (name + optional reading); resolves to its id (or null). */
+  createClient: (name: string, nameKana: string | null) => Promise<number | null>
   /** History-based line-item suggestions (description + default price/rate). */
   lineSuggestions: LineItemSuggestion[]
   onSubmit: (event: SyntheticEvent) => void
@@ -142,11 +142,11 @@ export function useCreateInvoice(): UseCreateInvoice {
     )
   })
 
-  const createClient = async (name: string): Promise<number | null> => {
+  const createClient = async (name: string, nameKana: string | null): Promise<number | null> => {
     try {
       const client = await createClientMutation.mutateAsync({
         name,
-        name_kana: null,
+        name_kana: nameKana,
         contact_name: null,
         email: null,
         billing_address: null,
