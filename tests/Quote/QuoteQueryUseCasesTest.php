@@ -16,6 +16,7 @@ use NeneInvoice\Quote\ListQuotesUseCase;
 use NeneInvoice\Quote\QuoteListFilter;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteSort;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
@@ -49,8 +50,9 @@ final class QuoteQueryUseCasesTest extends TestCase
         $this->clientId  = $this->clients->save(new Client(organizationId: 1, name: 'Acme'));
 
         $this->create = new CreateQuoteUseCase(
-            $this->quotes,
-            $this->lineItems,
+            new ImmediateTransactionManager(),
+            fn () => $this->quotes,
+            fn () => $this->lineItems,
             $this->clients,
             new InMemoryCompanySettingsRepository($this->holder),
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),

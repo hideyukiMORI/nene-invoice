@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\ListInvoicesUseCase;
 use NeneInvoice\LineItem\LineItemInput;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
@@ -46,8 +47,9 @@ final class InvoiceQueryUseCasesTest extends TestCase
         $this->clientId  = $this->clients->save(new Client(organizationId: 1, name: 'Buyer KK'));
 
         $this->create = new CreateInvoiceUseCase(
-            $this->invoices,
-            $this->lineItems,
+            new ImmediateTransactionManager(),
+            fn () => $this->invoices,
+            fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
             new RecordingAuditRecorder(),

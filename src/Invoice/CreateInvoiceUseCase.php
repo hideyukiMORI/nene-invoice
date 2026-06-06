@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
@@ -15,11 +18,13 @@ use NeneInvoice\LineItem\TaxCalculator;
 
 /**
  * Creates a draft invoice directly (without an originating quote): validates the
- * client and lines, computes totals (TaxCalculator, ADR 0004), persists the
- * header and line items, and records an audit entry.
+ * client and lines, computes totals (TaxCalculator, ADR 0004), then persists the
+ * header and line items **atomically** (one transaction) and records an audit entry.
  *
  * No number is allocated here — drafts have no `invoice_number`; numbering happens
- * at issue time ({@see IssueInvoiceUseCase}), so a draft can be edited freely.
+ * at issue time ({@see IssueInvoiceUseCase}), so a draft can be edited freely. The
+ * header + line writes run inside the transaction manager, so the repositories are
+ * rebuilt from the transaction-bound executor via the injected factories.
  */
 final readonly class CreateInvoiceUseCase
 {
@@ -27,11 +32,14 @@ final readonly class CreateInvoiceUseCase
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];
 
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
-        private InvoiceRepositoryInterface $invoices,
-        private LineItemRepositoryInterface $lineItems,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $invoicesFactory,
+        private Closure $lineItemsFactory,
         private ClientRepositoryInterface $clients,
         private TaxCalculator $taxCalculator,
         private AuditRecorderInterface $audit,
@@ -71,41 +79,50 @@ final readonly class CreateInvoiceUseCase
 
         $totals = $this->taxCalculator->calculate($input->lines);
 
-        $invoiceId = $this->invoices->save(new Invoice(
-            organizationId: $organizationId,
-            clientId: $input->clientId,
-            status: InvoiceStatus::Draft,
-            subtotalCents: $totals->subtotalCents,
-            taxCents: $totals->taxCents,
-            totalCents: $totals->totalCents,
-            notes: $input->notes,
-        ));
+        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $organizationId,
+            $input,
+            $totals,
+        ): InvoiceWithLines {
+            $invoices  = ($this->invoicesFactory)($exec);
+            $lineItems = ($this->lineItemsFactory)($exec);
 
-        $lineEntities = [];
-        foreach ($input->lines as $index => $line) {
-            $lineEntities[] = new LineItem(
-                parentType: LineItemParent::Invoice,
-                parentId: $invoiceId,
-                description: $line->description,
-                quantity: $line->quantity,
-                unitPriceCents: $line->unitPriceCents,
-                taxRateBps: $line->taxRateBps,
-                sortOrder: $index,
-            );
-        }
+            $invoiceId = $invoices->save(new Invoice(
+                organizationId: $organizationId,
+                clientId: $input->clientId,
+                status: InvoiceStatus::Draft,
+                subtotalCents: $totals->subtotalCents,
+                taxCents: $totals->taxCents,
+                totalCents: $totals->totalCents,
+                notes: $input->notes,
+            ));
 
-        $this->lineItems->replaceForParent(LineItemParent::Invoice, $invoiceId, $lineEntities);
+            $lineEntities = [];
+            foreach ($input->lines as $index => $line) {
+                $lineEntities[] = new LineItem(
+                    parentType: LineItemParent::Invoice,
+                    parentId: $invoiceId,
+                    description: $line->description,
+                    quantity: $line->quantity,
+                    unitPriceCents: $line->unitPriceCents,
+                    taxRateBps: $line->taxRateBps,
+                    sortOrder: $index,
+                );
+            }
 
-        $saved = $this->invoices->findById($invoiceId);
+            $lineItems->replaceForParent(LineItemParent::Invoice, $invoiceId, $lineEntities);
 
-        if ($saved === null) {
-            throw new LogicException('Invoice disappeared immediately after creation.');
-        }
+            $saved = $invoices->findById($invoiceId);
 
-        $lines = $this->lineItems->findByParent(LineItemParent::Invoice, $invoiceId);
+            if ($saved === null) {
+                throw new LogicException('Invoice disappeared immediately after creation.');
+            }
 
-        $this->audit->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $invoiceId, null, InvoiceResponse::toArray($saved, $lines));
+            return new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
+        });
 
-        return new InvoiceWithLines($saved, $lines);
+        $this->audit->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
+
+        return $result;
     }
 }

@@ -14,6 +14,7 @@ use NeneInvoice\Quote\CreateQuoteInput;
 use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\GenerateQuotePdfUseCase;
 use NeneInvoice\Quote\QuoteNotFoundException;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
@@ -63,8 +64,9 @@ final class GenerateQuotePdfUseCaseTest extends TestCase
     private function createQuote(): int
     {
         $create = new CreateQuoteUseCase(
-            $this->quotes,
-            $this->lineItems,
+            new ImmediateTransactionManager(),
+            fn () => $this->quotes,
+            fn () => $this->lineItems,
             $this->clients,
             $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),

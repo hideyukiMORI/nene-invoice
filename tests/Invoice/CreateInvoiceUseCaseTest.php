@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceValidationException;
 use NeneInvoice\LineItem\LineItemInput;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
@@ -38,8 +39,9 @@ final class CreateInvoiceUseCaseTest extends TestCase
         $this->clients = new InMemoryClientRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
         $this->useCase = new CreateInvoiceUseCase(
-            $this->invoices,
-            $this->lineItems,
+            new ImmediateTransactionManager(),
+            fn () => $this->invoices,
+            fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
             $this->audit,
