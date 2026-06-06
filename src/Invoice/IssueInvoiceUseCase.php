@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
-use DateTimeImmutable;
 use LogicException;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
@@ -13,6 +13,7 @@ use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\DocumentSequence\DocumentType;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\Support\Jst;
 
 /**
  * Issues a draft invoice: validates qualified-invoice requirements, allocates an
@@ -31,6 +32,7 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
         private AuditRecorderInterface $audit,
+        private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -68,9 +70,13 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
             }
         }
 
-        $number = $this->numbers->next(DocumentType::Invoice, (int) date('Y'));
+        // The issue instant is stored in UTC; the 交付年月日 and all calendar math
+        // (fiscal year, due date) use the JST wall clock (ADR 0010).
+        $now       = $this->clock->now();
+        $issuedAt  = $now->format('Y-m-d H:i:s');
+        $issuedJst = Jst::of($now);
 
-        $issuedAt = date('Y-m-d H:i:s');
+        $number = $this->numbers->next(DocumentType::Invoice, (int) $issuedJst->format('Y'));
 
         // Due date: explicit input wins, then any pre-set value, else the
         // company payment-terms default (締め日＋支払サイト) from the issue date.
@@ -79,7 +85,7 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
         if ($dueAt === null) {
             $terms = $settings?->paymentTerms();
             if ($terms !== null) {
-                $dueAt = $terms->dueDateFrom(new DateTimeImmutable($issuedAt));
+                $dueAt = $terms->dueDateFrom($issuedJst);
             }
         }
 

@@ -14,6 +14,7 @@ use NeneInvoice\Quote\CreateQuoteInput;
 use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\GenerateQuotePdfUseCase;
 use NeneInvoice\Quote\QuoteNotFoundException;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
@@ -72,6 +73,7 @@ final class GenerateQuotePdfUseCaseTest extends TestCase
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             new RecordingAuditRecorder(),
+            new FixedClock(),
             $this->holder,
         );
 

@@ -7,6 +7,7 @@ namespace NeneInvoice\Dashboard;
 use LogicException;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
@@ -22,6 +23,7 @@ final readonly class DashboardServiceProvider implements ServiceProviderInterfac
                 static fn (ContainerInterface $c): GetDashboardSummaryUseCase => new GetDashboardSummaryUseCase(
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, PaymentRepositoryInterface::class),
+                    self::resolve($c, ClockInterface::class),
                 ),
             )
             ->set(

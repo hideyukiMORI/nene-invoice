@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use LogicException;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
@@ -16,6 +17,7 @@ final readonly class ChangeQuoteStatusUseCase implements ChangeQuoteStatusUseCas
     public function __construct(
         private QuoteRepositoryInterface $quotes,
         private AuditRecorderInterface $audit,
+        private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -38,7 +40,7 @@ final readonly class ChangeQuoteStatusUseCase implements ChangeQuoteStatusUseCas
 
         // A quote is considered issued when first sent.
         $issuedAt = $target === QuoteStatus::Sent && $quote->issuedAt === null
-            ? date('Y-m-d H:i:s')
+            ? $this->clock->now()->format('Y-m-d H:i:s')
             : $quote->issuedAt;
 
         $this->quotes->update(new Quote(

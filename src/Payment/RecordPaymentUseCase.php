@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 use LogicException;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
@@ -12,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Invoice\InvoiceResponse;
 use NeneInvoice\Invoice\InvoiceStatus;
+use NeneInvoice\Support\Jst;
 
 /**
  * Records a payment against an issued invoice and advances the invoice status:
@@ -31,6 +33,7 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
         private PaymentRepositoryInterface $payments,
         private InvoiceRepositoryInterface $invoices,
         private AuditRecorderInterface $audit,
+        private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -74,7 +77,9 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
                 throw new PaymentValidationException('A payment date must be a valid date (YYYY-MM-DD).');
             }
 
-            if ($parsed > new \DateTimeImmutable('now')) {
+            // The supplied value is a JST calendar date; reject anything after the
+            // current JST day (compare calendar dates, zone-independent — ADR 0010).
+            if ($parsed->format('Y-m-d') > Jst::of($this->clock->now())->format('Y-m-d')) {
                 throw new PaymentValidationException('A payment date cannot be in the future.');
             }
         }
@@ -91,7 +96,7 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
 
         $before = InvoiceResponse::toArray($invoice);
 
-        $paidAt = $input->paidAt ?? date('Y-m-d H:i:s');
+        $paidAt = $input->paidAt ?? $this->clock->now()->format('Y-m-d H:i:s');
 
         $paymentId = $this->payments->save(new Payment(
             organizationId: $organizationId,

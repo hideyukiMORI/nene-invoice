@@ -18,6 +18,7 @@ use NeneInvoice\Invoice\IssueInvoiceUseCase;
 use NeneInvoice\Invoice\QualifiedInvoiceIncompleteException;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
@@ -49,6 +50,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
             $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             $this->audit,
+            new FixedClock(),
             $this->holder,
         );
     }

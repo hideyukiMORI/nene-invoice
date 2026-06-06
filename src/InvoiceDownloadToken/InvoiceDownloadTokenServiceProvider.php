@@ -9,6 +9,7 @@ use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -42,6 +43,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                     self::resolve($c, InvoiceRepositoryInterface::class),
                     self::resolve($c, InvoiceDownloadTokenRepositoryInterface::class),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::resolve($c, ClockInterface::class),
                     self::orgHolder($c),
                 ),
             )

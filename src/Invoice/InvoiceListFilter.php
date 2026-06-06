@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use NeneInvoice\Support\Jst;
+
 /**
  * Read filters for listing invoices (service API §2.1). All predicates resolve
  * against the invoices table alone — `overdueOnly` / `outstandingOnly` are
@@ -52,6 +54,6 @@ final readonly class InvoiceListFilter
 
     public function todayOrNow(): string
     {
-        return $this->today ?? date('Y-m-d');
+        return $this->today ?? Jst::today();
     }
 }

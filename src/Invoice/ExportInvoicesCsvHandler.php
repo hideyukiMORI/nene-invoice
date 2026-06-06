@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use NeneInvoice\Support\Jst;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -24,7 +25,7 @@ final readonly class ExportInvoicesCsvHandler implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $csv      = $this->useCase->execute();
-        $filename = 'invoices-' . date('Y-m-d') . '.csv';
+        $filename = 'invoices-' . Jst::today() . '.csv';
         $stream   = $this->psr17->createStream($csv);
 
         return $this->psr17->createResponse(200)

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
-use DateTimeImmutable;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemResponse;
+use NeneInvoice\Support\Jst;
 
 /**
  * Serializes an {@see Invoice} to its snake_case JSON representation. Line items
@@ -65,6 +65,6 @@ final class InvoiceResponse
             return false;
         }
 
-        return $invoice->dueAt < (new DateTimeImmutable())->format('Y-m-d H:i:s');
+        return $invoice->dueAt < Jst::nowString();
     }
 }

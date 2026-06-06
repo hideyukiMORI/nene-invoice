@@ -10,6 +10,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -60,6 +61,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                         self::resolve($c, DocumentNumberGenerator::class),
                         self::resolve($c, TaxCalculator::class),
                         self::resolve($c, AuditRecorderInterface::class),
+                        self::resolve($c, ClockInterface::class),
                         $orgHolder,
                     );
                 },
@@ -69,6 +71,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 static fn (ContainerInterface $c): ChangeQuoteStatusUseCase => new ChangeQuoteStatusUseCase(
                     self::quotes($c),
                     self::resolve($c, AuditRecorderInterface::class),
+                    self::resolve($c, ClockInterface::class),
                     self::orgHolder($c),
                 ),
             )

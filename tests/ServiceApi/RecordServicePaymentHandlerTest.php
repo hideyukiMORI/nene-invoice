@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Payment\PaymentExceedsOutstandingException;
 use NeneInvoice\Payment\RecordPaymentUseCase;
 use NeneInvoice\ServiceApi\RecordServicePaymentHandler;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryPaymentRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -48,7 +49,7 @@ final class RecordServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new RecordServicePaymentHandler(
-            new RecordPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder(), $holder),
+            new RecordPaymentUseCase($this->payments, $this->invoices, new RecordingAuditRecorder(), new FixedClock(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );

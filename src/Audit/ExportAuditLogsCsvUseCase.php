@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Audit;
 
+use NeneInvoice\Support\Jst;
+
 /**
  * Assembles CSV bytes for the audit trail (filtered, newest first). UTF-8 BOM is
  * prepended so Excel opens the file without encoding issues. before/after are
@@ -42,7 +44,7 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
 
         foreach ($rows as $log) {
             fputcsv($handle, [
-                $log->createdAt,
+                $log->createdAt !== null ? Jst::dateTime($log->createdAt) : '',
                 $log->action,
                 $log->entityType,
                 $log->entityId,

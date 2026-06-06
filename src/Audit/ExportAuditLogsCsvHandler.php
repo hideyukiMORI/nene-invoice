@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Audit;
 
+use NeneInvoice\Support\Jst;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -26,7 +27,7 @@ final readonly class ExportAuditLogsCsvHandler implements RequestHandlerInterfac
     {
         $filter   = AuditLogFilterFactory::fromQueryParams($request->getQueryParams());
         $csv      = $this->useCase->execute($filter);
-        $filename = 'audit-logs-' . date('Y-m-d') . '.csv';
+        $filename = 'audit-logs-' . Jst::today() . '.csv';
         $stream   = $this->psr17->createStream($csv);
 
         return $this->psr17->createResponse(200)

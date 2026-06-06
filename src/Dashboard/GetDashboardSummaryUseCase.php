@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace NeneInvoice\Dashboard;
 
 use DateTimeImmutable;
+use Nene2\Http\ClockInterface;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
+use NeneInvoice\Support\Jst;
 
 /**
  * Assembles the dashboard summary: unpaid/overdue counts, outstanding balance,
@@ -18,37 +20,42 @@ final readonly class GetDashboardSummaryUseCase implements GetDashboardSummaryUs
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private PaymentRepositoryInterface $payments,
+        private ClockInterface $clock,
     ) {
     }
 
     public function execute(): DashboardSummary
     {
-        // All time boundaries follow the application timezone (deploy with
-        // TZ=Asia/Tokyo), consistent with how paid_at / due_at are written.
-        $nowDt = new DateTimeImmutable();
-        $now   = $nowDt->format('Y-m-d H:i:s');
-        $data  = $this->invoices->getDashboardData($now);
+        // Months are Japanese calendar months: boundaries are computed on the JST
+        // wall clock, then converted to the UTC values stored in instant columns
+        // (issued_at, paid_at) for range queries. The overdue check compares the
+        // JST-calendar due_at against the current JST day. (ADR 0010)
+        $nowJst = Jst::of($this->clock->now());
+        $now    = $nowJst->format('Y-m-d H:i:s');
+        $data   = $this->invoices->getDashboardData($now);
 
         $outstandingTotalCents = $this->payments->outstandingTotal();
 
-        $thisMonthStart = $nowDt->format('Y-m-01 00:00:00');
-        $nextMonthStart = $nowDt->modify('first day of next month')->format('Y-m-01 00:00:00');
-        $lastMonthStart = $nowDt->modify('first day of last month')->format('Y-m-01 00:00:00');
-        $thirtyDaysAgo  = $nowDt->modify('-30 days')->format('Y-m-d H:i:s');
+        $firstThisMonthJst = $nowJst->modify('first day of this month')->setTime(0, 0);
+        $thisMonthStart = Jst::toUtcString($firstThisMonthJst);
+        $nextMonthStart = Jst::toUtcString($firstThisMonthJst->modify('+1 month'));
+        $lastMonthStart = Jst::toUtcString($firstThisMonthJst->modify('-1 month'));
+        // Aging compares the JST-calendar due_at, so its boundary stays in JST.
+        $thirtyDaysAgo  = $nowJst->modify('-30 days')->format('Y-m-d H:i:s');
 
         $billedThisMonth = $this->invoices->billedTotalBetween($thisMonthStart, $nextMonthStart);
         $billedLastMonth = $this->invoices->billedTotalBetween($lastMonthStart, $thisMonthStart);
 
         // Prior-year same month (YoY hero).
-        $prevYearStart = $nowDt->modify('first day of this month')->modify('-1 year');
+        $prevYearStart = $firstThisMonthJst->modify('-1 year');
         $billedPrevYearMonth = $this->invoices->billedTotalBetween(
-            $prevYearStart->format('Y-m-01 00:00:00'),
-            $prevYearStart->modify('first day of next month')->format('Y-m-01 00:00:00'),
+            Jst::toUtcString($prevYearStart),
+            Jst::toUtcString($prevYearStart->modify('+1 month')),
         );
 
         // Daily cumulative pace — current month (1..today) and the full prior month.
-        $today = (int) $nowDt->format('j');
-        $prevMonthLen = (int) $nowDt->modify('first day of last month')->format('t');
+        $today = (int) $nowJst->format('j');
+        $prevMonthLen = (int) $firstThisMonthJst->modify('-1 month')->format('t');
         $dailyCurrent = $this->dailyCumulative(
             $this->invoices->billedRowsBetween($thisMonthStart, $nextMonthStart),
             $today,
@@ -68,7 +75,7 @@ final readonly class GetDashboardSummaryUseCase implements GetDashboardSummaryUs
             aging: $this->payments->agingBuckets($now, $thirtyDaysAgo),
             billedThisMonthCents: $billedThisMonth['cents'],
             billedLastMonthCents: $billedLastMonth['cents'],
-            monthlyBilled: $this->monthlyBilled($nowDt),
+            monthlyBilled: $this->monthlyBilled($firstThisMonthJst),
             billedPrevYearMonthCents: $billedPrevYearMonth['cents'],
             billedDailyCurrent: $dailyCurrent,
             billedDailyPrevMonth: $dailyPrev,
@@ -88,8 +95,9 @@ final readonly class GetDashboardSummaryUseCase implements GetDashboardSummaryUs
         $perDay = array_fill(1, max($daysCount, 1), 0);
 
         foreach ($rows as $row) {
-            $day = (int) substr($row['issued_at'], 8, 2);
-            if ($day >= 1 && $day <= $daysCount) {
+            // issued_at is stored in UTC; bucket by the JST calendar day.
+            $day = (int) Jst::of(new DateTimeImmutable($row['issued_at']))->format('j');
+            if ($day <= $daysCount) {
                 $perDay[$day] += $row['total_cents'];
             }
         }
@@ -105,21 +113,24 @@ final readonly class GetDashboardSummaryUseCase implements GetDashboardSummaryUs
     }
 
     /**
-     * Issued-invoice totals for the last 6 calendar months (oldest→newest).
+     * Issued-invoice totals for the last 6 JST calendar months (oldest→newest).
+     * Month boundaries are JST wall-clock times converted to the UTC issued_at
+     * values used by the range query (ADR 0010).
+     *
+     * @param DateTimeImmutable $firstThisMonthJst first day of this JST month (00:00 JST)
      *
      * @return list<array{month: string, billed_cents: int, count: int}>
      */
-    private function monthlyBilled(DateTimeImmutable $nowDt): array
+    private function monthlyBilled(DateTimeImmutable $firstThisMonthJst): array
     {
-        $firstOfThisMonth = $nowDt->modify('first day of this month')->setTime(0, 0, 0);
         $months = [];
 
         for ($k = 5; $k >= 0; --$k) {
-            $start  = $firstOfThisMonth->modify("-{$k} month");
+            $start  = $firstThisMonthJst->modify("-{$k} month");
             $end    = $start->modify('+1 month');
             $bucket = $this->invoices->billedTotalBetween(
-                $start->format('Y-m-d H:i:s'),
-                $end->format('Y-m-d H:i:s'),
+                Jst::toUtcString($start),
+                Jst::toUtcString($end),
             );
 
             $months[] = [

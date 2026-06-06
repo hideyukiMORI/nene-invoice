@@ -8,6 +8,7 @@ use Mpdf\Mpdf;
 use Mpdf\MpdfException;
 use NeneInvoice\LineItem\TaxBreakdownLine;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Support\Jst;
 use RuntimeException;
 
 /**
@@ -36,7 +37,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 
         $html = $this->buildHtml(
             invoiceNumber: $invoice->invoiceNumber ?? '（下書き）',
-            issuedAt: $invoice->issuedAt ? substr($invoice->issuedAt, 0, 10) : '—',
+            issuedAt: $invoice->issuedAt ? Jst::date($invoice->issuedAt) : '—',
             dueAt: $invoice->dueAt ? substr($invoice->dueAt, 0, 10) : '—',
             isQualified: $invoice->isQualifiedInvoice,
             clientName: $client->name,

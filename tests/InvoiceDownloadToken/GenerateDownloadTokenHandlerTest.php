@@ -11,6 +11,7 @@ use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\InvoiceDownloadToken\GenerateDownloadTokenHandler;
 use NeneInvoice\InvoiceDownloadToken\GenerateDownloadTokenUseCase;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryInvoiceDownloadTokenRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -44,7 +45,7 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
         ));
 
         $this->handler = new GenerateDownloadTokenHandler(
-            new GenerateDownloadTokenUseCase($this->invoices, $tokens, new RecordingAuditRecorder(), $this->holder),
+            new GenerateDownloadTokenUseCase($this->invoices, $tokens, new RecordingAuditRecorder(), new FixedClock(), $this->holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
         );
     }

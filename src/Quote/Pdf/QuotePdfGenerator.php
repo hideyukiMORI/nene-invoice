@@ -8,6 +8,7 @@ use Mpdf\Mpdf;
 use Mpdf\MpdfException;
 use NeneInvoice\LineItem\TaxBreakdownLine;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Support\Jst;
 use RuntimeException;
 
 /**
@@ -35,7 +36,7 @@ final readonly class QuotePdfGenerator
 
         $html = $this->buildHtml(
             quoteNumber: $quote->quoteNumber,
-            issuedAt: $quote->issuedAt ? substr($quote->issuedAt, 0, 10) : '—',
+            issuedAt: $quote->issuedAt ? Jst::date($quote->issuedAt) : '—',
             validUntil: $quote->validUntil ? substr($quote->validUntil, 0, 10) : '—',
             clientName: $client->name,
             clientAddress: $client->billingAddress ?? '',
