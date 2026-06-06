@@ -103,8 +103,11 @@
   .data-table tbody tr:nth-child(even) {
     background: var(--color-surface-overlay);
   }
+  /* Hover is a neutral tint — the accent-soft green is reserved for the keyboard
+     row cursor (.is-cursor), so a hovered row never reads as a selection (e.g. the
+     stationary pointer landing on a row after the in-place login swap). */
   .data-table tbody tr:hover {
-    background: var(--color-accent-soft);
+    background: var(--color-neutral-soft);
   }
 
   /* Case C — square status badge */
