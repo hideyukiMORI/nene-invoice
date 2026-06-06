@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use Nene2\Http\JsonResponseFactory;
+use Nene2\Http\PaginationQueryParser;
+use Nene2\Http\PaginationResponse;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -15,9 +17,6 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final readonly class ListClientsHandler implements RequestHandlerInterface
 {
-    private const DEFAULT_LIMIT = 20;
-    private const MAX_LIMIT = 100;
-
     public function __construct(
         private ListClientsUseCase $useCase,
         private JsonResponseFactory $json,
@@ -26,13 +25,8 @@ final readonly class ListClientsHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        $pagination = PaginationQueryParser::parse($request);
         $query = $request->getQueryParams();
-
-        $limit = isset($query['limit']) && is_numeric($query['limit']) ? (int) $query['limit'] : self::DEFAULT_LIMIT;
-        $limit = max(1, min(self::MAX_LIMIT, $limit));
-
-        $offset = isset($query['offset']) && is_numeric($query['offset']) ? (int) $query['offset'] : 0;
-        $offset = max(0, $offset);
 
         $searchValue = $query['q'] ?? null;
         $search      = is_string($searchValue) && trim($searchValue) !== '' ? trim($searchValue) : null;
@@ -43,13 +37,13 @@ final readonly class ListClientsHandler implements RequestHandlerInterface
             is_string($orderValue) ? $orderValue : null,
         );
 
-        $result = $this->useCase->executeAdmin(new ClientListFilter($search), $sort, $limit, $offset);
+        $result = $this->useCase->executeAdmin(new ClientListFilter($search), $sort, $pagination->limit, $pagination->offset);
 
-        return $this->json->create([
-            'items' => array_map(static fn (Client $c): array => ClientResponse::toArray($c), $result->items),
-            'total' => $result->total,
-            'limit' => $limit,
-            'offset' => $offset,
-        ]);
+        return $this->json->create((new PaginationResponse(
+            items: array_map(static fn (Client $c): array => ClientResponse::toArray($c), $result->items),
+            limit: $pagination->limit,
+            offset: $pagination->offset,
+            total: $result->total,
+        ))->toArray());
     }
 }
