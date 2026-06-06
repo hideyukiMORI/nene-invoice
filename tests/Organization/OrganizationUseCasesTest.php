@@ -11,6 +11,7 @@ use NeneInvoice\Organization\GetOrganizationByIdUseCase;
 use NeneInvoice\Organization\ListOrganizationsUseCase;
 use NeneInvoice\Organization\OrganizationNotFoundException;
 use NeneInvoice\Organization\OrganizationSlugConflictException;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryOrganizationRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
@@ -28,7 +29,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_create_persists_returns_with_id_and_audits(): void
     {
-        $useCase = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $useCase = new CreateOrganizationUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
 
         $org = $useCase->execute(1, new CreateOrganizationInput('Acme', 'acme'));
 
@@ -44,7 +45,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_create_rejects_duplicate_slug(): void
     {
-        $useCase = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $useCase = new CreateOrganizationUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
         $useCase->execute(1, new CreateOrganizationInput('First', 'dup'));
 
         $this->expectException(OrganizationSlugConflictException::class);
@@ -53,7 +54,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_list_returns_items_and_total(): void
     {
-        $create = new CreateOrganizationUseCase($this->repo, $this->audit);
+        $create = new CreateOrganizationUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
         $create->execute(1, new CreateOrganizationInput('A', 'a'));
         $create->execute(1, new CreateOrganizationInput('B', 'b'));
 
@@ -65,7 +66,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_get_returns_organization_or_throws(): void
     {
-        $id = (new CreateOrganizationUseCase($this->repo, $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
+        $id = (new CreateOrganizationUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
         self::assertNotNull($id);
 
         $get = new GetOrganizationByIdUseCase($this->repo);
@@ -77,10 +78,10 @@ final class OrganizationUseCasesTest extends TestCase
 
     public function test_delete_removes_audits_and_throws_when_missing(): void
     {
-        $id = (new CreateOrganizationUseCase($this->repo, $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
+        $id = (new CreateOrganizationUseCase(new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit))->execute(1, new CreateOrganizationInput('A', 'a'))->id;
         self::assertNotNull($id);
 
-        $delete = new DeleteOrganizationUseCase($this->repo, $this->audit);
+        $delete = new DeleteOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
         $delete->execute(1, $id);
         self::assertSame(0, $this->repo->count());
         self::assertSame('organization.deleted', $this->audit->records[1]['action']);

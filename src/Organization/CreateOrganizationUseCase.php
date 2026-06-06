@@ -4,35 +4,47 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Organization;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class CreateOrganizationUseCase implements CreateOrganizationUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface $organizationsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
+     */
     public function __construct(
-        private OrganizationRepositoryInterface $organizations,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $organizationsFactory,
+        private Closure $auditFactory,
     ) {
     }
 
     /** @throws OrganizationSlugConflictException */
     public function execute(?int $actorUserId, CreateOrganizationInput $input): Organization
     {
-        $id = $this->organizations->save(new Organization(
-            name: $input->name,
-            slug: $input->slug,
-            plan: $input->plan,
-            isActive: true,
-        ));
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input): Organization {
+            $organizations = ($this->organizationsFactory)($exec);
 
-        $created = $this->organizations->findById($id);
+            $id = $organizations->save(new Organization(
+                name: $input->name,
+                slug: $input->slug,
+                plan: $input->plan,
+                isActive: true,
+            ));
 
-        if ($created === null) {
-            throw new LogicException('Organization disappeared immediately after creation.');
-        }
+            $created = $organizations->findById($id);
 
-        $this->audit->record($actorUserId, $id, 'organization.created', 'organization', $id, null, OrganizationResponse::toArray($created));
+            if ($created === null) {
+                throw new LogicException('Organization disappeared immediately after creation.');
+            }
 
-        return $created;
+            ($this->auditFactory)($exec)->record($actorUserId, $id, 'organization.created', 'organization', $id, null, OrganizationResponse::toArray($created));
+
+            return $created;
+        });
     }
 }

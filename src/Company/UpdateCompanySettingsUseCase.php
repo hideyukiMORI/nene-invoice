@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Company;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
@@ -12,11 +15,15 @@ use NeneInvoice\Compliance\RegistrationNumber;
 final readonly class UpdateCompanySettingsUseCase implements UpdateCompanySettingsUseCaseInterface
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): CompanySettingsRepositoryInterface $repositoryFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private CompanySettingsRepositoryInterface $repository,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $repositoryFactory,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -35,40 +42,44 @@ final readonly class UpdateCompanySettingsUseCase implements UpdateCompanySettin
         $organizationId = $this->orgId->get();
         $existing = $this->repository->find();
 
-        $this->repository->save(new CompanySettings(
-            organizationId: $organizationId,
-            legalName: $input->legalName,
-            address: $input->address,
-            phone: $input->phone,
-            email: $input->email,
-            registrationNumber: $input->registrationNumber,
-            bankName: $input->bankName,
-            bankBranch: $input->bankBranch,
-            accountType: $input->accountType,
-            accountNumber: $input->accountNumber,
-            logoUrl: $input->logoUrl,
-            defaultQuoteValidityDays: $input->defaultQuoteValidityDays,
-            defaultPaymentClosingDay: $input->defaultPaymentClosingDay,
-            defaultPaymentMonthOffset: $input->defaultPaymentMonthOffset,
-            defaultPaymentPayDay: $input->defaultPaymentPayDay,
-        ));
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $organizationId, $input, $existing): CompanySettings {
+            $repository = ($this->repositoryFactory)($exec);
 
-        $saved = $this->repository->find();
+            $repository->save(new CompanySettings(
+                organizationId: $organizationId,
+                legalName: $input->legalName,
+                address: $input->address,
+                phone: $input->phone,
+                email: $input->email,
+                registrationNumber: $input->registrationNumber,
+                bankName: $input->bankName,
+                bankBranch: $input->bankBranch,
+                accountType: $input->accountType,
+                accountNumber: $input->accountNumber,
+                logoUrl: $input->logoUrl,
+                defaultQuoteValidityDays: $input->defaultQuoteValidityDays,
+                defaultPaymentClosingDay: $input->defaultPaymentClosingDay,
+                defaultPaymentMonthOffset: $input->defaultPaymentMonthOffset,
+                defaultPaymentPayDay: $input->defaultPaymentPayDay,
+            ));
 
-        if ($saved === null) {
-            throw new LogicException('Company settings disappeared immediately after save.');
-        }
+            $saved = $repository->find();
 
-        $this->audit->record(
-            $actorUserId,
-            $organizationId,
-            $existing === null ? 'company_settings.created' : 'company_settings.updated',
-            'company_settings',
-            $organizationId,
-            $existing !== null ? CompanySettingsResponse::toArray($existing) : null,
-            CompanySettingsResponse::toArray($saved),
-        );
+            if ($saved === null) {
+                throw new LogicException('Company settings disappeared immediately after save.');
+            }
 
-        return $saved;
+            ($this->auditFactory)($exec)->record(
+                $actorUserId,
+                $organizationId,
+                $existing === null ? 'company_settings.created' : 'company_settings.updated',
+                'company_settings',
+                $organizationId,
+                $existing !== null ? CompanySettingsResponse::toArray($existing) : null,
+                CompanySettingsResponse::toArray($saved),
+            );
+
+            return $saved;
+        });
     }
 }

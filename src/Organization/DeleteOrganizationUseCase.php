@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Organization;
 
+use Closure;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class DeleteOrganizationUseCase implements DeleteOrganizationUseCaseInterface
 {
+    /**
+     * @param Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface $organizationsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
+     */
     public function __construct(
         private OrganizationRepositoryInterface $organizations,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $organizationsFactory,
+        private Closure $auditFactory,
     ) {
     }
 
@@ -23,8 +32,12 @@ final readonly class DeleteOrganizationUseCase implements DeleteOrganizationUseC
             throw new OrganizationNotFoundException($id);
         }
 
-        $this->organizations->delete($id);
+        $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $id, $existing): null {
+            ($this->organizationsFactory)($exec)->delete($id);
 
-        $this->audit->record($actorUserId, $id, 'organization.deleted', 'organization', $id, OrganizationResponse::toArray($existing), null);
+            ($this->auditFactory)($exec)->record($actorUserId, $id, 'organization.deleted', 'organization', $id, OrganizationResponse::toArray($existing), null);
+
+            return null;
+        });
     }
 }
