@@ -46,5 +46,6 @@ export function toInvoiceWithLines(dto: InvoiceWithLinesDto): InvoiceWithLines {
   return {
     ...toInvoice(dto),
     line_items: (dto.line_items ?? []).map(toLineItem),
+    notes: dto.notes ?? null,
   }
 }

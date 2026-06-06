@@ -70,6 +70,7 @@ export interface LineItem {
 
 export interface InvoiceWithLines extends Invoice {
   line_items: LineItem[]
+  notes: string | null
 }
 
 /** One line as submitted on create (no derived/server fields). */

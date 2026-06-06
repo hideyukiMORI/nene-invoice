@@ -3,6 +3,7 @@ import {
   invoiceStatusTone,
   useDownloadInvoicePdf,
   useSendInvoiceEmail,
+  type CreateInvoiceInput,
   type InvoiceId,
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
@@ -56,6 +57,22 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
 
   const invoice = state.invoice
 
+  // Duplicate (#316): seed a fresh create form with this invoice's client,
+  // notes, and lines (always available regardless of status).
+  const duplicate = (): void => {
+    const snapshot: CreateInvoiceInput = {
+      client_id: invoice.client_id,
+      notes: invoice.notes,
+      line_items: invoice.line_items.map((line) => ({
+        description: line.description,
+        quantity: line.quantity,
+        unit_price_cents: line.unit_price_cents,
+        tax_rate_bps: line.tax_rate_bps,
+      })),
+    }
+    void navigate('/invoices/new', { state: { duplicate: snapshot } })
+  }
+
   // 型3 success toast on send; reused by the 型2 "resend" recovery action.
   const sendInvoiceEmail = () => {
     sendEmail.mutate(invoiceId, {
@@ -83,6 +100,9 @@ export function ViewInvoice({ invoiceId }: ViewInvoiceProps) {
             {invoice.invoice_number ?? t('admin.invoices.detail.notIssued')}
           </Text>
           <div className="flex flex-wrap items-start gap-inline-sm">
+            <Button variant="ghost" onClick={duplicate}>
+              {t('admin.invoices.detail.duplicate')}
+            </Button>
             {pdf.canDownload && (
               <Button onClick={pdf.download} disabled={pdf.isDownloading}>
                 {pdf.isDownloading

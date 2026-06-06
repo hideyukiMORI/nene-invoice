@@ -1,5 +1,10 @@
-import { Link } from 'react-router-dom'
-import { quoteStatusTone, useDownloadQuotePdf, type QuoteId } from '@/entities/quote'
+import { Link, useNavigate } from 'react-router-dom'
+import {
+  quoteStatusTone,
+  useDownloadQuotePdf,
+  type CreateQuoteInput,
+  type QuoteId,
+} from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { formatYen } from '@/shared/lib/format-money'
 import {
@@ -21,6 +26,7 @@ export interface ViewQuoteProps {
 
 export function ViewQuote({ quoteId }: ViewQuoteProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const state = useViewQuote(quoteId)
   const quoteNumber = state.kind === 'ready' ? state.quote.quote_number : ''
   const pdf = useDownloadQuotePdf(quoteId, quoteNumber)
@@ -42,6 +48,23 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
   const quote = state.quote
   const busy = state.isStatusPending || state.isConverting
 
+  // Duplicate (#316): seed a fresh create form with this quote's client, notes,
+  // and lines. valid_until is not copied (falls back to the issuer default).
+  const duplicate = (): void => {
+    const snapshot: CreateQuoteInput = {
+      client_id: quote.client_id,
+      valid_until: null,
+      notes: quote.notes,
+      line_items: quote.line_items.map((line) => ({
+        description: line.description,
+        quantity: line.quantity,
+        unit_price_cents: line.unit_price_cents,
+        tax_rate_bps: line.tax_rate_bps,
+      })),
+    }
+    void navigate('/quotes/new', { state: { duplicate: snapshot } })
+  }
+
   return (
     <Stack gap="lg">
       <Stack gap="sm">
@@ -57,6 +80,9 @@ export function ViewQuote({ quoteId }: ViewQuoteProps) {
               {pdf.isDownloading
                 ? t('admin.quotes.detail.downloadingPdf')
                 : t('admin.quotes.detail.downloadPdf')}
+            </Button>
+            <Button variant="ghost" onClick={duplicate}>
+              {t('admin.quotes.detail.duplicate')}
             </Button>
             {state.canSend && (
               <Button

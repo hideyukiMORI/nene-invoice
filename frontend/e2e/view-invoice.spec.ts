@@ -13,7 +13,16 @@ const ISSUED_INVOICE = {
   tax_cents: 10000,
   total_cents: 110000,
   issued_at: '2026-05-01',
-  line_items: [],
+  notes: '初回請求',
+  line_items: [
+    {
+      description: '初期設定費',
+      quantity: 1,
+      unit_price_cents: 80000,
+      tax_rate_bps: 1000,
+      line_subtotal_cents: 80000,
+    },
+  ],
 }
 
 /** Reaches /invoices/1 through login → invoices list → the invoice-number link. */
@@ -48,6 +57,29 @@ test.describe('View invoice', () => {
 
     await expect(page.getByText('/invoices/download/abc123', { exact: false })).toBeVisible()
     await expect(page.getByRole('button', { name: 'コピー' })).toBeVisible()
+  })
+
+  test('duplicates an invoice into a prefilled create form', async ({ page }) => {
+    await page.route('**/admin/clients*', (route) =>
+      route.fulfill(
+        json({
+          items: [{ id: 5, organization_id: 1, name: '得意先ABC', name_kana: null }],
+          total: 1,
+          limit: 100,
+          offset: 0,
+        }),
+      ),
+    )
+    await page.route('**/admin/line-items/suggestions*', (route) =>
+      route.fulfill(json({ items: [] })),
+    )
+
+    await page.getByRole('button', { name: 'この内容で複製' }).click()
+
+    await expect(page).toHaveURL(/\/invoices\/new$/)
+    await expect(page.locator('#line-0-description')).toHaveValue('初期設定費')
+    await expect(page.locator('#line-0-unit')).toHaveValue('80000')
+    await expect(page.locator('#client_id')).toHaveValue('得意先ABC')
   })
 
   test('shows an error when link generation fails', async ({ page }) => {
