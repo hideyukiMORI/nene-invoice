@@ -105,6 +105,25 @@ describe('KeyboardShortcuts', () => {
     expect(document.activeElement).not.toBe(search)
   })
 
+  it('blurs any focused form field on Esc, not just search (#364)', () => {
+    const { container } = renderWithProviders(
+      <>
+        <KeyboardShortcuts />
+        <input id="plain" />
+        <textarea id="notes" />
+      </>,
+    )
+    const plain = container.querySelector('#plain') as HTMLInputElement
+    plain.focus()
+    fireEvent.keyDown(plain, { key: 'Escape' })
+    expect(document.activeElement).not.toBe(plain)
+
+    const notes = container.querySelector('#notes') as HTMLTextAreaElement
+    notes.focus()
+    fireEvent.keyDown(notes, { key: 'Escape' })
+    expect(document.activeElement).not.toBe(notes)
+  })
+
   it('keeps focus on Esc while composing in the search field (IME cancel) (#362)', () => {
     const { container } = renderWithProviders(
       <>
