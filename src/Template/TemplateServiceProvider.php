@@ -6,6 +6,7 @@ namespace NeneInvoice\Template;
 
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
@@ -14,6 +15,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\PdoLineItemRepository;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -40,8 +42,28 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
             )
             ->set(ListTemplatesUseCase::class, static fn (ContainerInterface $c): ListTemplatesUseCase => new ListTemplatesUseCase(self::repository($c)))
             ->set(GetTemplateByIdUseCase::class, static fn (ContainerInterface $c): GetTemplateByIdUseCase => new GetTemplateByIdUseCase(self::repository($c), self::lineItems($c)))
-            ->set(CreateTemplateUseCase::class, static fn (ContainerInterface $c): CreateTemplateUseCase => new CreateTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
-            ->set(UpdateTemplateUseCase::class, static fn (ContainerInterface $c): UpdateTemplateUseCase => new UpdateTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
+            ->set(CreateTemplateUseCase::class, static function (ContainerInterface $c): CreateTemplateUseCase {
+                $orgHolder = self::orgHolder($c);
+
+                return new CreateTemplateUseCase(
+                    self::resolve($c, DatabaseTransactionManagerInterface::class),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    self::audit($c),
+                    $orgHolder,
+                );
+            })
+            ->set(UpdateTemplateUseCase::class, static function (ContainerInterface $c): UpdateTemplateUseCase {
+                $orgHolder = self::orgHolder($c);
+
+                return new UpdateTemplateUseCase(
+                    self::resolve($c, DatabaseTransactionManagerInterface::class),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    self::audit($c),
+                    $orgHolder,
+                );
+            })
             ->set(DeleteTemplateUseCase::class, static fn (ContainerInterface $c): DeleteTemplateUseCase => new DeleteTemplateUseCase(self::repository($c), self::lineItems($c), self::audit($c), self::orgHolder($c)))
             ->set(
                 ListTemplatesHandler::class,

@@ -6,6 +6,7 @@ namespace NeneInvoice\Quote;
 
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
@@ -17,6 +18,7 @@ use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\PdoLineItemRepository;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Quote\Pdf\QuotePdfGenerator;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -46,16 +48,21 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             ->set(TaxCalculator::class, static fn (ContainerInterface $c): TaxCalculator => new TaxCalculator())
             ->set(
                 CreateQuoteUseCase::class,
-                static fn (ContainerInterface $c): CreateQuoteUseCase => new CreateQuoteUseCase(
-                    self::quotes($c),
-                    self::resolve($c, LineItemRepositoryInterface::class),
-                    self::resolve($c, ClientRepositoryInterface::class),
-                    self::resolve($c, CompanySettingsRepositoryInterface::class),
-                    self::resolve($c, DocumentNumberGenerator::class),
-                    self::resolve($c, TaxCalculator::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): CreateQuoteUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new CreateQuoteUseCase(
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        self::resolve($c, ClientRepositoryInterface::class),
+                        self::resolve($c, CompanySettingsRepositoryInterface::class),
+                        self::resolve($c, DocumentNumberGenerator::class),
+                        self::resolve($c, TaxCalculator::class),
+                        self::resolve($c, AuditRecorderInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 ChangeQuoteStatusUseCase::class,

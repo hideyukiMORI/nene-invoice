@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Template;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItem;
@@ -14,63 +17,79 @@ use NeneInvoice\LineItem\LineItemRepositoryInterface;
 final readonly class UpdateTemplateUseCase
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
-        private TemplateRepositoryInterface $templates,
-        private LineItemRepositoryInterface $lineItems,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $templatesFactory,
+        private Closure $lineItemsFactory,
         private AuditRecorderInterface $audit,
         private RequestScopedHolder $orgId,
     ) {
     }
 
     /**
-     * Updates a template (header + line presets) in the resolved organization.
+     * Updates a template (header + line presets) atomically in the resolved
+     * organization.
      *
      * @throws TemplateNotFoundException
      */
     public function execute(?int $actorUserId, int $id, UpdateTemplateInput $input): TemplateWithLines
     {
-        $existing = $this->templates->findById($id);
-        if ($existing === null) {
-            throw new TemplateNotFoundException($id);
-        }
+        /** @var array<string, mixed> $before */
+        $before = [];
 
-        $before = TemplateResponse::toArray($existing, $this->lineItems->findByParent(LineItemParent::Template, $id));
+        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $id,
+            $input,
+            &$before,
+        ): TemplateWithLines {
+            $templates = ($this->templatesFactory)($exec);
+            $lineItems = ($this->lineItemsFactory)($exec);
 
-        $this->templates->update(new Template(
-            organizationId: $existing->organizationId,
-            name: $input->name,
-            notes: $input->notes,
-            isDeleted: false,
-            id: $existing->id,
-            createdAt: $existing->createdAt,
-            updatedAt: $existing->updatedAt,
-        ));
+            $existing = $templates->findById($id);
+            if ($existing === null) {
+                throw new TemplateNotFoundException($id);
+            }
 
-        $entities = [];
-        foreach ($input->lines as $index => $line) {
-            $entities[] = new LineItem(
-                parentType: LineItemParent::Template,
-                parentId: $id,
-                description: $line->description,
-                quantity: $line->quantity,
-                unitPriceCents: $line->unitPriceCents,
-                taxRateBps: $line->taxRateBps,
-                sortOrder: $index,
-            );
-        }
-        $this->lineItems->replaceForParent(LineItemParent::Template, $id, $entities);
+            $before = TemplateResponse::toArray($existing, $lineItems->findByParent(LineItemParent::Template, $id));
 
-        $updated = $this->templates->findById($id);
-        if ($updated === null) {
-            throw new LogicException('Template disappeared immediately after update.');
-        }
+            $templates->update(new Template(
+                organizationId: $existing->organizationId,
+                name: $input->name,
+                notes: $input->notes,
+                isDeleted: false,
+                id: $existing->id,
+                createdAt: $existing->createdAt,
+                updatedAt: $existing->updatedAt,
+            ));
 
-        $lines = $this->lineItems->findByParent(LineItemParent::Template, $id);
+            $entities = [];
+            foreach ($input->lines as $index => $line) {
+                $entities[] = new LineItem(
+                    parentType: LineItemParent::Template,
+                    parentId: $id,
+                    description: $line->description,
+                    quantity: $line->quantity,
+                    unitPriceCents: $line->unitPriceCents,
+                    taxRateBps: $line->taxRateBps,
+                    sortOrder: $index,
+                );
+            }
+            $lineItems->replaceForParent(LineItemParent::Template, $id, $entities);
 
-        $this->audit->record($actorUserId, $this->orgId->get(), 'template.updated', 'template', $id, $before, TemplateResponse::toArray($updated, $lines));
+            $updated = $templates->findById($id);
+            if ($updated === null) {
+                throw new LogicException('Template disappeared immediately after update.');
+            }
 
-        return new TemplateWithLines($updated, $lines);
+            return new TemplateWithLines($updated, $lineItems->findByParent(LineItemParent::Template, $id));
+        });
+
+        $this->audit->record($actorUserId, $this->orgId->get(), 'template.updated', 'template', $id, $before, TemplateResponse::toArray($result->template, $result->lines));
+
+        return $result;
     }
 }

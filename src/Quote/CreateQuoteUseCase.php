@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
+use Closure;
 use DateTimeImmutable;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
@@ -19,8 +22,13 @@ use NeneInvoice\LineItem\TaxCalculator;
 
 /**
  * Creates a draft quote: validates the client and lines, computes totals
- * (TaxCalculator, ADR 0004), allocates a quote number, persists the header and
- * line items, and records an audit entry.
+ * (TaxCalculator, ADR 0004), allocates a quote number, then persists the header
+ * and line items **atomically** (one transaction) and records an audit entry.
+ *
+ * The header + line writes run inside {@see DatabaseTransactionManagerInterface},
+ * so the repositories are rebuilt from the transaction-bound executor via the
+ * injected factories (a pre-built repository would use a different connection and
+ * escape the transaction). Reads/validation and audit stay outside.
  */
 final readonly class CreateQuoteUseCase
 {
@@ -28,11 +36,14 @@ final readonly class CreateQuoteUseCase
     private const ALLOWED_TAX_RATES_BPS = [800, 1000];
 
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): QuoteRepositoryInterface $quotesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
-        private QuoteRepositoryInterface $quotes,
-        private LineItemRepositoryInterface $lineItems,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $quotesFactory,
+        private Closure $lineItemsFactory,
         private ClientRepositoryInterface $clients,
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
@@ -80,43 +91,54 @@ final readonly class CreateQuoteUseCase
         $validUntil = $input->validUntil
             ?? $this->companySettings->find()?->quoteValidUntilFrom(new DateTimeImmutable('today'));
 
-        $quoteId = $this->quotes->save(new Quote(
-            organizationId: $organizationId,
-            clientId: $input->clientId,
-            quoteNumber: $number,
-            status: QuoteStatus::Draft,
-            subtotalCents: $totals->subtotalCents,
-            taxCents: $totals->taxCents,
-            totalCents: $totals->totalCents,
-            validUntil: $validUntil,
-            notes: $input->notes,
-        ));
+        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $organizationId,
+            $input,
+            $number,
+            $totals,
+            $validUntil,
+        ): QuoteWithLines {
+            $quotes    = ($this->quotesFactory)($exec);
+            $lineItems = ($this->lineItemsFactory)($exec);
 
-        $lineEntities = [];
-        foreach ($input->lines as $index => $line) {
-            $lineEntities[] = new LineItem(
-                parentType: LineItemParent::Quote,
-                parentId: $quoteId,
-                description: $line->description,
-                quantity: $line->quantity,
-                unitPriceCents: $line->unitPriceCents,
-                taxRateBps: $line->taxRateBps,
-                sortOrder: $index,
-            );
-        }
+            $quoteId = $quotes->save(new Quote(
+                organizationId: $organizationId,
+                clientId: $input->clientId,
+                quoteNumber: $number,
+                status: QuoteStatus::Draft,
+                subtotalCents: $totals->subtotalCents,
+                taxCents: $totals->taxCents,
+                totalCents: $totals->totalCents,
+                validUntil: $validUntil,
+                notes: $input->notes,
+            ));
 
-        $this->lineItems->replaceForParent(LineItemParent::Quote, $quoteId, $lineEntities);
+            $lineEntities = [];
+            foreach ($input->lines as $index => $line) {
+                $lineEntities[] = new LineItem(
+                    parentType: LineItemParent::Quote,
+                    parentId: $quoteId,
+                    description: $line->description,
+                    quantity: $line->quantity,
+                    unitPriceCents: $line->unitPriceCents,
+                    taxRateBps: $line->taxRateBps,
+                    sortOrder: $index,
+                );
+            }
 
-        $saved = $this->quotes->findById($quoteId);
+            $lineItems->replaceForParent(LineItemParent::Quote, $quoteId, $lineEntities);
 
-        if ($saved === null) {
-            throw new LogicException('Quote disappeared immediately after creation.');
-        }
+            $saved = $quotes->findById($quoteId);
 
-        $lines = $this->lineItems->findByParent(LineItemParent::Quote, $quoteId);
+            if ($saved === null) {
+                throw new LogicException('Quote disappeared immediately after creation.');
+            }
 
-        $this->audit->record($actorUserId, $organizationId, 'quote.created', 'quote', $quoteId, null, QuoteResponse::toArray($saved, $lines));
+            return new QuoteWithLines($saved, $lineItems->findByParent(LineItemParent::Quote, $quoteId));
+        });
 
-        return new QuoteWithLines($saved, $lines);
+        $this->audit->record($actorUserId, $organizationId, 'quote.created', 'quote', $result->quote->id, null, QuoteResponse::toArray($result->quote, $result->lines));
+
+        return $result;
     }
 }

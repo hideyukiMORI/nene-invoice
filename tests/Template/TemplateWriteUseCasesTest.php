@@ -15,6 +15,7 @@ use NeneInvoice\Template\Template;
 use NeneInvoice\Template\TemplateNotFoundException;
 use NeneInvoice\Template\UpdateTemplateInput;
 use NeneInvoice\Template\UpdateTemplateUseCase;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryTemplateRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
@@ -104,7 +105,7 @@ final class TemplateWriteUseCasesTest extends TestCase
 
     private function create(): CreateTemplateUseCase
     {
-        return new CreateTemplateUseCase($this->templates, $this->lines, $this->audit, $this->holder);
+        return new CreateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, $this->audit, $this->holder);
     }
 
     private function get(): GetTemplateByIdUseCase
@@ -114,7 +115,7 @@ final class TemplateWriteUseCasesTest extends TestCase
 
     private function update(): UpdateTemplateUseCase
     {
-        return new UpdateTemplateUseCase($this->templates, $this->lines, $this->audit, $this->holder);
+        return new UpdateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, $this->audit, $this->holder);
     }
 
     private function delete(): DeleteTemplateUseCase

@@ -6,6 +6,7 @@ namespace NeneInvoice\Invoice;
 
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
@@ -18,6 +19,7 @@ use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\PdoLineItemRepository;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Mailer\MailerInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
@@ -48,24 +50,34 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 ConvertQuoteToInvoiceUseCase::class,
-                static fn (ContainerInterface $c): ConvertQuoteToInvoiceUseCase => new ConvertQuoteToInvoiceUseCase(
-                    self::resolve($c, QuoteRepositoryInterface::class),
-                    self::resolve($c, InvoiceRepositoryInterface::class),
-                    self::resolve($c, LineItemRepositoryInterface::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): ConvertQuoteToInvoiceUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new ConvertQuoteToInvoiceUseCase(
+                        self::resolve($c, QuoteRepositoryInterface::class),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        self::resolve($c, AuditRecorderInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 CreateInvoiceUseCase::class,
-                static fn (ContainerInterface $c): CreateInvoiceUseCase => new CreateInvoiceUseCase(
-                    self::resolve($c, InvoiceRepositoryInterface::class),
-                    self::resolve($c, LineItemRepositoryInterface::class),
-                    self::resolve($c, ClientRepositoryInterface::class),
-                    self::resolve($c, TaxCalculator::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): CreateInvoiceUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new CreateInvoiceUseCase(
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        self::resolve($c, ClientRepositoryInterface::class),
+                        self::resolve($c, TaxCalculator::class),
+                        self::resolve($c, AuditRecorderInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 IssueInvoiceUseCase::class,

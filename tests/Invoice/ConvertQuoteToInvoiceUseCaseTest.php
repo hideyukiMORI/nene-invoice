@@ -13,6 +13,7 @@ use NeneInvoice\Quote\Quote;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteStatus;
 use NeneInvoice\Quote\QuoteValidationException;
+use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
@@ -37,7 +38,7 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->lineItems = new InMemoryLineItemRepository();
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, $this->invoices, $this->lineItems, $this->audit, $this->holder);
+        $this->useCase = new ConvertQuoteToInvoiceUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->invoices, fn () => $this->lineItems, $this->audit, $this->holder);
     }
 
     private function quote(QuoteStatus $status): int

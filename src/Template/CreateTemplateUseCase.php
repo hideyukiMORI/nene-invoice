@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Template;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItem;
@@ -14,39 +17,50 @@ use NeneInvoice\LineItem\LineItemRepositoryInterface;
 final readonly class CreateTemplateUseCase
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
-        private TemplateRepositoryInterface $templates,
-        private LineItemRepositoryInterface $lineItems,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $templatesFactory,
+        private Closure $lineItemsFactory,
         private AuditRecorderInterface $audit,
         private RequestScopedHolder $orgId,
     ) {
     }
 
-    /** Creates a template (header + line presets) in the resolved organization. */
+    /** Creates a template (header + line presets) atomically in the resolved organization. */
     public function execute(?int $actorUserId, CreateTemplateInput $input): TemplateWithLines
     {
         $organizationId = $this->orgId->get();
 
-        $id = $this->templates->save(new Template(
-            organizationId: $organizationId,
-            name: $input->name,
-            notes: $input->notes,
-        ));
+        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $organizationId,
+            $input,
+        ): TemplateWithLines {
+            $templates = ($this->templatesFactory)($exec);
+            $lineItems = ($this->lineItemsFactory)($exec);
 
-        $this->lineItems->replaceForParent(LineItemParent::Template, $id, self::toLineEntities($id, $input->lines));
+            $id = $templates->save(new Template(
+                organizationId: $organizationId,
+                name: $input->name,
+                notes: $input->notes,
+            ));
 
-        $created = $this->templates->findById($id);
-        if ($created === null) {
-            throw new LogicException('Template disappeared immediately after creation.');
-        }
+            $lineItems->replaceForParent(LineItemParent::Template, $id, self::toLineEntities($id, $input->lines));
 
-        $lines = $this->lineItems->findByParent(LineItemParent::Template, $id);
+            $created = $templates->findById($id);
+            if ($created === null) {
+                throw new LogicException('Template disappeared immediately after creation.');
+            }
 
-        $this->audit->record($actorUserId, $organizationId, 'template.created', 'template', $id, null, TemplateResponse::toArray($created, $lines));
+            return new TemplateWithLines($created, $lineItems->findByParent(LineItemParent::Template, $id));
+        });
 
-        return new TemplateWithLines($created, $lines);
+        $this->audit->record($actorUserId, $organizationId, 'template.created', 'template', $result->template->id, null, TemplateResponse::toArray($result->template, $result->lines));
+
+        return $result;
     }
 
     /**
