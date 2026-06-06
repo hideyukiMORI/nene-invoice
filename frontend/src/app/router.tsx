@@ -12,6 +12,9 @@ import { ItemCreatePage } from '@/pages/item-create'
 import { ItemEditPage } from '@/pages/item-edit'
 import { ItemsPage } from '@/pages/items'
 import { QuoteCreatePage } from '@/pages/quote-create'
+import { TemplateCreatePage } from '@/pages/template-create'
+import { TemplateEditPage } from '@/pages/template-edit'
+import { TemplatesPage } from '@/pages/templates'
 import { QuoteDetailPage } from '@/pages/quote-detail'
 import { QuotesPage } from '@/pages/quotes'
 import { InvoiceDetailPage } from '@/pages/invoice-detail'
@@ -39,6 +42,9 @@ const router = createBrowserRouter([
       { path: 'quotes', element: <QuotesPage /> },
       { path: 'quotes/new', element: <QuoteCreatePage /> },
       { path: 'quotes/:id', element: <QuoteDetailPage /> },
+      { path: 'templates', element: <TemplatesPage /> },
+      { path: 'templates/new', element: <TemplateCreatePage /> },
+      { path: 'templates/:id/edit', element: <TemplateEditPage /> },
       { path: 'settings', element: <CompanySettingsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'users/new', element: <UserCreatePage /> },

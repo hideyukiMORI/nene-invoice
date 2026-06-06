@@ -110,6 +110,17 @@ export const handlers = [
     }),
   ),
 
+  http.get('/admin/templates', () =>
+    HttpResponse.json({
+      items: [
+        { id: 1, organization_id: 1, name: '月次保守テンプレート', notes: '毎月', line_items: [] },
+      ],
+      total: 1,
+      limit: 50,
+      offset: 0,
+    }),
+  ),
+
   http.get('/admin/quotes', () => HttpResponse.json({ items: [], total: 0, limit: 20, offset: 0 })),
 
   http.post('/admin/quotes', () =>

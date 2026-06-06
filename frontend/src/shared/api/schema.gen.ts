@@ -333,6 +333,49 @@ export interface paths {
         patch: operations["updateItem"];
         trace?: never;
     };
+    "/admin/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List templates
+         * @description Lists template headers (without line presets) for the caller's organization, by name. Requires ViewBilling.
+         */
+        get: operations["listTemplates"];
+        put?: never;
+        /** Create template */
+        post: operations["createTemplate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /** Get template by id */
+        get: operations["getTemplateById"];
+        put?: never;
+        post?: never;
+        /** Delete template */
+        delete: operations["deleteTemplate"];
+        options?: never;
+        head?: never;
+        /** Update template */
+        patch: operations["updateTemplate"];
+        trace?: never;
+    };
     "/admin/quotes": {
         parameters: {
             query?: never;
@@ -905,6 +948,27 @@ export interface components {
             default_unit_price_cents: number;
             /** @enum {integer} */
             default_tax_rate_bps: 800 | 1000;
+        };
+        /** @description A named quote/invoice template (雛形) with its line presets. */
+        Template: {
+            id: number;
+            organization_id: number;
+            name: string;
+            notes?: string | null;
+            line_items: components["schemas"]["LineItem"][];
+            created_at?: string | null;
+            updated_at?: string | null;
+        };
+        TemplateList: components["schemas"]["PageEnvelope"];
+        CreateTemplateRequest: {
+            name: string;
+            notes?: string | null;
+            line_items?: components["schemas"]["LineItemInput"][];
+        };
+        UpdateTemplateRequest: {
+            name: string;
+            notes?: string | null;
+            line_items?: components["schemas"]["LineItemInput"][];
         };
         /** @description A line on a quote or invoice. Money is integer cents. */
         LineItem: {
@@ -1967,6 +2031,155 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Item"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listTemplates: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of items to return (1–100, default 20). */
+                limit?: components["parameters"]["LimitParam"];
+                /** @description Number of items to skip (default 0). */
+                offset?: components["parameters"]["OffsetParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    createTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "月次保守テンプレート",
+                 *       "notes": "毎月の定期保守",
+                 *       "line_items": [
+                 *         {
+                 *           "description": "保守サポート（月額）",
+                 *           "quantity": 1,
+                 *           "unit_price_cents": 50000,
+                 *           "tax_rate_bps": 1000
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Template created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Template"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getTemplateById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template (with line presets) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Template"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Template deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Template updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Template"];
                 };
             };
             401: components["responses"]["Unauthorized"];

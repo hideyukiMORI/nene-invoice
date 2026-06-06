@@ -83,6 +83,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M10 10v7" />
     </>,
   ),
+  templates: icon(
+    <>
+      <path d="M4 3.5h8l4 4v9H4z" />
+      <path d="M12 3.5v4h4" />
+      <path d="M6.5 11h6M6.5 13.5h6" />
+    </>,
+  ),
   users: icon(
     <>
       <circle cx="7" cy="7" r="2.6" />
@@ -157,6 +164,7 @@ const NAV: NavGroup[] = [
       { to: '/invoices', label: 'admin.nav.invoices', iconKey: 'invoices' },
       { to: '/clients', label: 'admin.nav.clients', iconKey: 'clients' },
       { to: '/items', label: 'admin.nav.items', iconKey: 'items' },
+      { to: '/templates', label: 'admin.nav.templates', iconKey: 'templates' },
     ],
   },
   {

@@ -716,6 +716,11 @@
     gap: 0.5rem;
     align-items: center;
   }
+  /* Template line presets omit the live subtotal column (#329). */
+  .line-grid-template .line-head,
+  .line-grid-template .line-row {
+    grid-template-columns: 1fr 70px 110px 78px 34px;
+  }
   .line-head {
     font-size: 0.65625rem;
     font-weight: 600;
