@@ -14,6 +14,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\PdoLineItemRepository;
 use Psr\Container\ContainerInterface;
@@ -49,7 +50,7 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     self::resolve($c, DatabaseTransactionManagerInterface::class),
                     static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
                     static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
-                    self::audit($c),
+                    AuditServiceProvider::recorderFactory($c),
                     $orgHolder,
                 );
             })
@@ -60,7 +61,7 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     self::resolve($c, DatabaseTransactionManagerInterface::class),
                     static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
                     static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
-                    self::audit($c),
+                    AuditServiceProvider::recorderFactory($c),
                     $orgHolder,
                 );
             })

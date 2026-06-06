@@ -6,6 +6,7 @@ namespace NeneInvoice\Payment;
 
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
@@ -13,8 +14,9 @@ use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
-use NeneInvoice\Audit\AuditRecorderInterface;
+use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Invoice\PdoInvoiceRepository;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
@@ -41,13 +43,20 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 RecordPaymentUseCaseInterface::class,
-                static fn (ContainerInterface $c): RecordPaymentUseCase => new RecordPaymentUseCase(
-                    self::resolve($c, PaymentRepositoryInterface::class),
-                    self::resolve($c, InvoiceRepositoryInterface::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::resolve($c, ClockInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): RecordPaymentUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new RecordPaymentUseCase(
+                        self::resolve($c, PaymentRepositoryInterface::class),
+                        self::resolve($c, InvoiceRepositoryInterface::class),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        self::resolve($c, ClockInterface::class),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 ListPaymentsUseCaseInterface::class,
@@ -58,12 +67,19 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 VoidPaymentUseCaseInterface::class,
-                static fn (ContainerInterface $c): VoidPaymentUseCase => new VoidPaymentUseCase(
-                    self::resolve($c, PaymentRepositoryInterface::class),
-                    self::resolve($c, InvoiceRepositoryInterface::class),
-                    self::resolve($c, AuditRecorderInterface::class),
-                    self::orgHolder($c),
-                ),
+                static function (ContainerInterface $c): VoidPaymentUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new VoidPaymentUseCase(
+                        self::resolve($c, PaymentRepositoryInterface::class),
+                        self::resolve($c, InvoiceRepositoryInterface::class),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        $orgHolder,
+                    );
+                },
             )
             ->set(
                 RecordPaymentHandler::class,

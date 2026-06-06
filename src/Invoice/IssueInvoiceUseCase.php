@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use Closure;
 use LogicException;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
@@ -24,6 +27,8 @@ use NeneInvoice\Support\Jst;
 final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
 {
     /**
+     * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -31,7 +36,9 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
         private LineItemRepositoryInterface $lineItems,
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
-        private AuditRecorderInterface $audit,
+        private DatabaseTransactionManagerInterface $tx,
+        private Closure $invoicesFactory,
+        private Closure $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -89,31 +96,48 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
             }
         }
 
-        $this->invoices->update(new Invoice(
-            organizationId: $invoice->organizationId,
-            clientId: $invoice->clientId,
-            status: InvoiceStatus::Issued,
-            subtotalCents: $invoice->subtotalCents,
-            taxCents: $invoice->taxCents,
-            totalCents: $invoice->totalCents,
-            isQualifiedInvoice: $input->qualified,
-            quoteId: $invoice->quoteId,
-            invoiceNumber: $number,
-            issuedAt: $issuedAt,
-            dueAt: $dueAt,
-            notes: $invoice->notes,
-            id: $invoice->id,
-            createdAt: $invoice->createdAt,
-            updatedAt: $invoice->updatedAt,
-        ));
+        // The update and its audit record commit atomically (Issue #352).
+        $issued = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
+            $organizationId,
+            $id,
+            $input,
+            $invoice,
+            $lines,
+            $number,
+            $issuedAt,
+            $dueAt,
+        ): Invoice {
+            $invoices = ($this->invoicesFactory)($exec);
 
-        $issued = $this->invoices->findById($id);
+            $invoices->update(new Invoice(
+                organizationId: $invoice->organizationId,
+                clientId: $invoice->clientId,
+                status: InvoiceStatus::Issued,
+                subtotalCents: $invoice->subtotalCents,
+                taxCents: $invoice->taxCents,
+                totalCents: $invoice->totalCents,
+                isQualifiedInvoice: $input->qualified,
+                quoteId: $invoice->quoteId,
+                invoiceNumber: $number,
+                issuedAt: $issuedAt,
+                dueAt: $dueAt,
+                notes: $invoice->notes,
+                id: $invoice->id,
+                createdAt: $invoice->createdAt,
+                updatedAt: $invoice->updatedAt,
+            ));
 
-        if ($issued === null) {
-            throw new LogicException('Invoice disappeared immediately after issue.');
-        }
+            $issued = $invoices->findById($id);
 
-        $this->audit->record($actorUserId, $organizationId, 'invoice.issued', 'invoice', $id, InvoiceResponse::toArray($invoice, $lines), InvoiceResponse::toArray($issued, $lines));
+            if ($issued === null) {
+                throw new LogicException('Invoice disappeared immediately after issue.');
+            }
+
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'invoice.issued', 'invoice', $id, InvoiceResponse::toArray($invoice, $lines), InvoiceResponse::toArray($issued, $lines));
+
+            return $issued;
+        });
 
         return new InvoiceWithLines($issued, $lines);
     }

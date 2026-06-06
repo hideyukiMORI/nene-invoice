@@ -19,13 +19,14 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
     /**
      * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
+     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $templatesFactory,
         private Closure $lineItemsFactory,
-        private AuditRecorderInterface $audit,
+        private Closure $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -38,13 +39,13 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
      */
     public function execute(?int $actorUserId, int $id, UpdateTemplateInput $input): TemplateWithLines
     {
-        /** @var array<string, mixed> $before */
-        $before = [];
+        $organizationId = $this->orgId->get();
 
-        $result = $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+        return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
+            $actorUserId,
+            $organizationId,
             $id,
             $input,
-            &$before,
         ): TemplateWithLines {
             $templates = ($this->templatesFactory)($exec);
             $lineItems = ($this->lineItemsFactory)($exec);
@@ -55,6 +56,7 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
             }
 
             $before = TemplateResponse::toArray($existing, $lineItems->findByParent(LineItemParent::Template, $id));
+            // (captured for the in-transaction audit below)
 
             $templates->update(new Template(
                 organizationId: $existing->organizationId,
@@ -85,11 +87,12 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
                 throw new LogicException('Template disappeared immediately after update.');
             }
 
-            return new TemplateWithLines($updated, $lineItems->findByParent(LineItemParent::Template, $id));
+            $result = new TemplateWithLines($updated, $lineItems->findByParent(LineItemParent::Template, $id));
+
+            // Audit inside the transaction (Issue #352).
+            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'template.updated', 'template', $id, $before, TemplateResponse::toArray($result->template, $result->lines));
+
+            return $result;
         });
-
-        $this->audit->record($actorUserId, $this->orgId->get(), 'template.updated', 'template', $id, $before, TemplateResponse::toArray($result->template, $result->lines));
-
-        return $result;
     }
 }

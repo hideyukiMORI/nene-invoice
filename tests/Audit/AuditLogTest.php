@@ -8,6 +8,7 @@ use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
+use Nene2\Http\UtcClock;
 use NeneInvoice\Audit\AuditLogFilter;
 use NeneInvoice\Audit\AuditRecorder;
 use NeneInvoice\Audit\PdoAuditLogRepository;
@@ -63,7 +64,7 @@ final class AuditLogTest extends TestCase
 
     public function test_recorder_persists_before_and_after_snapshots(): void
     {
-        $recorder = new AuditRecorder($this->repository);
+        $recorder = new AuditRecorder($this->repository, new UtcClock());
 
         $recorder->record(7, 1, 'client.updated', 'client', 42, ['name' => '前'], ['name' => '後']);
 
@@ -80,7 +81,7 @@ final class AuditLogTest extends TestCase
     {
         $this->insertUser(7, 'operator@example.com');
 
-        $recorder = new AuditRecorder($this->repository);
+        $recorder = new AuditRecorder($this->repository, new UtcClock());
         $recorder->record(7, 1, 'invoice.issued', 'invoice', 5, null, ['status' => 'issued']);
         // Actor 99 has no users row → email stays null (caller shows #id).
         $recorder->record(99, 1, 'invoice.created', 'invoice', 6, null, ['status' => 'draft']);
@@ -95,7 +96,7 @@ final class AuditLogTest extends TestCase
     {
         // append keeps the organization on the log itself, so it is recorded
         // with an explicit org regardless of the read-side holder.
-        $recorder = new AuditRecorder($this->repository);
+        $recorder = new AuditRecorder($this->repository, new UtcClock());
         $recorder->record(1, 1, 'client.created', 'client', 1, null, ['name' => 'A']);
         $recorder->record(1, 1, 'client.deleted', 'client', 1, ['name' => 'A'], null);
         $recorder->record(1, 2, 'client.created', 'client', 9, null, ['name' => 'B']);
@@ -113,7 +114,7 @@ final class AuditLogTest extends TestCase
 
     public function test_filters_by_entity_type_action_actor_and_date_range(): void
     {
-        $recorder = new AuditRecorder($this->repository);
+        $recorder = new AuditRecorder($this->repository, new UtcClock());
         $recorder->record(5, 1, 'invoice.created', 'invoice', 1, null, ['status' => 'draft']);
         $recorder->record(6, 1, 'invoice.issued', 'invoice', 1, null, ['status' => 'issued']);
         $recorder->record(5, 1, 'client.created', 'client', 2, null, ['name' => 'A']);

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Audit;
 
+use Closure;
 use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -43,7 +45,7 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Audit log repository service is invalid.');
                     }
 
-                    return new AuditRecorder($repo);
+                    return new AuditRecorder($repo, self::clock($c));
                 },
             )
             ->set(
@@ -111,5 +113,33 @@ final readonly class AuditServiceProvider implements ServiceProviderInterface
         }
 
         return $holder;
+    }
+
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
+    }
+
+    /**
+     * Builds a recorder factory bound to a transaction's executor, so the audit
+     * write commits or rolls back together with the business writes (Issue #352).
+     * Use cases that mutate inside {@see DatabaseTransactionManagerInterface} take
+     * this closure and build the recorder from the transaction-bound executor.
+     *
+     * @return Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface
+     */
+    public static function recorderFactory(ContainerInterface $c): Closure
+    {
+        $orgHolder = self::orgHolder($c);
+        $clock     = self::clock($c);
+
+        return static fn (DatabaseQueryExecutorInterface $exec): AuditRecorderInterface
+            => new AuditRecorder(new PdoAuditLogRepository($exec, $orgHolder), $clock);
     }
 }

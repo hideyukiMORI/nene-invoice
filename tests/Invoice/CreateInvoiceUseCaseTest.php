@@ -44,7 +44,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
             fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
-            $this->audit,
+            fn () => $this->audit,
             $this->holder,
         );
     }
