@@ -10,6 +10,7 @@ import {
   type AuditLogFilters,
 } from '@/entities/audit'
 import { useTranslation } from '@/shared/i18n'
+import { formatJstDateTime } from '@/shared/lib/format-date'
 import {
   Button,
   DatePicker,
@@ -224,7 +225,9 @@ function AuditRow({ log, expanded, onToggle }: AuditRowProps) {
   return (
     <>
       <tr>
-        <td data-label={t('admin.audit.col.createdAt')}>{log.created_at ?? '—'}</td>
+        <td data-label={t('admin.audit.col.createdAt')}>
+          {log.created_at !== null ? formatJstDateTime(log.created_at) : '—'}
+        </td>
         <td data-label={t('admin.audit.col.action')}>
           {/* Accounting-term label; the raw code stays available on hover. */}
           <span title={log.action}>{actionLabel}</span>

@@ -1,5 +1,6 @@
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
+import { formatJstDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Button,
@@ -73,7 +74,7 @@ export function ManagePayments({ invoiceId }: ManagePaymentsProps) {
               {payments.map((payment) => (
                 <tr key={payment.id}>
                   <td className="num" data-label={t('admin.payments.col.paidAt')}>
-                    {payment.paid_at}
+                    {formatJstDate(payment.paid_at)}
                   </td>
                   <td data-label={t('admin.payments.col.method')}>
                     {payment.method === null ? '—' : t(`admin.payments.method.${payment.method}`)}

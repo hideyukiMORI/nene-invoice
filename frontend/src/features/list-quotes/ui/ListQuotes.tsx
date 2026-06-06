@@ -10,6 +10,7 @@ import {
 } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { KbdHint, useRowCursor } from '@/shared/keyboard'
+import { formatCalendarDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -201,7 +202,7 @@ export function ListQuotes() {
                       {quote.client_name ?? `#${String(quote.client_id)}`}
                     </td>
                     <td className="num" data-label={t('admin.quotes.col.validUntil')}>
-                      {quote.valid_until ?? '—'}
+                      {quote.valid_until !== null ? formatCalendarDate(quote.valid_until) : '—'}
                     </td>
                     <td className="tr num" data-label={t('admin.quotes.col.total')}>
                       {formatYen(quote.total_cents)}

@@ -4,6 +4,7 @@ import type { DailyBilled, MonthlyBilled } from '@/entities/dashboard'
 import { invoiceStatusTone } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { cn } from '@/shared/lib/cn'
+import { formatCalendarDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import { Badge, EmptyState, ErrorState, LinkButton, LoadingState, Stack } from '@/shared/ui'
 import { useViewDashboard } from '../hooks/use-view-dashboard'
@@ -185,7 +186,7 @@ export function ViewDashboard() {
                     </div>
                     <div className="text-caption text-fg-muted">
                       {invoice.due_at !== null
-                        ? t('admin.dashboard.due', { date: invoice.due_at.slice(0, 10) })
+                        ? t('admin.dashboard.due', { date: formatCalendarDate(invoice.due_at) })
                         : '—'}
                     </div>
                   </div>

@@ -11,6 +11,7 @@ import {
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { KbdHint, useRowCursor } from '@/shared/keyboard'
+import { formatCalendarDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import {
   Badge,
@@ -259,7 +260,7 @@ export function ListInvoices() {
                       {invoice.client_name ?? `#${String(invoice.client_id)}`}
                     </td>
                     <td className="num" data-label={t('admin.invoices.col.due')}>
-                      {invoice.due_at ?? '—'}
+                      {invoice.due_at !== null ? formatCalendarDate(invoice.due_at) : '—'}
                     </td>
                     <td className="tr num" data-label={t('admin.invoices.col.total')}>
                       {formatYen(invoice.total_cents)}
