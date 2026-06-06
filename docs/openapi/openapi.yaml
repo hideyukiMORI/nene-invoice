@@ -25,6 +25,8 @@ tags:
     description: Issuer (自社) profile per organization.
   - name: Clients
     description: Buyers / trading partners (取引先).
+  - name: Items
+    description: Item master (品目) — reusable descriptions with default price / tax.
   - name: Quotes
     description: Estimates / quotes (見積).
   - name: Invoices
@@ -587,6 +589,117 @@ paths:
       responses:
         '204':
           description: Client deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/items:
+    get:
+      tags: [Items]
+      summary: List items
+      operationId: listItems
+      description: >
+        Lists item-master rows with optional search / sort (admin). `q` matches
+        the description; `sort` ∈ description|unit_price|tax_rate with `order`
+        asc|desc. Requires ViewBilling.
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: sort, in: query, required: false, schema: { type: string, enum: [description, unit_price, tax_rate] } }
+        - { name: order, in: query, required: false, schema: { type: string, enum: [asc, desc] } }
+      responses:
+        '200':
+          description: Item page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    post:
+      tags: [Items]
+      summary: Create item
+      operationId: createItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+            example:
+              description: 保守サポート（月額）
+              default_unit_price_cents: 50000
+              default_tax_rate_bps: 1000
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/items/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Items]
+      summary: Get item by id
+      operationId: getItemById
+      responses:
+        '200':
+          description: Item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Items]
+      summary: Update item
+      operationId: updateItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [Items]
+      summary: Delete item
+      operationId: deleteItem
+      responses:
+        '204':
+          description: Item deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1583,6 +1696,53 @@ components:
           type: [string, 'null']
         registration_number:
           type: [string, 'null']
+    Item:
+      type: object
+      description: An item-master row (品目). Money is integer cents; tax in bps.
+      properties:
+        id:
+          type: integer
+        organization_id:
+          type: integer
+        description:
+          type: string
+        default_unit_price_cents:
+          type: integer
+          description: Default unit price in integer cents (seeds lines; editable).
+        default_tax_rate_bps:
+          type: integer
+          description: Default tax rate in basis points (1000 = 10%, 800 = 8%).
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, organization_id, description, default_unit_price_cents, default_tax_rate_bps]
+    ItemList:
+      $ref: '#/components/schemas/PageEnvelope'
+    CreateItemRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        default_unit_price_cents:
+          type: integer
+          minimum: 0
+        default_tax_rate_bps:
+          type: integer
+          enum: [800, 1000]
+      required: [description, default_unit_price_cents, default_tax_rate_bps]
+    UpdateItemRequest:
+      type: object
+      properties:
+        description:
+          type: string
+        default_unit_price_cents:
+          type: integer
+          minimum: 0
+        default_tax_rate_bps:
+          type: integer
+          enum: [800, 1000]
+      required: [description, default_unit_price_cents, default_tax_rate_bps]
     LineItem:
       type: object
       description: A line on a quote or invoice. Money is integer cents.
