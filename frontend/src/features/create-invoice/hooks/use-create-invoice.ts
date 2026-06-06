@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, type SyntheticEvent } from 'react'
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react'
 import {
   useFieldArray,
   useForm,
@@ -15,6 +15,7 @@ import {
 } from '@/entities/invoice'
 import { useLineItemSuggestions, type LineItemSuggestion } from '@/entities/line-item'
 import { useTranslation } from '@/shared/i18n'
+import { useDebouncedValue } from '@/shared/lib/use-debounced-value'
 import { useToast } from '@/shared/ui'
 
 const lineSchema = z.object({
@@ -80,6 +81,8 @@ export interface UseCreateInvoice {
   createClient: (name: string, nameKana: string | null) => Promise<number | null>
   /** History-based line-item suggestions (description + default price/rate). */
   lineSuggestions: LineItemSuggestion[]
+  /** Drives server-side client search (debounced) for the picker (#328). */
+  onClientQueryChange: (query: string) => void
   onSubmit: (event: SyntheticEvent) => void
   addLine: () => void
   isPending: boolean
@@ -92,10 +95,12 @@ export function useCreateInvoice(): UseCreateInvoice {
   const navigate = useNavigate()
   const create = useCreateInvoiceMutation()
   const createClientMutation = useCreateClient()
+  const [clientQuery, setClientQuery] = useState('')
+  const debouncedClientQuery = useDebouncedValue(clientQuery)
   const clientList = useClientList({
     limit: 100,
     offset: 0,
-    filters: { q: null },
+    filters: { q: debouncedClientQuery.trim() === '' ? null : debouncedClientQuery.trim() },
     sort: { field: null, order: 'asc' },
   })
   const lineSuggestions = useLineItemSuggestions()
@@ -167,6 +172,7 @@ export function useCreateInvoice(): UseCreateInvoice {
     clientsLoading: clientList.isPending,
     createClient,
     lineSuggestions: lineSuggestions.data ?? [],
+    onClientQueryChange: setClientQuery,
     onSubmit: (event) => {
       void submit(event)
     },
