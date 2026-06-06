@@ -9,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useClientList, useCreateClient, type Client } from '@/entities/client'
+import { useLineItemSuggestions, type LineItemSuggestion } from '@/entities/line-item'
 import { useCreateQuote as useCreateQuoteMutation } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { useToast } from '@/shared/ui'
@@ -43,6 +44,8 @@ export interface UseCreateQuote {
   clientsLoading: boolean
   /** Inline-registers a new client by name; resolves to its id (or null). */
   createClient: (name: string) => Promise<number | null>
+  /** History-based line-item suggestions (description + default price/rate). */
+  lineSuggestions: LineItemSuggestion[]
   onSubmit: (event: SyntheticEvent) => void
   addLine: () => void
   isPending: boolean
@@ -61,6 +64,7 @@ export function useCreateQuote(): UseCreateQuote {
     filters: { q: null },
     sort: { field: null, order: 'asc' },
   })
+  const lineSuggestions = useLineItemSuggestions()
 
   const form = useForm<CreateQuoteFormValues>({
     resolver: zodResolver(schema),
@@ -109,6 +113,7 @@ export function useCreateQuote(): UseCreateQuote {
     clients: clientList.data?.items ?? [],
     clientsLoading: clientList.isPending,
     createClient,
+    lineSuggestions: lineSuggestions.data ?? [],
     onSubmit: (event) => {
       void submit(event)
     },

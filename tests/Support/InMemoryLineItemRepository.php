@@ -55,6 +55,33 @@ final class InMemoryLineItemRepository implements LineItemRepositoryInterface
         unset($this->byParent[$this->key($parentType, $parentId)]);
     }
 
+    /**
+     * Returns every stored line as a suggestion row, newest-first by created_at.
+     * Org/soft-delete scoping is a SQL concern; this fake holds only one org's
+     * line items, so use-case tests drive aggregation through what they seed.
+     *
+     * @return list<array{description: string, unit_price_cents: int, tax_rate_bps: int, created_at: string}>
+     */
+    public function recentForOrganization(int $limit): array
+    {
+        $rows = [];
+
+        foreach ($this->byParent as $lines) {
+            foreach ($lines as $line) {
+                $rows[] = [
+                    'description'      => $line->description,
+                    'unit_price_cents' => $line->unitPriceCents,
+                    'tax_rate_bps'     => $line->taxRateBps,
+                    'created_at'       => $line->createdAt ?? '',
+                ];
+            }
+        }
+
+        usort($rows, static fn (array $a, array $b): int => $b['created_at'] <=> $a['created_at']);
+
+        return array_slice($rows, 0, $limit);
+    }
+
     private function key(LineItemParent $parentType, int $parentId): string
     {
         return $parentType->value . ':' . $parentId;

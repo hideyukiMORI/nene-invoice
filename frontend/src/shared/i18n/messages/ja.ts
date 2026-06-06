@@ -183,6 +183,7 @@ export const jaMessages = {
   'admin.clientPicker.create': '「{{name}}」を新規取引先として登録',
   'admin.clientPicker.registered': '「{{name}}」を取引先に登録しました',
   'admin.clientPicker.registerError': '取引先を登録できませんでした。',
+  'admin.lineItemSuggest.usage': '{{count}}回使用',
   'admin.clients.filter.search': '検索',
   'admin.clients.filter.searchPlaceholder': '名称・読み・担当者・メールで検索',
   'admin.clients.create.title': '取引先の作成',

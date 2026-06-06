@@ -22,6 +22,7 @@ use NeneInvoice\Invoice\InvoiceRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceValidationExceptionHandler;
 use NeneInvoice\Invoice\QualifiedInvoiceIncompleteExceptionHandler;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenRouteRegistrar;
+use NeneInvoice\LineItem\LineItemRouteRegistrar;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
@@ -85,6 +86,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
                     $downloadTokenRoutes = $container->get(InvoiceDownloadTokenRouteRegistrar::class);
+                    $lineItemRoutes = $container->get(LineItemRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -134,7 +136,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Invoice download token route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes];
+                    if (!$lineItemRoutes instanceof LineItemRouteRegistrar) {
+                        throw new LogicException('Line item route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes];
                 },
             )
             ->set(

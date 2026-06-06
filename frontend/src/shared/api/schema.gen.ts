@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/line-items/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List line-item suggestions
+         * @description History-based line-item suggestions for the caller's organization, aggregated from past invoices and quotes (distinct descriptions with the default unit price / tax rate, ordered by usage). The defaults are conveniences and never override the tax that applies to a sale. Returned in full for client-side typeahead filtering. Requires ViewBilling.
+         */
+        get: operations["listLineItemSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/audit-logs": {
         parameters: {
             query?: never;
@@ -675,6 +695,19 @@ export interface components {
             /** @description Token expiry timestamp (Y-m-d H:i:s). */
             expires_at: string;
         };
+        LineItemSuggestion: {
+            /** @description A distinct line-item description the organization has used before. */
+            description: string;
+            /** @description Default unit price in cents (from the most recent use; editable per line). */
+            unit_price_cents: number;
+            /** @description Default tax rate in basis points (from the most recent use; editable per line). */
+            tax_rate_bps: number;
+            /** @description How many times this description appears in recent history. */
+            usage_count: number;
+        };
+        LineItemSuggestionList: {
+            items: components["schemas"]["LineItemSuggestion"][];
+        };
         DashboardSummary: {
             /** @description Number of issued + partially_paid invoices. */
             unpaid_count: number;
@@ -1175,6 +1208,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    listLineItemSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Line-item suggestions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LineItemSuggestionList"];
                 };
             };
             401: components["responses"]["Unauthorized"];

@@ -11,6 +11,8 @@ import {
   FormRow,
   InlineAlert,
   Input,
+  type LineSuggestion,
+  LineItemSuggestInput,
   Select,
   Stack,
   Text,
@@ -41,6 +43,7 @@ export function CreateQuoteForm() {
     clients,
     clientsLoading,
     createClient,
+    lineSuggestions,
     onSubmit,
     addLine,
     isPending,
@@ -49,9 +52,24 @@ export function CreateQuoteForm() {
   const {
     control,
     register,
+    setValue,
     formState: { errors },
   } = form
   const { gridRef } = useLineGridEnter(lines.fields.length, addLine)
+
+  // Picking a suggestion fills the row's description and its default unit price
+  // / tax rate (still editable). The rate guard keeps the value within the
+  // form's allowed set; current data only ever uses 8% / 10%.
+  const applySuggestion = (index: number, s: LineSuggestion): void => {
+    setValue(`line_items.${index}.description`, s.description, { shouldValidate: true })
+    setValue(`line_items.${index}.unit_price_cents`, s.unit_price_cents, { shouldValidate: true })
+    if (s.tax_rate_bps === 800 || s.tax_rate_bps === 1000) {
+      setValue(`line_items.${index}.tax_rate_bps`, s.tax_rate_bps, { shouldValidate: true })
+    }
+  }
+
+  const suggestionMeta = (s: LineSuggestion): string =>
+    `${formatYen(s.unit_price_cents)} · ${formatTaxRate(s.tax_rate_bps)} · ${t('admin.lineItemSuggest.usage', { count: s.usage_count })}`
 
   // Live totals preview (backend stays authoritative; mirrors TaxCalculator).
   const watched = useWatch({ control, name: 'line_items' })
@@ -129,11 +147,23 @@ export function CreateQuoteForm() {
                 const amount = (line?.quantity || 0) * (line?.unit_price_cents || 0)
                 return (
                   <div className="line-row" key={field.id}>
-                    <Input
-                      id={`line-${index}-description`}
-                      aria-label={t('admin.invoices.line.description')}
-                      aria-invalid={errors.line_items?.[index]?.description ? true : undefined}
-                      {...register(`line_items.${index}.description`)}
+                    <Controller
+                      control={control}
+                      name={`line_items.${index}.description`}
+                      render={({ field }) => (
+                        <LineItemSuggestInput
+                          id={`line-${index}-description`}
+                          aria-label={t('admin.invoices.line.description')}
+                          invalid={errors.line_items?.[index]?.description !== undefined}
+                          value={field.value}
+                          onChange={field.onChange}
+                          suggestions={lineSuggestions}
+                          onPick={(s) => {
+                            applySuggestion(index, s)
+                          }}
+                          renderMeta={suggestionMeta}
+                        />
+                      )}
                     />
                     <Input
                       id={`line-${index}-quantity`}

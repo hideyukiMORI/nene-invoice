@@ -177,6 +177,7 @@ export const enMessages: MessageCatalog = {
   'admin.clientPicker.create': 'Register “{{name}}” as a new client',
   'admin.clientPicker.registered': 'Registered “{{name}}” as a client',
   'admin.clientPicker.registerError': 'Could not register the client.',
+  'admin.lineItemSuggest.usage': 'used {{count}}×',
   'admin.clients.filter.search': 'Search',
   'admin.clients.filter.searchPlaceholder': 'Search by name, reading, contact or email',
   'admin.clients.create.title': 'Create client',

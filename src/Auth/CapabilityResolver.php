@@ -38,7 +38,7 @@ final class CapabilityResolver
             return Capability::ViewBilling;
         }
 
-        foreach (['/admin/clients', '/admin/quotes', '/admin/invoices', '/admin/payments'] as $prefix) {
+        foreach (['/admin/clients', '/admin/quotes', '/admin/invoices', '/admin/payments', '/admin/line-items'] as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return self::isReadMethod($method) ? Capability::ViewBilling : Capability::ManageBilling;
             }

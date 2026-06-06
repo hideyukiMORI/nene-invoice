@@ -22,12 +22,21 @@ const INVOICE = {
   total_cents: 110000,
   line_items: [],
 }
+const SUGGESTION = {
+  description: 'コンサルティング（10時間）',
+  unit_price_cents: 30000,
+  tax_rate_bps: 1000,
+  usage_count: 4,
+}
 
 /** Reaches /invoices/new through login → invoices list → "請求書を作成". */
 test.describe('Create invoice', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/admin/clients*', (route) =>
       route.fulfill(json({ items: [CLIENT], total: 1, limit: 100, offset: 0 })),
+    )
+    await page.route('**/admin/line-items/suggestions*', (route) =>
+      route.fulfill(json({ items: [SUGGESTION] })),
     )
     await page.route('**/admin/invoices*', (route, request) => {
       if (request.method() === 'GET') {
@@ -76,5 +85,13 @@ test.describe('Create invoice', () => {
     await page.getByRole('button', { name: '作成する' }).click()
 
     await expect(page).toHaveURL(/\/invoices\/7$/)
+  })
+
+  test('picks a line-item suggestion to fill the description and unit price', async ({ page }) => {
+    await page.locator('#line-0-description').fill('コンサル')
+    await page.getByRole('option', { name: /コンサルティング（10時間）/ }).click()
+
+    await expect(page.locator('#line-0-description')).toHaveValue('コンサルティング（10時間）')
+    await expect(page.locator('#line-0-unit')).toHaveValue('30000')
   })
 })

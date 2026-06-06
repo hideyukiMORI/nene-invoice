@@ -20,4 +20,13 @@ interface LineItemRepositoryInterface
     public function replaceForParent(LineItemParent $parentType, int $parentId, array $lines): void;
 
     public function deleteForParent(LineItemParent $parentType, int $parentId): void;
+
+    /**
+     * Recent line-item rows across the caller's organization (invoices + quotes),
+     * newest first, for building history-based suggestions (#315). Org scoping is
+     * applied via the request holder; soft-deleted parents are excluded.
+     *
+     * @return list<array{description: string, unit_price_cents: int, tax_rate_bps: int, created_at: string}>
+     */
+    public function recentForOrganization(int $limit): array;
 }
