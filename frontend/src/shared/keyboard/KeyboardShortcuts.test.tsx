@@ -78,16 +78,31 @@ describe('KeyboardShortcuts', () => {
     expect(getByTestId('loc').textContent).toBe('/invoices')
   })
 
-  it('does NOT leave a create/edit form on u (avoids losing input) (#362)', () => {
+  it('returns to the parent list with u from an edit form when no field is focused (#374)', () => {
     const { getByTestId } = render(
-      <MemoryRouter initialEntries={['/invoices/new']}>
+      <MemoryRouter initialEntries={['/clients/42/edit']}>
         <KeyboardShortcuts />
         <LocationProbe />
       </MemoryRouter>,
     )
 
     fireEvent.keyDown(document.body, { key: 'u' })
-    expect(getByTestId('loc').textContent).toBe('/invoices/new')
+    expect(getByTestId('loc').textContent).toBe('/clients')
+  })
+
+  it('does not fire u while a form field is focused (typing wins) (#374)', () => {
+    const { getByTestId, container } = render(
+      <MemoryRouter initialEntries={['/clients/42/edit']}>
+        <KeyboardShortcuts />
+        <LocationProbe />
+        <input data-testid="field" />
+      </MemoryRouter>,
+    )
+    const field = container.querySelector('[data-testid="field"]') as HTMLInputElement
+    field.focus()
+
+    fireEvent.keyDown(field, { key: 'u' })
+    expect(getByTestId('loc').textContent).toBe('/clients/42/edit')
   })
 
   it('blurs the search field on Esc so j/k work again (#362)', () => {
