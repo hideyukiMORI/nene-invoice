@@ -3091,38 +3091,81 @@
     color: var(--color-fg-muted);
   }
 
-  /* command palette (⌘K) — actionable navigation menu (spec #370) */
+  /* command palette (⌘K) — actionable navigation menu (spec #370, design 案A).
+     Angular (radius 0) to match the product; selection uses a full-height left
+     accent rule like the list row cursor. */
+  .modal-dim.cmdp-dim {
+    align-items: flex-start;
+    padding-top: 11vh;
+  }
   .cmdp {
     position: relative;
     width: 460px;
     max-width: 100%;
-    max-height: 80vh;
+    max-height: 78vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--color-surface);
     border: 1px solid var(--color-border-strong);
-    border-radius: 13px;
     box-shadow: var(--shadow-pop);
   }
   .cmdp-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
-    padding: 13px 16px 11px;
+    padding: 11px 14px;
     border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-overlay);
+  }
+  .cmdp-head .hd-mark {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    background: var(--color-accent);
   }
   .cmdp-head b {
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
   }
-  .cmdp-head span {
+  .cmdp-head .sub {
     font-size: 11px;
     color: var(--color-fg-muted);
+    white-space: nowrap;
+  }
+  .cmdp-head .esc {
+    margin-left: auto;
+  }
+  .cmdp-head .esc .kk {
+    font-family: var(--font-num);
+    font-size: 10.5px;
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+    padding: 2px 6px;
   }
   .cmdp-list {
-    overflow: auto;
-    padding: 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 5px;
+    margin: 0;
+    list-style: none;
+  }
+  .cmdp-list li {
+    margin: 0;
+  }
+  .cmdp-grp {
+    font-size: 10px;
+    color: var(--color-fg-muted);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    padding: 9px 10px 4px;
+    white-space: nowrap;
+  }
+  .cmdp-grp:first-child {
+    padding-top: 3px;
   }
   .cmdp-row {
     display: flex;
@@ -3130,28 +3173,82 @@
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    padding: 9px 11px;
+    padding: 7px 10px;
     border: 0;
-    border-radius: 9px;
+    border-left: 3px solid transparent;
     background: transparent;
     color: var(--color-fg);
     font-size: 13px;
     text-align: left;
     cursor: pointer;
   }
+  .cmdp-row .cmdp-label {
+    white-space: nowrap;
+  }
+  .cmdp-row:hover {
+    background: color-mix(in oklch, var(--color-accent-soft) 55%, transparent);
+  }
   .cmdp-row.hl {
     background: var(--color-accent-soft);
-    box-shadow: inset 3px 0 0 var(--color-accent);
+    border-left-color: var(--color-accent);
+    color: var(--color-accent-deep);
+    font-weight: 600;
   }
   .cmdp-keys {
     display: inline-flex;
-    gap: 4px;
+  }
+  /* keycap: flat, angular, consecutive keys joined into one face (replaces .kbd) */
+  .keycombo {
+    display: inline-flex;
+    align-items: stretch;
+    font-family: var(--font-num);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-fg-muted);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-raised);
+  }
+  .keycombo span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 19px;
+    padding: 0 5px;
+  }
+  .keycombo span + span {
+    border-left: 1px solid var(--color-border);
+  }
+  .cmdp-row.hl .keycombo {
+    color: var(--color-accent-deep);
+    border-color: var(--color-border-strong);
+    background: var(--color-surface);
   }
   .cmdp-foot {
-    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 14px;
     border-top: 1px solid var(--color-border);
     background: var(--color-surface-overlay);
-    font-size: 11.5px;
+    font-size: 11px;
     color: var(--color-fg-muted);
+  }
+  .cmdp-foot .hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cmdp-foot .hint .mk {
+    font-family: var(--font-num);
+    font-size: 10.5px;
+    border: 1px solid var(--color-border);
+    padding: 1px 5px;
+    color: var(--color-fg);
+    background: var(--color-surface-raised);
+  }
+  .cmdp-foot .spacer {
+    margin-left: auto;
   }
 }

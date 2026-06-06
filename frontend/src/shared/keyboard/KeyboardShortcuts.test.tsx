@@ -168,6 +168,18 @@ describe('KeyboardShortcuts', () => {
     expect(queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('groups palette commands with non-selectable headers (design 案A, #370)', () => {
+    const { getByRole, getAllByRole } = renderWithProviders(<KeyboardShortcuts />)
+    fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
+
+    const dialog = getByRole('dialog')
+    // Group headers are presentation (not options); 9 navigable options remain.
+    expect(getAllByRole('option')).toHaveLength(9)
+    expect(dialog.querySelectorAll('.cmdp-grp')).toHaveLength(3)
+    // Keys render as the joined .keycombo (not the 3D .kbd).
+    expect(dialog.querySelector('.keycombo')).not.toBeNull()
+  })
+
   it('opens the cheat-sheet via openShortcutsOverlay()', () => {
     const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
     expect(queryByRole('dialog')).not.toBeInTheDocument()
