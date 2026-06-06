@@ -6,6 +6,7 @@ namespace NeneInvoice\InvoiceDownloadToken;
 
 use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
+use Nene2\Http\SecureTokenHelper;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
@@ -48,8 +49,8 @@ final readonly class GenerateDownloadTokenUseCase
 
         $organizationId = $this->orgId->get();
 
-        $rawToken  = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-        $tokenHash = hash('sha256', $rawToken);
+        // 256-bit token; only its SHA-256 hash is persisted (see SecureTokenHelper).
+        [$rawToken, $tokenHash] = SecureTokenHelper::generateWithHash();
         $now       = new DateTimeImmutable();
         $expiresAt = $now->modify('+' . self::TTL_DAYS . ' days')->format('Y-m-d H:i:s');
         $createdAt = $now->format('Y-m-d H:i:s');

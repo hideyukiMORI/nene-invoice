@@ -7,6 +7,7 @@ namespace NeneInvoice\InvoiceDownloadToken;
 use DateTimeImmutable;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\RequestScopedHolder;
+use Nene2\Http\SecureTokenHelper;
 use Nene2\Routing\Router;
 use NeneInvoice\Invoice\GenerateInvoicePdfUseCase;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
@@ -44,7 +45,7 @@ final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterfac
     {
         $params    = $request->getAttribute(Router::PARAMETERS_ATTRIBUTE, []);
         $rawToken  = is_array($params) && isset($params['token']) ? (string) $params['token'] : '';
-        $tokenHash = hash('sha256', $rawToken);
+        $tokenHash = SecureTokenHelper::hash($rawToken);
 
         $record = $this->tokens->findByHash($tokenHash);
 
