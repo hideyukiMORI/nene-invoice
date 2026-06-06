@@ -79,7 +79,10 @@ export function ClientCombobox({
   }
 
   const [open, setOpen] = useState(false)
-  const [highlight, setHighlight] = useState(0)
+  // -1 = nothing highlighted: suggestions appear but the field keeps the "cursor",
+  // so a user who knows their text isn't in the list is never auto-committed to a
+  // suggestion. ↑↓ move into the list explicitly (#366).
+  const [highlight, setHighlight] = useState(-1)
   const [creating, setCreating] = useState(false)
   // Inline-create sub-form (name is the typed text; capture an optional reading).
   const [createMode, setCreateMode] = useState(false)
@@ -166,10 +169,12 @@ export function ClientCombobox({
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setHighlight((h) => Math.max(h - 1, 0))
+      // Down to -1 returns to the field with nothing selected.
+      setHighlight((h) => Math.max(h - 1, -1))
     } else if (e.key === 'Enter') {
       e.preventDefault() // never submit the surrounding form
-      if (!open) return
+      // Nothing highlighted → let the user keep typing; never auto-pick / auto-create.
+      if (!open || highlight < 0) return
       if (highlight < matches.length) {
         const m = matches[highlight]
         if (m !== undefined) pick(m)
@@ -225,7 +230,7 @@ export function ClientCombobox({
         onChange={(e) => {
           setText(e.target.value)
           setOpen(true)
-          setHighlight(0)
+          setHighlight(-1)
           resetCreate()
           onQueryChange?.(e.target.value)
         }}
