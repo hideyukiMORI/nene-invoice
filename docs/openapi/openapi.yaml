@@ -31,6 +31,8 @@ tags:
     description: Invoices (請求書), including issue and quote conversion.
   - name: Payments
     description: Payments (入金) recorded against invoices.
+  - name: LineItems
+    description: Document line items (品目) and history-based suggestions.
 paths:
   /health:
     get:
@@ -114,6 +116,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/line-items/suggestions:
+    get:
+      tags: [LineItems]
+      summary: List line-item suggestions
+      description: >
+        History-based line-item suggestions for the caller's organization,
+        aggregated from past invoices and quotes (distinct descriptions with the
+        default unit price / tax rate, ordered by usage). The defaults are
+        conveniences and never override the tax that applies to a sale. Returned
+        in full for client-side typeahead filtering. Requires ViewBilling.
+      operationId: listLineItemSuggestions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Line-item suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineItemSuggestionList'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1294,6 +1320,30 @@ components:
           type: string
           description: Token expiry timestamp (Y-m-d H:i:s).
       required: [url, expires_at]
+    LineItemSuggestion:
+      type: object
+      properties:
+        description:
+          type: string
+          description: A distinct line-item description the organization has used before.
+        unit_price_cents:
+          type: integer
+          description: Default unit price in cents (from the most recent use; editable per line).
+        tax_rate_bps:
+          type: integer
+          description: Default tax rate in basis points (from the most recent use; editable per line).
+        usage_count:
+          type: integer
+          description: How many times this description appears in recent history.
+      required: [description, unit_price_cents, tax_rate_bps, usage_count]
+    LineItemSuggestionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineItemSuggestion'
+      required: [items]
     DashboardSummary:
       type: object
       properties:

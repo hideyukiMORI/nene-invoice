@@ -17,6 +17,11 @@ export {
 } from './components/ClientCombobox'
 export { DatePicker, type DatePickerProps } from './components/DatePicker'
 export {
+  LineItemSuggestInput,
+  type LineItemSuggestInputProps,
+  type LineSuggestion,
+} from './components/LineItemSuggestInput'
+export {
   FormLayout,
   type FormLayoutProps,
   FormRow,

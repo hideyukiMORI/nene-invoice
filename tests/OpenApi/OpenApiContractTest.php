@@ -24,6 +24,7 @@ final class OpenApiContractTest extends TestCase
     private const EXPECTED_OPERATION_IDS = [
         'getHealth',
         'getDashboard',
+        'listLineItemSuggestions',
         'login',
         'getCurrentUser',
         'listAuditLogs',
