@@ -199,6 +199,10 @@ export function DatePicker({
         ref={popRef}
         className={cn('dp-pop', flip.up && 'up', flip.right && 'right')}
         role="dialog"
+        // Closed popover stays in the DOM for the fade transition, but must be
+        // removed from the tab order / a11y tree — otherwise tabbing into a
+        // closed field is trapped in its ~45 hidden calendar buttons (#358).
+        inert={!open}
       >
         <div className="dp-head">
           <button
