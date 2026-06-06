@@ -113,6 +113,8 @@ export function CreateInvoiceForm() {
                     invalid={errors.client_id !== undefined}
                     placeholder={t('admin.clientPicker.placeholder')}
                     createLabel={(name) => t('admin.clientPicker.create', { name })}
+                    createKanaPlaceholder={t('admin.clientPicker.kanaPlaceholder')}
+                    createConfirmLabel={t('admin.clientPicker.createConfirm')}
                   />
                 )}
               />

@@ -176,6 +176,8 @@ export const enMessages: MessageCatalog = {
   'admin.clients.newButton': 'Create client',
   'admin.clientPicker.placeholder': 'Search clients (name, reading, reg. no.)',
   'admin.clientPicker.create': 'Register “{{name}}” as a new client',
+  'admin.clientPicker.kanaPlaceholder': 'Reading (optional)',
+  'admin.clientPicker.createConfirm': 'Add',
   'admin.clientPicker.registered': 'Registered “{{name}}” as a client',
   'admin.clientPicker.registerError': 'Could not register the client.',
   'admin.lineItemSuggest.usage': 'used {{count}}×',
