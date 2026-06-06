@@ -45,7 +45,14 @@ const LIST_ROOTS = [
   '/audit-logs',
 ]
 
+/**
+ * The parent list for `u` (back to list) — but only from a **detail** view, not
+ * a create/edit form. Firing `u` on `/new` or `/edit` would navigate away mid-edit
+ * and lose unsaved input (e.g. when focus sits on a form button), so forms opt out
+ * (#362). Detail routes like `/invoices/123` still resolve to their list.
+ */
 function parentListOf(path: string): string | null {
+  if (path.endsWith('/new') || path.endsWith('/edit')) return null
   return LIST_ROOTS.find((root) => path.startsWith(`${root}/`)) ?? null
 }
 
@@ -120,6 +127,16 @@ export function KeyboardShortcuts() {
       if (e.key === 'Escape') {
         if (overlayRef.current) setOverlayOpen(false)
         else if (pendingRef.current) clearPending()
+        // Esc leaves the search box (so j/k work again) without reaching for the
+        // mouse. Scoped to the search field only — combobox / date picker own
+        // their Esc — and skipped while composing, where Esc cancels the IME (#362).
+        else if (
+          !e.isComposing &&
+          e.target instanceof HTMLElement &&
+          e.target.matches('[data-kbd="search"]')
+        ) {
+          e.target.blur()
+        }
         return
       }
 
