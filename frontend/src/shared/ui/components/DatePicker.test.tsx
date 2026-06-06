@@ -71,4 +71,16 @@ describe('DatePicker', () => {
     expect(onChange).not.toHaveBeenCalled()
     expect(input.value).toBe('2026/06/15')
   })
+
+  it('keeps the closed calendar out of the tab order via inert (#358)', () => {
+    const { container } = renderWithProviders(<DatePicker value="2026-06-15" onChange={vi.fn()} />)
+    const pop = container.querySelector('.dp-pop') as HTMLElement
+
+    // Closed: inert so its ~45 buttons cannot trap Tab focus.
+    expect(pop.hasAttribute('inert')).toBe(true)
+
+    fireEvent.click(container.querySelector('.dp-ico-btn') as HTMLElement)
+    // Open: interactive again.
+    expect(pop.hasAttribute('inert')).toBe(false)
+  })
 })
