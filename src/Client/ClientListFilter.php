@@ -14,9 +14,4 @@ final readonly class ClientListFilter
         public ?string $search = null,
     ) {
     }
-
-    public function isEmpty(): bool
-    {
-        return $this->search === null;
-    }
 }

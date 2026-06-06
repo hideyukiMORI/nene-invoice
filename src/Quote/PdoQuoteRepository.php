@@ -30,27 +30,6 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         return $row !== null ? $this->mapRow($row) : null;
     }
 
-    /** @return list<Quote> */
-    public function findAll(int $limit, int $offset): array
-    {
-        $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM quotes WHERE organization_id = ? AND is_deleted = 0 ORDER BY id DESC LIMIT ? OFFSET ?',
-            [$this->orgId->get(), $limit, $offset],
-        );
-
-        return array_map(fn (array $row): Quote => $this->mapRow($row), $rows);
-    }
-
-    public function count(): int
-    {
-        $row = $this->query->fetchOne(
-            'SELECT COUNT(*) AS cnt FROM quotes WHERE organization_id = ? AND is_deleted = 0',
-            [$this->orgId->get()],
-        );
-
-        return $row !== null ? (int) $row['cnt'] : 0;
-    }
-
     /**
      * Admin list: filtered + searched + sorted, joined with the client name.
      *

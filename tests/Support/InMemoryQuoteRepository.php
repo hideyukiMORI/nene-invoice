@@ -47,25 +47,6 @@ final class InMemoryQuoteRepository implements QuoteRepositoryInterface
             : null;
     }
 
-    /** @return list<Quote> */
-    public function findAll(int $limit, int $offset): array
-    {
-        $matches = array_values(array_filter(
-            $this->byId,
-            fn (Quote $q): bool => $q->organizationId === $this->orgId->get() && !$q->isDeleted,
-        ));
-
-        return array_slice($matches, $offset, $limit);
-    }
-
-    public function count(): int
-    {
-        return count(array_filter(
-            $this->byId,
-            fn (Quote $q): bool => $q->organizationId === $this->orgId->get() && !$q->isDeleted,
-        ));
-    }
-
     /**
      * Admin list fake: applies the admin filters + sort. The fake has no client
      * data, so search matches quote_number only and clientName is empty (the

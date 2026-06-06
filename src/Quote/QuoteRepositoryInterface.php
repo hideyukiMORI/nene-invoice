@@ -13,11 +13,6 @@ interface QuoteRepositoryInterface
 {
     public function findById(int $id): ?Quote;
 
-    /** @return list<Quote> */
-    public function findAll(int $limit, int $offset): array;
-
-    public function count(): int;
-
     /**
      * Admin list: filtered + searched + sorted, joined with the client name.
      *

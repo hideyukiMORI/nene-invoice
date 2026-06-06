@@ -10,7 +10,9 @@ use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Quote\PdoQuoteRepository;
 use NeneInvoice\Quote\Quote;
+use NeneInvoice\Quote\QuoteListFilter;
 use NeneInvoice\Quote\QuoteNotFoundException;
+use NeneInvoice\Quote\QuoteSort;
 use NeneInvoice\Quote\QuoteStatus;
 use PHPUnit\Framework\TestCase;
 
@@ -36,9 +38,11 @@ final class PdoQuoteRepositoryTest extends TestCase
         $factory = new PdoConnectionFactory($config);
         $pdo = $factory->create();
 
-        $schema = file_get_contents(dirname(__DIR__, 2) . '/database/schema/quotes.sql');
-        self::assertIsString($schema);
-        $pdo->exec($schema);
+        foreach (['quotes', 'clients'] as $table) {
+            $schema = file_get_contents(dirname(__DIR__, 2) . "/database/schema/{$table}.sql");
+            self::assertIsString($schema);
+            $pdo->exec($schema);
+        }
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
@@ -79,11 +83,11 @@ final class PdoQuoteRepositoryTest extends TestCase
         $this->repository->save($this->draft(2, 9, 'EST-2026-001'));
 
         $this->orgId->set(1);
-        self::assertSame(2, $this->repository->count());
-        self::assertCount(2, $this->repository->findAll(10, 0));
+        self::assertSame(2, $this->repository->countForAdminList(new QuoteListFilter()));
+        self::assertCount(2, $this->repository->findForAdminList(new QuoteListFilter(), new QuoteSort(), 10, 0));
 
         $this->orgId->set(2);
-        self::assertSame(1, $this->repository->count());
+        self::assertSame(1, $this->repository->countForAdminList(new QuoteListFilter()));
         // A caller in another org must not read the row even by direct id.
         self::assertNull($this->repository->findById($org1QuoteId));
     }
@@ -118,7 +122,7 @@ final class PdoQuoteRepositoryTest extends TestCase
         $this->repository->delete($id);
 
         self::assertNull($this->repository->findById($id));
-        self::assertSame(0, $this->repository->count());
+        self::assertSame(0, $this->repository->countForAdminList(new QuoteListFilter()));
     }
 
     public function test_delete_throws_for_unknown_quote(): void

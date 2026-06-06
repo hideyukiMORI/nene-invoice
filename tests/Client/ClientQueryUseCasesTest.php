@@ -6,7 +6,9 @@ namespace NeneInvoice\Tests\Client;
 
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
+use NeneInvoice\Client\ClientListFilter;
 use NeneInvoice\Client\ClientNotFoundException;
+use NeneInvoice\Client\ClientSort;
 use NeneInvoice\Client\GetClientByIdUseCase;
 use NeneInvoice\Client\ListClientsUseCase;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
@@ -30,7 +32,7 @@ final class ClientQueryUseCasesTest extends TestCase
 
     public function test_list_is_scoped_to_organization(): void
     {
-        $result = (new ListClientsUseCase($this->repo))->execute(10, 0);
+        $result = (new ListClientsUseCase($this->repo))->executeAdmin(new ClientListFilter(), new ClientSort(), 10, 0);
 
         self::assertSame(2, $result->total);
         self::assertCount(2, $result->items);

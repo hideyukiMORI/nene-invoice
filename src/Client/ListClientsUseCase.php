@@ -11,14 +11,6 @@ final readonly class ListClientsUseCase
     ) {
     }
 
-    public function execute(int $limit, int $offset): ListClientsResult
-    {
-        return new ListClientsResult(
-            $this->clients->findAll($limit, $offset),
-            $this->clients->count(),
-        );
-    }
-
     /** Admin list: search + sort. */
     public function executeAdmin(
         ClientListFilter $filter,

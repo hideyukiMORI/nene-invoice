@@ -17,8 +17,6 @@ interface ItemRepositoryInterface
     /** @return list<Item> */
     public function findAll(int $limit, int $offset): array;
 
-    public function count(): int;
-
     /**
      * Admin list: searched + sorted.
      *

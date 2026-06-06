@@ -11,14 +11,6 @@ final readonly class ListItemsUseCase
     ) {
     }
 
-    public function execute(int $limit, int $offset): ListItemsResult
-    {
-        return new ListItemsResult(
-            $this->items->findAll($limit, $offset),
-            $this->items->count(),
-        );
-    }
-
     /** Admin list: search + sort. */
     public function executeAdmin(
         ItemListFilter $filter,
