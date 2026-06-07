@@ -61,6 +61,7 @@ final class OpenApiContractTest extends TestCase
         'changeQuoteStatus',
         'getQuotePdf',
         'convertQuoteToInvoice',
+        'exportQuotesCsv',
         'listInvoices',
         'getInvoiceById',
         'createInvoice',

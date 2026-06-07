@@ -34,6 +34,9 @@ final readonly class InvoiceListFilter
         /** Admin due-date range (YYYY-MM-DD, inclusive). */
         public ?string $dueFrom = null,
         public ?string $dueTo = null,
+        /** Admin issue-date range (YYYY-MM-DD, inclusive). The accounting-period axis. */
+        public ?string $issuedFrom = null,
+        public ?string $issuedTo = null,
     ) {
     }
 
@@ -49,7 +52,9 @@ final readonly class InvoiceListFilter
             && $this->totalMin === null
             && $this->totalMax === null
             && $this->dueFrom === null
-            && $this->dueTo === null;
+            && $this->dueTo === null
+            && $this->issuedFrom === null
+            && $this->issuedTo === null;
     }
 
     public function todayOrNow(): string

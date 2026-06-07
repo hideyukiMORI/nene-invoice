@@ -42,7 +42,7 @@ export function ListInvoices() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const view = useListInvoices()
-  const exportInvoices = useExportInvoicesCsv()
+  const exportInvoices = useExportInvoicesCsv(view.filters, view.sort)
   const exportPayments = useExportPaymentsCsv()
 
   const [draft, setDraft] = useState<InvoiceListFilters>(EMPTY_INVOICE_FILTERS)
@@ -86,6 +86,7 @@ export function ListInvoices() {
             size="sm"
             onClick={exportInvoices.download}
             disabled={exportInvoices.isDownloading}
+            title={t('admin.invoices.export.issuedAtNote')}
           >
             {exportInvoices.isDownloading
               ? t('admin.invoices.export.downloading')
@@ -181,6 +182,24 @@ export function ListInvoices() {
             value={draft.due_to ?? ''}
             onChange={(v) => {
               setDraft({ ...draft, due_to: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="inv-issued-from" label={t('admin.invoices.filter.issuedFrom')}>
+          <DatePicker
+            id="inv-issued-from"
+            value={draft.issued_from ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, issued_from: v === '' ? null : v })
+            }}
+          />
+        </Field>
+        <Field id="inv-issued-to" label={t('admin.invoices.filter.issuedTo')}>
+          <DatePicker
+            id="inv-issued-to"
+            value={draft.issued_to ?? ''}
+            onChange={(v) => {
+              setDraft({ ...draft, issued_to: v === '' ? null : v })
             }}
           />
         </Field>

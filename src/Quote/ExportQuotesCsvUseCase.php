@@ -2,29 +2,32 @@
 
 declare(strict_types=1);
 
-namespace NeneInvoice\Invoice;
+namespace NeneInvoice\Quote;
 
 use NeneInvoice\Support\Jst;
 
 /**
- * Assembles CSV bytes for all issued invoices in the organization.
- * UTF-8 BOM is prepended so Excel opens the file without encoding issues.
+ * Assembles CSV bytes for the quotes matching the given admin filter (so the
+ * export mirrors the list). UTF-8 BOM is prepended so Excel opens the file
+ * without encoding issues.
  */
-final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCaseInterface
+final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInterface
 {
     private const STATUS_LABELS = [
-        'issued'         => '発行済み',
-        'partially_paid' => '一部入金',
-        'paid'           => '入金済み',
+        'draft'    => '下書き',
+        'sent'     => '送付済み',
+        'accepted' => '承認済み',
+        'rejected' => '却下',
+        'expired'  => '期限切れ',
     ];
 
-    public function __construct(private InvoiceRepositoryInterface $invoices)
+    public function __construct(private QuoteRepositoryInterface $quotes)
     {
     }
 
-    public function execute(InvoiceListFilter $filter): string
+    public function execute(QuoteListFilter $filter): string
     {
-        $rows = $this->invoices->findIssuedForExport($filter);
+        $rows = $this->quotes->findForExport($filter);
 
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
@@ -33,28 +36,26 @@ final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCas
         fwrite($handle, "\xEF\xBB\xBF");
 
         fputcsv($handle, [
-            '請求書番号',
+            '見積番号',
             '発行日',
-            '支払期限',
+            '有効期限',
             '取引先',
             '小計(円)',
             '消費税(円)',
             '合計(円)',
             'ステータス',
-            '適格請求書',
         ]);
 
         foreach ($rows as $row) {
             fputcsv($handle, [
-                $row['invoice_number'],
-                $row['issued_at'] !== null ? Jst::date($row['issued_at']) : '',
-                $row['due_at'],
+                $row['quote_number'],
+                $row['issued_at'] !== null && $row['issued_at'] !== '' ? Jst::date($row['issued_at']) : '',
+                $row['valid_until'],
                 $row['client_name'],
                 $row['subtotal_cents'],
                 $row['tax_cents'],
                 $row['total_cents'],
                 self::STATUS_LABELS[$row['status']] ?? $row['status'],
-                $row['is_qualified_invoice'] ? 'はい' : 'いいえ',
             ]);
         }
 

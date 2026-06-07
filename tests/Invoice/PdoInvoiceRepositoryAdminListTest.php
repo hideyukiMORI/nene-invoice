@@ -137,4 +137,56 @@ final class PdoInvoiceRepositoryAdminListTest extends TestCase
         self::assertCount(1, $rows);
         self::assertSame('INV-OLD', $rows[0]->invoice->invoiceNumber);
     }
+
+    public function test_filters_by_issued_date_range_inclusive(): void
+    {
+        $this->client(1, 'A');
+        $this->invoiceIssued('INV-APR', 1, 'issued', '2026-04-15');
+        $this->invoiceIssued('INV-JUN-LO', 1, 'issued', '2026-06-01');
+        $this->invoiceIssued('INV-JUN-HI', 1, 'issued', '2026-06-30');
+        $this->invoiceIssued('INV-JUL', 1, 'issued', '2026-07-01');
+
+        // The Q1-FY range 2026-06-01..2026-06-30 includes both boundary dates.
+        $filter = new InvoiceListFilter(issuedFrom: '2026-06-01', issuedTo: '2026-06-30');
+        $rows   = $this->repo->findForAdminList($filter, new InvoiceSort('number', false), 20, 0);
+
+        self::assertSame(
+            ['INV-JUN-HI', 'INV-JUN-LO'],
+            array_map(static fn ($r): ?string => $r->invoice->invoiceNumber, $rows),
+        );
+        self::assertSame(2, $this->repo->countForAdminList($filter));
+    }
+
+    public function test_export_reflects_filter_and_excludes_drafts(): void
+    {
+        $this->client(1, 'アルファ商事');
+        $this->invoiceIssued('INV-MAY', 1, 'issued', '2026-05-20');
+        $this->invoiceIssued('INV-JUN', 1, 'paid', '2026-06-10');
+        $this->invoiceIssued('INV-DRAFT', 1, 'draft', '2026-06-15');
+
+        // Draft is excluded even though it falls inside the requested range.
+        $rows = $this->repo->findIssuedForExport(
+            new InvoiceListFilter(issuedFrom: '2026-06-01', issuedTo: '2026-06-30'),
+        );
+
+        self::assertCount(1, $rows);
+        self::assertSame('INV-JUN', $rows[0]['invoice_number']);
+        self::assertSame('アルファ商事', $rows[0]['client_name']);
+        self::assertSame('2026-06-10', $rows[0]['issued_at']);
+    }
+
+    private function invoiceIssued(string $number, int $clientId, string $status, string $issued): void
+    {
+        $this->repo->save(new Invoice(
+            organizationId: 1,
+            clientId: $clientId,
+            status: InvoiceStatus::from($status),
+            subtotalCents: 100000,
+            taxCents: 0,
+            totalCents: 100000,
+            invoiceNumber: $number,
+            issuedAt: $issued,
+            dueAt: '2026-12-31',
+        ));
+    }
 }

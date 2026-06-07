@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NeneInvoice\Invoice;
+namespace NeneInvoice\Quote;
 
 use NeneInvoice\Support\Jst;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -11,24 +11,23 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * `GET /admin/invoices/export` — exports issued invoices as a CSV file,
- * applying the same filters as the list endpoint (the export mirrors what the
- * list shows). Requires ViewBilling capability (resolved by the
- * `/admin/invoices` prefix).
+ * `GET /admin/quotes/export` — exports quotes as a CSV file, applying the same
+ * filters as the list endpoint (the export mirrors what the list shows).
+ * Requires ViewBilling capability (resolved by the `/admin/quotes` prefix).
  */
-final readonly class ExportInvoicesCsvHandler implements RequestHandlerInterface
+final readonly class ExportQuotesCsvHandler implements RequestHandlerInterface
 {
     public function __construct(
-        private ExportInvoicesCsvUseCaseInterface $useCase,
+        private ExportQuotesCsvUseCaseInterface $useCase,
         private Psr17Factory $psr17,
     ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $filter   = InvoiceListFilterFactory::fromQueryParams($request->getQueryParams());
+        $filter   = QuoteListFilterFactory::fromQueryParams($request->getQueryParams());
         $csv      = $this->useCase->execute($filter);
-        $filename = 'invoices-' . Jst::today() . '.csv';
+        $filename = 'quotes-' . Jst::today() . '.csv';
         $stream   = $this->psr17->createStream($csv);
 
         return $this->psr17->createResponse(200)

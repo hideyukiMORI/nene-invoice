@@ -22,6 +22,16 @@ interface QuoteRepositoryInterface
 
     public function countForAdminList(QuoteListFilter $filter): int;
 
+    /**
+     * Returns the non-deleted quotes matching the given admin filter, joined
+     * with the client name. Intended for CSV export only: it applies the same
+     * predicates as {@see findForAdminList()} (so the export mirrors the list)
+     * but never paginates.
+     *
+     * @return list<array{quote_number: string, issued_at: string|null, valid_until: string|null, client_name: string, subtotal_cents: int, tax_cents: int, total_cents: int, status: string}>
+     */
+    public function findForExport(QuoteListFilter $filter): array;
+
     public function save(Quote $quote): int;
 
     /** @throws QuoteNotFoundException */

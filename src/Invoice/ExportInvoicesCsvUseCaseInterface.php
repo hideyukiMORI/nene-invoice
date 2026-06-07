@@ -6,5 +6,5 @@ namespace NeneInvoice\Invoice;
 
 interface ExportInvoicesCsvUseCaseInterface
 {
-    public function execute(): string;
+    public function execute(InvoiceListFilter $filter): string;
 }

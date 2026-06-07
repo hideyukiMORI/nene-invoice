@@ -167,6 +167,16 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
             $params[] = $filter->dueTo;
         }
 
+        if ($filter->issuedFrom !== null) {
+            $clauses[] = 'i.issued_at IS NOT NULL AND i.issued_at >= ?';
+            $params[] = $filter->issuedFrom;
+        }
+
+        if ($filter->issuedTo !== null) {
+            $clauses[] = 'i.issued_at IS NOT NULL AND i.issued_at <= ?';
+            $params[] = $filter->issuedTo;
+        }
+
         if ($filter->totalMin !== null) {
             $clauses[] = 'i.total_cents >= ?';
             $params[] = $filter->totalMin;
@@ -400,8 +410,12 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         );
     }
 
-    public function findIssuedForExport(): array
+    public function findIssuedForExport(InvoiceListFilter $filter): array
     {
+        // Reuse the admin-list predicates so the export mirrors exactly what the
+        // list shows, then exclude drafts (not accounting documents).
+        [$where, $params] = $this->buildAdminWhere($filter);
+
         $rows = $this->query->fetchAll(
             'SELECT i.invoice_number, i.issued_at, i.due_at,
                     COALESCE(c.name, \'\') AS client_name,
@@ -409,10 +423,10 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
                     i.status, i.is_qualified_invoice
              FROM invoices i
              LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
-             WHERE i.organization_id = ? AND i.is_deleted = 0
+             WHERE ' . $where . '
                AND i.status != \'draft\'
              ORDER BY i.issued_at DESC, i.id DESC',
-            [$this->orgId->get()],
+            $params,
         );
 
         return array_map(static fn (array $row): array => [

@@ -120,4 +120,21 @@ final class PdoQuoteRepositoryAdminListTest extends TestCase
         $desc = $this->repo->findForAdminList(new QuoteListFilter(), new QuoteSort('total', true), 20, 0);
         self::assertSame([300000, 200000, 100000], array_map(static fn ($r): int => $r->quote->totalCents, $desc));
     }
+
+    public function test_export_reflects_filter_including_drafts(): void
+    {
+        $this->client(1, 'アルファ商事');
+        $this->quote('EST-SENT', 1, 100000, 'sent', '2026-06-30');
+        $this->quote('EST-DRAFT', 1, 200000, 'draft', '2026-07-31');
+
+        // No status filter: the export mirrors the list, so drafts are included.
+        $all = $this->repo->findForExport(new QuoteListFilter());
+        self::assertCount(2, $all);
+
+        // A status filter narrows the export the same way it narrows the list.
+        $accepted = $this->repo->findForExport(new QuoteListFilter(statuses: ['draft']));
+        self::assertCount(1, $accepted);
+        self::assertSame('EST-DRAFT', $accepted[0]['quote_number']);
+        self::assertSame('アルファ商事', $accepted[0]['client_name']);
+    }
 }

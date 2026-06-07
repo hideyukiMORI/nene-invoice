@@ -15,7 +15,7 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
     public function test_returns_empty_csv_with_header_when_no_invoices(): void
     {
         $useCase = new ExportInvoicesCsvUseCase($this->fakeRepo([]));
-        $csv     = $useCase->execute();
+        $csv     = $useCase->execute(new InvoiceListFilter());
 
         // UTF-8 BOM
         self::assertStringStartsWith("\xEF\xBB\xBF", $csv);
@@ -39,7 +39,7 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             ],
         ]);
 
-        $csv = (new ExportInvoicesCsvUseCase($repo))->execute();
+        $csv = (new ExportInvoicesCsvUseCase($repo))->execute(new InvoiceListFilter());
 
         self::assertStringContainsString('INV-2026-001', $csv);
         self::assertStringContainsString('株式会社サンプル', $csv);
@@ -66,7 +66,7 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
                 ],
             ]);
 
-            $csv = (new ExportInvoicesCsvUseCase($repo))->execute();
+            $csv = (new ExportInvoicesCsvUseCase($repo))->execute(new InvoiceListFilter());
             self::assertStringContainsString($expected, $csv, "Status {$status} should map to {$expected}");
         }
     }
@@ -82,7 +82,7 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             ],
         ]);
 
-        $csv = (new ExportInvoicesCsvUseCase($repo))->execute();
+        $csv = (new ExportInvoicesCsvUseCase($repo))->execute(new InvoiceListFilter());
         self::assertStringContainsString('いいえ', $csv);
     }
 
@@ -102,7 +102,7 @@ final class ExportInvoicesCsvUseCaseTest extends TestCase
             }
 
             /** @return list<array{invoice_number: string, issued_at: string|null, due_at: string|null, client_name: string, subtotal_cents: int, tax_cents: int, total_cents: int, status: string, is_qualified_invoice: bool}> */
-            public function findIssuedForExport(): array
+            public function findIssuedForExport(InvoiceListFilter $filter): array
             {
                 return $this->exportRows;
             }

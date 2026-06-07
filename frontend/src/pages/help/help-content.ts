@@ -491,8 +491,15 @@ export const HELP_SECTIONS: HelpSection[] = [
       {
         kind: 'lede',
         text: {
-          ja: '列の見出しをクリックすると**並べ替え**できます。請求・入金・監査ログは **CSV エクスポート**に対応しており、会計ソフトへの取込や控えに使えます。',
-          en: 'Click a column header to **sort**. Invoices, payments, and the audit log support **CSV export** for importing into accounting software or keeping records.',
+          ja: '列の見出しをクリックすると**並べ替え**できます。見積・請求・入金・監査ログは **CSV エクスポート**に対応しており、会計ソフトへの取込や控えに使えます。エクスポートは**現在の絞り込み結果**（検索・状態・期間・金額）をそのまま出力します。',
+          en: 'Click a column header to **sort**. Quotes, invoices, payments, and the audit log support **CSV export** for importing into accounting software or keeping records. The export reflects your **current filters** (search, status, date range, amount).',
+        },
+      },
+      {
+        kind: 'note',
+        text: {
+          ja: '請求書 CSV の期間は**発行日（issued_at）基準**です。発行日は会計上の**売上計上日（納品日）とは一致しない場合がある**ため、納品月で集計したい場合は会計ソフト側の計上日でご確認ください。',
+          en: 'The invoice CSV date range is based on the **issue date (issued_at)**. The issue date **may differ from the accounting revenue-recognition date (delivery date)**, so when aggregating by delivery month, check the posting date in your accounting software.',
         },
       },
     ],
