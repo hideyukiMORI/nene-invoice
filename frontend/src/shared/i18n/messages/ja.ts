@@ -83,6 +83,7 @@ export const jaMessages = {
   'admin.auth.trustOss': 'オープンソース（MIT）',
   'admin.auth.trustQualified': '適格請求書対応',
   'admin.auth.failed': 'メールアドレスまたはパスワードが正しくありません。',
+  'admin.auth.sessionExpired': 'セッションの有効期限が切れました。再度ログインしてください。',
   'admin.auth.emailInvalid': '有効なメールアドレスを入力してください。',
   'admin.auth.passwordRequired': 'パスワードを入力してください。',
   'admin.account.signedInAs': '{{email}} でログイン中',
