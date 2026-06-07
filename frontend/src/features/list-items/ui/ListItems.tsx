@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   EMPTY_ITEM_FILTERS,
   useDeleteItem,
+  useExportItemsCsv,
   type Item,
   type ItemListFilters,
   type ItemSortField,
@@ -11,6 +12,7 @@ import { useTranslation } from '@/shared/i18n'
 import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
 import {
+  Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
@@ -33,6 +35,7 @@ export function ListItems() {
   const navigate = useNavigate()
   const view = useListItems()
   const deleteItem = useDeleteItem()
+  const exportItems = useExportItemsCsv(view.filters, view.sort)
   const [pendingDelete, setPendingDelete] = useState<Item | null>(null)
   const [draft, setDraft] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
 
@@ -77,10 +80,31 @@ export function ListItems() {
         <Text as="h1" variant="heading-md">
           {t('admin.items.title')}
         </Text>
-        <LinkButton to="/items/new" size="sm" aria-keyshortcuts="n">
-          {t('admin.items.newButton')}
-        </LinkButton>
+        <Stack direction="row" gap="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportItems.download}
+            disabled={exportItems.isDownloading}
+          >
+            {exportItems.isDownloading
+              ? t('admin.items.export.downloading')
+              : t('admin.items.export.items')}
+          </Button>
+          <LinkButton to="/items/import" variant="ghost" size="sm">
+            {t('admin.items.import.button')}
+          </LinkButton>
+          <LinkButton to="/items/new" size="sm" aria-keyshortcuts="n">
+            {t('admin.items.newButton')}
+          </LinkButton>
+        </Stack>
       </div>
+
+      {exportItems.errorMessage !== null && (
+        <Text variant="muted" role="alert">
+          {exportItems.errorMessage}
+        </Text>
+      )}
 
       <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
         <Field id="item-q" label={t('admin.items.filter.search')}>

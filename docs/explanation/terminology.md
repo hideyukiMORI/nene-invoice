@@ -163,7 +163,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient`, `exportClientsCsv`, `getClientsImportTemplate`, `importClientsCsv` | Client |
-| `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem` | Item (品目マスタ) |
+| `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem`, `exportItemsCsv`, `getItemsImportTemplate`, `importItemsCsv` | Item (品目マスタ) |
 | `listTemplates`, `getTemplateById`, `createTemplate`, `updateTemplate`, `deleteTemplate` | Template (雛形) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice`, `exportQuotesCsv` | Quote |

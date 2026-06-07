@@ -11,6 +11,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 use NeneInvoice\Support\CsvImport;
+use NeneInvoice\Support\CsvImportResult;
 
 /**
  * Template-only clients import (ADR 0011). Two passes: validate every row first
@@ -20,7 +21,7 @@ use NeneInvoice\Support\CsvImport;
  * lenient import path. `id` blank = create, present = update an existing
  * own-organization client.
  *
- * @phpstan-import-type RowError from ClientImportResult
+ * @phpstan-import-type RowError from CsvImportResult
  */
 final readonly class ImportClientsCsvUseCase implements ImportClientsCsvUseCaseInterface
 {
@@ -38,12 +39,12 @@ final readonly class ImportClientsCsvUseCase implements ImportClientsCsvUseCaseI
     ) {
     }
 
-    public function execute(?int $actorUserId, string $raw, bool $dryRun): ClientImportResult
+    public function execute(?int $actorUserId, string $raw, bool $dryRun): CsvImportResult
     {
         $parse = CsvImport::parse($raw, ClientImportTemplate::HEADER);
 
         if ($parse->formatError !== null) {
-            return ClientImportResult::formatRejected($parse->formatError);
+            return CsvImportResult::formatRejected($parse->formatError);
         }
 
         $rowCount = count($parse->rows);
@@ -120,19 +121,19 @@ final readonly class ImportClientsCsvUseCase implements ImportClientsCsvUseCaseI
         }
 
         if ($errors !== []) {
-            return ClientImportResult::rowsRejected($rowCount, $errors);
+            return CsvImportResult::rowsRejected($rowCount, $errors);
         }
 
         $created = count(array_filter($ops, static fn (array $op): bool => $op['mode'] === 'create'));
         $updated = count($ops) - $created;
 
         if ($dryRun) {
-            return ClientImportResult::applied($rowCount, $created, $updated, true);
+            return CsvImportResult::applied($rowCount, $created, $updated, true);
         }
 
         $this->apply($actorUserId, $ops);
 
-        return ClientImportResult::applied($rowCount, $created, $updated, false);
+        return CsvImportResult::applied($rowCount, $created, $updated, false);
     }
 
     /**

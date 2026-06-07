@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
-namespace NeneInvoice\Client;
+namespace NeneInvoice\Support;
 
 /**
- * Outcome of an import attempt (ADR 0011). Either the file was rejected — a
- * file-level `formatError` or one/more row errors — in which case nothing was
- * written, or it was accepted (applied, or validated under dry-run) with
- * created/updated counts. `accepted` drives the HTTP status (200 vs 422).
+ * Outcome of a template-only CSV import (ADR 0011), shared across domains
+ * (clients, items). Either the file was rejected — a file-level `formatError` or
+ * one/more row errors — in which case nothing was written, or it was accepted
+ * (applied, or validated under dry-run) with created/updated counts. `accepted`
+ * drives the HTTP status (200 vs 422).
  *
  * @phpstan-type RowError array{row: int, column: string|null, code: string, message: string}
  */
-final readonly class ClientImportResult
+final readonly class CsvImportResult
 {
     /**
      * @param list<RowError> $errors

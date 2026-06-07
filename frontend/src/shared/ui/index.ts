@@ -30,6 +30,7 @@ export {
 export { EmptyState, type EmptyStateProps } from './components/EmptyState'
 export { ErrorState, type ErrorStateProps } from './components/ErrorState'
 export { ConfirmDialog, type ConfirmDialogProps } from './components/ConfirmDialog'
+export { CsvImportPanel, type CsvImportPanelProps } from './components/CsvImportPanel'
 export { LoadingState } from './components/LoadingState'
 export {
   ActionError,
