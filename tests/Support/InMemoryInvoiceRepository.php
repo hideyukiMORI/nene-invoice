@@ -287,9 +287,26 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         $this->byId[$id] = $this->withId($existing, $id, true);
     }
 
-    public function findIssuedForExport(): array
+    /** @return list<array{invoice_number: string, issued_at: string|null, due_at: string|null, client_name: string, subtotal_cents: int, tax_cents: int, total_cents: int, status: string, is_qualified_invoice: bool}> */
+    public function findIssuedForExport(InvoiceListFilter $filter): array
     {
-        return [];
+        return array_values(array_map(
+            static fn (Invoice $i): array => [
+                'invoice_number'       => (string) $i->invoiceNumber,
+                'issued_at'            => $i->issuedAt,
+                'due_at'               => $i->dueAt,
+                'client_name'          => '',
+                'subtotal_cents'       => $i->subtotalCents,
+                'tax_cents'            => $i->taxCents,
+                'total_cents'          => $i->totalCents,
+                'status'               => $i->status->value,
+                'is_qualified_invoice' => $i->isQualifiedInvoice,
+            ],
+            array_filter(
+                $this->adminFiltered($filter),
+                static fn (Invoice $i): bool => $i->status !== InvoiceStatus::Draft,
+            ),
+        ));
     }
 
     private function withId(Invoice $invoice, int $id, bool $isDeleted): Invoice

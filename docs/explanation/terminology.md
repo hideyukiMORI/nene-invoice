@@ -166,7 +166,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem` | Item (品目マスタ) |
 | `listTemplates`, `getTemplateById`, `createTemplate`, `updateTemplate`, `deleteTemplate` | Template (雛形) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |
-| `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice` | Quote |
+| `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice`, `exportQuotesCsv` | Quote |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |
 | `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
 | `listLineItemSuggestions` | LineItem (history-based suggestions) |

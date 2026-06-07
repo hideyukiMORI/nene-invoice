@@ -4,6 +4,7 @@ import {
   EMPTY_QUOTE_FILTERS,
   QUOTE_STATUSES,
   quoteStatusTone,
+  useExportQuotesCsv,
   type QuoteListFilters,
   type QuoteSortField,
   type QuoteStatus,
@@ -40,6 +41,7 @@ export function ListQuotes() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const view = useListQuotes()
+  const exportQuotes = useExportQuotesCsv(view.filters, view.sort)
   const [draft, setDraft] = useState<QuoteListFilters>(EMPTY_QUOTE_FILTERS)
 
   const rows = view.state.kind === 'ready' ? view.state.quotes : []
@@ -75,10 +77,28 @@ export function ListQuotes() {
         <Text as="h1" variant="heading-md">
           {t('admin.quotes.title')}
         </Text>
-        <LinkButton to="/quotes/new" size="sm" aria-keyshortcuts="n">
-          {t('admin.quotes.newButton')}
-        </LinkButton>
+        <Stack direction="row" gap="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportQuotes.download}
+            disabled={exportQuotes.isDownloading}
+          >
+            {exportQuotes.isDownloading
+              ? t('admin.quotes.export.downloading')
+              : t('admin.quotes.export.quotes')}
+          </Button>
+          <LinkButton to="/quotes/new" size="sm" aria-keyshortcuts="n">
+            {t('admin.quotes.newButton')}
+          </LinkButton>
+        </Stack>
       </div>
+
+      {exportQuotes.errorMessage !== null && (
+        <Text variant="muted" role="alert">
+          {exportQuotes.errorMessage}
+        </Text>
+      )}
 
       <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
         <Field id="q-q" label={t('admin.quotes.filter.search')}>

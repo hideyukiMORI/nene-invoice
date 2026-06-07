@@ -127,6 +127,35 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         return [implode(' AND ', $clauses), $params];
     }
 
+    public function findForExport(QuoteListFilter $filter): array
+    {
+        // Reuse the admin-list predicates so the export mirrors exactly what the
+        // list shows (all statuses, including drafts).
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT q.quote_number, q.issued_at, q.valid_until,
+                    COALESCE(c.name, \'\') AS client_name,
+                    q.subtotal_cents, q.tax_cents, q.total_cents, q.status
+             FROM quotes q
+             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = 0
+             WHERE ' . $where . '
+             ORDER BY q.issued_at DESC, q.id DESC',
+            $params,
+        );
+
+        return array_map(static fn (array $row): array => [
+            'quote_number'   => (string) ($row['quote_number'] ?? ''),
+            'issued_at'      => isset($row['issued_at']) && $row['issued_at'] !== '' ? substr((string) $row['issued_at'], 0, 10) : '',
+            'valid_until'    => isset($row['valid_until']) && $row['valid_until'] !== '' ? substr((string) $row['valid_until'], 0, 10) : '',
+            'client_name'    => (string) ($row['client_name'] ?? ''),
+            'subtotal_cents' => (int) $row['subtotal_cents'],
+            'tax_cents'      => (int) $row['tax_cents'],
+            'total_cents'    => (int) $row['total_cents'],
+            'status'         => (string) $row['status'],
+        ], $rows);
+    }
+
     /** Maps a whitelisted sort field to a SQL ORDER BY, with `q.id` as tiebreak. */
     private static function orderByClause(QuoteSort $sort): string
     {

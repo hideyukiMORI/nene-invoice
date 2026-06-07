@@ -113,6 +113,24 @@ final class InMemoryQuoteRepository implements QuoteRepositoryInterface
         }));
     }
 
+    /** @return list<array{quote_number: string, issued_at: string|null, valid_until: string|null, client_name: string, subtotal_cents: int, tax_cents: int, total_cents: int, status: string}> */
+    public function findForExport(QuoteListFilter $filter): array
+    {
+        return array_map(
+            static fn (Quote $q): array => [
+                'quote_number'   => $q->quoteNumber,
+                'issued_at'      => $q->issuedAt,
+                'valid_until'    => $q->validUntil,
+                'client_name'    => '',
+                'subtotal_cents' => $q->subtotalCents,
+                'tax_cents'      => $q->taxCents,
+                'total_cents'    => $q->totalCents,
+                'status'         => $q->status->value,
+            ],
+            $this->adminFiltered($filter),
+        );
+    }
+
     public function save(Quote $quote): int
     {
         $id = $this->nextId++;

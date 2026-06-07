@@ -38,6 +38,9 @@ export interface InvoiceListFilters {
   overdue: boolean
   due_from: string | null
   due_to: string | null
+  /** Issue-date range — the accounting-period axis (YYYY-MM-DD, inclusive). */
+  issued_from: string | null
+  issued_to: string | null
   total_min: number | null
   total_max: number | null
 }
@@ -48,6 +51,8 @@ export const EMPTY_INVOICE_FILTERS: InvoiceListFilters = {
   overdue: false,
   due_from: null,
   due_to: null,
+  issued_from: null,
+  issued_to: null,
   total_min: null,
   total_max: null,
 }

@@ -83,6 +83,10 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
             )
             ->set(ListQuotesUseCaseInterface::class, static fn (ContainerInterface $c): ListQuotesUseCase => new ListQuotesUseCase(self::quotes($c)))
             ->set(
+                ExportQuotesCsvUseCaseInterface::class,
+                static fn (ContainerInterface $c): ExportQuotesCsvUseCase => new ExportQuotesCsvUseCase(self::quotes($c)),
+            )
+            ->set(
                 GetQuoteByIdUseCaseInterface::class,
                 static fn (ContainerInterface $c): GetQuoteByIdUseCase => new GetQuoteByIdUseCase(
                     self::quotes($c),
@@ -142,6 +146,13 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ExportQuotesCsvHandler::class,
+                static fn (ContainerInterface $c): ExportQuotesCsvHandler => new ExportQuotesCsvHandler(
+                    self::resolve($c, ExportQuotesCsvUseCaseInterface::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 QuoteNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): QuoteNotFoundExceptionHandler => new QuoteNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -161,12 +172,13 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     $create       = $c->get(CreateQuoteHandler::class);
                     $changeStatus = $c->get(ChangeQuoteStatusHandler::class);
                     $pdf          = $c->get(GetQuotePdfHandler::class);
+                    $exportCsv    = $c->get(ExportQuotesCsvHandler::class);
 
-                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler || !$changeStatus instanceof ChangeQuoteStatusHandler || !$pdf instanceof GetQuotePdfHandler) {
+                    if (!$list instanceof ListQuotesHandler || !$get instanceof GetQuoteByIdHandler || !$create instanceof CreateQuoteHandler || !$changeStatus instanceof ChangeQuoteStatusHandler || !$pdf instanceof GetQuotePdfHandler || !$exportCsv instanceof ExportQuotesCsvHandler) {
                         throw new LogicException('Quote handler services are invalid.');
                     }
 
-                    return new QuoteRouteRegistrar($list, $get, $create, $changeStatus, $pdf);
+                    return new QuoteRouteRegistrar($list, $get, $create, $changeStatus, $pdf, $exportCsv);
                 },
             );
     }

@@ -87,6 +87,8 @@ describe('useListInvoices', () => {
         overdue: true,
         due_from: '2026-06-01',
         due_to: '2026-06-30',
+        issued_from: '2026-04-01',
+        issued_to: '2026-06-30',
         total_min: 1000,
         total_max: 500000,
       })
@@ -101,6 +103,8 @@ describe('useListInvoices', () => {
       expect(last).toContain('status=issued')
       expect(last).toContain('overdue=1')
       expect(last).toContain('due_from=2026-06-01')
+      expect(last).toContain('issued_from=2026-04-01')
+      expect(last).toContain('issued_to=2026-06-30')
       expect(last).toContain('total_min=1000')
       expect(last).toContain('sort=total')
       expect(last).toContain('order=asc')

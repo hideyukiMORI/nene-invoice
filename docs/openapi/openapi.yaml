@@ -979,17 +979,138 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+  /admin/quotes/export:
+    get:
+      tags: [Quotes]
+      summary: Export quotes as CSV
+      description: >
+        Downloads the (optionally filtered) quotes for the organization as a
+        UTF-8 BOM CSV file compatible with Excel. Accepts the same filters as
+        the list endpoint, so the export mirrors what the list shows.
+        Requires ViewBilling capability.
+      operationId: exportQuotesCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search term (matches quote number or client name).
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Comma-separated subset of quote statuses.
+          schema:
+            type: string
+        - name: valid_from
+          in: query
+          required: false
+          description: valid_until lower bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: valid_to
+          in: query
+          required: false
+          description: valid_until upper bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: total_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: total_max
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/invoices/export:
     get:
       tags: [Invoices]
       summary: Export invoices as CSV
       description: >
-        Downloads all issued (non-draft) invoices for the organization as a
-        UTF-8 BOM CSV file compatible with Excel and accounting software.
-        Requires ViewBilling capability.
+        Downloads the (optionally filtered) issued (non-draft) invoices for the
+        organization as a UTF-8 BOM CSV file compatible with Excel and
+        accounting software. Accepts the same filters as the list endpoint, so
+        the export mirrors what the list shows. The issued-date range
+        (issued_from / issued_to) is the accounting-period axis. Requires
+        ViewBilling capability.
       operationId: exportInvoicesCsv
       security:
         - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search term (matches invoice number or client name).
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Comma-separated subset of invoice statuses.
+          schema:
+            type: string
+        - name: overdue
+          in: query
+          required: false
+          description: When '1', only overdue (issued/partially_paid, past due) invoices.
+          schema:
+            type: string
+        - name: due_from
+          in: query
+          required: false
+          description: due_at lower bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: due_to
+          in: query
+          required: false
+          description: due_at upper bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: issued_from
+          in: query
+          required: false
+          description: issued_at lower bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: issued_to
+          in: query
+          required: false
+          description: issued_at upper bound (YYYY-MM-DD, inclusive).
+          schema:
+            type: string
+            format: date
+        - name: total_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: total_max
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
           description: CSV file

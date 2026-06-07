@@ -1,55 +1,13 @@
-import { useState } from 'react'
-import { apiClient } from '@/shared/api/client'
-import { useTranslation } from '@/shared/i18n'
-import type { MessageKey } from '@/shared/i18n'
+import { useExportCsvBase, type UseExportCsv } from '@/shared/api/use-export-csv'
+import type { InvoiceListFilters, InvoiceSort } from './model'
+import { buildInvoiceListSearch } from './queries'
 
-export interface UseExportCsv {
-  download: () => void
-  isDownloading: boolean
-  errorMessage: string | null
-}
-
-function useExportCsvBase(path: string, filename: string, errorKey: MessageKey): UseExportCsv {
-  const { t } = useTranslation()
-  const [isDownloading, setIsDownloading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const download = (): void => {
-    if (isDownloading) return
-    setIsDownloading(true)
-    setErrorMessage(null)
-
-    void apiClient
-      .getBlob(path)
-      .then((blob) => {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      })
-      .catch(() => {
-        setErrorMessage(t(errorKey))
-      })
-      .finally(() => {
-        setIsDownloading(false)
-      })
-  }
-
-  return { download, isDownloading, errorMessage }
-}
-
-/** Downloads all issued invoices as CSV. */
-export function useExportInvoicesCsv(): UseExportCsv {
+/** Downloads the issued invoices matching the current list filters as CSV. */
+export function useExportInvoicesCsv(filters: InvoiceListFilters, sort: InvoiceSort): UseExportCsv {
   const today = new Date().toISOString().slice(0, 10)
-  return useExportCsvBase(
-    '/admin/invoices/export',
-    `invoices-${today}.csv`,
-    'admin.invoices.export.error',
-  )
+  const qs = buildInvoiceListSearch(filters, sort).toString()
+  const path = qs === '' ? '/admin/invoices/export' : `/admin/invoices/export?${qs}`
+  return useExportCsvBase(path, `invoices-${today}.csv`, 'admin.invoices.export.error')
 }
 
 /** Downloads all payments as CSV. */
