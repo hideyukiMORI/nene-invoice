@@ -11,7 +11,9 @@ const NO_SORT: InvoiceSort = { field: null, order: 'desc' }
 
 describe('useExportInvoicesCsv', () => {
   it('starts in idle state', () => {
-    const { result } = renderHookWithProviders(() => useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT))
+    const { result } = renderHookWithProviders(() =>
+      useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT),
+    )
     expect(result.current.isDownloading).toBe(false)
     expect(result.current.errorMessage).toBeNull()
   })
@@ -27,7 +29,9 @@ describe('useExportInvoicesCsv', () => {
       ),
     )
 
-    const { result } = renderHookWithProviders(() => useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT))
+    const { result } = renderHookWithProviders(() =>
+      useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT),
+    )
 
     act(() => {
       result.current.download()
@@ -45,7 +49,9 @@ describe('useExportInvoicesCsv', () => {
   it('sets errorMessage on server error', async () => {
     server.use(http.get('/admin/invoices/export', () => new HttpResponse(null, { status: 500 })))
 
-    const { result } = renderHookWithProviders(() => useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT))
+    const { result } = renderHookWithProviders(() =>
+      useExportInvoicesCsv(EMPTY_INVOICE_FILTERS, NO_SORT),
+    )
 
     act(() => {
       result.current.download()

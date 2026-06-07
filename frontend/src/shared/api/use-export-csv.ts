@@ -14,7 +14,11 @@ export interface UseExportCsv {
  * surfaces a translated error. Shared by the list-export hooks (invoices,
  * payments, quotes) so the download mechanics live in one place.
  */
-export function useExportCsvBase(path: string, filename: string, errorKey: MessageKey): UseExportCsv {
+export function useExportCsvBase(
+  path: string,
+  filename: string,
+  errorKey: MessageKey,
+): UseExportCsv {
   const { t } = useTranslation()
   const [isDownloading, setIsDownloading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
