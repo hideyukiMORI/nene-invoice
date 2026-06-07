@@ -23,6 +23,15 @@ interface ClientRepositoryInterface
 
     public function countForAdminList(ClientListFilter $filter): int;
 
+    /**
+     * Returns the non-deleted clients matching the given admin filter, ordered by
+     * name. Intended for CSV export only: same predicates as
+     * {@see findForAdminList()} (so the export mirrors the list) but unpaginated.
+     *
+     * @return list<Client>
+     */
+    public function findForExport(ClientListFilter $filter): array;
+
     public function save(Client $client): int;
 
     /** @throws ClientNotFoundException */

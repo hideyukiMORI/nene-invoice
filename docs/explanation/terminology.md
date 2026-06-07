@@ -162,7 +162,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listOrganizations`, `getOrganizationById`, `createOrganization`, `deleteOrganization` | Organization (superadmin) |
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
-| `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient` | Client |
+| `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient`, `exportClientsCsv` | Client |
 | `listItems`, `getItemById`, `createItem`, `updateItem`, `deleteItem` | Item (品目マスタ) |
 | `listTemplates`, `getTemplateById`, `createTemplate`, `updateTemplate`, `deleteTemplate` | Template (雛形) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |

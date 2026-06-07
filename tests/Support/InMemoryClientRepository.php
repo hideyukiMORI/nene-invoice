@@ -93,6 +93,16 @@ final class InMemoryClientRepository implements ClientRepositoryInterface
         }));
     }
 
+    /** @return list<Client> */
+    public function findForExport(ClientListFilter $filter): array
+    {
+        $matches = $this->adminFiltered($filter);
+
+        usort($matches, static fn (Client $a, Client $b): int => strcmp($a->name, $b->name));
+
+        return $matches;
+    }
+
     public function save(Client $client): int
     {
         $id = $this->nextId++;

@@ -28,16 +28,15 @@ final readonly class ListClientsHandler implements RequestHandlerInterface
         $pagination = PaginationQueryParser::parse($request);
         $query = $request->getQueryParams();
 
-        $searchValue = $query['q'] ?? null;
-        $search      = is_string($searchValue) && trim($searchValue) !== '' ? trim($searchValue) : null;
-        $sortValue   = $query['sort'] ?? null;
-        $orderValue  = $query['order'] ?? null;
-        $sort        = ClientSort::fromInput(
+        $filter     = ClientListFilterFactory::fromQueryParams($query);
+        $sortValue  = $query['sort'] ?? null;
+        $orderValue = $query['order'] ?? null;
+        $sort       = ClientSort::fromInput(
             is_string($sortValue) ? $sortValue : null,
             is_string($orderValue) ? $orderValue : null,
         );
 
-        $result = $this->useCase->executeAdmin(new ClientListFilter($search), $sort, $pagination->limit, $pagination->offset);
+        $result = $this->useCase->executeAdmin($filter, $sort, $pagination->limit, $pagination->offset);
 
         return $this->json->create((new PaginationResponse(
             items: array_map(static fn (Client $c): array => ClientResponse::toArray($c), $result->items),

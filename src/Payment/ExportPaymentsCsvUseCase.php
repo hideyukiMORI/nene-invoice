@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Payment;
 
+use NeneInvoice\Support\Csv;
 use NeneInvoice\Support\Jst;
 
 /**
@@ -32,7 +33,7 @@ final readonly class ExportPaymentsCsvUseCase implements ExportPaymentsCsvUseCas
         // UTF-8 BOM for Excel compatibility
         fwrite($handle, "\xEF\xBB\xBF");
 
-        fputcsv($handle, [
+        Csv::putRow($handle, [
             '請求書番号',
             '取引先',
             '入金日',
@@ -42,7 +43,7 @@ final readonly class ExportPaymentsCsvUseCase implements ExportPaymentsCsvUseCas
         ]);
 
         foreach ($rows as $row) {
-            fputcsv($handle, [
+            Csv::putRow($handle, [
                 $row['invoice_number'],
                 $row['client_name'],
                 Jst::date($row['paid_at']),

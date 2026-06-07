@@ -82,6 +82,18 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         return [implode(' AND ', $clauses), $params];
     }
 
+    public function findForExport(ClientListFilter $filter): array
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . ' FROM clients WHERE ' . $where . ' ORDER BY name ASC, id ASC',
+            $params,
+        );
+
+        return array_map(fn (array $row): Client => $this->mapRow($row), $rows);
+    }
+
     /** Maps a whitelisted sort field to a SQL ORDER BY, with `id` as tiebreak. */
     private static function orderByClause(ClientSort $sort): string
     {

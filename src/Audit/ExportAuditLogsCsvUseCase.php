@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Audit;
 
+use NeneInvoice\Support\Csv;
 use NeneInvoice\Support\Jst;
 
 /**
@@ -31,7 +32,7 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
         // UTF-8 BOM for Excel compatibility
         fwrite($handle, "\xEF\xBB\xBF");
 
-        fputcsv($handle, [
+        Csv::putRow($handle, [
             '日時',
             'アクション',
             '対象種別',
@@ -43,7 +44,7 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
         ]);
 
         foreach ($rows as $log) {
-            fputcsv($handle, [
+            Csv::putRow($handle, [
                 $log->createdAt !== null ? Jst::dateTime($log->createdAt) : '',
                 $log->action,
                 $log->entityType,
