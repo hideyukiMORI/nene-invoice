@@ -539,6 +539,38 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '422':
           $ref: '#/components/responses/InvalidRegistrationNumber'
+  /admin/clients/export:
+    get:
+      tags: [Clients]
+      summary: Export clients as CSV
+      description: >
+        Downloads the (optionally filtered) clients for the organization as a
+        UTF-8 BOM CSV file compatible with Excel. Accepts the same `q` filter as
+        the list endpoint, so the export mirrors what the list shows. Cells are
+        neutralized against spreadsheet formula injection. Requires ViewBilling
+        capability.
+      operationId: exportClientsCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search term (matches name, kana, contact, email, or registration number).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/clients/{id}:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'

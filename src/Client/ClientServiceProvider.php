@@ -15,6 +15,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -43,6 +44,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
             ->set(CreateClientUseCaseInterface::class, static fn (ContainerInterface $c): CreateClientUseCase => new CreateClientUseCase(self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(UpdateClientUseCaseInterface::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(DeleteClientUseCaseInterface::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
+            ->set(ExportClientsCsvUseCaseInterface::class, static fn (ContainerInterface $c): ExportClientsCsvUseCase => new ExportClientsCsvUseCase(self::repository($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
@@ -79,6 +81,13 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ExportClientsCsvHandler::class,
+                static fn (ContainerInterface $c): ExportClientsCsvHandler => new ExportClientsCsvHandler(
+                    self::exportUseCase($c),
+                    self::psr17($c),
+                ),
+            )
+            ->set(
                 ClientNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ClientNotFoundExceptionHandler => new ClientNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -94,17 +103,19 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                     $create = $c->get(CreateClientHandler::class);
                     $update = $c->get(UpdateClientHandler::class);
                     $delete = $c->get(DeleteClientHandler::class);
+                    $exportCsv = $c->get(ExportClientsCsvHandler::class);
 
                     if (!$list instanceof ListClientsHandler
                         || !$get instanceof GetClientByIdHandler
                         || !$create instanceof CreateClientHandler
                         || !$update instanceof UpdateClientHandler
                         || !$delete instanceof DeleteClientHandler
+                        || !$exportCsv instanceof ExportClientsCsvHandler
                     ) {
                         throw new LogicException('Client handler services are invalid.');
                     }
 
-                    return new ClientRouteRegistrar($list, $get, $create, $update, $delete);
+                    return new ClientRouteRegistrar($list, $get, $create, $update, $delete, $exportCsv);
                 },
             );
     }
@@ -140,6 +151,28 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
         }
 
         return $u;
+    }
+
+    private static function exportUseCase(ContainerInterface $c): ExportClientsCsvUseCase
+    {
+        $u = $c->get(ExportClientsCsvUseCaseInterface::class);
+
+        if (!$u instanceof ExportClientsCsvUseCase) {
+            throw new LogicException('Export clients use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function psr17(ContainerInterface $c): Psr17Factory
+    {
+        $p = $c->get(Psr17Factory::class);
+
+        if (!$p instanceof Psr17Factory) {
+            throw new LogicException('PSR-17 factory service is invalid.');
+        }
+
+        return $p;
     }
 
     private static function repository(ContainerInterface $c): ClientRepositoryInterface

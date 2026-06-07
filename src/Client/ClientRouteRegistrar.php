@@ -20,6 +20,7 @@ final readonly class ClientRouteRegistrar
         private CreateClientHandler $createHandler,
         private UpdateClientHandler $updateHandler,
         private DeleteClientHandler $deleteHandler,
+        private ExportClientsCsvHandler $exportCsvHandler,
     ) {
     }
 
@@ -30,9 +31,12 @@ final readonly class ClientRouteRegistrar
         $create = $this->createHandler;
         $update = $this->updateHandler;
         $delete = $this->deleteHandler;
+        $exportCsv = $this->exportCsvHandler;
 
         $router->get('/admin/clients', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/clients', static fn (ServerRequestInterface $r) => $create->handle($r));
+        // Static segment 'export' takes priority over {id} per Router spec.
+        $router->get('/admin/clients/export', static fn (ServerRequestInterface $r) => $exportCsv->handle($r));
         $router->get('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->patch('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $update->handle($r));
         $router->delete('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $delete->handle($r));

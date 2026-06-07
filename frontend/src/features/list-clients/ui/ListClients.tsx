@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   EMPTY_CLIENT_FILTERS,
   useDeleteClient,
+  useExportClientsCsv,
   type Client,
   type ClientListFilters,
   type ClientSortField,
@@ -10,6 +11,7 @@ import {
 import { useTranslation } from '@/shared/i18n'
 import { KbdHint, useRowCursor } from '@/shared/keyboard'
 import {
+  Button,
   ConfirmDialog,
   EmptyState,
   ErrorState,
@@ -32,6 +34,7 @@ export function ListClients() {
   const navigate = useNavigate()
   const view = useListClients()
   const deleteClient = useDeleteClient()
+  const exportClients = useExportClientsCsv(view.filters, view.sort)
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null)
   const [draft, setDraft] = useState<ClientListFilters>(EMPTY_CLIENT_FILTERS)
 
@@ -76,10 +79,28 @@ export function ListClients() {
         <Text as="h1" variant="heading-md">
           {t('admin.clients.title')}
         </Text>
-        <LinkButton to="/clients/new" size="sm" aria-keyshortcuts="n">
-          {t('admin.clients.newButton')}
-        </LinkButton>
+        <Stack direction="row" gap="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={exportClients.download}
+            disabled={exportClients.isDownloading}
+          >
+            {exportClients.isDownloading
+              ? t('admin.clients.export.downloading')
+              : t('admin.clients.export.clients')}
+          </Button>
+          <LinkButton to="/clients/new" size="sm" aria-keyshortcuts="n">
+            {t('admin.clients.newButton')}
+          </LinkButton>
+        </Stack>
       </div>
+
+      {exportClients.errorMessage !== null && (
+        <Text variant="muted" role="alert">
+          {exportClients.errorMessage}
+        </Text>
+      )}
 
       <FilterBar count={view.total} onSubmit={onSubmit} onReset={onReset}>
         <Field id="client-q" label={t('admin.clients.filter.search')}>

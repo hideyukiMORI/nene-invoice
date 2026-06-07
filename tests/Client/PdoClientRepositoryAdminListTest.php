@@ -81,4 +81,23 @@ final class PdoClientRepositoryAdminListTest extends TestCase
         $desc = $this->repo->findForAdminList(new ClientListFilter(), new ClientSort('name', true), 20, 0);
         self::assertSame(['ベータ', 'ガンマ', 'アルファ'], array_map(static fn (Client $c): string => $c->name, $desc));
     }
+
+    public function test_export_reflects_search_filter_ordered_by_name(): void
+    {
+        $this->client('株式会社アルファ', null, null, null);
+        $this->client('合同会社ベータ', null, null, null);
+        $this->client('株式会社アルゴ', null, null, null);
+
+        // No filter: all rows, name-ordered.
+        $all = $this->repo->findForExport(new ClientListFilter());
+        self::assertSame(
+            ['合同会社ベータ', '株式会社アルゴ', '株式会社アルファ'],
+            array_map(static fn (Client $c): string => $c->name, $all),
+        );
+
+        // Search narrows the export exactly like the list.
+        $filtered = $this->repo->findForExport(new ClientListFilter('アルファ'));
+        self::assertCount(1, $filtered);
+        self::assertSame('株式会社アルファ', $filtered[0]->name);
+    }
 }

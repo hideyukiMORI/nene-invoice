@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
+use NeneInvoice\Support\Csv;
 use NeneInvoice\Support\Jst;
 
 /**
@@ -35,7 +36,7 @@ final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInt
         // UTF-8 BOM for Excel compatibility
         fwrite($handle, "\xEF\xBB\xBF");
 
-        fputcsv($handle, [
+        Csv::putRow($handle, [
             '見積番号',
             '発行日',
             '有効期限',
@@ -47,7 +48,7 @@ final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInt
         ]);
 
         foreach ($rows as $row) {
-            fputcsv($handle, [
+            Csv::putRow($handle, [
                 $row['quote_number'],
                 $row['issued_at'] !== null && $row['issued_at'] !== '' ? Jst::date($row['issued_at']) : '',
                 $row['valid_until'],

@@ -45,6 +45,7 @@ final class OpenApiContractTest extends TestCase
         'createClient',
         'updateClient',
         'deleteClient',
+        'exportClientsCsv',
         'listItems',
         'getItemById',
         'createItem',
