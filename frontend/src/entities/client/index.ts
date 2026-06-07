@@ -13,9 +13,4 @@ export { clientKeys, type ClientListParams } from './query-keys'
 export { useClientList, useClient } from './queries'
 export { useCreateClient, useUpdateClient, useDeleteClient } from './mutations'
 export { useExportClientsCsv } from './export'
-export {
-  useImportClients,
-  useDownloadClientsImportTemplate,
-  type ClientImportReport,
-  type ClientImportRowError,
-} from './import'
+export { useImportClients, useDownloadClientsImportTemplate } from './import'

@@ -69,13 +69,13 @@ must be non-empty.
 | `__template` | yes | — | literal `items/v1` |
 | `id` | no | `items.id` | blank = create; if present, an existing **own-org** item id |
 | `品目名` | yes | `description` | non-empty |
-| `標準単価` | yes | `default_unit_price_cents` | integer yen ≥ 0 → ×100 to cents |
+| `標準単価` | yes | `default_unit_price_cents` | non-negative whole-yen integer; stored **1:1 as cents** (JPY's smallest unit is ¥1 — no ×100) |
 | `標準税率` | yes | `default_tax_rate_bps` | one of `10` or `8` (percent) → 1000 / 800 bps |
 
-> Note: clients export today does **not** emit `id` / `__template`. To make
-> export ↔ import round-trip, the export must be extended to emit those columns
-> (follow-up in the implementation epic). Items have no export yet; it would be
-> added alongside import.
+> Note: the **items** export emits the import-template shape (incl. `id` /
+> `__template`), so an items export round-trips into an import directly. The
+> **clients** export is human-friendly and does **not** yet emit `id` /
+> `__template`; extending it for round-trip is a follow-up.
 
 ---
 

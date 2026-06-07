@@ -11,6 +11,7 @@ import { HelpPage } from '@/pages/help'
 import { InvoiceCreatePage } from '@/pages/invoice-create'
 import { ItemCreatePage } from '@/pages/item-create'
 import { ItemEditPage } from '@/pages/item-edit'
+import { ItemImportPage } from '@/pages/item-import'
 import { ItemsPage } from '@/pages/items'
 import { QuoteCreatePage } from '@/pages/quote-create'
 import { TemplateCreatePage } from '@/pages/template-create'
@@ -40,6 +41,7 @@ const router = createBrowserRouter([
       { path: 'clients/:id/edit', element: <ClientEditPage /> },
       { path: 'items', element: <ItemsPage /> },
       { path: 'items/new', element: <ItemCreatePage /> },
+      { path: 'items/import', element: <ItemImportPage /> },
       { path: 'items/:id/edit', element: <ItemEditPage /> },
       { path: 'quotes', element: <QuotesPage /> },
       { path: 'quotes/new', element: <QuoteCreatePage /> },

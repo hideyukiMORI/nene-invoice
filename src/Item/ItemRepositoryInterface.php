@@ -26,6 +26,14 @@ interface ItemRepositoryInterface
 
     public function countForAdminList(ItemListFilter $filter): int;
 
+    /**
+     * Non-deleted items matching the filter, ordered by description. CSV export
+     * only — same predicates as {@see findForAdminList()}, unpaginated.
+     *
+     * @return list<Item>
+     */
+    public function findForExport(ItemListFilter $filter): array;
+
     public function save(Item $item): int;
 
     /** @throws ItemNotFoundException */

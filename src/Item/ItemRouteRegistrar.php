@@ -20,6 +20,9 @@ final readonly class ItemRouteRegistrar
         private CreateItemHandler $createHandler,
         private UpdateItemHandler $updateHandler,
         private DeleteItemHandler $deleteHandler,
+        private ExportItemsCsvHandler $exportCsvHandler,
+        private GetItemsImportTemplateHandler $importTemplateHandler,
+        private ImportItemsCsvHandler $importCsvHandler,
     ) {
     }
 
@@ -30,9 +33,16 @@ final readonly class ItemRouteRegistrar
         $create = $this->createHandler;
         $update = $this->updateHandler;
         $delete = $this->deleteHandler;
+        $exportCsv = $this->exportCsvHandler;
+        $importTemplate = $this->importTemplateHandler;
+        $importCsv = $this->importCsvHandler;
 
         $router->get('/admin/items', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/items', static fn (ServerRequestInterface $r) => $create->handle($r));
+        // Static segments take priority over {id} per Router spec.
+        $router->get('/admin/items/export', static fn (ServerRequestInterface $r) => $exportCsv->handle($r));
+        $router->get('/admin/items/import-template', static fn (ServerRequestInterface $r) => $importTemplate->handle($r));
+        $router->post('/admin/items/import', static fn (ServerRequestInterface $r) => $importCsv->handle($r));
         $router->get('/admin/items/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->patch('/admin/items/{id}', static fn (ServerRequestInterface $r) => $update->handle($r));
         $router->delete('/admin/items/{id}', static fn (ServerRequestInterface $r) => $delete->handle($r));

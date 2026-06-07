@@ -98,6 +98,16 @@ final class InMemoryItemRepository implements ItemRepositoryInterface
         }));
     }
 
+    /** @return list<Item> */
+    public function findForExport(ItemListFilter $filter): array
+    {
+        $matches = $this->adminFiltered($filter);
+
+        usort($matches, static fn (Item $a, Item $b): int => strcmp($a->description, $b->description));
+
+        return $matches;
+    }
+
     public function save(Item $item): int
     {
         $id = $this->nextId++;

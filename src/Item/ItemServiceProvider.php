@@ -15,6 +15,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -43,6 +44,8 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
             ->set(CreateItemUseCaseInterface::class, static fn (ContainerInterface $c): CreateItemUseCase => new CreateItemUseCase(self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(UpdateItemUseCaseInterface::class, static fn (ContainerInterface $c): UpdateItemUseCase => new UpdateItemUseCase(self::repository($c), self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(DeleteItemUseCaseInterface::class, static fn (ContainerInterface $c): DeleteItemUseCase => new DeleteItemUseCase(self::repository($c), self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
+            ->set(ExportItemsCsvUseCaseInterface::class, static fn (ContainerInterface $c): ExportItemsCsvUseCase => new ExportItemsCsvUseCase(self::repository($c)))
+            ->set(ImportItemsCsvUseCaseInterface::class, static fn (ContainerInterface $c): ImportItemsCsvUseCase => new ImportItemsCsvUseCase(self::repository($c), self::tx($c), self::itemsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(
                 ListItemsHandler::class,
                 static fn (ContainerInterface $c): ListItemsHandler => new ListItemsHandler(
@@ -79,6 +82,26 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                ExportItemsCsvHandler::class,
+                static fn (ContainerInterface $c): ExportItemsCsvHandler => new ExportItemsCsvHandler(
+                    self::exportUseCase($c),
+                    self::psr17($c),
+                ),
+            )
+            ->set(
+                GetItemsImportTemplateHandler::class,
+                static fn (ContainerInterface $c): GetItemsImportTemplateHandler => new GetItemsImportTemplateHandler(
+                    self::psr17($c),
+                ),
+            )
+            ->set(
+                ImportItemsCsvHandler::class,
+                static fn (ContainerInterface $c): ImportItemsCsvHandler => new ImportItemsCsvHandler(
+                    self::importUseCase($c),
+                    self::json($c),
+                ),
+            )
+            ->set(
                 ItemNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ItemNotFoundExceptionHandler => new ItemNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -90,17 +113,23 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
                     $create = $c->get(CreateItemHandler::class);
                     $update = $c->get(UpdateItemHandler::class);
                     $delete = $c->get(DeleteItemHandler::class);
+                    $exportCsv = $c->get(ExportItemsCsvHandler::class);
+                    $importTemplate = $c->get(GetItemsImportTemplateHandler::class);
+                    $importCsv = $c->get(ImportItemsCsvHandler::class);
 
                     if (!$list instanceof ListItemsHandler
                         || !$get instanceof GetItemByIdHandler
                         || !$create instanceof CreateItemHandler
                         || !$update instanceof UpdateItemHandler
                         || !$delete instanceof DeleteItemHandler
+                        || !$exportCsv instanceof ExportItemsCsvHandler
+                        || !$importTemplate instanceof GetItemsImportTemplateHandler
+                        || !$importCsv instanceof ImportItemsCsvHandler
                     ) {
                         throw new LogicException('Item handler services are invalid.');
                     }
 
-                    return new ItemRouteRegistrar($list, $get, $create, $update, $delete);
+                    return new ItemRouteRegistrar($list, $get, $create, $update, $delete, $exportCsv, $importTemplate, $importCsv);
                 },
             );
     }
@@ -136,6 +165,39 @@ final readonly class ItemServiceProvider implements ServiceProviderInterface
         }
 
         return $u;
+    }
+
+    private static function exportUseCase(ContainerInterface $c): ExportItemsCsvUseCase
+    {
+        $u = $c->get(ExportItemsCsvUseCaseInterface::class);
+
+        if (!$u instanceof ExportItemsCsvUseCase) {
+            throw new LogicException('Export items use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function importUseCase(ContainerInterface $c): ImportItemsCsvUseCase
+    {
+        $u = $c->get(ImportItemsCsvUseCaseInterface::class);
+
+        if (!$u instanceof ImportItemsCsvUseCase) {
+            throw new LogicException('Import items use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function psr17(ContainerInterface $c): Psr17Factory
+    {
+        $p = $c->get(Psr17Factory::class);
+
+        if (!$p instanceof Psr17Factory) {
+            throw new LogicException('PSR-17 factory service is invalid.');
+        }
+
+        return $p;
     }
 
     private static function repository(ContainerInterface $c): ItemRepositoryInterface

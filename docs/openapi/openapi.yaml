@@ -627,13 +627,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientImportReport'
+                $ref: '#/components/schemas/CsvImportReport'
         '422':
           description: Rejected — format error or row errors; nothing written
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientImportReport'
+                $ref: '#/components/schemas/CsvImportReport'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -749,6 +749,104 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+  /admin/items/export:
+    get:
+      tags: [Items]
+      summary: Export items as CSV
+      description: >
+        Downloads the (optionally filtered) items as a UTF-8 BOM CSV in the
+        import-template shape (so an export round-trips into an import). `標準単価`
+        is whole yen (cents 1:1 for JPY); `標準税率` is a percent. Cells are
+        neutralized against formula injection. Requires ViewBilling capability.
+      operationId: exportItemsCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search term (matches description).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/items/import-template:
+    get:
+      tags: [Items]
+      summary: Download the items import template
+      description: >
+        Returns the UTF-8 (BOM) CSV template (header only) for item import.
+        Requires ViewBilling capability. See ADR 0011.
+      operationId: getItemsImportTemplate
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV template file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/items/import:
+    post:
+      tags: [Items]
+      summary: Import items from a template CSV
+      description: >
+        Template-only import (ADR 0011). The body is the raw template CSV
+        (`text/csv`). The whole file is validated first: on a format error or any
+        invalid row, nothing is written and a report is returned (422). On
+        success, rows are applied in one transaction (200). The `id` column drives
+        create (blank) vs. update (existing own-org id). `標準単価` is whole yen;
+        `標準税率` is a percent restricted to 10 or 8. `?dry_run=1` validates
+        without writing. Requires ManageBilling.
+      operationId: importItemsCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dry_run
+          in: query
+          required: false
+          description: When '1', validate and report without writing.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Import accepted (applied, or validated under dry-run)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsvImportReport'
+        '422':
+          description: Rejected — format error or row errors; nothing written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsvImportReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/items/{id}:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
@@ -2004,7 +2102,7 @@ components:
       required: [id, organization_id, name]
     ClientList:
       $ref: '#/components/schemas/PageEnvelope'
-    ClientImportReport:
+    CsvImportReport:
       type: object
       description: Result of a clients import (ADR 0011). `accepted` drives the status.
       properties:

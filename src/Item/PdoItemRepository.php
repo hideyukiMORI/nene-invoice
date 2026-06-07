@@ -86,6 +86,18 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         return [implode(' AND ', $clauses), $params];
     }
 
+    public function findForExport(ItemListFilter $filter): array
+    {
+        [$where, $params] = $this->buildAdminWhere($filter);
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . ' FROM items WHERE ' . $where . ' ORDER BY description ASC, id ASC',
+            $params,
+        );
+
+        return array_map(fn (array $row): Item => $this->mapRow($row), $rows);
+    }
+
     /** Maps a whitelisted sort field to a SQL ORDER BY, with `id` as tiebreak. */
     private static function orderByClause(ItemSort $sort): string
     {

@@ -28,16 +28,15 @@ final readonly class ListItemsHandler implements RequestHandlerInterface
         $pagination = PaginationQueryParser::parse($request);
         $query = $request->getQueryParams();
 
-        $searchValue = $query['q'] ?? null;
-        $search      = is_string($searchValue) && trim($searchValue) !== '' ? trim($searchValue) : null;
-        $sortValue   = $query['sort'] ?? null;
-        $orderValue  = $query['order'] ?? null;
-        $sort        = ItemSort::fromInput(
+        $filter     = ItemListFilterFactory::fromQueryParams($query);
+        $sortValue  = $query['sort'] ?? null;
+        $orderValue = $query['order'] ?? null;
+        $sort       = ItemSort::fromInput(
             is_string($sortValue) ? $sortValue : null,
             is_string($orderValue) ? $orderValue : null,
         );
 
-        $result = $this->useCase->executeAdmin(new ItemListFilter($search), $sort, $pagination->limit, $pagination->offset);
+        $result = $this->useCase->executeAdmin($filter, $sort, $pagination->limit, $pagination->offset);
 
         return $this->json->create((new PaginationResponse(
             items: array_map(static fn (Item $i): array => ItemResponse::toArray($i), $result->items),

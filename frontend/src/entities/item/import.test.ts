@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { server } from '@tests/msw/server'
 import { renderHookWithProviders } from '@tests/render/render-with-providers'
 import type { CsvImportReport } from '@/shared/lib/csv-import'
-import { useImportClients } from './import'
+import { useImportItems } from './import'
 
 const okReport: CsvImportReport = {
   accepted: true,
@@ -18,14 +18,14 @@ const rejectedReport: CsvImportReport = {
   dry_run: false,
   format_error: null,
   summary: { rows: 1, created: 0, updated: 0, errors: 1 },
-  errors: [{ row: 2, column: '登録番号', code: 'invalid_registration_number', message: 'NG' }],
+  errors: [{ row: 2, column: '標準税率', code: 'invalid_tax_rate', message: 'NG' }],
 }
 
-describe('useImportClients', () => {
+describe('useImportItems', () => {
   it('resolves the report on a dry-run', async () => {
-    server.use(http.post('/admin/clients/import', () => HttpResponse.json(okReport)))
+    server.use(http.post('/admin/items/import', () => HttpResponse.json(okReport)))
 
-    const { result } = renderHookWithProviders(() => useImportClients())
+    const { result } = renderHookWithProviders(() => useImportItems())
     const report = await result.current('csv', true)
 
     expect(report.accepted).toBe(true)
@@ -34,13 +34,13 @@ describe('useImportClients', () => {
 
   it('resolves the 422 report (rejected) instead of throwing', async () => {
     server.use(
-      http.post('/admin/clients/import', () => HttpResponse.json(rejectedReport, { status: 422 })),
+      http.post('/admin/items/import', () => HttpResponse.json(rejectedReport, { status: 422 })),
     )
 
-    const { result } = renderHookWithProviders(() => useImportClients())
+    const { result } = renderHookWithProviders(() => useImportItems())
     const report = await result.current('csv', false)
 
     expect(report.accepted).toBe(false)
-    expect(report.errors[0]?.code).toBe('invalid_registration_number')
+    expect(report.errors[0]?.code).toBe('invalid_tax_rate')
   })
 })
