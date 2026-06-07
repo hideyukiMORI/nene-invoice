@@ -21,6 +21,8 @@ final readonly class ClientRouteRegistrar
         private UpdateClientHandler $updateHandler,
         private DeleteClientHandler $deleteHandler,
         private ExportClientsCsvHandler $exportCsvHandler,
+        private GetClientsImportTemplateHandler $importTemplateHandler,
+        private ImportClientsCsvHandler $importCsvHandler,
     ) {
     }
 
@@ -32,11 +34,15 @@ final readonly class ClientRouteRegistrar
         $update = $this->updateHandler;
         $delete = $this->deleteHandler;
         $exportCsv = $this->exportCsvHandler;
+        $importTemplate = $this->importTemplateHandler;
+        $importCsv = $this->importCsvHandler;
 
         $router->get('/admin/clients', static fn (ServerRequestInterface $r) => $list->handle($r));
         $router->post('/admin/clients', static fn (ServerRequestInterface $r) => $create->handle($r));
-        // Static segment 'export' takes priority over {id} per Router spec.
+        // Static segments take priority over {id} per Router spec.
         $router->get('/admin/clients/export', static fn (ServerRequestInterface $r) => $exportCsv->handle($r));
+        $router->get('/admin/clients/import-template', static fn (ServerRequestInterface $r) => $importTemplate->handle($r));
+        $router->post('/admin/clients/import', static fn (ServerRequestInterface $r) => $importCsv->handle($r));
         $router->get('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $get->handle($r));
         $router->patch('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $update->handle($r));
         $router->delete('/admin/clients/{id}', static fn (ServerRequestInterface $r) => $delete->handle($r));

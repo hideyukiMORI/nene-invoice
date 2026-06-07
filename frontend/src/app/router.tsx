@@ -3,6 +3,7 @@ import { AppShell } from '@/pages/layout'
 import { AuditLogsPage } from '@/pages/audit-logs'
 import { ClientCreatePage } from '@/pages/client-create'
 import { ClientEditPage } from '@/pages/client-edit'
+import { ClientImportPage } from '@/pages/client-import'
 import { ClientsPage } from '@/pages/clients'
 import { CompanySettingsPage } from '@/pages/company-settings'
 import { DashboardPage } from '@/pages/dashboard'
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: 'invoices/:id', element: <InvoiceDetailPage /> },
       { path: 'clients', element: <ClientsPage /> },
       { path: 'clients/new', element: <ClientCreatePage /> },
+      { path: 'clients/import', element: <ClientImportPage /> },
       { path: 'clients/:id/edit', element: <ClientEditPage /> },
       { path: 'items', element: <ItemsPage /> },
       { path: 'items/new', element: <ItemCreatePage /> },

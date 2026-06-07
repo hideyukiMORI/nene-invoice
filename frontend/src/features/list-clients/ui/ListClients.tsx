@@ -90,6 +90,9 @@ export function ListClients() {
               ? t('admin.clients.export.downloading')
               : t('admin.clients.export.clients')}
           </Button>
+          <LinkButton to="/clients/import" variant="ghost" size="sm">
+            {t('admin.clients.import.button')}
+          </LinkButton>
           <LinkButton to="/clients/new" size="sm" aria-keyshortcuts="n">
             {t('admin.clients.newButton')}
           </LinkButton>

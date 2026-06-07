@@ -109,6 +109,7 @@ final class InMemoryClientRepository implements ClientRepositoryInterface
         $this->byId[$id] = new Client(
             organizationId: $client->organizationId,
             name: $client->name,
+            nameKana: $client->nameKana,
             contactName: $client->contactName,
             email: $client->email,
             billingAddress: $client->billingAddress,
