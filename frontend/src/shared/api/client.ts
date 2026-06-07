@@ -8,10 +8,13 @@ import { AppError } from './errors'
  * `setAuthToken`; it is lost on reload (fail-closed → re-login).
  */
 let authToken: string | null = null
+let sessionExpired = false
 const authListeners = new Set<() => void>()
 
 export function setAuthToken(token: string | null): void {
   authToken = token
+  // A fresh sign-in clears any "session expired" notice on the login screen.
+  if (token !== null) sessionExpired = false
   for (const listener of authListeners) listener()
 }
 
@@ -19,11 +22,33 @@ export function hasAuthToken(): boolean {
   return authToken !== null
 }
 
-/** Subscribe to token changes (for `useSyncExternalStore` in the auth shell). */
+/**
+ * True when the session ended because a request came back 401 (expired/invalid
+ * token), as opposed to never having signed in. Lets the login screen explain
+ * why the user landed back there. Cleared on the next successful sign-in.
+ */
+export function wasSessionExpired(): boolean {
+  return sessionExpired
+}
+
+/** Subscribe to token / session changes (for `useSyncExternalStore`). */
 export function subscribeAuthChange(listener: () => void): () => void {
   authListeners.add(listener)
   return () => {
     authListeners.delete(listener)
+  }
+}
+
+/**
+ * A 401 means the session expired or the token is invalid. Clear it so the
+ * fail-closed auth shell shows the login screen, and flag the expiry so the
+ * login form can say why. No-op when not signed in (e.g. a failed login attempt,
+ * where the 401 is a credentials error to surface on the form instead).
+ */
+function handleUnauthorized(status: number): void {
+  if (status === 401 && authToken !== null) {
+    sessionExpired = true
+    setAuthToken(null)
   }
 }
 
@@ -53,6 +78,7 @@ async function request<T>(method: string, path: string, body?: Json): Promise<T>
   const parsed: unknown = text === '' ? null : safeJsonParse(text)
 
   if (!response.ok) {
+    handleUnauthorized(response.status)
     throw AppError.fromProblem(response.status, parsed)
   }
 
@@ -80,6 +106,7 @@ async function requestBlob(path: string): Promise<Blob> {
   }
 
   if (!response.ok) {
+    handleUnauthorized(response.status)
     const text = await response.text()
     throw AppError.fromProblem(response.status, text === '' ? null : safeJsonParse(text))
   }
@@ -110,6 +137,7 @@ async function postCsv<T>(path: string, csv: string): Promise<T> {
     return parsed as T
   }
 
+  handleUnauthorized(response.status)
   throw AppError.fromProblem(response.status, parsed)
 }
 

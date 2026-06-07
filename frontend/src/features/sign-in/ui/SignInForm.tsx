@@ -1,3 +1,4 @@
+import { useSessionExpired } from '@/entities/auth'
 import { Button, Field, InlineAlert, Input, Stack } from '@/shared/ui'
 import { useTranslation } from '@/shared/i18n'
 import { useSignIn } from '../hooks/use-sign-in'
@@ -8,6 +9,7 @@ export function SignInForm() {
   const { t } = useTranslation()
   const { form, onSubmit, isPending, errorMessage } = useSignIn()
   const { errors } = form.formState
+  const sessionExpired = useSessionExpired()
 
   return (
     <form onSubmit={onSubmit} noValidate>
@@ -15,6 +17,12 @@ export function SignInForm() {
       <p className="af-headsub">{t('admin.auth.headSub')}</p>
 
       <Stack gap="md">
+        {/* Session expired elsewhere → 401 cleared the token and landed the user
+            here; explain why (unless a fresh login error already shows). */}
+        {sessionExpired && errorMessage === null && (
+          <InlineAlert tone="info" message={t('admin.auth.sessionExpired')} />
+        )}
+
         {/* 型1 (login): the cause can't be pinned to one field, so a single-line
             summary sits at the top and both fields are marked invalid. */}
         {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
