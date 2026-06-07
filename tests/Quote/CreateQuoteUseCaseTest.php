@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Quote;
 
-use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Company\CompanySettings;
@@ -16,6 +15,7 @@ use NeneInvoice\Quote\CreateQuoteInput;
 use NeneInvoice\Quote\CreateQuoteUseCase;
 use NeneInvoice\Quote\QuoteStatus;
 use NeneInvoice\Quote\QuoteValidationException;
+use NeneInvoice\Support\Jst;
 use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
@@ -35,6 +35,7 @@ final class CreateQuoteUseCaseTest extends TestCase
     private InMemoryClientRepository $clients;
     private InMemoryCompanySettingsRepository $companySettings;
     private RecordingAuditRecorder $audit;
+    private FixedClock $clock;
     private CreateQuoteUseCase $useCase;
     private int $clientId;
 
@@ -47,6 +48,7 @@ final class CreateQuoteUseCaseTest extends TestCase
         $this->clients = new InMemoryClientRepository($this->holder);
         $this->companySettings = new InMemoryCompanySettingsRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
+        $this->clock = new FixedClock();
         $this->clientId = $this->clients->save(new Client(organizationId: 1, name: 'Acme'));
 
         $this->useCase = new CreateQuoteUseCase(
@@ -58,7 +60,7 @@ final class CreateQuoteUseCaseTest extends TestCase
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
             fn () => $this->audit,
-            new FixedClock(),
+            $this->clock,
             $this->holder,
         );
     }
@@ -76,7 +78,10 @@ final class CreateQuoteUseCaseTest extends TestCase
             lines: [new LineItemInput('X', 1, 1000, 1000)],
         ));
 
-        $expected = (new DateTimeImmutable('today'))->modify('+30 day')->format('Y-m-d');
+        // Mirror the use case: the validity period is measured from the JST
+        // calendar date of the (fixed) clock, never the real wall clock — keep the
+        // expectation deterministic regardless of when the suite runs.
+        $expected = Jst::of($this->clock->now())->setTime(0, 0)->modify('+30 day')->format('Y-m-d');
         self::assertSame($expected, substr((string) $result->quote->validUntil, 0, 10));
     }
 
