@@ -87,8 +87,35 @@ async function requestBlob(path: string): Promise<Blob> {
   return response.blob()
 }
 
+/**
+ * POSTs a raw CSV body and returns the parsed JSON report. Both 200 (accepted)
+ * and 422 (rejected — the report carries the format/row errors) resolve with the
+ * body; only auth / transport / 5xx throw. Used by template-only CSV import.
+ */
+async function postCsv<T>(path: string, csv: string): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
+  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+
+  let response: Response
+  try {
+    response = await fetch(path, { method: 'POST', headers, body: csv })
+  } catch {
+    throw AppError.transport('Network request failed')
+  }
+
+  const text = await response.text()
+  const parsed: unknown = text === '' ? null : safeJsonParse(text)
+
+  if (response.status === 200 || response.status === 422) {
+    return parsed as T
+  }
+
+  throw AppError.fromProblem(response.status, parsed)
+}
+
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>('GET', path),
+  postCsv: <T>(path: string, csv: string): Promise<T> => postCsv<T>(path, csv),
   post: <T>(path: string, body?: Json): Promise<T> => request<T>('POST', path, body),
   put: <T>(path: string, body?: Json): Promise<T> => request<T>('PUT', path, body),
   patch: <T>(path: string, body?: Json): Promise<T> => request<T>('PATCH', path, body),

@@ -45,6 +45,7 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
             ->set(UpdateClientUseCaseInterface::class, static fn (ContainerInterface $c): UpdateClientUseCase => new UpdateClientUseCase(self::repository($c), self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(DeleteClientUseCaseInterface::class, static fn (ContainerInterface $c): DeleteClientUseCase => new DeleteClientUseCase(self::repository($c), self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(ExportClientsCsvUseCaseInterface::class, static fn (ContainerInterface $c): ExportClientsCsvUseCase => new ExportClientsCsvUseCase(self::repository($c)))
+            ->set(ImportClientsCsvUseCaseInterface::class, static fn (ContainerInterface $c): ImportClientsCsvUseCase => new ImportClientsCsvUseCase(self::repository($c), self::tx($c), self::clientsFactory($c), AuditServiceProvider::recorderFactory($c), self::orgHolder($c)))
             ->set(
                 ListClientsHandler::class,
                 static fn (ContainerInterface $c): ListClientsHandler => new ListClientsHandler(
@@ -88,6 +89,19 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                GetClientsImportTemplateHandler::class,
+                static fn (ContainerInterface $c): GetClientsImportTemplateHandler => new GetClientsImportTemplateHandler(
+                    self::psr17($c),
+                ),
+            )
+            ->set(
+                ImportClientsCsvHandler::class,
+                static fn (ContainerInterface $c): ImportClientsCsvHandler => new ImportClientsCsvHandler(
+                    self::importUseCase($c),
+                    self::json($c),
+                ),
+            )
+            ->set(
                 ClientNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): ClientNotFoundExceptionHandler => new ClientNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -104,6 +118,8 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                     $update = $c->get(UpdateClientHandler::class);
                     $delete = $c->get(DeleteClientHandler::class);
                     $exportCsv = $c->get(ExportClientsCsvHandler::class);
+                    $importTemplate = $c->get(GetClientsImportTemplateHandler::class);
+                    $importCsv = $c->get(ImportClientsCsvHandler::class);
 
                     if (!$list instanceof ListClientsHandler
                         || !$get instanceof GetClientByIdHandler
@@ -111,11 +127,13 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
                         || !$update instanceof UpdateClientHandler
                         || !$delete instanceof DeleteClientHandler
                         || !$exportCsv instanceof ExportClientsCsvHandler
+                        || !$importTemplate instanceof GetClientsImportTemplateHandler
+                        || !$importCsv instanceof ImportClientsCsvHandler
                     ) {
                         throw new LogicException('Client handler services are invalid.');
                     }
 
-                    return new ClientRouteRegistrar($list, $get, $create, $update, $delete, $exportCsv);
+                    return new ClientRouteRegistrar($list, $get, $create, $update, $delete, $exportCsv, $importTemplate, $importCsv);
                 },
             );
     }
@@ -159,6 +177,17 @@ final readonly class ClientServiceProvider implements ServiceProviderInterface
 
         if (!$u instanceof ExportClientsCsvUseCase) {
             throw new LogicException('Export clients use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function importUseCase(ContainerInterface $c): ImportClientsCsvUseCase
+    {
+        $u = $c->get(ImportClientsCsvUseCaseInterface::class);
+
+        if (!$u instanceof ImportClientsCsvUseCase) {
+            throw new LogicException('Import clients use case service is invalid.');
         }
 
         return $u;

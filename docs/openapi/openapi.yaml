@@ -571,6 +571,73 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/InsufficientCapability'
+  /admin/clients/import-template:
+    get:
+      tags: [Clients]
+      summary: Download the clients import template
+      description: >
+        Returns the UTF-8 (BOM) CSV template (header only) for client import.
+        The user adds rows beneath the header and uploads to the import endpoint.
+        Requires ViewBilling capability. See ADR 0011.
+      operationId: getClientsImportTemplate
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: CSV template file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/clients/import:
+    post:
+      tags: [Clients]
+      summary: Import clients from a template CSV
+      description: >
+        Template-only import (ADR 0011). The request body is the raw template CSV
+        (`text/csv`). The whole file is validated first: on a format error or any
+        invalid row, nothing is written and a report is returned (422). On
+        success, rows are applied in one transaction (200). The `id` column drives
+        create (blank) vs. update (existing own-org id). `?dry_run=1` validates
+        and returns the same report without writing. Requires ManageBilling.
+      operationId: importClientsCsv
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dry_run
+          in: query
+          required: false
+          description: When '1', validate and report without writing.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Import accepted (applied, or validated under dry-run)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientImportReport'
+        '422':
+          description: Rejected — format error or row errors; nothing written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientImportReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/clients/{id}:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
@@ -1937,6 +2004,36 @@ components:
       required: [id, organization_id, name]
     ClientList:
       $ref: '#/components/schemas/PageEnvelope'
+    ClientImportReport:
+      type: object
+      description: Result of a clients import (ADR 0011). `accepted` drives the status.
+      properties:
+        accepted:
+          type: boolean
+        dry_run:
+          type: boolean
+        format_error:
+          type: [string, 'null']
+          description: File-level rejection reason (header / encoding / size); null if none.
+        summary:
+          type: object
+          properties:
+            rows: { type: integer }
+            created: { type: integer }
+            updated: { type: integer }
+            errors: { type: integer }
+          required: [rows, created, updated, errors]
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              row: { type: integer, description: 1-based spreadsheet row (header = 1) }
+              column: { type: [string, 'null'] }
+              code: { type: string }
+              message: { type: string }
+            required: [row, column, code, message]
+      required: [accepted, dry_run, format_error, summary, errors]
     CreateClientRequest:
       type: object
       properties:
