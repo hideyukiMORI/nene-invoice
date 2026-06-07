@@ -100,8 +100,11 @@ final class ImportItemsCsvUseCaseTest extends TestCase
 
         self::assertTrue($result->accepted);
         self::assertSame(1, $result->updated);
-        self::assertSame('After', $this->repo->findById($id)?->description);
-        self::assertSame(200, $this->repo->findById($id)?->defaultUnitPriceCents);
+
+        $updated = $this->repo->findById($id);
+        self::assertNotNull($updated);
+        self::assertSame('After', $updated->description);
+        self::assertSame(200, $updated->defaultUnitPriceCents);
     }
 
     public function test_invalid_tax_rate_rejects_whole_file(): void
