@@ -1,4 +1,5 @@
-import { useState, type ChangeEvent } from 'react'
+import { useState, type ChangeEvent, type DragEvent } from 'react'
+import { cn } from '@/shared/lib/cn'
 import type { CsvImportReport } from '@/shared/lib/csv-import'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '../primitives/Button'
@@ -23,28 +24,39 @@ export interface CsvImportPanelProps {
   onDone: (summary: { created: number; updated: number }) => void
 }
 
+interface PickedFile {
+  name: string
+  size: string
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${String(bytes)} B`
+  const kb = bytes / 1024
+  if (kb < 1024) return `${kb.toFixed(1)} KB`
+  return `${(kb / 1024).toFixed(1)} MB`
+}
+
 /**
- * Generic template-only CSV import widget (ADR 0011): download template → choose
- * file → auto dry-run preview (summary + per-row errors) → apply. Shared by the
- * clients and items import pages; entity-specific chrome (title, lede) lives in
- * the page, the mechanics + report rendering live here.
+ * Template-only CSV import widget (ADR 0011), design #390: stepped panel
+ * (download template → drop/choose file) → auto dry-run preview (summary stats +
+ * per-row errors) → apply. Shared by the clients and items import pages; the page
+ * supplies the entity-specific chrome (crumb, title, lede).
  */
 export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelProps) {
   const { t } = useTranslation()
   const [phase, setPhase] = useState<Phase>('idle')
+  const [file, setFile] = useState<PickedFile | null>(null)
   const [csv, setCsv] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
   const [report, setReport] = useState<CsvImportReport | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [drag, setDrag] = useState(false)
 
-  const onFile = (event: ChangeEvent<HTMLInputElement>): void => {
-    const file = event.target.files?.[0]
-    if (file === undefined) return
+  const pick = (picked: File): void => {
     setError(null)
     setReport(null)
-    setFileName(file.name)
+    setFile({ name: picked.name, size: formatSize(picked.size) })
     setPhase('previewing')
-    file
+    picked
       .text()
       .then(async (text) => {
         setCsv(text)
@@ -58,7 +70,27 @@ export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelPr
       })
   }
 
-  const onApply = (): void => {
+  const onInput = (event: ChangeEvent<HTMLInputElement>): void => {
+    const picked = event.target.files?.[0]
+    if (picked !== undefined) pick(picked)
+  }
+
+  const onDrop = (event: DragEvent<HTMLLabelElement>): void => {
+    event.preventDefault()
+    setDrag(false)
+    const picked = event.dataTransfer.files[0]
+    if (picked !== undefined) pick(picked)
+  }
+
+  const reset = (): void => {
+    setPhase('idle')
+    setFile(null)
+    setCsv(null)
+    setReport(null)
+    setError(null)
+  }
+
+  const apply = (): void => {
     if (csv === null) return
     setPhase('applying')
     setError(null)
@@ -78,99 +110,333 @@ export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelPr
       })
   }
 
-  const canApply = report !== null && report.accepted && report.dry_run && phase === 'idle'
-
   return (
     <Stack gap="md">
-      <Stack direction="row" gap="sm">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={template.download}
-          disabled={template.isDownloading}
-        >
-          {template.isDownloading
-            ? t('common.csvImport.downloading')
-            : t('common.csvImport.downloadTemplate')}
-        </Button>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          aria-label={t('common.csvImport.fileLabel')}
-          className="block text-body"
-          onChange={onFile}
-          disabled={phase !== 'idle'}
-        />
-      </Stack>
+      {/* ① download template  ② choose / drop file (always visible) */}
+      <div className="panel">
+        <div className="panel-step">
+          <span className="step-no">1</span>
+          <div className="step-body">
+            <div className="st-t">{t('common.csvImport.step1Title')}</div>
+            <div className="st-d">{t('common.csvImport.step1Desc')}</div>
+          </div>
+          <div className="panel-actions">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-inline-xs"
+              onClick={template.download}
+              disabled={template.isDownloading}
+            >
+              <svg
+                width={15}
+                height={15}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+              </svg>
+              {template.isDownloading
+                ? t('common.csvImport.downloading')
+                : t('common.csvImport.downloadTemplate')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="panel-step is-upload">
+          <div className="step-head">
+            <span className="step-no">2</span>
+            <div className="step-body">
+              <div className="st-t">{t('common.csvImport.step2Title')}</div>
+              <div className="st-d">{t('common.csvImport.step2Desc')}</div>
+            </div>
+          </div>
+          <label
+            className={cn('dropzone', drag && 'is-drag')}
+            onDragEnter={(e) => {
+              e.preventDefault()
+              setDrag(true)
+            }}
+            onDragOver={(e) => {
+              e.preventDefault()
+            }}
+            onDragLeave={() => {
+              setDrag(false)
+            }}
+            onDrop={onDrop}
+          >
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              aria-label={t('common.csvImport.fileLabel')}
+              onChange={onInput}
+              disabled={phase !== 'idle'}
+            />
+            <svg
+              className="dz-ico"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.7}
+              aria-hidden="true"
+            >
+              <path d="M12 16V4m0 0L7 9m5-5l5 5" />
+              <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            </svg>
+            <div className="dz-main">
+              <b>{t('common.csvImport.dropMainAction')}</b>
+              {t('common.csvImport.dropMainRest')}
+            </div>
+            <div className="dz-sub">{t('common.csvImport.dropSub')}</div>
+          </label>
+        </div>
+      </div>
+
+      {/* slot: selected file + state */}
+      {file !== null && (
+        <Stack gap="sm">
+          <FileChip
+            name={file.name}
+            size={file.size}
+            onClear={reset}
+            removeLabel={t('common.csvImport.removeFile')}
+          />
+
+          {error !== null && (
+            <Text variant="muted" role="alert">
+              {error}
+            </Text>
+          )}
+
+          {phase === 'previewing' && (
+            <div className="status-line" role="status">
+              <span className="spinner" />
+              {t('common.csvImport.checking')}
+            </div>
+          )}
+          {phase === 'applying' && (
+            <div className="status-line" role="status">
+              <span className="spinner" />
+              {t('common.csvImport.applying')}
+            </div>
+          )}
+
+          {phase === 'idle' && report !== null && report.format_error !== null && (
+            <>
+              <p className="alert format-error" role="alert">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5m0 3h.01" />
+                </svg>
+                <span>
+                  <span className="fe-file">{file.name}</span>
+                  {`: ${report.format_error}`}
+                </span>
+              </p>
+              <div className="apply-bar">
+                <span className="spacer" />
+                <Button variant="ghost" size="sm" onClick={reset}>
+                  {t('common.csvImport.reselect')}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {phase === 'idle' && report !== null && report.format_error === null && (
+            <>
+              <ReportView report={report} />
+              <ApplyBar report={report} onReselect={reset} onApply={apply} />
+            </>
+          )}
+        </Stack>
+      )}
 
       {template.errorMessage !== null && (
         <Text variant="muted" role="alert">
           {template.errorMessage}
         </Text>
       )}
-      {error !== null && (
-        <Text variant="muted" role="alert">
-          {error}
-        </Text>
-      )}
-      {phase === 'previewing' && <Text variant="muted">{t('common.csvImport.checking')}</Text>}
-
-      {report !== null && <ImportReport report={report} fileName={fileName} />}
-
-      {canApply && (
-        <div>
-          <Button onClick={onApply}>{t('common.csvImport.apply')}</Button>
-        </div>
-      )}
-      {phase === 'applying' && <Text variant="muted">{t('common.csvImport.applying')}</Text>}
     </Stack>
   )
 }
 
-function ImportReport({ report, fileName }: { report: CsvImportReport; fileName: string | null }) {
-  const { t } = useTranslation()
+function FileChip({
+  name,
+  size,
+  onClear,
+  removeLabel,
+}: {
+  name: string
+  size: string
+  onClear: () => void
+  removeLabel: string
+}) {
+  return (
+    <div className="file-chip">
+      <svg
+        className="fc-ico"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        aria-hidden="true"
+      >
+        <path d="M14 3v5h5" />
+        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      </svg>
+      <span className="fc-name">{name}</span>
+      <span className="fc-size">{size}</span>
+      <button
+        type="button"
+        className="fc-x"
+        title={removeLabel}
+        aria-label={removeLabel}
+        onClick={onClear}
+      >
+        <svg
+          width={13}
+          height={13}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+    </div>
+  )
+}
 
-  if (report.format_error !== null) {
-    return (
-      <Text role="alert">
-        {fileName !== null ? `${fileName}: ` : ''}
-        {report.format_error}
-      </Text>
-    )
-  }
+function ReportView({ report }: { report: CsvImportReport }) {
+  const { t } = useTranslation()
+  const { rows, created, updated, errors } = report.summary
+  const hasErrors = errors > 0
 
   return (
-    <Stack gap="sm">
-      <Text>
-        {t('common.csvImport.summary', {
-          rows: report.summary.rows,
-          created: report.summary.created,
-          updated: report.summary.updated,
-          errors: report.summary.errors,
-        })}
-      </Text>
-      {report.errors.length > 0 && (
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>{t('common.csvImport.col.row')}</th>
-                <th>{t('common.csvImport.col.column')}</th>
-                <th>{t('common.csvImport.col.message')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.errors.map((e, i) => (
-                <tr key={`${String(e.row)}-${String(i)}`}>
-                  <td className="num">{e.row}</td>
-                  <td>{e.column ?? '—'}</td>
-                  <td>{e.message}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="report">
+      <div className="report-summary">
+        <div className="rs-total">
+          <span className="rt-n">{rows}</span>
+          <span className="rt-l">{t('common.csvImport.rowsUnit')}</span>
         </div>
+        <div className="rs-stats">
+          <Stat
+            n={created}
+            label={t('common.csvImport.statNew')}
+            unit={t('common.csvImport.unit')}
+            kind="new"
+          />
+          <Stat
+            n={updated}
+            label={t('common.csvImport.statUpd')}
+            unit={t('common.csvImport.unit')}
+            kind="upd"
+          />
+          <Stat
+            n={errors}
+            label={t('common.csvImport.statErr')}
+            unit={t('common.csvImport.unit')}
+            kind={hasErrors ? 'err' : 'err zero'}
+          />
+        </div>
+      </div>
+
+      {hasErrors && (
+        <>
+          <div className="report-tablehd">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+              <path d="M12 9v4m0 4h.01" />
+            </svg>
+            {t('common.csvImport.errorBand', { errors })}
+          </div>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="num">{t('common.csvImport.col.row')}</th>
+                  <th>{t('common.csvImport.col.column')}</th>
+                  <th>{t('common.csvImport.col.message')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.errors.map((e, i) => (
+                  <tr key={`${String(e.row)}-${String(i)}`}>
+                    <td className="num">{e.row}</td>
+                    <td className="col-name">{e.column ?? '—'}</td>
+                    <td className="row-ref">{e.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-    </Stack>
+    </div>
+  )
+}
+
+function Stat({ n, label, unit, kind }: { n: number; label: string; unit: string; kind: string }) {
+  return (
+    <div className={cn('stat', kind)}>
+      <span className="s-n">
+        {n}
+        <span className="u">{unit}</span>
+      </span>
+      <span className="s-l">
+        <span className="pip" />
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function ApplyBar({
+  report,
+  onReselect,
+  onApply,
+}: {
+  report: CsvImportReport
+  onReselect: () => void
+  onApply: () => void
+}) {
+  const { t } = useTranslation()
+  const blocked = report.summary.errors > 0
+
+  return (
+    <div className="apply-bar">
+      <span className={cn('ab-note', blocked && 'block')}>
+        {blocked
+          ? t('common.csvImport.applyNoteBlocked')
+          : t('common.csvImport.applyNoteClean', {
+              created: report.summary.created,
+              updated: report.summary.updated,
+            })}
+      </span>
+      <span className="spacer" />
+      <Button variant="ghost" size="sm" onClick={onReselect}>
+        {t('common.csvImport.reselect')}
+      </Button>
+      <Button onClick={onApply} disabled={blocked}>
+        {t('common.csvImport.apply')}
+      </Button>
+    </div>
   )
 }
