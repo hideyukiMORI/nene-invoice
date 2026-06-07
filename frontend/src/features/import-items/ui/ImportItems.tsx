@@ -12,17 +12,36 @@ export function ImportItems() {
   const importItems = useImportItems()
 
   return (
-    <Stack gap="md">
-      <div className="flex items-center justify-between">
-        <Text as="h1" variant="heading-md">
-          {t('admin.items.import.title')}
-        </Text>
-        <Button variant="ghost" size="sm" onClick={() => void navigate('/items')}>
+    <Stack gap="md" className="csv-import">
+      <div className="page-head">
+        <div>
+          <div className="crumb">{t('admin.items.import.crumb')}</div>
+          <Text as="h1" variant="heading-md">
+            {t('admin.items.import.title')}
+          </Text>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-inline-xs"
+          onClick={() => void navigate('/items')}
+        >
+          <svg
+            width={15}
+            height={15}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
           {t('admin.items.import.back')}
         </Button>
       </div>
 
-      <Text variant="muted">{t('admin.items.import.lede')}</Text>
+      <p className="lede">{t('admin.items.import.lede')}</p>
 
       <CsvImportPanel
         template={template}
