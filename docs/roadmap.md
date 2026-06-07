@@ -72,7 +72,8 @@ Goal: Japan SMB install path.
 
 Goal: connect to sibling products.
 
-- CSV export (invoices, payments, audit) ✅
+- CSV export (clients, quotes, invoices, payments, audit; list-filter aware; formula-injection safe) ✅
+- CSV import (template-only, clients + items) — design first, see ADR 0011 / `explanation/csv-import-design.md`
 - NeNe Records product catalog import
 - NeNe Concierge lead → draft client / quote webhook
 - MCP tool catalog
