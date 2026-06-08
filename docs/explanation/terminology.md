@@ -43,6 +43,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Template | `Template` | `templates` | `template_id` |
 | Receipt | `Payment` | `payments` | `payment_id` |
 | Number generator | `DocumentSequence` | `document_sequences` | — |
+| Integration credential | `ServiceToken` | `service_tokens` | `service_token_id` |
 
 Domain folders are **PascalCase singular**; tables are **snake_case plural**.
 
@@ -62,6 +63,7 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | `line_item_suggestion.source` | `master`, `history` |
 | `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
 | `user.status` | `active`, `invited` |
+| service_token status (computed) | `active`, `revoked` |
 | Capability (enum) | `manage_organizations`, `manage_users`, `manage_company_settings`, `manage_billing`, `view_billing` |
 | Org resolution mode | `single` (default), `path`, `subdomain`, `custom_domain` |
 
@@ -98,6 +100,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
 | Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |
+| Service-token fields | `jti`, `subject`, `label`, `scopes`, `created_by`, `expires_at`, `revoked_at`, `ttl_seconds` | `jwt_id`, `name`, `scope`, `created_user_id`, `expiry`, `revoked`, `ttl` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
 | Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents`, `billed_this_month_cents`, `billed_last_month_cents`, `monthly_billed` (→ `month`, `billed_cents`, `count`), `billed_prev_year_month_cents`, `billed_daily_current` / `billed_daily_prev_month` (→ `day`, `cumulative_cents`) | `monthly_received_cents`, `received_this_month`, `mtd_cents`, `issued_this_month_cents`, `invoiced_cents`, `yoy_cents`, `daily_billed` |
 | Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
@@ -142,6 +145,8 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `payment-exceeds-outstanding` | Payment would exceed the invoice outstanding balance (422; service API) |
 | `payment-not-found` | Payment id / external_reference not found (404; service API) |
 | `insufficient-scope` | Service token lacks the required scope (403; service API) |
+| `service-token-revoked` | Presented service token has been revoked (401; service API) |
+| `service-token-not-found` | Service-token id not found in the caller's org (404; operator API) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is
@@ -170,6 +175,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |
 | `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
 | `listLineItemSuggestions` | LineItem (history-based suggestions) |
+| `listServiceTokens`, `issueServiceToken`, `revokeServiceToken` | ServiceToken (NeNe Clear integration credentials; admin oversight) |
 
 ### Service API (`/api/*`, NeNe Clear — ADR 0009)
 

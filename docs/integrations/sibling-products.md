@@ -43,7 +43,13 @@ architecture: **ADR 0009**.
   `POST …/payments/{paymentId}/void` (void-with-audit, idempotent). All behind
   service-token auth; OpenAPI `docs/openapi/service-api.yaml`. Mint tokens:
   `php tools/issue-service-token.php --org=N --scopes=read:invoices,write:payments`.
-  Remaining: Clear-side contract tests; ops (multi-org tokens, issuance/revocation UI).
+- **Token registry + revocation (#416):** issued tokens are recorded in
+  `service_tokens` (metadata + `jti` only — the token value is never stored). The
+  operator API `/admin/service-tokens` (admin oversight) issues, lists, and revokes
+  them, and the CLI issuer registers too. A revoked token's `jti` is rejected at
+  request time by `ServiceScopeMiddleware` (`401 service-token-revoked`). Legacy
+  tokens issued before the registry carry no `jti` and rely on signature + `exp`.
+  Remaining: Clear-side contract tests; operator **UI** for the registry (#417).
 
 ## Environment variables (planned)
 

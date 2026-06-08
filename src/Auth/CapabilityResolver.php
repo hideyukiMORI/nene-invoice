@@ -30,6 +30,13 @@ final class CapabilityResolver
             return Capability::ManageUsers;
         }
 
+        // Service-token management (NeNe Clear integration credentials) is admin
+        // oversight: issuing a machine principal that can write payments must not
+        // be available to billing operators (member / viewer). ADR 0009 ops.
+        if (str_starts_with($path, '/admin/service-tokens')) {
+            return Capability::ManageUsers;
+        }
+
         if (str_starts_with($path, '/admin/company-settings')) {
             return Capability::ManageCompanySettings;
         }

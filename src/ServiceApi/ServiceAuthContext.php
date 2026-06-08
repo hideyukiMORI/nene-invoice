@@ -25,6 +25,17 @@ final class ServiceAuthContext
         return is_int($value) ? $value : null;
     }
 
+    /**
+     * The token's `jti` (revocation key in the service-token registry), or null
+     * for a legacy token issued before the registry existed.
+     */
+    public static function tokenId(ServerRequestInterface $request): ?string
+    {
+        $value = self::claim($request, 'jti');
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
     /** @return list<string> */
     public static function scopes(ServerRequestInterface $request): array
     {

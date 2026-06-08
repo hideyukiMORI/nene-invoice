@@ -7,15 +7,20 @@ declare(strict_types=1);
  *
  * Usage:
  *   php tools/issue-service-token.php --org=1 --scopes=read:invoices,write:payments \
- *       [--sub=service:clear] [--ttl=2592000]
+ *       [--label="NeNe Clear"] [--sub=service:clear] [--ttl=2592000]
  *
  * Prints the bearer token to stdout. Clear stores it as NENE_INVOICE_BEARER_TOKEN.
  * The token is signed with the same HMAC secret as login tokens; treat it as a
- * secret. (Issuance/revocation via an operator UI is a follow-up.)
+ * secret. It is also recorded in the `service_tokens` registry (metadata + jti,
+ * never the value) so it appears in the operator UI and can be revoked there.
  */
 
-use Nene2\Auth\TokenIssuerInterface;
+use Nene2\Http\RequestScopedHolder;
+use Nene2\Validation\ValidationException;
+use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Http\RuntimeContainerFactory;
+use NeneInvoice\ServiceToken\IssueServiceTokenUseCaseInterface;
+use NeneInvoice\ServiceToken\ServiceTokenField;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -44,24 +49,40 @@ $scopes = array_values(array_filter(
     explode(',', $args['scopes'] ?? 'read:invoices'),
     static fn (string $s): bool => $s !== '',
 ));
-$sub = $args['sub'] ?? 'service:clear';
-$ttl = isset($args['ttl']) && ctype_digit($args['ttl']) ? (int) $args['ttl'] : 2592000; // 30 days
+$ttl = isset($args['ttl']) && ctype_digit($args['ttl']) ? (int) $args['ttl'] : ServiceTokenField::DEFAULT_TTL_SECONDS;
 
-$container = (new RuntimeContainerFactory(dirname(__DIR__)))->create();
-$issuer = $container->get(TokenIssuerInterface::class);
-
-if (!$issuer instanceof TokenIssuerInterface) {
-    fwrite(STDERR, "Error: token issuer service is unavailable.\n");
+// Validate exactly like the operator API does (scopes, label/subject length, TTL).
+try {
+    $input = ServiceTokenField::parse([
+        'label'       => $args['label'] ?? 'CLI-issued',
+        'scopes'      => $scopes,
+        'subject'     => $args['sub'] ?? ServiceTokenField::DEFAULT_SUBJECT,
+        'ttl_seconds' => $ttl,
+    ]);
+} catch (ValidationException $e) {
+    foreach ($e->errors() as $error) {
+        fwrite(STDERR, sprintf("Error: %s — %s\n", $error->field, $error->message));
+    }
     exit(1);
 }
 
-$now = time();
-$token = $issuer->issue([
-    'sub' => $sub,
-    'org' => $org,
-    'scopes' => $scopes,
-    'iat' => $now,
-    'exp' => $now + $ttl,
-]);
+$container = (new RuntimeContainerFactory(dirname(__DIR__)))->create();
 
-echo $token . "\n";
+// The issue use case reads the org from the request-scoped holder (ADR 0006);
+// set it explicitly here since there is no HTTP request to resolve it.
+$orgHolder = $container->get(ApplicationServiceProvider::ORG_ID_HOLDER);
+if (!$orgHolder instanceof RequestScopedHolder) {
+    fwrite(STDERR, "Error: org holder service is unavailable.\n");
+    exit(1);
+}
+$orgHolder->set($org);
+
+$useCase = $container->get(IssueServiceTokenUseCaseInterface::class);
+if (!$useCase instanceof IssueServiceTokenUseCaseInterface) {
+    fwrite(STDERR, "Error: service-token issuer is unavailable.\n");
+    exit(1);
+}
+
+$result = $useCase->execute(null, $input);
+
+echo $result->plaintextToken . "\n";

@@ -6,6 +6,7 @@ namespace NeneInvoice\ServiceApi;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\ServiceToken\ServiceTokenAuthorizerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -21,6 +22,10 @@ use Psr\Http\Server\RequestHandlerInterface;
  * `/api/*` bypasses OrgResolverMiddleware (org comes from the service token, not
  * the URL), so this middleware sets the request-scoped org holder from the
  * token's `org` claim — the same holder org-scoped repositories read (ADR 0006).
+ *
+ * It also enforces **revocation**: a token carrying a `jti` is rejected once its
+ * registry row is revoked (or missing). Legacy tokens without a `jti` predate the
+ * registry and rely on the JWT signature + `exp` only.
  */
 final readonly class ServiceScopeMiddleware implements MiddlewareInterface
 {
@@ -30,6 +35,7 @@ final readonly class ServiceScopeMiddleware implements MiddlewareInterface
     public function __construct(
         private ProblemDetailsResponseFactory $problemDetails,
         private RequestScopedHolder $orgId,
+        private ServiceTokenAuthorizerInterface $authorizer,
     ) {
     }
 
@@ -60,6 +66,20 @@ final readonly class ServiceScopeMiddleware implements MiddlewareInterface
                 'Forbidden',
                 403,
                 'The service token is not scoped to an organization.',
+            );
+        }
+
+        // Revocation: a registered token (carrying a jti) must still be active.
+        // Legacy tokens without a jti predate the registry and are not checked here.
+        $jti = ServiceAuthContext::tokenId($request);
+
+        if ($jti !== null && !$this->authorizer->isActive($jti)) {
+            return $this->problemDetails->create(
+                $request,
+                'service-token-revoked',
+                'Unauthorized',
+                401,
+                'The service token has been revoked.',
             );
         }
 

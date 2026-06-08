@@ -407,6 +407,7 @@ Phase 1–3 後の運用・UX 強化と Phase 4 着手分（すべて merged）:
 
 Phase 1–3・セキュリティ診断・上記 UX 強化は完了。Phase 4 の残り：
 
+- **NeNe Clear service token 運用（#416 backend / #417 frontend）** — 🔄 進行中。発行済みトークンを `service_tokens` レジストリに記録（メタデータ＋`jti` のみ・値は保存しない）し、`/admin/service-tokens`（admin）で発行・一覧・失効。失効は `ServiceScopeMiddleware` が `jti` 照合で即時拒否（`401 service-token-revoked`）。#416 が backend、#417 がオペレーター UI。
 - **NeNe Records 商品カタログ連携** — 明細行への商品インポート
 - **NeNe Concierge webhook** — リード → 取引先/見積下書き自動生成
 - **決済ゲートウェイ連携** — Stripe 等（任意）

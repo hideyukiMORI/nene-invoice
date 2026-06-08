@@ -190,3 +190,22 @@ CREATE TABLE IF NOT EXISTS `login_attempts` (
     `created_at` DATETIME    NOT NULL,
     KEY `idx_login_attempts_ip_time` (`ip_address`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- service_tokens — registry of issued NeNe Clear service tokens (ADR 0009).
+-- Metadata only; the token value is never stored. `jti` keys revocation.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `service_tokens` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          NOT NULL,
+    `jti`             VARCHAR(64)  NOT NULL,
+    `subject`         VARCHAR(255) NOT NULL,
+    `label`           VARCHAR(255) NOT NULL,
+    `scopes`          VARCHAR(255) NOT NULL,
+    `created_by`      INT          DEFAULT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    `expires_at`      DATETIME     NOT NULL,
+    `revoked_at`      DATETIME     DEFAULT NULL,
+    UNIQUE KEY `uniq_service_tokens_jti` (`jti`),
+    KEY `idx_service_tokens_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
