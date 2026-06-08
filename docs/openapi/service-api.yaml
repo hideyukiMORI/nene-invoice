@@ -267,8 +267,17 @@ components:
         Client (取引先) contact data for dunning. `recipient_email` maps to the
         client's billing email in NeNe Invoice.
       properties:
+        client_id:
+          type: integer
+          description: >
+            Canonical client identifier on the service surface (matches the invoice
+            read model's `client_id` and upstream contract §2.3).
         id:
           type: integer
+          deprecated: true
+          description: >
+            Deprecated alias of `client_id` (ADR 0009 §5: deprecate, never rename).
+            Read `client_id` instead.
         name:
           type: string
           description: Client company name.
@@ -283,7 +292,7 @@ components:
         registration_number:
           type: [string, 'null']
           description: Buyer's invoice registration number (T + 13 digits), if set.
-      required: [id, name]
+      required: [client_id, id, name]
     ServiceInvoice:
       type: object
       properties:

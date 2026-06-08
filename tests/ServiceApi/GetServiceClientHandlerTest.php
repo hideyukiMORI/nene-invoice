@@ -52,6 +52,10 @@ final class GetServiceClientHandlerTest extends TestCase
 
         /** @var array<string, mixed> $body */
         $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+        // `client_id` is the canonical identifier the upstream contract / NeNe Clear
+        // reads (C2); `id` is retained as a deprecated alias.
+        self::assertSame($id, $body['client_id']);
+        self::assertSame($id, $body['id']);
         self::assertSame('株式会社テスト', $body['name']);
         self::assertSame('山田太郎', $body['contact_name']);
         self::assertSame('yamada@example.com', $body['recipient_email']);
