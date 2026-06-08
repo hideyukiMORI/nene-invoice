@@ -27,8 +27,10 @@ test.describe('Service tokens', () => {
     await page.getByRole('link', { name: 'サービストークン' }).click()
 
     await expect(page.getByRole('heading', { name: 'サービストークン' })).toBeVisible()
-    await expect(page.getByText('NeNe Clear')).toBeVisible()
-    await expect(page.getByText('有効')).toBeVisible()
+    // exact: the label appears verbatim in the row; the subtitle also contains
+    // "NeNe Clear", and the status badge "有効" is a substring of the "有効期限" header.
+    await expect(page.getByText('NeNe Clear', { exact: true })).toBeVisible()
+    await expect(page.getByText('有効', { exact: true })).toBeVisible()
   })
 
   test('issues a token and reveals its one-time value', async ({ page }) => {
