@@ -24,7 +24,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
     public function findById(int $id): ?Quote
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM quotes WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT ' . self::COLUMNS . ' FROM quotes WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$id, $this->orgId->get()],
         );
 
@@ -46,7 +46,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
                     q.is_deleted, q.created_at, q.updated_at,
                     COALESCE(c.name, \'\') AS client_name
              FROM quotes q
-             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = FALSE
              WHERE ' . $where . '
              ORDER BY ' . self::orderByClause($sort) . '
              LIMIT ? OFFSET ?',
@@ -69,7 +69,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         $row = $this->query->fetchOne(
             'SELECT COUNT(*) AS cnt
              FROM quotes q
-             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = FALSE
              WHERE ' . $where,
             $params,
         );
@@ -85,7 +85,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
      */
     private function buildAdminWhere(QuoteListFilter $filter): array
     {
-        $clauses = ['q.organization_id = ?', 'q.is_deleted = 0'];
+        $clauses = ['q.organization_id = ?', 'q.is_deleted = FALSE'];
         /** @var list<int|string> $params */
         $params = [$this->orgId->get()];
 
@@ -98,7 +98,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         }
 
         if ($filter->search !== null) {
-            $clauses[] = "(q.quote_number LIKE ? ESCAPE '!' OR c.name LIKE ? ESCAPE '!')";
+            $clauses[] = "(LOWER(q.quote_number) LIKE LOWER(?) ESCAPE '!' OR LOWER(c.name) LIKE LOWER(?) ESCAPE '!')";
             $like = '%' . SqlLike::escape($filter->search) . '%';
             $params[] = $like;
             $params[] = $like;
@@ -138,7 +138,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
                     COALESCE(c.name, \'\') AS client_name,
                     q.subtotal_cents, q.tax_cents, q.total_cents, q.status
              FROM quotes q
-             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = q.client_id AND c.is_deleted = FALSE
              WHERE ' . $where . '
              ORDER BY q.issued_at DESC, q.id DESC',
             $params,
@@ -184,7 +184,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
             'INSERT INTO quotes (organization_id, client_id, quote_number, status, issued_at, valid_until, subtotal_cents, tax_cents, total_cents, notes, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)',
             [
                 $this->orgId->get(),
                 $quote->clientId,
@@ -213,7 +213,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE quotes SET client_id = ?, status = ?, issued_at = ?, valid_until = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE quotes SET client_id = ?, status = ?, issued_at = ?, valid_until = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [
                 $quote->clientId,
                 $quote->status->value,
@@ -241,7 +241,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
         }
 
         $this->query->execute(
-            'UPDATE quotes SET is_deleted = 1, deleted_at = ? WHERE id = ? AND organization_id = ?',
+            'UPDATE quotes SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
             [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }

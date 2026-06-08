@@ -82,13 +82,13 @@ final readonly class PdoLineItemRepository implements LineItemRepositoryInterfac
                     li.tax_rate_bps AS tax_rate_bps, li.created_at AS created_at
                FROM line_items li
                JOIN invoices i ON li.parent_type = ? AND li.parent_id = i.id
-              WHERE i.organization_id = ? AND i.is_deleted = 0
+              WHERE i.organization_id = ? AND i.is_deleted = FALSE
              UNION ALL
              SELECT li.description AS description, li.unit_price_cents AS unit_price_cents,
                     li.tax_rate_bps AS tax_rate_bps, li.created_at AS created_at
                FROM line_items li
                JOIN quotes q ON li.parent_type = ? AND li.parent_id = q.id
-              WHERE q.organization_id = ? AND q.is_deleted = 0
+              WHERE q.organization_id = ? AND q.is_deleted = FALSE
              ORDER BY created_at DESC, description ASC
              LIMIT ?',
             [

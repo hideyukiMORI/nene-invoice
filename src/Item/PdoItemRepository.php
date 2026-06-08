@@ -24,7 +24,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
     public function findById(int $id): ?Item
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM items WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT ' . self::COLUMNS . ' FROM items WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$id, $this->orgId->get()],
         );
 
@@ -35,7 +35,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
     public function findAll(int $limit, int $offset): array
     {
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM items WHERE organization_id = ? AND is_deleted = 0 ORDER BY id ASC LIMIT ? OFFSET ?',
+            'SELECT ' . self::COLUMNS . ' FROM items WHERE organization_id = ? AND is_deleted = FALSE ORDER BY id ASC LIMIT ? OFFSET ?',
             [$this->orgId->get(), $limit, $offset],
         );
 
@@ -74,12 +74,12 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
      */
     private function buildAdminWhere(ItemListFilter $filter): array
     {
-        $clauses = ['organization_id = ?', 'is_deleted = 0'];
+        $clauses = ['organization_id = ?', 'is_deleted = FALSE'];
         /** @var list<int|string> $params */
         $params = [$this->orgId->get()];
 
         if ($filter->search !== null) {
-            $clauses[] = "description LIKE ? ESCAPE '!'";
+            $clauses[] = "LOWER(description) LIKE LOWER(?) ESCAPE '!'";
             $params[] = '%' . SqlLike::escape($filter->search) . '%';
         }
 
@@ -124,7 +124,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         // the entity — a write always lands in the caller's resolved org.
         $this->query->execute(
             'INSERT INTO items (organization_id, description, default_unit_price_cents, default_tax_rate_bps, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, ?, FALSE, ?, ?)',
             [
                 $this->orgId->get(),
                 $item->description,
@@ -147,7 +147,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE items SET description = ?, default_unit_price_cents = ?, default_tax_rate_bps = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE items SET description = ?, default_unit_price_cents = ?, default_tax_rate_bps = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [
                 $item->description,
                 $item->defaultUnitPriceCents,
@@ -170,7 +170,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
         }
 
         $this->query->execute(
-            'UPDATE items SET is_deleted = 1, deleted_at = ? WHERE id = ? AND organization_id = ?',
+            'UPDATE items SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
             [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
