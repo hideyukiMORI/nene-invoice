@@ -37,6 +37,8 @@ use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
 use NeneInvoice\Quote\QuoteValidationExceptionHandler;
 use NeneInvoice\ServiceApi\ServiceApiRouteRegistrar;
+use NeneInvoice\ServiceToken\ServiceTokenNotFoundExceptionHandler;
+use NeneInvoice\ServiceToken\ServiceTokenRouteRegistrar;
 use NeneInvoice\Template\TemplateNotFoundExceptionHandler;
 use NeneInvoice\Template\TemplateRouteRegistrar;
 use NeneInvoice\User\CannotDeleteSelfExceptionHandler;
@@ -93,6 +95,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $lineItemRoutes = $container->get(LineItemRouteRegistrar::class);
                     $itemRoutes = $container->get(ItemRouteRegistrar::class);
                     $templateRoutes = $container->get(TemplateRouteRegistrar::class);
+                    $serviceTokenRoutes = $container->get(ServiceTokenRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -154,7 +157,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Template route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes];
+                    if (!$serviceTokenRoutes instanceof ServiceTokenRouteRegistrar) {
+                        throw new LogicException('Service token route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes];
                 },
             )
             ->set(
@@ -182,6 +189,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
                     $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
                     $paymentNotFound = $container->get(PaymentNotFoundExceptionHandler::class);
+                    $serviceTokenNotFound = $container->get(ServiceTokenNotFoundExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
                         throw new LogicException('Organization not-found exception handler service is invalid.');
@@ -271,7 +279,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound];
+                    if (!$serviceTokenNotFound instanceof ServiceTokenNotFoundExceptionHandler) {
+                        throw new LogicException('Service token not-found exception handler service is invalid.');
+                    }
+
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $serviceTokenNotFound];
                 },
             );
     }

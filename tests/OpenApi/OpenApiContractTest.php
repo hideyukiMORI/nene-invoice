@@ -80,6 +80,9 @@ final class OpenApiContractTest extends TestCase
         'sendInvoiceEmail',
         'exportInvoicesCsv',
         'exportPaymentsCsv',
+        'listServiceTokens',
+        'issueServiceToken',
+        'revokeServiceToken',
     ];
 
     /** @var array<string, mixed> */

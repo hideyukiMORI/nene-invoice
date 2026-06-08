@@ -17,6 +17,7 @@ use NeneInvoice\Invoice\ListInvoicesUseCaseInterface;
 use NeneInvoice\Payment\ListPaymentsUseCaseInterface;
 use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
 use NeneInvoice\Payment\VoidPaymentUseCaseInterface;
+use NeneInvoice\ServiceToken\ServiceTokenAuthorizerInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -30,7 +31,11 @@ final readonly class ServiceApiServiceProvider implements ServiceProviderInterfa
         $builder
             ->set(
                 ServiceScopeMiddleware::class,
-                static fn (ContainerInterface $c): ServiceScopeMiddleware => new ServiceScopeMiddleware(self::problemDetails($c), self::orgHolder($c)),
+                static fn (ContainerInterface $c): ServiceScopeMiddleware => new ServiceScopeMiddleware(
+                    self::problemDetails($c),
+                    self::orgHolder($c),
+                    self::resolve($c, ServiceTokenAuthorizerInterface::class),
+                ),
             )
             ->set(
                 ListServiceInvoicesHandler::class,
