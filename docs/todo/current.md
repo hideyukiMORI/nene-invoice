@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-06-04 (Issue #253; merged through #252)
+Last updated: 2026-06-08 (NeNe Clear 連携の税務サインオフ状況・Clear 側完了を反映; merged through #413)
 
 ## Recently merged
 
@@ -83,8 +83,8 @@ Last updated: 2026-06-04 (Issue #253; merged through #252)
     - W1 **済(#109)**: payments に `external_reference` / `idempotency_key`、`findById`/`findByIdempotencyKey`/`markVoided`（void=soft delete 流用）。
     - W2 **済(#111)**: `POST /api/invoices/{id}/payments`。RecordPaymentUseCase を拡張（冪等 replay / `external_reference` 保存 / 過入金→`PaymentExceedsOutstandingException`=422 `payment-exceeds-outstanding` + `outstanding_cents`）して operator/service 共用。`paid_at`=入金日。ライブ確認済み。
     - W3 **済(#113)**: `POST /api/invoices/{id}/payments/{paymentId}/void`。VoidPaymentUseCase（soft delete 流用の void-with-audit `payment.voided`、status 再計算 paid→partially_paid/issued、冪等）。`payment-not-found`(404) 追加。ライブ確認済み。
-  - **②（読み取り＋書き込み）= 契約 §2/§3 完了**。残りは契約テスト（Clear 側）、運用フォロー: 複数 org スコープ、トークン発行/失効 UI。
-- **コンプライアンス gate**: 書き込みAPI PR の前に、`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点を **税理士確認**（accounting-compliance.md は拘束）。
+  - **②（読み取り＋書き込み）= 契約 §2/§3 完了**。**Clear 側の契約テスト・連携実装も完了（2026-06-08、Clear チーム報告）→ 連携は稼働可能**。運用フォロー（任意・未着手）: 複数 org スコープ、トークン発行/失効 UI。
+- **コンプライアンス gate: ✅ 解除済み（税理士サインオフ取得済み）**。`paid_at`=入金日・外部起票・過入金は Clear 側 client_credit の各点について、**2026-05-30 に税理士サインオフを取得**（記録: `docs/daily-reports/2026-05-30.md` §"Compliance gate honored"、ADR 0009 のゲート条件）。書き込みAPI（#109/#111/#113）はサインオフ取得後にマージ済み。accounting-compliance.md は引き続き拘束で、`paid_at`/外部起票/client_credit の扱いを変更する場合は再度 ADR ＋ 税理士確認が必要。
 
 ### Frontend 画面の進め方（縦スライス）
 
