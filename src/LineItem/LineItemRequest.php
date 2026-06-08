@@ -6,6 +6,7 @@ namespace NeneInvoice\LineItem;
 
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
+use NeneInvoice\Support\TextLimit;
 
 /**
  * Shared parsing/validation for document write payloads (quote & invoice create):
@@ -65,6 +66,7 @@ final class LineItemRequest
             if (!is_string($description) || $description === '' || !is_int($quantity) || !is_int($unitPrice) || !is_int($taxRate)) {
                 throw new ValidationException([new ValidationError($field, 'Each line item needs description (string) and quantity / unit_price_cents / tax_rate_bps (integers).', 'invalid')]);
             }
+            TextLimit::check($description, $field . '.description', TextLimit::LONG);
 
             $lines[] = new LineItemInput($description, $quantity, $unitPrice, $taxRate);
         }

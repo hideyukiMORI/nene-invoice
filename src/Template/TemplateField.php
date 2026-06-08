@@ -7,6 +7,7 @@ namespace NeneInvoice\Template;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\LineItem\LineItemInput;
+use NeneInvoice\Support\TextLimit;
 
 /**
  * Parses + validates the template write payload shared by create and update.
@@ -32,6 +33,7 @@ final class TemplateField
         if (!is_string($name) || trim($name) === '') {
             throw new ValidationException([new ValidationError('body.name', 'Name is required.', 'required')]);
         }
+        TextLimit::check($name, 'body.name', TextLimit::NAME);
 
         $rawLines = $body['line_items'] ?? [];
         if (!is_array($rawLines)) {
@@ -58,15 +60,18 @@ final class TemplateField
             if ($quantity <= 0 || $unitPrice < 0 || !in_array($taxRate, self::ALLOWED_TAX_RATES, true)) {
                 throw new ValidationException([new ValidationError($field, 'Line item quantity must be > 0, unit price >= 0, and tax rate one of 800 or 1000.', 'invalid')]);
             }
+            TextLimit::check($description, $field . '.description', TextLimit::LONG);
 
             $lines[] = new LineItemInput($description, $quantity, $unitPrice, $taxRate);
         }
 
         $notes = $body['notes'] ?? null;
+        $notes = is_string($notes) && $notes !== '' ? $notes : null;
+        TextLimit::check($notes, 'body.notes', TextLimit::NOTE);
 
         return [
             'name' => trim($name),
-            'notes' => is_string($notes) && $notes !== '' ? $notes : null,
+            'notes' => $notes,
             'lines' => $lines,
         ];
     }

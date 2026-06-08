@@ -10,6 +10,7 @@ use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\Auth\Role;
+use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -33,6 +34,7 @@ final readonly class CreateUserHandler implements RequestHandlerInterface
         if (!is_string($email) || $email === '') {
             throw new ValidationException([new ValidationError('body.email', 'Email is required.', 'required')]);
         }
+        TextLimit::check($email, 'body.email', TextLimit::NAME);
 
         $password = $body['password'] ?? null;
         if (!is_string($password) || $password === '') {
