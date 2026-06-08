@@ -12,8 +12,13 @@ namespace NeneInvoice\Support;
  */
 final class CsvImport
 {
-    /** Hard ceiling on the raw upload, checked before any parsing (memory-DoS guard). */
-    public const MAX_BYTES = 5_000_000;
+    /**
+     * Defense-in-depth ceiling on the raw upload, aligned with the framework's
+     * RequestSizeLimitMiddleware (1 MiB) — that middleware normally rejects an
+     * oversized body with 413 before it reaches here; this is a second, domain-level
+     * guard so the parser never builds an unbounded record array (Round 4 F3).
+     */
+    public const MAX_BYTES = 1_048_576;
 
     /**
      * @param list<string> $expectedHeader the template header, in order
@@ -23,7 +28,7 @@ final class CsvImport
         // Bound memory up front: reject oversized uploads before reading any
         // records into memory (the row cap below only applies after parsing).
         if (strlen($raw) > $maxBytes) {
-            return CsvImportParse::rejected(sprintf('ファイルサイズが上限（%d MB）を超えています。分割してインポートしてください。', intdiv($maxBytes, 1_000_000)));
+            return CsvImportParse::rejected(sprintf('ファイルサイズが上限（%d MB）を超えています。分割してインポートしてください。', intdiv($maxBytes, 1_048_576)));
         }
 
         if (!mb_check_encoding($raw, 'UTF-8')) {

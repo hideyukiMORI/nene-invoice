@@ -8,6 +8,8 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\Invoice\InvoiceResponse;
+use NeneInvoice\Support\RequestField;
+use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -32,22 +34,17 @@ final readonly class RecordPaymentHandler implements RequestHandlerInterface
         $decoded = json_decode((string) $request->getBody(), true);
         $decoded = is_array($decoded) ? $decoded : [];
 
-        $amountValue = $decoded['amount_cents'] ?? null;
-        $amountCents = is_int($amountValue) ? $amountValue : (is_numeric($amountValue) ? (int) $amountValue : 0);
+        $amountCents = PaymentAmount::fromBody($decoded);
 
         $paidAtValue = $decoded['paid_at'] ?? null;
         $paidAt = is_string($paidAtValue) && $paidAtValue !== '' ? $paidAtValue : null;
 
-        $methodValue = $decoded['method'] ?? null;
-        $method = is_string($methodValue) && $methodValue !== '' ? $methodValue : null;
-
-        $noteValue = $decoded['note'] ?? null;
-        $note = is_string($noteValue) && $noteValue !== '' ? $noteValue : null;
+        $method = RequestField::optionalString($decoded, 'method', TextLimit::TINY);
+        $note = RequestField::optionalString($decoded, 'note', TextLimit::NOTE);
 
         // Optional idempotency key: a retried submission with the same key returns
         // the original payment instead of double-recording it (diagnostic R2-3).
-        $keyValue = $decoded['idempotency_key'] ?? null;
-        $idempotencyKey = is_string($keyValue) && $keyValue !== '' ? $keyValue : null;
+        $idempotencyKey = RequestField::optionalString($decoded, 'idempotency_key', TextLimit::NAME);
 
         $result = $this->useCase->execute(
             AuthContext::userId($request),

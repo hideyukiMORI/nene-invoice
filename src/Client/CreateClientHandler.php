@@ -10,6 +10,7 @@ use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\Support\RequestField;
+use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -34,13 +35,14 @@ final readonly class CreateClientHandler implements RequestHandlerInterface
         if (!is_string($name) || $name === '') {
             throw new ValidationException([new ValidationError('body.name', 'Name is required.', 'required')]);
         }
+        TextLimit::check($name, 'body.name', TextLimit::NAME);
 
         $client = $this->useCase->execute(AuthContext::userId($request), new CreateClientInput(
             name: $name,
             nameKana: RequestField::optionalString($body, 'name_kana'),
             contactName: RequestField::optionalString($body, 'contact_name'),
             email: RequestField::optionalString($body, 'email'),
-            billingAddress: RequestField::optionalString($body, 'billing_address'),
+            billingAddress: RequestField::optionalString($body, 'billing_address', TextLimit::NOTE),
             registrationNumber: RequestField::optionalString($body, 'registration_number'),
         ));
 

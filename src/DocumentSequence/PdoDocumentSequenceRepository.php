@@ -27,6 +27,12 @@ final readonly class PdoDocumentSequenceRepository implements DocumentSequenceRe
         // Increment the existing counter; if there is no row yet for this
         // org/type/year, create it. A concurrent INSERT (unique conflict) means
         // another caller created the row first, so we increment instead.
+        //
+        // The increment and the read-back are separate statements, so under
+        // concurrency two callers could read the same value (Round 4 F4). This is
+        // backstopped by the UNIQUE constraint `uniq_invoices_org_number` and the
+        // surrounding issue transaction: a collision makes one INSERT fail rather
+        // than minting a duplicate number, so the accounting invariant holds.
         $affected = $this->increment($organizationId, $docType, $year);
 
         if ($affected === 0) {

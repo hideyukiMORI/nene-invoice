@@ -6,6 +6,7 @@ namespace NeneInvoice\Item;
 
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
+use NeneInvoice\Support\TextLimit;
 
 /**
  * Parses + validates the item write payload shared by create and update.
@@ -32,6 +33,8 @@ final class ItemField
         if (!is_string($description) || trim($description) === '') {
             $errors[] = new ValidationError('body.description', 'Description is required.', 'required');
             $description = '';
+        } elseif (mb_strlen($description) > TextLimit::NAME) {
+            $errors[] = new ValidationError('body.description', sprintf('Must be at most %d characters.', TextLimit::NAME), 'too_long');
         }
 
         $price = $body['default_unit_price_cents'] ?? null;

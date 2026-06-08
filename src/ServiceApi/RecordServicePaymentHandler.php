@@ -10,9 +10,11 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Routing\Router;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
+use NeneInvoice\Payment\PaymentAmount;
 use NeneInvoice\Payment\RecordPaymentInput;
 use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
 use NeneInvoice\Support\RequestField;
+use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -46,8 +48,7 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
 
         $decoded = JsonRequestBodyParser::parse($request);
 
-        $amountValue = $decoded['amount_cents'] ?? null;
-        $amountCents = is_int($amountValue) ? $amountValue : (is_numeric($amountValue) ? (int) $amountValue : 0);
+        $amountCents = PaymentAmount::fromBody($decoded);
 
         $paidAt = RequestField::optionalString($decoded, 'paid_at');
         if ($paidAt === null) {
@@ -62,9 +63,9 @@ final readonly class RecordServicePaymentHandler implements RequestHandlerInterf
         $result = $this->useCase->execute(null, $invoiceId, new RecordPaymentInput(
             amountCents: $amountCents,
             paidAt: $paidAt,
-            method: RequestField::optionalString($decoded, 'method'),
-            note: RequestField::optionalString($decoded, 'note'),
-            externalReference: RequestField::optionalString($decoded, 'external_reference'),
+            method: RequestField::optionalString($decoded, 'method', TextLimit::TINY),
+            note: RequestField::optionalString($decoded, 'note', TextLimit::NOTE),
+            externalReference: RequestField::optionalString($decoded, 'external_reference', TextLimit::NAME),
             idempotencyKey: $idempotencyKey,
         ));
 

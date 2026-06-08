@@ -10,6 +10,7 @@ use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
 use NeneInvoice\Support\RequestField;
+use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -35,20 +36,21 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
         if (!is_string($legalName) || $legalName === '') {
             throw new ValidationException([new ValidationError('body.legal_name', 'Legal name is required.', 'required')]);
         }
+        TextLimit::check($legalName, 'body.legal_name', TextLimit::NAME);
 
         $this->validateBillingDefaults($decoded);
 
         $settings = $this->useCase->execute(AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
-            address: RequestField::optionalString($decoded, 'address'),
-            phone: RequestField::optionalString($decoded, 'phone'),
+            address: RequestField::optionalString($decoded, 'address', TextLimit::NOTE),
+            phone: RequestField::optionalString($decoded, 'phone', TextLimit::TINY),
             email: RequestField::optionalString($decoded, 'email'),
             registrationNumber: RequestField::optionalString($decoded, 'registration_number'),
             bankName: RequestField::optionalString($decoded, 'bank_name'),
             bankBranch: RequestField::optionalString($decoded, 'bank_branch'),
-            accountType: RequestField::optionalString($decoded, 'account_type'),
-            accountNumber: RequestField::optionalString($decoded, 'account_number'),
-            logoUrl: RequestField::optionalString($decoded, 'logo_url'),
+            accountType: RequestField::optionalString($decoded, 'account_type', TextLimit::TINY),
+            accountNumber: RequestField::optionalString($decoded, 'account_number', TextLimit::ACCOUNT),
+            logoUrl: RequestField::optionalString($decoded, 'logo_url', TextLimit::LONG),
             defaultQuoteValidityDays: RequestField::optionalInt($decoded, 'default_quote_validity_days'),
             defaultPaymentClosingDay: RequestField::optionalInt($decoded, 'default_payment_closing_day'),
             defaultPaymentMonthOffset: RequestField::optionalInt($decoded, 'default_payment_month_offset'),
