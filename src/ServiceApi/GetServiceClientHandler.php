@@ -47,6 +47,11 @@ final readonly class GetServiceClientHandler implements RequestHandlerInterface
         }
 
         return $this->json->create([
+            // `client_id` is the canonical identifier on the service surface — it
+            // matches the invoice read model's `client_id` and the upstream contract
+            // (§2.3). `id` is retained but deprecated (ADR 0009 §5: deprecate, never
+            // rename); consumers should read `client_id`.
+            'client_id'           => $client->id,
             'id'                  => $client->id,
             'name'                => $client->name,
             'contact_name'        => $client->contactName,
