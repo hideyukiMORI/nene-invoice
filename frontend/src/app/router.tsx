@@ -24,6 +24,7 @@ import { InvoicesPage } from '@/pages/invoices'
 import { UsersPage } from '@/pages/users'
 import { UserCreatePage } from '@/pages/user-create'
 import { UserEditPage } from '@/pages/user-edit'
+import { ServiceTokensPage } from '@/pages/service-tokens'
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
       { path: 'users/new', element: <UserCreatePage /> },
       { path: 'users/:id/edit', element: <UserEditPage /> },
       { path: 'audit-logs', element: <AuditLogsPage /> },
+      { path: 'service-tokens', element: <ServiceTokensPage /> },
       { path: 'help', element: <HelpPage /> },
     ],
   },

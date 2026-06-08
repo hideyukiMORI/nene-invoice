@@ -126,6 +126,13 @@ const ICONS: Record<string, ReactNode> = {
       <circle cx="16" cy="10" r="1.4" />
     </>,
   ),
+  serviceTokens: icon(
+    <>
+      <circle cx="6.5" cy="10" r="3.2" />
+      <path d="M9.5 10h7.5M14.5 10v2.6M16.8 10v2.2" />
+      <circle cx="6.5" cy="10" r="0.9" fill="currentColor" stroke="none" />
+    </>,
+  ),
 }
 
 /** Hamburger (mobile drawer toggle). */
@@ -172,6 +179,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/users', label: 'admin.nav.users', iconKey: 'users' },
       { to: '/audit-logs', label: 'admin.nav.auditLogs', iconKey: 'audit' },
+      { to: '/service-tokens', label: 'admin.nav.serviceTokens', iconKey: 'serviceTokens' },
       { to: '/help', label: 'admin.nav.help', iconKey: 'help' },
       { to: '/settings', label: 'admin.nav.settings', iconKey: 'settings' },
     ],
@@ -193,7 +201,7 @@ const BOTTOM_TABS: BottomTab[] = [
   { to: '/clients', label: 'admin.bottomNav.clients', iconKey: 'clients' },
 ]
 /** Routes that live behind the 「メニュー」 tab (not direct bottom tabs). */
-const DRAWER_ROUTES = ['/users', '/audit-logs', '/help', '/settings']
+const DRAWER_ROUTES = ['/users', '/audit-logs', '/service-tokens', '/help', '/settings']
 
 interface BottomNavProps {
   pathname: string

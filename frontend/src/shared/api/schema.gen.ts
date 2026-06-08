@@ -268,6 +268,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/clients/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export clients as CSV
+         * @description Downloads the (optionally filtered) clients for the organization as a UTF-8 BOM CSV file compatible with Excel. Accepts the same `q` filter as the list endpoint, so the export mirrors what the list shows. Cells are neutralized against spreadsheet formula injection. Requires ViewBilling capability.
+         */
+        get: operations["exportClientsCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/clients/import-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the clients import template
+         * @description Returns the UTF-8 (BOM) CSV template (header only) for client import. The user adds rows beneath the header and uploads to the import endpoint. Requires ViewBilling capability. See ADR 0011.
+         */
+        get: operations["getClientsImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/clients/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import clients from a template CSV
+         * @description Template-only import (ADR 0011). The request body is the raw template CSV (`text/csv`). The whole file is validated first: on a format error or any invalid row, nothing is written and a report is returned (422). On success, rows are applied in one transaction (200). The `id` column drives create (blank) vs. update (existing own-org id). `?dry_run=1` validates and returns the same report without writing. Requires ManageBilling.
+         */
+        post: operations["importClientsCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/clients/{id}": {
         parameters: {
             query?: never;
@@ -305,6 +365,66 @@ export interface paths {
         put?: never;
         /** Create item */
         post: operations["createItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/items/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export items as CSV
+         * @description Downloads the (optionally filtered) items as a UTF-8 BOM CSV in the import-template shape (so an export round-trips into an import). `標準単価` is whole yen (cents 1:1 for JPY); `標準税率` is a percent. Cells are neutralized against formula injection. Requires ViewBilling capability.
+         */
+        get: operations["exportItemsCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/items/import-template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download the items import template
+         * @description Returns the UTF-8 (BOM) CSV template (header only) for item import. Requires ViewBilling capability. See ADR 0011.
+         */
+        get: operations["getItemsImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/items/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import items from a template CSV
+         * @description Template-only import (ADR 0011). The body is the raw template CSV (`text/csv`). The whole file is validated first: on a format error or any invalid row, nothing is written and a report is returned (422). On success, rows are applied in one transaction (200). The `id` column drives create (blank) vs. update (existing own-org id). `標準単価` is whole yen; `標準税率` is a percent restricted to 10 or 8. `?dry_run=1` validates without writing. Requires ManageBilling.
+         */
+        post: operations["importItemsCsv"];
         delete?: never;
         options?: never;
         head?: never;
@@ -374,6 +494,53 @@ export interface paths {
         head?: never;
         /** Update template */
         patch: operations["updateTemplate"];
+        trace?: never;
+    };
+    "/admin/service-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List service tokens
+         * @description Lists the organization's NeNe Clear service-token registry records (metadata only — the token value is never returned). Requires ManageUsers (admin oversight).
+         */
+        get: operations["listServiceTokens"];
+        put?: never;
+        /**
+         * Issue service token
+         * @description Issues a NeNe Clear service token for the caller's organization. The plaintext `token` is returned exactly once in this response and never again. Requires ManageUsers.
+         */
+        post: operations["issueServiceToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/service-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke service token
+         * @description Revokes a service token by id (idempotent). Once revoked, the token's `jti` is rejected at request time on `/api/*`. Requires ManageUsers.
+         */
+        delete: operations["revokeServiceToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/admin/quotes": {
@@ -470,6 +637,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/quotes/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export quotes as CSV
+         * @description Downloads the (optionally filtered) quotes for the organization as a UTF-8 BOM CSV file compatible with Excel. Accepts the same filters as the list endpoint, so the export mirrors what the list shows. Requires ViewBilling capability.
+         */
+        get: operations["exportQuotesCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invoices/export": {
         parameters: {
             query?: never;
@@ -479,7 +666,7 @@ export interface paths {
         };
         /**
          * Export invoices as CSV
-         * @description Downloads all issued (non-draft) invoices for the organization as a UTF-8 BOM CSV file compatible with Excel and accounting software. Requires ViewBilling capability.
+         * @description Downloads the (optionally filtered) issued (non-draft) invoices for the organization as a UTF-8 BOM CSV file compatible with Excel and accounting software. Accepts the same filters as the list endpoint, so the export mirrors what the list shows. The issued-date range (issued_from / issued_to) is the accounting-period axis. Requires ViewBilling capability.
          */
         get: operations["exportInvoicesCsv"];
         put?: never;
@@ -908,6 +1095,26 @@ export interface components {
             updated_at?: string | null;
         };
         ClientList: components["schemas"]["PageEnvelope"];
+        /** @description Result of a clients import (ADR 0011). `accepted` drives the status. */
+        CsvImportReport: {
+            accepted: boolean;
+            dry_run: boolean;
+            /** @description File-level rejection reason (header / encoding / size); null if none. */
+            format_error: string | null;
+            summary: {
+                rows: number;
+                created: number;
+                updated: number;
+                errors: number;
+            };
+            errors: {
+                /** @description 1-based spreadsheet row (header = 1) */
+                row: number;
+                column: string | null;
+                code: string;
+                message: string;
+            }[];
+        };
         CreateClientRequest: {
             name: string;
             name_kana?: string | null;
@@ -969,6 +1176,35 @@ export interface components {
             name: string;
             notes?: string | null;
             line_items?: components["schemas"]["LineItemInput"][];
+        };
+        /** @description Registry record for a NeNe Clear service token (ADR 0009). Metadata only — the token value is never included here. */
+        ServiceToken: {
+            id: number;
+            /** @description The token `sub` claim (machine principal, e.g. service:clear). */
+            subject: string;
+            label: string;
+            scopes: ("read:invoices" | "write:payments")[];
+            /** @description Operator user id who issued the token (null for CLI-issued). */
+            created_by?: number | null;
+            created_at: string;
+            expires_at: string;
+            revoked_at?: string | null;
+            /** @enum {string} */
+            status: "active" | "revoked";
+        };
+        ServiceTokenList: components["schemas"]["PageEnvelope"];
+        IssueServiceTokenRequest: {
+            /** @description Human label for the token (required). */
+            label: string;
+            scopes: ("read:invoices" | "write:payments")[];
+            /** @description Machine principal `sub` claim. Defaults to service:clear. */
+            subject?: string;
+            /** @description Token lifetime in seconds (3600 … 31536000; default 2592000). */
+            ttl_seconds?: number;
+        };
+        CreatedServiceToken: components["schemas"]["ServiceToken"] & {
+            /** @description The signed bearer token, returned exactly once on issuance. */
+            token: string;
         };
         /** @description A line on a quote or invoice. Money is integer cents. */
         LineItem: {
@@ -1813,6 +2049,91 @@ export interface operations {
             422: components["responses"]["InvalidRegistrationNumber"];
         };
     };
+    exportClientsCsv: {
+        parameters: {
+            query?: {
+                /** @description Search term (matches name, kana, contact, email, or registration number). */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    getClientsImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV template file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    importClientsCsv: {
+        parameters: {
+            query?: {
+                /** @description When '1', validate and report without writing. */
+                dry_run?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/csv": string;
+            };
+        };
+        responses: {
+            /** @description Import accepted (applied, or validated under dry-run) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportReport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            /** @description Rejected — format error or row errors; nothing written */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportReport"];
+                };
+            };
+        };
+    };
     getClientById: {
         parameters: {
             query?: never;
@@ -1956,6 +2277,91 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["InsufficientCapability"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    exportItemsCsv: {
+        parameters: {
+            query?: {
+                /** @description Search term (matches description). */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    getItemsImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV template file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    importItemsCsv: {
+        parameters: {
+            query?: {
+                /** @description When '1', validate and report without writing. */
+                dry_run?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/csv": string;
+            };
+        };
+        responses: {
+            /** @description Import accepted (applied, or validated under dry-run) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportReport"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            /** @description Rejected — format error or row errors; nothing written */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvImportReport"];
+                };
+            };
         };
     };
     getItemById: {
@@ -2188,6 +2594,93 @@ export interface operations {
             422: components["responses"]["ValidationFailed"];
         };
     };
+    listServiceTokens: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of items to return (1–100, default 20). */
+                limit?: components["parameters"]["LimitParam"];
+                /** @description Number of items to skip (default 0). */
+                offset?: components["parameters"]["OffsetParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service-token page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceTokenList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    issueServiceToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "label": "NeNe Clear (本番)",
+                 *       "scopes": [
+                 *         "read:invoices",
+                 *         "write:payments"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["IssueServiceTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Service token issued (plaintext token included once) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedServiceToken"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    revokeServiceToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Service token revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     listQuotes: {
         parameters: {
             query?: {
@@ -2378,9 +2871,59 @@ export interface operations {
             422: components["responses"]["ValidationFailed"];
         };
     };
+    exportQuotesCsv: {
+        parameters: {
+            query?: {
+                /** @description Search term (matches quote number or client name). */
+                q?: string;
+                /** @description Comma-separated subset of quote statuses. */
+                status?: string;
+                /** @description valid_until lower bound (YYYY-MM-DD, inclusive). */
+                valid_from?: string;
+                /** @description valid_until upper bound (YYYY-MM-DD, inclusive). */
+                valid_to?: string;
+                total_min?: number;
+                total_max?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
     exportInvoicesCsv: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Search term (matches invoice number or client name). */
+                q?: string;
+                /** @description Comma-separated subset of invoice statuses. */
+                status?: string;
+                /** @description When '1', only overdue (issued/partially_paid, past due) invoices. */
+                overdue?: string;
+                /** @description due_at lower bound (YYYY-MM-DD, inclusive). */
+                due_from?: string;
+                /** @description due_at upper bound (YYYY-MM-DD, inclusive). */
+                due_to?: string;
+                /** @description issued_at lower bound (YYYY-MM-DD, inclusive). */
+                issued_from?: string;
+                /** @description issued_at upper bound (YYYY-MM-DD, inclusive). */
+                issued_to?: string;
+                total_min?: number;
+                total_max?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
