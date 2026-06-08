@@ -12,11 +12,20 @@ namespace NeneInvoice\Support;
  */
 final class CsvImport
 {
+    /** Hard ceiling on the raw upload, checked before any parsing (memory-DoS guard). */
+    public const MAX_BYTES = 5_000_000;
+
     /**
      * @param list<string> $expectedHeader the template header, in order
      */
-    public static function parse(string $raw, array $expectedHeader, int $maxRows = 5000): CsvImportParse
+    public static function parse(string $raw, array $expectedHeader, int $maxRows = 5000, int $maxBytes = self::MAX_BYTES): CsvImportParse
     {
+        // Bound memory up front: reject oversized uploads before reading any
+        // records into memory (the row cap below only applies after parsing).
+        if (strlen($raw) > $maxBytes) {
+            return CsvImportParse::rejected(sprintf('ファイルサイズが上限（%d MB）を超えています。分割してインポートしてください。', intdiv($maxBytes, 1_000_000)));
+        }
+
         if (!mb_check_encoding($raw, 'UTF-8')) {
             return CsvImportParse::rejected('ファイルが UTF-8 ではありません。テンプレートを UTF-8 で保存し直してください。');
         }

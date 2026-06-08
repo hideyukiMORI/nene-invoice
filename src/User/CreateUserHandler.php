@@ -38,6 +38,7 @@ final readonly class CreateUserHandler implements RequestHandlerInterface
         if (!is_string($password) || $password === '') {
             throw new ValidationException([new ValidationError('body.password', 'Password is required.', 'required')]);
         }
+        PasswordPolicy::assert($password);
 
         $roleValue = $body['role'] ?? null;
         $role = is_string($roleValue) ? Role::tryFrom($roleValue) : null;

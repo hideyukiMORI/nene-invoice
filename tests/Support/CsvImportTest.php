@@ -19,6 +19,16 @@ final class CsvImportTest extends TestCase
         self::assertStringContainsString('UTF-8', $parse->formatError);
     }
 
+    public function test_rejects_oversized_upload_before_parsing(): void
+    {
+        // Exceed a tiny byte cap; rejection must happen on size, not header/rows.
+        $parse = CsvImport::parse(str_repeat('a', 1_001), self::HEADER, maxRows: 5000, maxBytes: 1_000);
+
+        self::assertNotNull($parse->formatError);
+        self::assertStringContainsString('ファイルサイズ', $parse->formatError);
+        self::assertSame([], $parse->rows);
+    }
+
     public function test_strips_bom_and_accepts_matching_header(): void
     {
         $parse = CsvImport::parse("\xEF\xBB\xBF__template,name\nclients/v1,Acme\n", self::HEADER);
