@@ -45,3 +45,87 @@ jobs:
 
       - name: Run checks
         run: composer check
+
+  # Runs the repository SQL against the real production engines (MySQL +
+  # PostgreSQL — issue #396). SQLite cannot catch PG's strict boolean typing, so
+  # this is what guards the dialect-portable SQL from regressing.
+  integration:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: nene_invoice_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nene_invoice_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Apply schema (MySQL via Phinx)
+        env:
+          APP_ENV: test
+          DB_ADAPTER: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_NAME: nene_invoice_test
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_CHARSET: utf8mb4
+        run: php vendor/bin/phinx migrate -c phinx.php
+
+      - name: Apply schema (PostgreSQL via Phinx)
+        env:
+          APP_ENV: test
+          DB_ADAPTER: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '5432'
+          DB_NAME: nene_invoice_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_CHARSET: utf8
+        run: php vendor/bin/phinx migrate -c phinx.php
+
+      - name: Integration tests (MySQL + PostgreSQL)
+        env:
+          MYSQL_TEST_HOST: 127.0.0.1
+          MYSQL_TEST_PORT: '3306'
+          MYSQL_TEST_DB: nene_invoice_test
+          MYSQL_TEST_USER: root
+          MYSQL_TEST_PASSWORD: root
+          PGSQL_TEST_HOST: 127.0.0.1
+          PGSQL_TEST_PORT: '5432'
+          PGSQL_TEST_DB: nene_invoice_test
+          PGSQL_TEST_USER: postgres
+          PGSQL_TEST_PASSWORD: postgres
+        run: composer test:integration

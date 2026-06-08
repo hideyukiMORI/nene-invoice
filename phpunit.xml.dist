@@ -12,6 +12,10 @@
   <testsuites>
     <testsuite name="NeneInvoice">
       <directory>tests</directory>
+      <exclude>tests/Integration</exclude>
+    </testsuite>
+    <testsuite name="integration">
+      <directory>tests/Integration</directory>
     </testsuite>
   </testsuites>
   <source>

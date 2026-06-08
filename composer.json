@@ -24,6 +24,7 @@
     },
     "scripts": {
         "test": "phpunit --testsuite NeneInvoice",
+        "test:integration": "phpunit --testsuite integration",
         "analyse": "phpstan analyse --memory-limit 512M",
         "cs": "php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php",
         "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.php",

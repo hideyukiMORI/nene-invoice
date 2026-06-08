@@ -23,7 +23,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
     public function findById(int $id): ?Template
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM templates WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT ' . self::COLUMNS . ' FROM templates WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$id, $this->orgId->get()],
         );
 
@@ -34,7 +34,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
     public function findAll(int $limit, int $offset): array
     {
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM templates WHERE organization_id = ? AND is_deleted = 0 ORDER BY name ASC, id ASC LIMIT ? OFFSET ?',
+            'SELECT ' . self::COLUMNS . ' FROM templates WHERE organization_id = ? AND is_deleted = FALSE ORDER BY name ASC, id ASC LIMIT ? OFFSET ?',
             [$this->orgId->get(), $limit, $offset],
         );
 
@@ -44,7 +44,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
     public function count(): int
     {
         $row = $this->query->fetchOne(
-            'SELECT COUNT(*) AS cnt FROM templates WHERE organization_id = ? AND is_deleted = 0',
+            'SELECT COUNT(*) AS cnt FROM templates WHERE organization_id = ? AND is_deleted = FALSE',
             [$this->orgId->get()],
         );
 
@@ -59,7 +59,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
         // the entity — a write always lands in the caller's resolved org.
         $this->query->execute(
             'INSERT INTO templates (organization_id, name, notes, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, FALSE, ?, ?)',
             [$this->orgId->get(), $template->name, $template->notes, $now, $now],
         );
 
@@ -75,7 +75,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE templates SET name = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE templates SET name = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$template->name, $template->notes, $now, $template->id, $this->orgId->get()],
         );
 
@@ -91,7 +91,7 @@ final readonly class PdoTemplateRepository implements TemplateRepositoryInterfac
         }
 
         $this->query->execute(
-            'UPDATE templates SET is_deleted = 1, deleted_at = ? WHERE id = ? AND organization_id = ?',
+            'UPDATE templates SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
             [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }

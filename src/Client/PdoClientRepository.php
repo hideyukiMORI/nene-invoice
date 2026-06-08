@@ -24,7 +24,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
     public function findById(int $id): ?Client
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM clients WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT ' . self::COLUMNS . ' FROM clients WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$id, $this->orgId->get()],
         );
 
@@ -63,14 +63,14 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
      */
     private function buildAdminWhere(ClientListFilter $filter): array
     {
-        $clauses = ['organization_id = ?', 'is_deleted = 0'];
+        $clauses = ['organization_id = ?', 'is_deleted = FALSE'];
         /** @var list<int|string> $params */
         $params = [$this->orgId->get()];
 
         if ($filter->search !== null) {
-            $clauses[] = "(name LIKE ? ESCAPE '!' OR name_kana LIKE ? ESCAPE '!'"
-                . " OR contact_name LIKE ? ESCAPE '!'"
-                . " OR email LIKE ? ESCAPE '!' OR registration_number LIKE ? ESCAPE '!')";
+            $clauses[] = "(LOWER(name) LIKE LOWER(?) ESCAPE '!' OR LOWER(name_kana) LIKE LOWER(?) ESCAPE '!'"
+                . " OR LOWER(contact_name) LIKE LOWER(?) ESCAPE '!'"
+                . " OR LOWER(email) LIKE LOWER(?) ESCAPE '!' OR LOWER(registration_number) LIKE LOWER(?) ESCAPE '!')";
             $like = '%' . SqlLike::escape($filter->search) . '%';
             $params[] = $like;
             $params[] = $like;
@@ -121,7 +121,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         // the entity — a write always lands in the caller's resolved org.
         $this->query->execute(
             'INSERT INTO clients (organization_id, name, name_kana, contact_name, email, billing_address, registration_number, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)',
             [
                 $this->orgId->get(),
                 $client->name,
@@ -147,7 +147,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE clients SET name = ?, name_kana = ?, contact_name = ?, email = ?, billing_address = ?, registration_number = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE clients SET name = ?, name_kana = ?, contact_name = ?, email = ?, billing_address = ?, registration_number = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [
                 $client->name,
                 $client->nameKana,
@@ -173,7 +173,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
         }
 
         $this->query->execute(
-            'UPDATE clients SET is_deleted = 1, deleted_at = ? WHERE id = ? AND organization_id = ?',
+            'UPDATE clients SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
             [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }

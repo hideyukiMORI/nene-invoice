@@ -27,7 +27,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
             'INSERT INTO payments (organization_id, invoice_id, amount_cents, paid_at, method, note, external_reference, idempotency_key, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)',
             [
                 $this->orgId->get(),
                 $payment->invoiceId,
@@ -69,7 +69,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function markVoided(int $id): void
     {
         $this->query->execute(
-            'UPDATE payments SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE payments SET is_deleted = TRUE, deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
@@ -78,7 +78,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function findByInvoice(int $invoiceId): array
     {
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = 0 ORDER BY paid_at ASC, id ASC',
+            'SELECT ' . self::COLUMNS . ' FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = FALSE ORDER BY paid_at ASC, id ASC',
             [$invoiceId, $this->orgId->get()],
         );
 
@@ -88,7 +88,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function totalPaidForInvoice(int $invoiceId): int
     {
         $row = $this->query->fetchOne(
-            'SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT COALESCE(SUM(amount_cents), 0) AS total FROM payments WHERE invoice_id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$invoiceId, $this->orgId->get()],
         );
 
@@ -108,7 +108,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         $placeholders = implode(', ', array_fill(0, count($invoiceIds), '?'));
         $rows = $this->query->fetchAll(
             'SELECT invoice_id, COALESCE(SUM(amount_cents), 0) AS total
-             FROM payments WHERE is_deleted = 0 AND organization_id = ? AND invoice_id IN (' . $placeholders . ')
+             FROM payments WHERE is_deleted = FALSE AND organization_id = ? AND invoice_id IN (' . $placeholders . ')
              GROUP BY invoice_id',
             [$this->orgId->get(), ...$invoiceIds],
         );
@@ -125,10 +125,10 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     {
         $row = $this->query->fetchOne(
             'SELECT
-                COALESCE(SUM(i.total_cents), 0) - COALESCE(SUM(CASE WHEN p.is_deleted = 0 THEN p.amount_cents ELSE 0 END), 0) AS outstanding
+                COALESCE(SUM(i.total_cents), 0) - COALESCE(SUM(CASE WHEN p.is_deleted = FALSE THEN p.amount_cents ELSE 0 END), 0) AS outstanding
             FROM invoices i
             LEFT JOIN payments p ON p.invoice_id = i.id
-            WHERE i.organization_id = ? AND i.is_deleted = 0 AND i.status IN (\'issued\', \'partially_paid\')',
+            WHERE i.organization_id = ? AND i.is_deleted = FALSE AND i.status IN (\'issued\', \'partially_paid\')',
             [$this->orgId->get()],
         );
 
@@ -143,8 +143,8 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
                     COALESCE(c.name, \'\') AS client_name
              FROM payments p
              LEFT JOIN invoices i ON i.id = p.invoice_id
-             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
-             WHERE p.organization_id = ? AND p.is_deleted = 0
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = FALSE
+             WHERE p.organization_id = ? AND p.is_deleted = FALSE
              ORDER BY p.paid_at DESC, p.id DESC',
             [$this->orgId->get()],
         );
@@ -164,7 +164,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
         $row = $this->query->fetchOne(
             'SELECT COALESCE(SUM(amount_cents), 0) AS total
              FROM payments
-             WHERE organization_id = ? AND is_deleted = 0 AND paid_at >= ? AND paid_at < ?',
+             WHERE organization_id = ? AND is_deleted = FALSE AND paid_at >= ? AND paid_at < ?',
             [$this->orgId->get(), $startInclusive, $endExclusive],
         );
 
@@ -182,10 +182,10 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
                 COALESCE(SUM(CASE WHEN t.due_at < ? THEN t.net ELSE 0 END), 0) AS overdue_31_plus
              FROM (
                 SELECT i.id, i.due_at,
-                       i.total_cents - COALESCE(SUM(CASE WHEN p.is_deleted = 0 THEN p.amount_cents ELSE 0 END), 0) AS net
+                       i.total_cents - COALESCE(SUM(CASE WHEN p.is_deleted = FALSE THEN p.amount_cents ELSE 0 END), 0) AS net
                 FROM invoices i
                 LEFT JOIN payments p ON p.invoice_id = i.id
-                WHERE i.organization_id = ? AND i.is_deleted = 0 AND i.status IN (\'issued\', \'partially_paid\')
+                WHERE i.organization_id = ? AND i.is_deleted = FALSE AND i.status IN (\'issued\', \'partially_paid\')
                 GROUP BY i.id, i.due_at, i.total_cents
              ) t
              WHERE t.net > 0',

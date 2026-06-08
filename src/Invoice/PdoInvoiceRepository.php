@@ -24,7 +24,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     public function findById(int $id): ?Invoice
     {
         $row = $this->query->fetchOne(
-            'SELECT ' . self::COLUMNS . ' FROM invoices WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'SELECT ' . self::COLUMNS . ' FROM invoices WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [$id, $this->orgId->get()],
         );
 
@@ -34,7 +34,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     public function existsForQuote(int $quoteId): bool
     {
         $row = $this->query->fetchOne(
-            'SELECT 1 AS hit FROM invoices WHERE quote_id = ? AND organization_id = ? AND is_deleted = 0 LIMIT 1',
+            'SELECT 1 AS hit FROM invoices WHERE quote_id = ? AND organization_id = ? AND is_deleted = FALSE LIMIT 1',
             [$quoteId, $this->orgId->get()],
         );
 
@@ -45,7 +45,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     public function findAll(int $limit, int $offset): array
     {
         $rows = $this->query->fetchAll(
-            'SELECT ' . self::COLUMNS . ' FROM invoices WHERE organization_id = ? AND is_deleted = 0 ORDER BY id DESC LIMIT ? OFFSET ?',
+            'SELECT ' . self::COLUMNS . ' FROM invoices WHERE organization_id = ? AND is_deleted = FALSE ORDER BY id DESC LIMIT ? OFFSET ?',
             [$this->orgId->get(), $limit, $offset],
         );
 
@@ -55,7 +55,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     public function count(): int
     {
         $row = $this->query->fetchOne(
-            'SELECT COUNT(*) AS cnt FROM invoices WHERE organization_id = ? AND is_deleted = 0',
+            'SELECT COUNT(*) AS cnt FROM invoices WHERE organization_id = ? AND is_deleted = FALSE',
             [$this->orgId->get()],
         );
 
@@ -99,7 +99,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
                     i.total_cents, i.notes, i.is_deleted, i.created_at, i.updated_at,
                     COALESCE(c.name, \'\') AS client_name
              FROM invoices i
-             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = FALSE
              WHERE ' . $where . '
              ORDER BY ' . self::orderByClause($sort) . '
              LIMIT ? OFFSET ?',
@@ -122,7 +122,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         $row = $this->query->fetchOne(
             'SELECT COUNT(*) AS cnt
              FROM invoices i
-             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = FALSE
              WHERE ' . $where,
             $params,
         );
@@ -138,7 +138,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
      */
     private function buildAdminWhere(InvoiceListFilter $filter): array
     {
-        $clauses = ['i.organization_id = ?', 'i.is_deleted = 0'];
+        $clauses = ['i.organization_id = ?', 'i.is_deleted = FALSE'];
         /** @var list<int|string> $params */
         $params = [$this->orgId->get()];
 
@@ -151,7 +151,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         }
 
         if ($filter->search !== null) {
-            $clauses[] = "(i.invoice_number LIKE ? ESCAPE '!' OR c.name LIKE ? ESCAPE '!')";
+            $clauses[] = "(LOWER(i.invoice_number) LIKE LOWER(?) ESCAPE '!' OR LOWER(c.name) LIKE LOWER(?) ESCAPE '!')";
             $like = '%' . SqlLike::escape($filter->search) . '%';
             $params[] = $like;
             $params[] = $like;
@@ -222,7 +222,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
      */
     private function buildWhere(InvoiceListFilter $filter): array
     {
-        $clauses = ['organization_id = ?', 'is_deleted = 0'];
+        $clauses = ['organization_id = ?', 'is_deleted = FALSE'];
         /** @var list<int|string> $params */
         $params = [$this->orgId->get()];
 
@@ -270,7 +270,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         $row = $this->query->fetchOne(
             'SELECT COALESCE(SUM(total_cents), 0) AS cents, COUNT(*) AS cnt
              FROM invoices
-             WHERE organization_id = ? AND is_deleted = 0
+             WHERE organization_id = ? AND is_deleted = FALSE
                AND issued_at IS NOT NULL AND issued_at >= ? AND issued_at < ?',
             [$this->orgId->get(), $startInclusive, $endExclusive],
         );
@@ -286,7 +286,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         $rows = $this->query->fetchAll(
             'SELECT issued_at, total_cents
              FROM invoices
-             WHERE organization_id = ? AND is_deleted = 0
+             WHERE organization_id = ? AND is_deleted = FALSE
                AND issued_at IS NOT NULL AND issued_at >= ? AND issued_at < ?
              ORDER BY issued_at ASC',
             [$this->orgId->get(), $startInclusive, $endExclusive],
@@ -313,7 +313,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
                 SUM(CASE WHEN status IN (\'issued\', \'partially_paid\') THEN 1 ELSE 0 END) AS unpaid_count,
                 SUM(CASE WHEN status IN (\'issued\', \'partially_paid\') AND due_at IS NOT NULL AND due_at < ? THEN 1 ELSE 0 END) AS overdue_count
             FROM invoices
-            WHERE organization_id = ? AND is_deleted = 0',
+            WHERE organization_id = ? AND is_deleted = FALSE',
             [$now, $orgId],
         );
 
@@ -323,7 +323,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         $rows = $this->query->fetchAll(
             'SELECT ' . self::COLUMNS . '
             FROM invoices
-            WHERE organization_id = ? AND is_deleted = 0 AND status IN (\'issued\', \'partially_paid\')
+            WHERE organization_id = ? AND is_deleted = FALSE AND status IN (\'issued\', \'partially_paid\')
             ORDER BY id DESC
             LIMIT 5',
             [$orgId],
@@ -343,7 +343,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
             'INSERT INTO invoices (organization_id, client_id, quote_id, invoice_number, status, is_qualified_invoice, issued_at, due_at, subtotal_cents, tax_cents, total_cents, notes, is_deleted, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, ?)',
             [
                 $this->orgId->get(),
                 $invoice->clientId,
@@ -374,7 +374,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         $now = date('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
-            'UPDATE invoices SET client_id = ?, quote_id = ?, invoice_number = ?, status = ?, is_qualified_invoice = ?, issued_at = ?, due_at = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = 0',
+            'UPDATE invoices SET client_id = ?, quote_id = ?, invoice_number = ?, status = ?, is_qualified_invoice = ?, issued_at = ?, due_at = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
             [
                 $invoice->clientId,
                 $invoice->quoteId,
@@ -405,7 +405,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         }
 
         $this->query->execute(
-            'UPDATE invoices SET is_deleted = 1, deleted_at = ? WHERE id = ? AND organization_id = ?',
+            'UPDATE invoices SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
             [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
@@ -422,7 +422,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
                     i.subtotal_cents, i.tax_cents, i.total_cents,
                     i.status, i.is_qualified_invoice
              FROM invoices i
-             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = 0
+             LEFT JOIN clients c ON c.id = i.client_id AND c.is_deleted = FALSE
              WHERE ' . $where . '
                AND i.status != \'draft\'
              ORDER BY i.issued_at DESC, i.id DESC',
