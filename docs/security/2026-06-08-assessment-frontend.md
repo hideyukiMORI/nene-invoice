@@ -2,7 +2,7 @@
 
 - **対象**: `frontend/`（React 19 + react-router + react-query + react-hook-form + zod、TS/TSX 373ファイル）＋ 静的配信構成
 - **実施日**: 2026-06-08
-- **手法**: 静的解析（XSSシンク・トークン処理・リダイレクト・秘密情報・配信ヘッダ）＋ `npm audit` ＋ ビルド成果物検査 ＋ Apache配信のヘッダ実検証
+- **手法**: 静的解析（XSSシンク・トークン処理・リダイレクト・秘密情報・配信ヘッダ）＋ `npm audit` ＋ ビルド成果物検査 ＋ Apache配信のヘッダ実検証 ＋ **レッドチーム（Playwright + 実Chromium による敵対的攻撃）**
 
 > ⚠️ 認可された自己所有アプリの検証。
 
@@ -54,8 +54,41 @@ CSP はビルド実態に整合: 外部 module スクリプトのみ（`script-s
 | 依存 | `npm audit` 脆弱性0件 |
 | target=_blank / postMessage / iframe | 該当なし |
 
+---
+
+## レッドチーム（実ブラウザ敵対的攻撃, 2026-06-08）
+
+「完全に破壊する」前提で Playwright + 実 Chromium による能動的攻撃を実施。**フロントは突破不能で、新規所見ゼロ**。FE-1 修正（#409）が実際に強制されることも実証。
+
+### 1. Stored XSS 全フィールド注入 — ❌ 不成立
+client 名/担当者/住所、item 説明、invoice/quote 備考、template 名、会社 legal_name/住所へ
+`<img src=x onerror=…>` / `<script>` / `<svg onload=…>` を API 経由で注入し、各描画ページを
+実ブラウザで開いて実行検知。**ペイロードはエスケープされたテキストとして描画**
+（`htmlEscaped:true` / `htmlLive:false` / `liveImg:0`、`window.__XSS` 未設定、dialog 不発火）。
+React の JSX 自動エスケープが全描画経路で機能（`dangerouslySetInnerHTML` 不在）。
+
+### 2. fail-closed セッション — ✅ 確認
+フルリロードでメモリ保持トークンが消え、`AuthGate` がログイン画面へ強制（リロード＝即ログアウト）。
+
+### 3. CSP 強制（Apache 実機）— ✅ 多層防御
+注入したインライン script は実行されず（`script-src-elem blocked inline`）、外部攻撃者 script
+（`evil.example.com`）もブロック。仮に XSS が存在しても `script-src 'self'` が実行・外部送信を阻止。
+
+### 4. クリックジャッキング（Apache 実機）— ✅ ブロック
+クロスオリジン iframe にアプリは描画されず（`frameRenderedApp:false`）。X-Frame-Options /
+`frame-ancestors 'self'` が機能（FE-1 修正の実効を確認）。
+
+### 5. その他
+オープンリダイレクト不成立（ハードコード遷移のみ）、トークン窃取経路なし（メモリ保持＋XSS不可）、
+Bearer ヘッダ認証で CSRF 構造的に不成立、URL/hash DOM-XSS なし、`npm audit` 0 件。
+
+> 検証用に注入したデータ（marker `ZZXSS`）と上書きした会社設定は、テスト後に dev DB を完全復元済み。ソース変更なし。
+
+---
+
 ## 対応状況（Remediation, 2026-06-08）
 
 | 指摘 | 深刻度 | 状態 | Issue |
 |---|---|---|---|
 | FE-1 静的アセットのセキュリティヘッダ | Low | ✅ 修正 | #408 |
+| レッドチーム結果の記録（新規所見なし） | — | ✅ 記録 | #410 |
