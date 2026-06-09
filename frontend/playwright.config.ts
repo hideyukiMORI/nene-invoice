@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 5180
+// Default 5180; override with E2E_PORT when that port is taken by a sibling
+// product's dev server (NeNe runs several apps side by side locally).
+const PORT = Number(process.env.E2E_PORT ?? 5180)
 
 /**
  * Single-feature browser tests. The app talks to the API over relative paths,
