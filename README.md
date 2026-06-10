@@ -23,11 +23,31 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 
 **Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress; CSV export already landed.
 
+### Option A — Docker (recommended, fastest)
+
+No PHP or Node needed on the host. One command brings up the API, the built admin UI, MySQL, and Mailpit; migrations and dev seed data run automatically.
+
 ```bash
 git clone https://github.com/hideyukiMORI/nene-invoice.git
 cd nene-invoice
+docker compose up -d --build
+
+# API + admin UI: http://localhost:8510   (sign in: admin@example.com / password123)
+# Mailpit inbox:  http://localhost:8585
+# phpMyAdmin:     http://localhost:8581
+curl http://localhost:8510/health        # {"status":"ok","checks":{"database":"ok"}}
+```
+
+The admin SPA is baked into the image. After editing frontend code run `docker compose build app`, or use the host Vite dev server (Option B) for HMR. Ports are fixed to the `85**` range in `compose.yaml`; override via `NENE_INVOICE_*` in `.env`.
+
+### Option B — Host (PHP + Node on your machine)
+
+For active development with live reload (SQLite by default).
+
+```bash
 composer install
 composer check                          # PHPUnit + PHPStan 8 + php-cs-fixer
+php tools/seed-dev.php                   # dev users + sample data (admin@example.com / password123)
 
 # Backend API (front controller as router; local ports fixed to the 85** range)
 php -S localhost:8510 -t public_html public_html/index.php
@@ -36,6 +56,8 @@ curl http://localhost:8510/health       # {"status":"ok","checks":{"database":"o
 # Admin SPA (separate terminal) — Vite dev server on :5185
 cd frontend && npm install && npm run dev
 ```
+
+> SQLite dev needs an absolute `DB_NAME` path in `.env` (the built-in server's cwd is the docroot). For mail, run host Mailpit: `docker compose up -d mailpit`.
 
 Shared-hosting / production install uses the web installer (`public_html/install.php`) and a release ZIP — see [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md).
 

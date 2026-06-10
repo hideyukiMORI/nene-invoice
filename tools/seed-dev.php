@@ -4,38 +4,100 @@
  * 開発用ダミーデータシードスクリプト
  * 使い方: php tools/seed-dev.php
  *
- * 既存レコードと衝突しないよう INSERT OR IGNORE を使用。
- * 実行のたびに冪等に動作する（二重投入にならない）。
+ * - 接続はアプリ／Phinx と同じ ConfigLoader 経由で解決するため、設定された
+ *   どの adapter（ホスト既定の SQLite / Docker の MySQL 等）でも動作する。
+ * - マイグレーション直後の空 DB でも単独で動くよう、組織・会社設定・管理者を
+ *   冪等にブートストラップする（install.php と同じ最小プロビジョニング）。
+ * - 何度実行しても二重投入にならない（サンプル業務データは投入済みならスキップ）。
  */
 
 declare(strict_types=1);
 
+use Nene2\Config\ConfigLoader;
+use Nene2\Database\PdoConnectionFactory;
+
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
-$dotenv->load();
+$root = dirname(__DIR__);
 
-$dbName = getenv('DB_NAME') ?: 'var/nene_invoice.sqlite';
-if (!str_starts_with($dbName, '/')) {
-    $dbName = dirname(__DIR__) . '/' . $dbName;
+// 接続情報をアプリと同じ型付き config で解決する。
+$config = (new ConfigLoader($root))->load()->database;
+if ($config->adapter === 'sqlite' && $config->name !== ':memory:' && !str_starts_with($config->name, '/')) {
+    // 相対 SQLite パスは cwd 依存になるためプロジェクトルートに固定する
+    // （アプリ／Phinx と同じファイルへ確実に接続するため）。
+    $config = (new ConfigLoader($root))->load(['DB_NAME' => $root . '/' . $config->name])->database;
 }
-
-$pdo = new PDO('sqlite:' . $dbName, options: [
-    PDO::ATTR_ERRMODE    => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-]);
+$pdo = (new PdoConnectionFactory($config))->create();
 
 $now = date('Y-m-d H:i:s');
-$orgId = 1;
+
+// 既存の有無を確認してからユーザーを冪等に作成する（adapter 非依存）。
+$ensureUser = function (int $orgId, string $email, string $role) use ($pdo, $now): void {
+    $check = $pdo->prepare('SELECT COUNT(*) FROM users WHERE organization_id = ? AND email = ?');
+    $check->execute([$orgId, $email]);
+    if ((int) $check->fetchColumn() > 0) {
+        return;
+    }
+    $hash = password_hash('password123', PASSWORD_BCRYPT, ['cost' => 12]);
+    $pdo->prepare("INSERT INTO users (organization_id, email, password_hash, role, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'active', ?, ?)")
+        ->execute([$orgId, $email, $hash, $role, $now, $now]);
+    echo "✓ ユーザー: {$email} ({$role})" . PHP_EOL;
+};
+
+// document_sequences の upsert（ON CONFLICT/ON DUPLICATE の方言差を避け、
+// SELECT → INSERT/UPDATE で行う）。
+$upsertSeq = function (int $orgId, string $docType, int $year, int $lastNumber) use ($pdo): void {
+    $sel = $pdo->prepare('SELECT last_number FROM document_sequences WHERE organization_id = ? AND doc_type = ? AND year = ?');
+    $sel->execute([$orgId, $docType, $year]);
+    $current = $sel->fetchColumn();
+    if ($current === false) {
+        $pdo->prepare('INSERT INTO document_sequences (organization_id, doc_type, year, last_number) VALUES (?, ?, ?, ?)')
+            ->execute([$orgId, $docType, $year, $lastNumber]);
+    } elseif ((int) $current < $lastNumber) {
+        $pdo->prepare('UPDATE document_sequences SET last_number = ? WHERE organization_id = ? AND doc_type = ? AND year = ?')
+            ->execute([$lastNumber, $orgId, $docType, $year]);
+    }
+};
 
 // ----------------------------------------------------------------
-// 0. 既存データ取得
+// 0. ベースライン（組織・会社設定・管理者）を冪等に用意する
+// ----------------------------------------------------------------
+$orgId = (int) ($pdo->query('SELECT id FROM organizations ORDER BY id ASC LIMIT 1')->fetchColumn() ?: 0);
+if ($orgId === 0) {
+    $pdo->prepare("INSERT INTO organizations (name, slug, plan, is_active, created_at, updated_at)
+        VALUES (?, ?, 'free', 1, ?, ?)")
+        ->execute(['株式会社ネネ商会', 'default', $now, $now]);
+    $orgId = (int) $pdo->lastInsertId();
+    echo "✓ 組織を作成 (id={$orgId})" . PHP_EOL;
+}
+
+// 会社設定行（このあとの UPDATE が前提とする行）を保証する。
+$hasSettings = $pdo->prepare('SELECT COUNT(*) FROM company_settings WHERE organization_id = ?');
+$hasSettings->execute([$orgId]);
+if ((int) $hasSettings->fetchColumn() === 0) {
+    $pdo->prepare('INSERT INTO company_settings (organization_id, legal_name, created_at, updated_at) VALUES (?, ?, ?, ?)')
+        ->execute([$orgId, '株式会社ネネ商会', $now, $now]);
+}
+
+$ensureUser($orgId, 'admin@example.com', 'admin');
+
+// ----------------------------------------------------------------
+// 0b. 既存データ取得 — サンプル業務データの二重投入を防ぐゲート
 // ----------------------------------------------------------------
 $existingClients   = $pdo->query("SELECT id FROM clients WHERE is_deleted=0 AND organization_id={$orgId}")->fetchAll(PDO::FETCH_COLUMN);
 $existingQuotes    = $pdo->query("SELECT id FROM quotes WHERE is_deleted=0 AND organization_id={$orgId}")->fetchAll(PDO::FETCH_COLUMN);
 $existingInvoices  = $pdo->query("SELECT id FROM invoices WHERE is_deleted=0 AND organization_id={$orgId}")->fetchAll(PDO::FETCH_COLUMN);
 
 echo "現在: clients=" . count($existingClients) . " quotes=" . count($existingQuotes) . " invoices=" . count($existingInvoices) . PHP_EOL;
+
+if (!empty($existingClients) || !empty($existingQuotes) || !empty($existingInvoices)) {
+    // member / viewer だけは未作成なら補ってから終了する。
+    $ensureUser($orgId, 'member@example.com', 'member');
+    $ensureUser($orgId, 'viewer@example.com', 'viewer');
+    echo "サンプル業務データは投入済みのためスキップします。" . PHP_EOL;
+    return;
+}
 
 // ----------------------------------------------------------------
 // 1. 会社設定を充実させる
@@ -55,19 +117,10 @@ $pdo->exec("UPDATE company_settings SET
 echo "✓ 会社設定更新" . PHP_EOL;
 
 // ----------------------------------------------------------------
-// 2. ユーザー追加
+// 2. ユーザー追加（member / viewer）— admin は冒頭で用意済み
 // ----------------------------------------------------------------
-$users = [
-    ['member@example.com', 'member'],
-    ['viewer@example.com', 'viewer'],
-];
-$stmt = $pdo->prepare("INSERT OR IGNORE INTO users (organization_id, email, password_hash, role, status, created_at, updated_at)
-    VALUES (?, ?, ?, ?, 'active', ?, ?)");
-foreach ($users as [$email, $role]) {
-    $hash = password_hash('password123', PASSWORD_BCRYPT, ['cost' => 12]);
-    $stmt->execute([$orgId, $email, $hash, $role, $now, $now]);
-    echo "✓ ユーザー: {$email} ({$role})" . PHP_EOL;
-}
+$ensureUser($orgId, 'member@example.com', 'member');
+$ensureUser($orgId, 'viewer@example.com', 'viewer');
 
 // ----------------------------------------------------------------
 // 3. 取引先
@@ -161,8 +214,7 @@ foreach ($quoteRows as $i => [$cIdx, $status, $number, $issuedAt, $validUntil, $
 }
 
 // document_sequences for quotes
-$pdo->exec("INSERT INTO document_sequences (organization_id, doc_type, year, last_number) VALUES ({$orgId}, 'quote', 2026, 106)
-    ON CONFLICT(organization_id, doc_type, year) DO UPDATE SET last_number=MAX(last_number, 106)");
+$upsertSeq($orgId, 'quote', 2026, 106);
 
 // ----------------------------------------------------------------
 // 5. 請求書（8件・各ステータス）
@@ -242,8 +294,7 @@ foreach ($invoiceRows as [$cIdx, $status, $number, $issuedAt, $dueAt, $isQualifi
 }
 
 // document_sequences for invoices
-$pdo->exec("INSERT INTO document_sequences (organization_id, doc_type, year, last_number) VALUES ({$orgId}, 'invoice', 2026, 108)
-    ON CONFLICT(organization_id, doc_type, year) DO UPDATE SET last_number=MAX(last_number, 108)");
+$upsertSeq($orgId, 'invoice', 2026, 108);
 
 // ----------------------------------------------------------------
 // 6. 完了サマリ
