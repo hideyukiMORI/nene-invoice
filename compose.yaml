@@ -1,0 +1,105 @@
+# NeNe Invoice — ローカル開発スタック
+#
+#   docker compose up -d --build
+#
+# これだけで API + 管理 UI（http://localhost:8510）+ MySQL + Mailpit が起動する。
+# ホストに PHP / Node を入れる必要はない。FE で HMR が要るときはホストの Vite(5185)
+# を併用する（従来のホスト直実行ワークフローも温存）。
+#
+# ポートは CLAUDE.md の 85** レンジ規約に従う。上書きしたい場合は .env で
+# NENE_INVOICE_* を設定する。
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # DB / Mail はホストの .env（SQLite 前提）に汚染されないよう **リテラル固定**。
+      # compose は ./​.env を変数展開に自動利用するため、${DB_*} にすると host の
+      # SQLite 設定がコンテナへ漏れて MySQL に繋がらなくなる。変更したい場合はここを編集。
+      DB_ENV: local
+      DB_ADAPTER: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: nene_invoice
+      DB_USER: nene_invoice
+      DB_PASSWORD: nene_invoice
+      DB_CHARSET: utf8mb4
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      MAIL_FROM_ADDRESS: invoice@example.com
+      MAIL_FROM_NAME: NeNe Invoice
+      # 下記はホスト .env の値を引き継いでも無害なので展開を許可する。
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_NAME: ${APP_NAME:-NeNe Invoice}
+      PROBLEM_DETAILS_BASE_URL: ${PROBLEM_DETAILS_BASE_URL:-https://nene-invoice.dev/problems/}
+      TENANT_RESOLUTION: ${TENANT_RESOLUTION:-single}
+      # local 限定の開発用シークレット。production では必ず上書きすること。
+      NENE2_LOCAL_JWT_SECRET: ${NENE2_LOCAL_JWT_SECRET:-local-dev-secret-change-me-0123456789abcdef}
+      # 0 にすると dev ダミーデータ投入を無効化（本番相当の確認用）。
+      INVOICE_SEED_DEV: ${INVOICE_SEED_DEV:-1}
+    ports:
+      - "${NENE_INVOICE_PORT:-8510}:80"
+    volumes:
+      - .:/var/www/html
+      # ホストの .env をコンテナ内で空ファイルに被せ、ConfigLoader が SQLite 設定を
+      # 読み込まないようにする（設定は上の environment が唯一の真実）。
+      - ./docker/app/container.env:/var/www/html/.env:ro
+      # image に焼き込んだビルド済み SPA をバインドマウントで隠さないための named volume。
+      # FE を更新したら `docker compose build app` で再ビルドする。
+      - admin-build:/var/www/html/public_html/admin
+      - composer-cache:/root/.composer/cache
+    command: ["/bin/sh", "/var/www/html/docker/app/entrypoint.sh"]
+
+  mysql:
+    image: mysql:8.4
+    # app と同じくホスト .env に汚染されないようリテラル固定（${DB_NAME} だと
+    # host の SQLite パスが MySQL の DB 名に化けてしまう）。
+    environment:
+      MYSQL_DATABASE: nene_invoice
+      MYSQL_USER: nene_invoice
+      MYSQL_PASSWORD: nene_invoice
+      MYSQL_ROOT_PASSWORD: nene_invoice_root
+    ports:
+      - "${NENE_INVOICE_MYSQL_PORT:-3585}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "${NENE_INVOICE_PHPMYADMIN_PORT:-8581}:80"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${NENE_INVOICE_MAILPIT_SMTP_PORT:-1585}:1025"   # SMTP
+      - "${NENE_INVOICE_MAILPIT_WEB_PORT:-8585}:8025"    # Web UI — http://localhost:8585
+    environment:
+      MP_MAX_MESSAGES: 200
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+
+volumes:
+  mysql-data:
+  composer-cache:
+  admin-build:

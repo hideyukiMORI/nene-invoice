@@ -83,14 +83,22 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 
 | サービス | ホストポート | 用途 |
 | --- | --- | --- |
-| PHP dev server | **8510** | `php -S localhost:8510 -t public_html` |
+| PHP dev server | **8510** | `php -S localhost:8510 -t public_html public_html/index.php`（ホスト直実行） |
+| Docker app（Apache, API + UI） | **8510** | `docker compose up`。PHP dev server と排他（同一ポート） |
 | Vite dev server | **5185** | `npm run dev`（frontend/） |
+| Docker MySQL | **3585** | `compose.yaml` の MySQL（env `NENE_INVOICE_MYSQL_PORT`） |
+| Docker phpMyAdmin | **8581** | `compose.yaml`（env `NENE_INVOICE_PHPMYADMIN_PORT`） |
 | Mailpit SMTP | **1585** | `docker compose up -d mailpit` |
 | Mailpit Web UI | **8585** | メール受信確認 http://localhost:8585 |
 | セキュリティ診断 App | **8590** | `docs/security/harness/` |
 | セキュリティ診断 MySQL | **3385** | 同上 |
 
-**絶対禁止:** 上記以外のポートを `docker-compose.yml` / `vite.config.ts` / `.env.example` に記載しない。新規コンテナを追加する場合も 85** 内から選ぶ。
+**絶対禁止:** 上記以外のポートを `compose.yaml` / `vite.config.ts` / `.env.example` に記載しない。新規コンテナを追加する場合も 85** 内（DB 等で 33** が必要なら 35** 系）から選ぶ。
+
+### 起動方法（2 通り）
+
+- **Docker（推奨・最短）**: `docker compose up -d --build` → http://localhost:8510 で API + 管理 UI。DB は MySQL、マイグレーション・dev シードは自動。クローン直後でもログイン可（`admin@example.com` / `password123`）。
+- **ホスト直実行**: `php -S localhost:8510 -t public_html public_html/index.php`（SQLite・要絶対パス）+ `npm run dev --prefix frontend`（Vite 5185）。FE の HMR が必要なときはこちら、または Docker と併用。
 
 ---
 
