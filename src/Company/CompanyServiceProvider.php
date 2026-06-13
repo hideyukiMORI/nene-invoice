@@ -15,6 +15,13 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
+use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
+use NeneInvoice\Company\Seal\CompanySealUseCase;
+use NeneInvoice\Company\Seal\CompanySealUseCaseInterface;
+use NeneInvoice\Company\Seal\DeleteCompanySealHandler;
+use NeneInvoice\Company\Seal\GetCompanySealHandler;
+use NeneInvoice\Company\Seal\PdoCompanySealRepository;
+use NeneInvoice\Company\Seal\PutCompanySealHandler;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -55,6 +62,44 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                 ),
             )
             ->set(
+                CompanySealRepositoryInterface::class,
+                static function (ContainerInterface $c): CompanySealRepositoryInterface {
+                    $query = $c->get(DatabaseQueryExecutorInterface::class);
+
+                    if (!$query instanceof DatabaseQueryExecutorInterface) {
+                        throw new LogicException('Database query executor service is invalid.');
+                    }
+
+                    return new PdoCompanySealRepository($query, self::orgHolder($c));
+                },
+            )
+            ->set(
+                CompanySealUseCaseInterface::class,
+                static function (ContainerInterface $c): CompanySealUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new CompanySealUseCase(
+                        self::sealRepository($c),
+                        self::tx($c),
+                        static fn (DatabaseQueryExecutorInterface $exec): CompanySealRepositoryInterface => new PdoCompanySealRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        $orgHolder,
+                    );
+                },
+            )
+            ->set(
+                GetCompanySealHandler::class,
+                static fn (ContainerInterface $c): GetCompanySealHandler => new GetCompanySealHandler(self::sealUseCase($c), self::json($c)),
+            )
+            ->set(
+                PutCompanySealHandler::class,
+                static fn (ContainerInterface $c): PutCompanySealHandler => new PutCompanySealHandler(self::sealUseCase($c), self::json($c)),
+            )
+            ->set(
+                DeleteCompanySealHandler::class,
+                static fn (ContainerInterface $c): DeleteCompanySealHandler => new DeleteCompanySealHandler(self::sealUseCase($c), self::json($c)),
+            )
+            ->set(
                 CompanySettingsNotFoundExceptionHandler::class,
                 static fn (ContainerInterface $c): CompanySettingsNotFoundExceptionHandler => new CompanySettingsNotFoundExceptionHandler(self::problemDetails($c)),
             )
@@ -67,12 +112,19 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                 static function (ContainerInterface $c): CompanyRouteRegistrar {
                     $get = $c->get(GetCompanySettingsHandler::class);
                     $update = $c->get(UpdateCompanySettingsHandler::class);
+                    $getSeal = $c->get(GetCompanySealHandler::class);
+                    $putSeal = $c->get(PutCompanySealHandler::class);
+                    $deleteSeal = $c->get(DeleteCompanySealHandler::class);
 
                     if (!$get instanceof GetCompanySettingsHandler || !$update instanceof UpdateCompanySettingsHandler) {
                         throw new LogicException('Company settings handler services are invalid.');
                     }
 
-                    return new CompanyRouteRegistrar($get, $update);
+                    if (!$getSeal instanceof GetCompanySealHandler || !$putSeal instanceof PutCompanySealHandler || !$deleteSeal instanceof DeleteCompanySealHandler) {
+                        throw new LogicException('Company seal handler services are invalid.');
+                    }
+
+                    return new CompanyRouteRegistrar($get, $update, $getSeal, $putSeal, $deleteSeal);
                 },
             );
     }
@@ -124,6 +176,28 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
 
         if (!$u instanceof UpdateCompanySettingsUseCase) {
             throw new LogicException('Update company settings use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function sealRepository(ContainerInterface $c): CompanySealRepositoryInterface
+    {
+        $repo = $c->get(CompanySealRepositoryInterface::class);
+
+        if (!$repo instanceof CompanySealRepositoryInterface) {
+            throw new LogicException('Company seal repository service is invalid.');
+        }
+
+        return $repo;
+    }
+
+    private static function sealUseCase(ContainerInterface $c): CompanySealUseCase
+    {
+        $u = $c->get(CompanySealUseCaseInterface::class);
+
+        if (!$u instanceof CompanySealUseCase) {
+            throw new LogicException('Company seal use case service is invalid.');
         }
 
         return $u;

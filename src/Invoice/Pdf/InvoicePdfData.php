@@ -15,6 +15,8 @@ final readonly class InvoicePdfData
         public InvoiceWithLines $invoiceWithLines,
         public CompanySettings $companySettings,
         public Client $client,
+        /** Issuer seal (社印) as a base64 PNG, or null when none is set (Issue #448). */
+        public ?string $sealImageBase64 = null,
     ) {
     }
 }

@@ -7,6 +7,7 @@ namespace NeneInvoice\Invoice;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
+use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
 use NeneInvoice\Invoice\Pdf\InvoicePdfData;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
@@ -27,6 +28,7 @@ final readonly class GenerateInvoicePdfUseCase implements GenerateInvoicePdfUseC
         private PaymentRepositoryInterface $payments,
         private CompanySettingsRepositoryInterface $companySettings,
         private ClientRepositoryInterface $clients,
+        private CompanySealRepositoryInterface $seals,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -58,6 +60,6 @@ final readonly class GenerateInvoicePdfUseCase implements GenerateInvoicePdfUseC
                 name: '（取引先情報なし）',
             );
 
-        return new InvoicePdfData($withLines, $company, $client);
+        return new InvoicePdfData($withLines, $company, $client, $this->seals->find());
     }
 }

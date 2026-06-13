@@ -41,6 +41,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 
         $html = $this->buildHtml(
             styleBlock: $style->stylesheet(),
+            sealHtml: self::sealHtml($data->sealImageBase64),
             invoiceNumber: $invoice->invoiceNumber ?? '（下書き）',
             issuedAt: $invoice->issuedAt ? Jst::date($invoice->issuedAt) : '—',
             dueAt: $invoice->dueAt ? substr($invoice->dueAt, 0, 10) : '—',
@@ -75,6 +76,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
      */
     private function buildHtml(
         string $styleBlock,
+        string $sealHtml,
         string $invoiceNumber,
         string $issuedAt,
         string $dueAt,
@@ -171,6 +173,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
         <tr><td colspan="2"><strong>{$esc($companyName)}</strong></td></tr>
         <tr><td colspan="2" style="font-size:8pt;">{$esc($companyAddress)}</td></tr>
         {$registrationRow}
+        {$sealHtml}
       </table>
     </td>
   </tr>
@@ -205,6 +208,17 @@ HTML;
     private static function yen(int $cents): string
     {
         return '&yen;' . number_format($cents);
+    }
+
+    /** Issuer seal (社印) as a stamped data-URI image, or '' when none is set. */
+    private static function sealHtml(?string $sealImageBase64): string
+    {
+        if ($sealImageBase64 === null) {
+            return '';
+        }
+
+        return '<tr><td colspan="2" class="seal-cell">'
+            . '<img class="seal" src="data:image/png;base64,' . $sealImageBase64 . '"></td></tr>';
     }
 
     private function formatBankInfo(\NeneInvoice\Company\CompanySettings $company): string

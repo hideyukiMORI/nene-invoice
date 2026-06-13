@@ -17,6 +17,7 @@ use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
+use NeneInvoice\Tests\Support\InMemoryCompanySealRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
@@ -53,6 +54,7 @@ final class GenerateQuotePdfUseCaseTest extends TestCase
             $this->lineItems,
             $this->companySettings,
             $this->clients,
+            new InMemoryCompanySealRepository($this->holder),
             $this->holder,
         );
 
@@ -130,6 +132,7 @@ final class GenerateQuotePdfUseCaseTest extends TestCase
             $this->lineItems,
             $this->companySettings,
             $this->clients,
+            new InMemoryCompanySealRepository($otherHolder),
             $otherHolder,
         );
 

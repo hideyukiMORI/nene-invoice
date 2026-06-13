@@ -287,6 +287,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/company-settings/seal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get company seal
+         * @description Returns the organization's seal (社印) PNG as base64 for preview, or has_seal=false when none is set.
+         */
+        get: operations["getCompanySeal"];
+        /**
+         * Upload company seal
+         * @description Upserts the organization's seal from a base64 PNG. Validated as PNG within size and dimension caps.
+         */
+        put: operations["putCompanySeal"];
+        post?: never;
+        /**
+         * Delete company seal
+         * @description Removes the organization's seal. Idempotent.
+         */
+        delete: operations["deleteCompanySeal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/clients": {
         parameters: {
             query?: never;
@@ -1296,6 +1324,20 @@ export interface components {
              */
             pdf_heading_font?: "gothic" | "mincho";
         };
+        /** @description Company seal (社印) image for preview. */
+        CompanySeal: {
+            has_seal: boolean;
+            /** @description Base64-encoded PNG (no data-URI prefix), or null when has_seal is false. */
+            image_base64: string | null;
+        };
+        /** @description Result of a seal upsert / delete. */
+        CompanySealState: {
+            has_seal: boolean;
+        };
+        PutCompanySealRequest: {
+            /** @description Base64-encoded PNG. A `data:image/png;base64,` prefix is accepted and stripped. PNG only, ≤512KB, ≤1000×1000px. */
+            image_base64: string;
+        };
         Client: {
             id: number;
             organization_id: number;
@@ -2242,6 +2284,77 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["InsufficientCapability"];
             422: components["responses"]["InvalidRegistrationNumber"];
+        };
+    };
+    getCompanySeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seal image (or none) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanySeal"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    putCompanySeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutCompanySealRequest"];
+            };
+        };
+        responses: {
+            /** @description Seal stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanySealState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    deleteCompanySeal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Seal removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanySealState"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
         };
     };
     listClients: {

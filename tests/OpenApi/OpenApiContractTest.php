@@ -90,6 +90,9 @@ final class OpenApiContractTest extends TestCase
         'listServiceTokens',
         'issueServiceToken',
         'revokeServiceToken',
+        'getCompanySeal',
+        'putCompanySeal',
+        'deleteCompanySeal',
     ];
 
     /** @var array<string, mixed> */
