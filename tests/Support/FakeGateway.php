@@ -21,12 +21,23 @@ final class FakeGateway implements PaymentGatewayInterface
     public function __construct(
         private readonly string $chargeId = 'ch_fake_1',
         private readonly ?string $declineMessage = null,
+        private readonly bool $connectivity = true,
+        private readonly bool $connectivityThrows = false,
     ) {
     }
 
     public function name(): string
     {
         return 'fake';
+    }
+
+    public function verifyConnectivity(): bool
+    {
+        if ($this->connectivityThrows) {
+            throw new PaymentGatewayException('unreachable');
+        }
+
+        return $this->connectivity;
     }
 
     public function createCharge(GatewayChargeRequest $request): GatewayCharge

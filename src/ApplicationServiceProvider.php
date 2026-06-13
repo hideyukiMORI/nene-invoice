@@ -16,6 +16,7 @@ use NeneInvoice\Company\CompanyRouteRegistrar;
 use NeneInvoice\Company\CompanySettingsNotFoundExceptionHandler;
 use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInvalidRegistrationNumberExceptionHandler;
 use NeneInvoice\Dashboard\DashboardRouteRegistrar;
+use NeneInvoice\GatewaySettings\GatewaySettingsRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceEmailExceptionHandler;
 use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
 use NeneInvoice\Invoice\InvoiceRouteRegistrar;
@@ -98,6 +99,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $templateRoutes = $container->get(TemplateRouteRegistrar::class);
                     $serviceTokenRoutes = $container->get(ServiceTokenRouteRegistrar::class);
                     $paymentLinkRoutes = $container->get(PaymentLinkRouteRegistrar::class);
+                    $gatewaySettingsRoutes = $container->get(GatewaySettingsRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -167,7 +169,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment link route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes];
+                    if (!$gatewaySettingsRoutes instanceof GatewaySettingsRouteRegistrar) {
+                        throw new LogicException('Gateway settings route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes, $gatewaySettingsRoutes];
                 },
             )
             ->set(

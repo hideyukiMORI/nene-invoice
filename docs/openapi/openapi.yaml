@@ -443,6 +443,50 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /admin/gateway-settings:
+    get:
+      tags: [Payments]
+      summary: Get card payment gateway status
+      description: >
+        Reports whether the PAY.JP gateway is configured (credentials live in the
+        environment — ADR 0013). Never returns the secret key; the public key is
+        masked. Capability: ManageCompanySettings.
+      operationId: getGatewaySettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Gateway status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewaySettingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/gateway-settings/test:
+    post:
+      tags: [Payments]
+      summary: Test gateway connectivity
+      description: >
+        Runs a live connectivity check against the gateway using the configured
+        (env) credentials. Always 200 with an `ok` flag and a `detail` reason.
+        Capability: ManageCompanySettings.
+      operationId: testGatewayConnectivity
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Connectivity result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GatewayConnectivityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/company-settings:
     get:
       tags: [CompanySettings]
@@ -2115,6 +2159,28 @@ components:
           type: boolean
           description: True if this call transitioned an active link; false if it was already inactive.
       required: [payment_link_id, status, revoked]
+    GatewaySettingsResponse:
+      type: object
+      properties:
+        gateway: { type: string, example: payjp }
+        public_key_masked:
+          type: string
+          nullable: true
+          description: Masked public key for display, or null when unset.
+        secret_set: { type: boolean }
+        webhook_token_set: { type: boolean }
+        configured:
+          type: boolean
+          description: True when both secret and public key are present.
+      required: [gateway, public_key_masked, secret_set, webhook_token_set, configured]
+    GatewayConnectivityResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        detail:
+          type: string
+          enum: [connected, not_configured, invalid_credentials, unreachable]
+      required: [ok, detail]
     LineItemSuggestion:
       type: object
       properties:
