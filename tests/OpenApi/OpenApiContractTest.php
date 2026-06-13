@@ -77,6 +77,8 @@ final class OpenApiContractTest extends TestCase
         'issueInvoice',
         'listPayments',
         'recordPayment',
+        'generatePaymentLink',
+        'revokePaymentLink',
         'sendInvoiceEmail',
         'exportInvoicesCsv',
         'exportPaymentsCsv',

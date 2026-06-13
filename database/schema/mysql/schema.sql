@@ -209,3 +209,28 @@ CREATE TABLE IF NOT EXISTS `service_tokens` (
     UNIQUE KEY `uniq_service_tokens_jti` (`jti`),
     KEY `idx_service_tokens_organization_id` (`organization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- payment_links — hashed, time-limited, revocable links that let a payer settle
+-- one invoice on a hosted gateway (PAY.JP — ADR 0012/0013). Only the SHA-256
+-- hash of the raw URL token is stored; card data is never stored (SAQ-A).
+-- status: active | paid | revoked (expiry is derived from expires_at).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `payment_links` (
+    `id`                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`    INT          NOT NULL,
+    `invoice_id`         INT          NOT NULL,
+    `token_hash`         VARCHAR(64)  NOT NULL,
+    `gateway`            VARCHAR(32)  NOT NULL,
+    `gateway_session_id` VARCHAR(255) DEFAULT NULL,
+    `status`             VARCHAR(16)  NOT NULL,
+    `expires_at`         DATETIME     NOT NULL,
+    `paid_at`            DATETIME     DEFAULT NULL,
+    `revoked_at`         DATETIME     DEFAULT NULL,
+    `created_at`         DATETIME     NOT NULL,
+    `updated_at`         DATETIME     NOT NULL,
+    UNIQUE KEY `uniq_payment_links_token_hash` (`token_hash`),
+    KEY `idx_payment_links_invoice_id` (`invoice_id`),
+    KEY `idx_payment_links_gateway_session_id` (`gateway_session_id`),
+    KEY `idx_payment_links_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

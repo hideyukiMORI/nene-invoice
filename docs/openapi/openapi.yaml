@@ -1575,6 +1575,59 @@ paths:
               schema: { type: string, format: binary }
         '404':
           $ref: '#/components/responses/NotFound'
+  /admin/invoices/{id}/payment-links:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Payments]
+      summary: Generate a card payment link
+      description: >
+        Issues a time-limited (7 days), revocable payment link that lets the
+        payer settle the invoice on the hosted gateway (PAY.JP — ADR 0012/0013).
+        Re-issuing auto-revokes any prior active link for the invoice. Card data
+        never touches this API (SAQ-A). Requires ManageBilling capability.
+      operationId: generatePaymentLink
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Payment link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/payment-links/{id}/revoke:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [Payments]
+      summary: Revoke a payment link
+      description: >
+        Revokes an active payment link so it can no longer be paid. Idempotent:
+        revoking an already-terminal link returns 200. Requires ManageBilling
+        capability.
+      operationId: revokePaymentLink
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payment link revoked (or already inactive)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkRevokeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /admin/invoices/{id}/issue:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
@@ -1938,6 +1991,33 @@ components:
           type: string
           description: Token expiry timestamp (Y-m-d H:i:s).
       required: [url, expires_at]
+    PaymentLinkResponse:
+      type: object
+      properties:
+        payment_link_id:
+          type: integer
+          description: Identifier of the generated payment link.
+        url:
+          type: string
+          description: Public payment URL (relative path, no auth required).
+        expires_at:
+          type: string
+          description: Link expiry timestamp (Y-m-d H:i:s).
+      required: [payment_link_id, url, expires_at]
+    PaymentLinkRevokeResponse:
+      type: object
+      properties:
+        payment_link_id:
+          type: integer
+          description: Identifier of the targeted payment link.
+        status:
+          type: string
+          enum: [revoked]
+          description: Resulting status (revoked).
+        revoked:
+          type: boolean
+          description: True if this call transitioned an active link; false if it was already inactive.
+      required: [payment_link_id, status, revoked]
     LineItemSuggestion:
       type: object
       properties:
