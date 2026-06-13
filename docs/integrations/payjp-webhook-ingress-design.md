@@ -1,6 +1,6 @@
 # PAY.JP Webhook Ingress — Design Note
 
-Design input for **Issue #431** (webhook ingress: signature verification +
+Design input for **Issue #431** (webhook ingress: request authentication +
 idempotency) under **ADR 0012** (card payment, hosted-only / SAQ-A) and
 **ADR 0013** (launch gateway = PAY.JP). This note fixes the design so the
 implementation PR can follow established Payment-domain conventions. **No code in
@@ -25,52 +25,105 @@ use case. This keeps invoice status transitions and over-allocation handling
 - Public route, **no admin JWT**: `POST /webhooks/payjp`. Registered in a
   `Payment/Gateway/` route registrar, mirroring the public-route pattern in
   `InvoiceDownloadTokenRouteRegistrar` (`/invoices/download/{token}`).
-- Authentication is by **webhook signature**, not session — a dedicated
-  signature-verification middleware stands in where `ServiceScopeMiddleware`
-  would be for service tokens.
+- Authentication is by **webhook token header** (`X-Payjp-Webhook-Token`), not
+  session — a dedicated token-verification middleware stands in where
+  `ServiceScopeMiddleware` would be for service tokens.
 - Body is parsed with `JsonRequestBodyParser`; errors returned as Problem Details.
 
-## Signature verification (gateway-specific)
+## Request authentication (gateway-specific) — VERIFIED 2026-06-13
 
-- Verify the PAY.JP webhook signature against a per-organization (or per-gateway)
-  signing secret **before** parsing intent. Reject unverified with `401`
-  (Problem Details slug `invalid-webhook-signature`).
-- Secret is stored via the gateway config (Issue #432), never logged, never
-  echoed. Constant-time comparison.
-- This is the first hard requirement that differs from Stripe; the verification
-  step sits behind `PaymentGatewayInterface` so the Stripe adapter (ADR 0013,
-  second adapter) supplies its own `Stripe-Signature` scheme without reshaping
-  the flow.
+> **Correction.** An earlier draft of this note assumed Stripe-style HMAC
+> signature verification. PAY.JP does **not** sign webhooks. Verified against
+> <https://docs.pay.jp/v1/webhook>.
+
+- PAY.JP sends a **shared secret token** in the header
+  `X-Payjp-Webhook-Token: whook_…`. The receiver authenticates the webhook by
+  **constant-time comparing** this header against the configured token for the
+  account. There is no HMAC over the body.
+- Reject a missing/incorrect token with `401` (Problem Details slug
+  `invalid-webhook-token`). The expected token is stored via gateway config
+  (Issue #432), never logged, never echoed.
+- The token does not cover the body, so the body is **untrusted**: never treat
+  webhook amounts as authoritative for ledger truth beyond matching the resolved
+  link/invoice. Re-fetch the charge from the PAY.JP API if stronger assurance is
+  needed before recording (decide in the impl PR).
+- This verification sits behind `PaymentGatewayInterface`. The contract is
+  "authenticate this request", so the Stripe adapter (ADR 0013, second adapter)
+  can supply its own HMAC `Stripe-Signature` scheme without reshaping the flow.
+  **Do not bake an HMAC assumption into the interface.**
 
 ## Idempotency
 
-- Use the PAY.JP **event id** (or charge id) as the `idempotency_key` passed to
-  `RecordPaymentInput`. A retried/duplicated webhook with the same id returns the
-  same `payment` — no double-booking. This reuses the existing repository-level
-  idempotency, not a new store.
-- PAY.JP retries on non-2xx; the handler must therefore be safe to call N times
-  and still respond `200` once the event is recorded.
+- Use the PAY.JP **event id** (top-level `id`, e.g. `evnt_…`) as the
+  `idempotency_key` passed to `RecordPaymentInput`. A retried/duplicated webhook
+  with the same id returns the same `payment` — no double-booking. This reuses the
+  existing repository-level idempotency, not a new store.
+- **Retry contract (verified):** PAY.JP retries at **3-minute intervals, up to 3
+  times**, on a 4xx/5xx response; it requires HTTP **200**. The handler must
+  therefore be safe to call up to 4 times and respond `200` once the event is
+  recorded (including the duplicate-id case).
+
+## Verified event JSON shape
+
+Top-level event fields (`<https://docs.pay.jp/v1/webhook>`):
+
+```jsonc
+{
+  "object": "event",
+  "id": "evnt_…",        // event id → idempotency_key
+  "type": "charge.succeeded",
+  "created": 1750000000,  // unix seconds → paid_at source
+  "livemode": true,
+  "pending_webhooks": 1,
+  "data": { /* the charge object, same shape as the API response */ }
+}
+```
+
+Settlement event type confirmed: **`charge.succeeded`**. The nested charge id
+(`data.id`, `ch_…`) is the `external_reference`.
 
 ## Tenant & invoice resolution
 
-- The webhook payload references a charge, not our `organization_id` / invoice
-  directly. Resolution path: the **payment link** (ADR 0012 §3, owned by the
-  Invoice DB) records the originating `organization_id` + `invoice_id` + gateway
-  session/charge id at link-creation time. The webhook looks up that mapping to
-  recover tenant + invoice. **No cross-tenant access** (ADR 0006).
-- If the charge id maps to no known link → `404`/ignore with audit log; do not
-  create orphan payments.
+- The webhook payload references a **charge**, not our `organization_id` /
+  invoice directly. The link from a PAY.JP charge back to a `payment_link`
+  (and thus org + invoice) must be carried by **something we set when the charge
+  is created** — either the charge's `metadata` or a stored
+  `payment_links.gateway_session_id`. The webhook then reverse-looks-up the
+  owning `payment_link` (`findByGatewaySessionId` / by metadata), recovers tenant
+  + invoice, records the payment, and sets the link `status = paid`. **No
+  cross-tenant access** (ADR 0006).
+- If the charge maps to no known link → `200` + audit log, **do not** create an
+  orphan payment (200 so PAY.JP stops retrying a permanently-unresolvable event).
+
+> ⚠️ **Prerequisite gap.** The resolution key above has **no producer yet**.
+> #436 persists payment links but leaves `gateway_session_id` null (lazy session
+> creation deferred). Building this webhook before the **charge/session creation
+> path** (the gateway adapter + public `/pay/{token}` page that creates the
+> PAY.JP charge with our metadata and stores `gateway_session_id`) yields a
+> handler that cannot be wired or end-to-end tested. **That producer issue must
+> land first** — see "Sequencing" below.
 
 ## Event → payment mapping (settlement only, for #431)
 
 | PAY.JP event | Action |
 | --- | --- |
-| charge succeeded / captured | `RecordPaymentInput(method: 'card', paid_at: <event time>, external_reference: <charge id>, idempotency_key: <event id>)` → existing use case |
-| charge failed | no payment; audit log; link stays unpaid |
+| `charge.succeeded` | resolve link → `RecordPaymentInput(method: 'card', paid_at: <from `created`>, external_reference: <`data.id`>, idempotency_key: <event `id`>)` → existing use case; then mark link `paid` |
+| `charge.failed` | no payment; audit log; link stays unpaid |
 | refund / chargeback | **out of scope here** — see boundary below |
 
-`method` value (`card` vs a more specific token) is a **new identifier** and MUST
-be registered in `docs/explanation/terminology.md` in the implementation PR.
+`method` value (`card`) is a **new identifier** and MUST be registered in
+`docs/explanation/terminology.md` in the implementation PR.
+
+## Sequencing (corrected)
+
+1. **Gateway adapter + charge/session creation** (new issue, prerequisite):
+   `PaymentGatewayInterface` + PAY.JP adapter; public `/pay/{token}` creates the
+   charge carrying our `payment_link` reference and persists
+   `gateway_session_id`. This is the **producer** the webhook resolves against.
+2. **#431 webhook ingress** (this note): consumes events, records settlement.
+
+Until step 1 exists, #431 can only be implemented contract-first against fakes
+(no real wiring). Recommend doing step 1 first.
 
 ## Accounting boundary (release gate, #430)
 
@@ -85,8 +138,8 @@ changes.
 
 - Every accepted/rejected webhook writes an audit entry (ADR 0008): event id,
   outcome, invoice/org (when resolved). No card data, ever (SAQ-A).
-- Rejections (bad signature, unknown charge, expired link) are logged but return
-  the minimal status to the gateway.
+- Rejections (bad token, unknown charge, expired link) are logged but return the
+  minimal status to the gateway.
 
 ## Test plan
 
@@ -102,7 +155,7 @@ changes.
 ## New identifiers to register (impl PR)
 
 - Route: `/webhooks/payjp`
-- Problem Details slugs: `invalid-webhook-signature` (and any added)
+- Problem Details slugs: `invalid-webhook-token` (and any added)
 - `payment.method` value for card settlement
 - Any gateway/link mapping field names
 
