@@ -71,11 +71,31 @@ final readonly class PdoPaymentLinkRepository implements PaymentLinkRepositoryIn
         return $row !== null ? $this->mapRow($row) : null;
     }
 
+    public function findByGatewaySessionId(string $gatewaySessionId): ?PaymentLink
+    {
+        $row = $this->query->fetchOne(
+            'SELECT ' . self::COLUMNS . ' FROM payment_links WHERE gateway_session_id = ?',
+            [$gatewaySessionId],
+        );
+
+        return $row !== null ? $this->mapRow($row) : null;
+    }
+
     public function markRevoked(int $id, string $revokedAt): bool
     {
         $affected = $this->query->execute(
             'UPDATE payment_links SET status = ?, revoked_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND status = ?',
             [PaymentLinkStatus::Revoked->value, $revokedAt, $revokedAt, $id, $this->orgId->get(), PaymentLinkStatus::Active->value],
+        );
+
+        return $affected > 0;
+    }
+
+    public function markPaid(int $id, string $gatewaySessionId, string $paidAt): bool
+    {
+        $affected = $this->query->execute(
+            'UPDATE payment_links SET status = ?, gateway_session_id = ?, paid_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND status = ?',
+            [PaymentLinkStatus::Paid->value, $gatewaySessionId, $paidAt, $paidAt, $id, $this->orgId->get(), PaymentLinkStatus::Active->value],
         );
 
         return $affected > 0;

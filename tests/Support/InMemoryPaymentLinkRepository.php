@@ -75,6 +75,17 @@ final class InMemoryPaymentLinkRepository implements PaymentLinkRepositoryInterf
         return null;
     }
 
+    public function findByGatewaySessionId(string $gatewaySessionId): ?PaymentLink
+    {
+        foreach ($this->byId as $link) {
+            if ($link->gatewaySessionId === $gatewaySessionId) {
+                return $link;
+            }
+        }
+
+        return null;
+    }
+
     public function markRevoked(int $id, string $revokedAt): bool
     {
         $link = $this->byId[$id] ?? null;
@@ -98,6 +109,34 @@ final class InMemoryPaymentLinkRepository implements PaymentLinkRepositoryInterf
             id: $link->id,
             createdAt: $link->createdAt,
             updatedAt: $revokedAt,
+        );
+
+        return true;
+    }
+
+    public function markPaid(int $id, string $gatewaySessionId, string $paidAt): bool
+    {
+        $link = $this->byId[$id] ?? null;
+
+        if ($link === null
+            || $link->organizationId !== $this->organizationId
+            || $link->status !== PaymentLinkStatus::Active) {
+            return false;
+        }
+
+        $this->byId[$id] = new PaymentLink(
+            organizationId: $link->organizationId,
+            invoiceId: $link->invoiceId,
+            tokenHash: $link->tokenHash,
+            gateway: $link->gateway,
+            status: PaymentLinkStatus::Paid,
+            expiresAt: $link->expiresAt,
+            gatewaySessionId: $gatewaySessionId,
+            paidAt: $paidAt,
+            revokedAt: $link->revokedAt,
+            id: $link->id,
+            createdAt: $link->createdAt,
+            updatedAt: $paidAt,
         );
 
         return true;

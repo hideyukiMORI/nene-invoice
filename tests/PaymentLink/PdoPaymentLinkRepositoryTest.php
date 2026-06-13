@@ -100,4 +100,32 @@ final class PdoPaymentLinkRepositoryTest extends TestCase
         self::assertNull($this->repo->findById($id));
         self::assertFalse($this->repo->markRevoked($id, '2026-06-07 00:00:00'));
     }
+
+    public function test_mark_paid_records_charge_id_and_is_findable_by_session(): void
+    {
+        $id = $this->repo->save($this->activeLink(1, 5, 'raw-paid'));
+
+        self::assertTrue($this->repo->markPaid($id, 'ch_test_abc', '2026-06-07 00:00:00'));
+
+        $byId = $this->repo->findById($id);
+        self::assertNotNull($byId);
+        self::assertSame(PaymentLinkStatus::Paid, $byId->status);
+        self::assertSame('ch_test_abc', $byId->gatewaySessionId);
+        self::assertSame('2026-06-07 00:00:00', $byId->paidAt);
+
+        // Reverse lookup by gateway charge id (webhook path) is not org-scoped.
+        $bySession = $this->repo->findByGatewaySessionId('ch_test_abc');
+        self::assertNotNull($bySession);
+        self::assertSame($id, $bySession->id);
+
+        // markPaid is idempotent: a second call (now non-active) is a no-op.
+        self::assertFalse($this->repo->markPaid($id, 'ch_test_abc', '2026-06-08 00:00:00'));
+    }
+
+    public function test_mark_paid_is_org_scoped(): void
+    {
+        $id = $this->repo->save($this->activeLink(2, 9, 'raw-foreign-paid'));
+
+        self::assertFalse($this->repo->markPaid($id, 'ch_x', '2026-06-07 00:00:00'));
+    }
 }
