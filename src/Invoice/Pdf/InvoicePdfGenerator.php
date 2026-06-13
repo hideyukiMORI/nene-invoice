@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice\Pdf;
 
-use Mpdf\Mpdf;
 use Mpdf\MpdfException;
 use NeneInvoice\LineItem\TaxBreakdownLine;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
+use NeneInvoice\Pdf\PdfStyle;
 use NeneInvoice\Support\Jst;
 use RuntimeException;
 
@@ -20,8 +21,10 @@ use RuntimeException;
  */
 final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 {
-    public function __construct(private TaxCalculator $taxCalculator)
-    {
+    public function __construct(
+        private TaxCalculator $taxCalculator,
+        private MpdfFactory $mpdfFactory,
+    ) {
     }
 
     /** @throws RuntimeException if mPDF fails */
@@ -34,8 +37,10 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 
         $inputs  = array_map(static fn ($l) => $l->toCalculationInput(), $lines);
         $tax     = $this->taxCalculator->calculate($inputs);
+        $style   = PdfStyle::fromCompany($company);
 
         $html = $this->buildHtml(
+            styleBlock: $style->stylesheet(),
             invoiceNumber: $invoice->invoiceNumber ?? '（下書き）',
             issuedAt: $invoice->issuedAt ? Jst::date($invoice->issuedAt) : '—',
             dueAt: $invoice->dueAt ? substr($invoice->dueAt, 0, 10) : '—',
@@ -55,16 +60,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
         );
 
         try {
-            $mpdf = new Mpdf([
-                'mode'          => 'ja',
-                'format'        => 'A4',
-                'margin_left'   => 15,
-                'margin_right'  => 15,
-                'margin_top'    => 20,
-                'margin_bottom' => 20,
-                'tempDir'       => sys_get_temp_dir(),
-            ]);
-            $mpdf->SetTitle($invoice->invoiceNumber ?? '請求書');
+            $mpdf = $this->mpdfFactory->create($style, $invoice->invoiceNumber ?? '請求書');
             $mpdf->WriteHTML($html);
 
             return $mpdf->Output('', 'S');
@@ -78,6 +74,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
      * @param list<TaxBreakdownLine>               $breakdown
      */
     private function buildHtml(
+        string $styleBlock,
         string $invoiceNumber,
         string $issuedAt,
         string $dueAt,
@@ -153,31 +150,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<style>
-/* Do NOT set a non-CJK font-family (e.g. sans-serif): it overrides mPDF's
-   mode=ja Japanese font and renders all 日本語 as tofu (□). Leave it unset so
-   the CJK-capable default applies. */
-body { font-size: 10pt; color: #111; }
-h1 { font-size: 22pt; text-align: center; margin: 0 0 4mm; border-bottom: 1pt solid #333; padding-bottom: 2mm; }
-.header-meta { text-align: right; font-size: 9pt; margin-bottom: 5mm; }
-.parties { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
-.buyer { width: 55%; vertical-align: top; }
-.seller { width: 40%; vertical-align: top; font-size: 9pt; }
-.seller table { width: 100%; border-collapse: collapse; }
-.seller td { padding: 0.5mm 1mm; }
-.greeting { margin-bottom: 3mm; }
-.items { width: 100%; border-collapse: collapse; margin-bottom: 5mm; }
-.items th { background: #e8e8e8; border: 0.5pt solid #999; padding: 1.5mm 2mm; }
-.items td { border: 0.5pt solid #bbb; padding: 1.5mm 2mm; }
-.tc { text-align: center; }
-.tr { text-align: right; }
-.summary { width: 55%; margin-left: auto; border-collapse: collapse; margin-bottom: 5mm; }
-.summary td { padding: 1mm 2mm; border-bottom: 0.25pt solid #ccc; }
-.summary td.tr { text-align: right; }
-.total-row td { font-weight: bold; font-size: 12pt; border-top: 1pt solid #333; }
-.notes { font-size: 9pt; color: #444; margin-top: 4mm; }
-.bank { font-size: 9pt; margin-top: 4mm; }
-</style>
+{$styleBlock}
 </head>
 <body>
 <h1>{$title}</h1>

@@ -9,6 +9,7 @@ use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
 use NeneInvoice\Quote\Pdf\QuotePdfData;
 use NeneInvoice\Quote\Pdf\QuotePdfGenerator;
 use NeneInvoice\Quote\Quote;
@@ -40,7 +41,7 @@ final class QuotePdfGeneratorTest extends TestCase
             new Client(organizationId: 1, name: '株式会社サンプル製作所'),
         );
 
-        $pdf = (new QuotePdfGenerator(new TaxCalculator()))->generate($data);
+        $pdf = (new QuotePdfGenerator(new TaxCalculator(), new MpdfFactory()))->generate($data);
 
         self::assertStringStartsWith('%PDF', $pdf);
         // Regression guard: Japanese must embed a CJK font (mode=ja), never the

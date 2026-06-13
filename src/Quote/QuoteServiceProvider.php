@@ -21,6 +21,7 @@ use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\PdoLineItemRepository;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
 use NeneInvoice\Quote\Pdf\QuotePdfGenerator;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
@@ -135,6 +136,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                 QuotePdfGenerator::class,
                 static fn (ContainerInterface $c): QuotePdfGenerator => new QuotePdfGenerator(
                     self::resolve($c, TaxCalculator::class),
+                    new MpdfFactory(),
                 ),
             )
             ->set(

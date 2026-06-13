@@ -17,5 +17,8 @@ export function toCompanySettings(dto: CompanySettingsDto): CompanySettings {
     default_payment_closing_day: dto.default_payment_closing_day ?? null,
     default_payment_month_offset: dto.default_payment_month_offset ?? null,
     default_payment_pay_day: dto.default_payment_pay_day ?? null,
+    pdf_template: dto.pdf_template ?? 'standard',
+    pdf_spacing: dto.pdf_spacing ?? 'medium',
+    pdf_heading_font: dto.pdf_heading_font ?? 'gothic',
   }
 }

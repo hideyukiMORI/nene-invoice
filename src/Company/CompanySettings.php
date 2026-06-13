@@ -38,6 +38,9 @@ final readonly class CompanySettings
         public ?int $defaultPaymentClosingDay = null,
         public ?int $defaultPaymentMonthOffset = null,
         public ?int $defaultPaymentPayDay = null,
+        public string $pdfTemplate = 'standard',
+        public string $pdfSpacing = 'medium',
+        public string $pdfHeadingFont = 'gothic',
         public ?string $createdAt = null,
         public ?string $updatedAt = null,
     ) {

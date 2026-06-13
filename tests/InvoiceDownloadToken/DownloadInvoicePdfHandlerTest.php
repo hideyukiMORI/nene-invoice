@@ -15,6 +15,7 @@ use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\InvoiceDownloadToken\DownloadInvoicePdfHandler;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadToken;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceDownloadTokenRepository;
@@ -60,7 +61,7 @@ final class DownloadInvoicePdfHandlerTest extends TestCase
         $this->handler = new DownloadInvoicePdfHandler(
             $this->tokens,
             new GenerateInvoicePdfUseCase($invoices, $lineItems, $payments, $company, $clients, $holder),
-            new InvoicePdfGenerator(new TaxCalculator()),
+            new InvoicePdfGenerator(new TaxCalculator(), new MpdfFactory()),
             $this->psr17,
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
             $holder,

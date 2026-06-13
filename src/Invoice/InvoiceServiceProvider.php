@@ -25,6 +25,7 @@ use NeneInvoice\LineItem\PdoLineItemRepository;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Mailer\MailerInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
+use NeneInvoice\Pdf\MpdfFactory;
 use NeneInvoice\Quote\QuoteRepositoryInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
@@ -165,6 +166,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                 InvoicePdfGenerator::class,
                 static fn (ContainerInterface $c): InvoicePdfGenerator => new InvoicePdfGenerator(
                     self::resolve($c, TaxCalculator::class),
+                    new MpdfFactory(),
                 ),
             )
             ->set(

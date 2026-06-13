@@ -28,6 +28,9 @@ final class CompanySettingsResponse
             'default_payment_closing_day' => $settings->defaultPaymentClosingDay,
             'default_payment_month_offset' => $settings->defaultPaymentMonthOffset,
             'default_payment_pay_day' => $settings->defaultPaymentPayDay,
+            'pdf_template' => $settings->pdfTemplate,
+            'pdf_spacing' => $settings->pdfSpacing,
+            'pdf_heading_font' => $settings->pdfHeadingFont,
             'created_at' => $settings->createdAt,
             'updated_at' => $settings->updatedAt,
         ];

@@ -21,6 +21,10 @@ const schema = z.object({
   default_payment_closing_day: z.string(),
   default_payment_month_offset: z.string(),
   default_payment_pay_day: z.string(),
+  // PDF appearance (Issue #449). Always a concrete enum value.
+  pdf_template: z.enum(['standard', 'modern', 'classic']),
+  pdf_spacing: z.enum(['small', 'medium', 'large']),
+  pdf_heading_font: z.enum(['gothic', 'mincho']),
 })
 
 export type EditCompanySettingsFormValues = z.infer<typeof schema>
@@ -63,6 +67,9 @@ export function useEditCompanySettings(): EditCompanySettingsState {
       default_payment_closing_day: '',
       default_payment_month_offset: '',
       default_payment_pay_day: '',
+      pdf_template: 'standard',
+      pdf_spacing: 'medium',
+      pdf_heading_font: 'gothic',
     },
   })
 
@@ -84,6 +91,9 @@ export function useEditCompanySettings(): EditCompanySettingsState {
         default_payment_closing_day: numberToEmpty(settings?.default_payment_closing_day),
         default_payment_month_offset: numberToEmpty(settings?.default_payment_month_offset),
         default_payment_pay_day: numberToEmpty(settings?.default_payment_pay_day),
+        pdf_template: settings?.pdf_template ?? 'standard',
+        pdf_spacing: settings?.pdf_spacing ?? 'medium',
+        pdf_heading_font: settings?.pdf_heading_font ?? 'gothic',
       })
     }
   }, [settings, reset])
@@ -124,6 +134,9 @@ export function useEditCompanySettings(): EditCompanySettingsState {
           : null,
         default_payment_month_offset: monthOffset,
         default_payment_pay_day: termsActive ? intOrNull(values.default_payment_pay_day) : null,
+        pdf_template: values.pdf_template,
+        pdf_spacing: values.pdf_spacing,
+        pdf_heading_font: values.pdf_heading_font,
       },
       {
         onSuccess: () => {

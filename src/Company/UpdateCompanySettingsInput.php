@@ -21,6 +21,9 @@ final readonly class UpdateCompanySettingsInput
         public ?int $defaultPaymentClosingDay = null,
         public ?int $defaultPaymentMonthOffset = null,
         public ?int $defaultPaymentPayDay = null,
+        public string $pdfTemplate = 'standard',
+        public string $pdfSpacing = 'medium',
+        public string $pdfHeadingFont = 'gothic',
     ) {
     }
 }

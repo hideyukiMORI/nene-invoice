@@ -2344,6 +2344,18 @@ components:
           minimum: 1
           maximum: 31
           description: Payment day (支払日) 1–31; null = month-end (末日) when terms are configured.
+        pdf_template:
+          type: string
+          enum: [standard, modern, classic]
+          description: PDF layout template for 見積書 / 請求書 (Issue #449).
+        pdf_spacing:
+          type: string
+          enum: [small, medium, large]
+          description: PDF spacing scale (gap/margin/padding 大中小).
+        pdf_heading_font:
+          type: string
+          enum: [gothic, mincho]
+          description: PDF heading font (見出しフォント ゴシック/明朝).
         created_at:
           type: [string, 'null']
         updated_at:
@@ -2392,6 +2404,18 @@ components:
           minimum: 1
           maximum: 31
           description: Payment day (支払日) 1–31; null = month-end (末日) when terms are configured.
+        pdf_template:
+          type: string
+          enum: [standard, modern, classic]
+          description: PDF layout template for 見積書 / 請求書 (Issue #449). Absent keeps the current value.
+        pdf_spacing:
+          type: string
+          enum: [small, medium, large]
+          description: PDF spacing scale (gap/margin/padding 大中小).
+        pdf_heading_font:
+          type: string
+          enum: [gothic, mincho]
+          description: PDF heading font (見出しフォント ゴシック/明朝).
       required: [legal_name]
     Client:
       type: object

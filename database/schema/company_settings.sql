@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS company_settings (
     default_payment_closing_day INTEGER NULL DEFAULT NULL,
     default_payment_month_offset INTEGER NULL DEFAULT NULL,
     default_payment_pay_day INTEGER NULL DEFAULT NULL,
+    pdf_template VARCHAR(16) NOT NULL DEFAULT 'standard',
+    pdf_spacing VARCHAR(16) NOT NULL DEFAULT 'medium',
+    pdf_heading_font VARCHAR(16) NOT NULL DEFAULT 'gothic',
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL
 );
