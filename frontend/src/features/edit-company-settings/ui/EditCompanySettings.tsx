@@ -268,6 +268,37 @@ export function EditCompanySettings() {
             </Stack>
           </div>
 
+          <div className="card">
+            <div className="section-title">{t('admin.settings.pdfSection')}</div>
+            <Stack gap="md">
+              <Text variant="muted" className="text-caption">
+                {t('admin.settings.pdfHint')}
+              </Text>
+              <FormRow>
+                <Field id="pdf_template" label={t('admin.settings.pdfTemplate')}>
+                  <Select id="pdf_template" {...register('pdf_template')}>
+                    <option value="standard">{t('admin.settings.pdfTemplateStandard')}</option>
+                    <option value="modern">{t('admin.settings.pdfTemplateModern')}</option>
+                    <option value="classic">{t('admin.settings.pdfTemplateClassic')}</option>
+                  </Select>
+                </Field>
+                <Field id="pdf_spacing" label={t('admin.settings.pdfSpacing')}>
+                  <Select id="pdf_spacing" {...register('pdf_spacing')}>
+                    <option value="small">{t('admin.settings.pdfSpacingSmall')}</option>
+                    <option value="medium">{t('admin.settings.pdfSpacingMedium')}</option>
+                    <option value="large">{t('admin.settings.pdfSpacingLarge')}</option>
+                  </Select>
+                </Field>
+                <Field id="pdf_heading_font" label={t('admin.settings.pdfHeadingFont')}>
+                  <Select id="pdf_heading_font" {...register('pdf_heading_font')}>
+                    <option value="gothic">{t('admin.settings.pdfFontGothic')}</option>
+                    <option value="mincho">{t('admin.settings.pdfFontMincho')}</option>
+                  </Select>
+                </Field>
+              </FormRow>
+            </Stack>
+          </div>
+
           {state.errorMessage !== null && (
             <Text variant="muted" role="alert">
               {state.errorMessage}

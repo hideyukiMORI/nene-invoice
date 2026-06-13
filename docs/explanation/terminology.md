@@ -67,6 +67,9 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | service_token status (computed) | `active`, `revoked` |
 | `payment_link.status` | `active`, `paid`, `revoked` (expiry derived from `expires_at`, not stored) |
 | `payment_link.gateway` | `payjp` (launch gateway — ADR 0013) |
+| `company_settings.pdf_template` | `standard` (default), `modern`, `classic` (見積/請求 PDF レイアウト — Issue #449) |
+| `company_settings.pdf_spacing` | `small`, `medium` (default), `large` (PDF 余白スケール大中小 — Issue #449) |
+| `company_settings.pdf_heading_font` | `gothic` (default), `mincho` (PDF 見出しフォント — Issue #449) |
 | Capability (enum) | `manage_organizations`, `manage_users`, `manage_company_settings`, `manage_billing`, `view_billing` |
 | Org resolution mode | `single` (default), `path`, `subdomain`, `custom_domain` |
 
@@ -100,6 +103,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Numbers | `quote_number`, `invoice_number` | `number`, `quote_no` |
 | Timestamps | `issued_at`, `due_at`, `paid_at`, `valid_until`, `deleted_at` | `issue_date`, `due_date`, `paidAt` |
 | Issuer fields | `legal_name`, `bank_name`, `bank_branch`, `account_type`, `account_number`, `logo_url` | `company_name`, `branch`, `acct_no` |
+| PDF appearance (issuer) | `pdf_template`, `pdf_spacing`, `pdf_heading_font` (values in §2) | `template`, `layout`, `spacing_size`, `margin_size`, `font`, `heading_font_family` |
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
 | Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |

@@ -14,6 +14,7 @@ use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -26,7 +27,7 @@ final class InvoicePdfTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->generator = new InvoicePdfGenerator(new TaxCalculator());
+        $this->generator = new InvoicePdfGenerator(new TaxCalculator(), new MpdfFactory());
     }
 
     public function test_generates_pdf_for_qualified_invoice(): void

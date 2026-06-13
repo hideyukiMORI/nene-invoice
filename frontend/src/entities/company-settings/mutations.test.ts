@@ -16,6 +16,13 @@ const input: UpdateCompanySettingsInput = {
   bank_branch: null,
   account_type: null,
   account_number: null,
+  default_quote_validity_days: null,
+  default_payment_closing_day: null,
+  default_payment_month_offset: null,
+  default_payment_pay_day: null,
+  pdf_template: 'standard',
+  pdf_spacing: 'medium',
+  pdf_heading_font: 'gothic',
 }
 
 describe('useUpdateCompanySettings', () => {

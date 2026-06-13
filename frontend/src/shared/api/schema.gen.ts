@@ -1243,6 +1243,21 @@ export interface components {
             default_payment_month_offset?: number | null;
             /** @description Payment day (支払日) 1–31; null = month-end (末日) when terms are configured. */
             default_payment_pay_day?: number | null;
+            /**
+             * @description PDF layout template for 見積書 / 請求書 (Issue
+             * @enum {string}
+             */
+            pdf_template?: "standard" | "modern" | "classic";
+            /**
+             * @description PDF spacing scale (gap/margin/padding 大中小).
+             * @enum {string}
+             */
+            pdf_spacing?: "small" | "medium" | "large";
+            /**
+             * @description PDF heading font (見出しフォント ゴシック/明朝).
+             * @enum {string}
+             */
+            pdf_heading_font?: "gothic" | "mincho";
             created_at?: string | null;
             updated_at?: string | null;
         };
@@ -1265,6 +1280,21 @@ export interface components {
             default_payment_month_offset?: number | null;
             /** @description Payment day (支払日) 1–31; null = month-end (末日) when terms are configured. */
             default_payment_pay_day?: number | null;
+            /**
+             * @description PDF layout template for 見積書 / 請求書 (Issue
+             * @enum {string}
+             */
+            pdf_template?: "standard" | "modern" | "classic";
+            /**
+             * @description PDF spacing scale (gap/margin/padding 大中小).
+             * @enum {string}
+             */
+            pdf_spacing?: "small" | "medium" | "large";
+            /**
+             * @description PDF heading font (見出しフォント ゴシック/明朝).
+             * @enum {string}
+             */
+            pdf_heading_font?: "gothic" | "mincho";
         };
         Client: {
             id: number;

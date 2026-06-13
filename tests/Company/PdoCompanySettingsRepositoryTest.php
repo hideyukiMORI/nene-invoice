@@ -70,6 +70,9 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
             defaultPaymentClosingDay: 20,
             defaultPaymentMonthOffset: 1,
             defaultPaymentPayDay: null,
+            pdfTemplate: 'modern',
+            pdfSpacing: 'large',
+            pdfHeadingFont: 'mincho',
         );
 
         $this->repo->save($settings);
@@ -85,6 +88,10 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
         self::assertSame(20, $found->defaultPaymentClosingDay);
         self::assertSame(1, $found->defaultPaymentMonthOffset);
         self::assertNull($found->defaultPaymentPayDay);
+        // PDF appearance round-trips (Issue #449).
+        self::assertSame('modern', $found->pdfTemplate);
+        self::assertSame('large', $found->pdfSpacing);
+        self::assertSame('mincho', $found->pdfHeadingFont);
     }
 
     public function test_save_updates_existing_record(): void
@@ -128,5 +135,9 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
         self::assertNull($found->address);
         self::assertNull($found->registrationNumber);
         self::assertNull($found->bankName);
+        // PDF appearance defaults apply (backward compatible — Issue #449).
+        self::assertSame('standard', $found->pdfTemplate);
+        self::assertSame('medium', $found->pdfSpacing);
+        self::assertSame('gothic', $found->pdfHeadingFont);
     }
 }

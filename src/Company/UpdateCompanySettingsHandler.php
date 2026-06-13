@@ -9,6 +9,7 @@ use Nene2\Http\JsonResponseFactory;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\Auth\AuthContext;
+use NeneInvoice\Pdf\PdfStyle;
 use NeneInvoice\Support\RequestField;
 use NeneInvoice\Support\TextLimit;
 use Psr\Http\Message\ResponseInterface;
@@ -39,6 +40,7 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
         TextLimit::check($legalName, 'body.legal_name', TextLimit::NAME);
 
         $this->validateBillingDefaults($decoded);
+        $this->validatePdfAppearance($decoded);
 
         $settings = $this->useCase->execute(AuthContext::userId($request), new UpdateCompanySettingsInput(
             legalName: $legalName,
@@ -55,6 +57,9 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
             defaultPaymentClosingDay: RequestField::optionalInt($decoded, 'default_payment_closing_day'),
             defaultPaymentMonthOffset: RequestField::optionalInt($decoded, 'default_payment_month_offset'),
             defaultPaymentPayDay: RequestField::optionalInt($decoded, 'default_payment_pay_day'),
+            pdfTemplate: $this->enumOrDefault($decoded, 'pdf_template', PdfStyle::TEMPLATES, PdfStyle::TEMPLATE_STANDARD),
+            pdfSpacing: $this->enumOrDefault($decoded, 'pdf_spacing', PdfStyle::SPACINGS, PdfStyle::SPACING_MEDIUM),
+            pdfHeadingFont: $this->enumOrDefault($decoded, 'pdf_heading_font', PdfStyle::FONTS, PdfStyle::FONT_GOTHIC),
         ));
 
         return $this->json->create(CompanySettingsResponse::toArray($settings));
@@ -96,5 +101,48 @@ final readonly class UpdateCompanySettingsHandler implements RequestHandlerInter
         }
 
         return is_int($value) && $value >= $min && $value <= $max;
+    }
+
+    /**
+     * Validates the PDF appearance enums (Issue #449). Absent fields keep the
+     * default; a present value outside the registered set raises a 422.
+     *
+     * @param array<string, mixed> $body
+     *
+     * @throws ValidationException
+     */
+    private function validatePdfAppearance(array $body): void
+    {
+        $fields = [
+            'pdf_template'     => PdfStyle::TEMPLATES,
+            'pdf_spacing'      => PdfStyle::SPACINGS,
+            'pdf_heading_font' => PdfStyle::FONTS,
+        ];
+
+        $errors = [];
+        foreach ($fields as $key => $allowed) {
+            $value = $body[$key] ?? null;
+            if ($value !== null && (!is_string($value) || !in_array($value, $allowed, true))) {
+                $errors[] = new ValidationError('body.' . $key, sprintf('%s must be one of: %s.', $key, implode(', ', $allowed)), 'invalid_value');
+            }
+        }
+
+        if ($errors !== []) {
+            throw new ValidationException($errors);
+        }
+    }
+
+    /**
+     * Returns the request value when it is a registered enum member, otherwise
+     * the default. Invalid values are already rejected by {@see validatePdfAppearance}.
+     *
+     * @param array<string, mixed> $body
+     * @param list<string>         $allowed
+     */
+    private function enumOrDefault(array $body, string $key, array $allowed, string $default): string
+    {
+        $value = $body[$key] ?? null;
+
+        return is_string($value) && in_array($value, $allowed, true) ? $value : $default;
     }
 }

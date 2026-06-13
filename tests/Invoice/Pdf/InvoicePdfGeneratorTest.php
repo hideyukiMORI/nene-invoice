@@ -14,6 +14,7 @@ use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\TaxCalculator;
+use NeneInvoice\Pdf\MpdfFactory;
 use PHPUnit\Framework\TestCase;
 
 final class InvoicePdfGeneratorTest extends TestCase
@@ -40,7 +41,7 @@ final class InvoicePdfGeneratorTest extends TestCase
             new Client(organizationId: 1, name: '株式会社サンプル製作所'),
         );
 
-        $pdf = (new InvoicePdfGenerator(new TaxCalculator()))->generate($data);
+        $pdf = (new InvoicePdfGenerator(new TaxCalculator(), new MpdfFactory()))->generate($data);
 
         self::assertStringStartsWith('%PDF', $pdf);
         // Regression guard: Japanese must embed a CJK font (mode=ja), never the

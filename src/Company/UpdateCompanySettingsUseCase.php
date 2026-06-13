@@ -61,6 +61,9 @@ final readonly class UpdateCompanySettingsUseCase implements UpdateCompanySettin
                 defaultPaymentClosingDay: $input->defaultPaymentClosingDay,
                 defaultPaymentMonthOffset: $input->defaultPaymentMonthOffset,
                 defaultPaymentPayDay: $input->defaultPaymentPayDay,
+                pdfTemplate: $input->pdfTemplate,
+                pdfSpacing: $input->pdfSpacing,
+                pdfHeadingFont: $input->pdfHeadingFont,
             ));
 
             $saved = $repository->find();
