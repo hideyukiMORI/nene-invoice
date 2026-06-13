@@ -1628,6 +1628,72 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '404':
           $ref: '#/components/responses/NotFound'
+  /pay/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Payments]
+      summary: Public card payment page
+      description: >
+        Public, no authentication. Renders a minimal HTML page that loads PAY.JP
+        Checkout (hosted card iframe — SAQ-A; no operator scripts). Returns a 404
+        HTML page for unknown/expired/revoked/paid links.
+      operationId: getPaymentPage
+      responses:
+        '200':
+          description: Payment page (HTML)
+          content:
+            text/html:
+              schema: { type: string }
+        '404':
+          description: Link not payable (HTML)
+          content:
+            text/html:
+              schema: { type: string }
+  /pay/{token}/charge:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Payments]
+      summary: Charge a payment link
+      description: >
+        Public, no authentication. Receives the single-use card token posted by
+        PAY.JP Checkout (`payjp-token`) and charges the invoice's outstanding
+        balance. Renders an HTML result page. No card data is read or stored.
+      operationId: chargePaymentLink
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                payjp-token:
+                  type: string
+                  description: Single-use card token from PAY.JP Checkout.
+              required: [payjp-token]
+      responses:
+        '200':
+          description: Payment accepted (HTML)
+          content:
+            text/html:
+              schema: { type: string }
+        '402':
+          description: Charge declined or failed (HTML)
+          content:
+            text/html:
+              schema: { type: string }
+        '404':
+          description: Link not payable (HTML)
+          content:
+            text/html:
+              schema: { type: string }
   /admin/invoices/{id}/issue:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'

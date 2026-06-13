@@ -16,6 +16,11 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Payment\Gateway\PayjpGateway;
+use NeneInvoice\Payment\Gateway\PaymentGatewayInterface;
+use NeneInvoice\Payment\PaymentRepositoryInterface;
+use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 final readonly class PaymentLinkServiceProvider implements ServiceProviderInterface
@@ -72,10 +77,49 @@ final readonly class PaymentLinkServiceProvider implements ServiceProviderInterf
                 ),
             )
             ->set(
+                PaymentGatewayInterface::class,
+                static fn (ContainerInterface $c): PaymentGatewayInterface => new PayjpGateway(
+                    (string) (getenv('PAYJP_SECRET_KEY') ?: ''),
+                ),
+            )
+            ->set(
+                ChargePaymentLinkUseCaseInterface::class,
+                static fn (ContainerInterface $c): ChargePaymentLinkUseCase => new ChargePaymentLinkUseCase(
+                    self::resolve($c, PaymentLinkRepositoryInterface::class),
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, PaymentRepositoryInterface::class),
+                    self::resolve($c, PaymentGatewayInterface::class),
+                    self::resolve($c, RecordPaymentUseCaseInterface::class),
+                    self::resolve($c, ClockInterface::class),
+                    self::orgHolder($c),
+                ),
+            )
+            ->set(
+                PayPageHandler::class,
+                static fn (ContainerInterface $c): PayPageHandler => new PayPageHandler(
+                    self::resolve($c, PaymentLinkRepositoryInterface::class),
+                    self::resolve($c, InvoiceRepositoryInterface::class),
+                    self::resolve($c, PaymentRepositoryInterface::class),
+                    self::resolve($c, ClockInterface::class),
+                    self::resolve($c, Psr17Factory::class),
+                    self::orgHolder($c),
+                    (string) (getenv('PAYJP_PUBLIC_KEY') ?: ''),
+                ),
+            )
+            ->set(
+                ChargePaymentLinkHandler::class,
+                static fn (ContainerInterface $c): ChargePaymentLinkHandler => new ChargePaymentLinkHandler(
+                    self::resolve($c, ChargePaymentLinkUseCaseInterface::class),
+                    self::resolve($c, Psr17Factory::class),
+                ),
+            )
+            ->set(
                 PaymentLinkRouteRegistrar::class,
                 static fn (ContainerInterface $c): PaymentLinkRouteRegistrar => new PaymentLinkRouteRegistrar(
                     self::resolve($c, GeneratePaymentLinkHandler::class),
                     self::resolve($c, RevokePaymentLinkHandler::class),
+                    self::resolve($c, PayPageHandler::class),
+                    self::resolve($c, ChargePaymentLinkHandler::class),
                 ),
             );
     }

@@ -24,8 +24,21 @@ interface PaymentLinkRepositoryInterface
     public function findByHash(string $tokenHash): ?PaymentLink;
 
     /**
+     * Lookup by gateway charge/session id, **not** organization-scoped: the
+     * settlement webhook (#431) resolves the owning organization *from* the link.
+     */
+    public function findByGatewaySessionId(string $gatewaySessionId): ?PaymentLink;
+
+    /**
      * Marks an active link revoked. Org-scoped and idempotent: returns true only
      * when an active link in the caller's org transitioned to revoked.
      */
     public function markRevoked(int $id, string $revokedAt): bool;
+
+    /**
+     * Marks an active link paid and records the gateway charge id. Org-scoped and
+     * idempotent: returns true only when an active link in the caller's org
+     * transitioned to paid.
+     */
+    public function markPaid(int $id, string $gatewaySessionId, string $paidAt): bool;
 }
