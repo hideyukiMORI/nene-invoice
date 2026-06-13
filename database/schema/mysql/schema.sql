@@ -73,6 +73,15 @@ CREATE TABLE IF NOT EXISTS `company_settings` (
     UNIQUE KEY `uniq_company_settings_organization_id` (`organization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `company_seal_images` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          NOT NULL,
+    `image_base64`    MEDIUMTEXT   NOT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    `updated_at`      DATETIME     NOT NULL,
+    UNIQUE KEY `uniq_company_seal_images_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `audit_logs` (
     `id`           INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `actor_user_id` INT        DEFAULT NULL,

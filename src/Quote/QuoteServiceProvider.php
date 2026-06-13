@@ -17,6 +17,7 @@ use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
+use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\PdoLineItemRepository;
@@ -129,6 +130,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     self::resolve($c, LineItemRepositoryInterface::class),
                     self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, ClientRepositoryInterface::class),
+                    self::resolve($c, CompanySealRepositoryInterface::class),
                     self::orgHolder($c),
                 ),
             )

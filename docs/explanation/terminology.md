@@ -35,6 +35,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Tenant | `Organization` | `organizations` | `organization_id` |
 | Operator account | `User` | `users` | `user_id` |
 | Issuer profile | `Company` (folder); `CompanySettings` (entity) | `company_settings` | — (one per `organization_id`) |
+| Company seal | `Company\Seal` (folder) | `company_seal_images` | — (one per `organization_id`) |
 | Buyer | `Client` | `clients` | `client_id` |
 | Item master | `Item` | `items` | `item_id` |
 | Estimate | `Quote` | `quotes` | `quote_id` |
@@ -104,6 +105,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Timestamps | `issued_at`, `due_at`, `paid_at`, `valid_until`, `deleted_at` | `issue_date`, `due_date`, `paidAt` |
 | Issuer fields | `legal_name`, `bank_name`, `bank_branch`, `account_type`, `account_number`, `logo_url` | `company_name`, `branch`, `acct_no` |
 | PDF appearance (issuer) | `pdf_template`, `pdf_spacing`, `pdf_heading_font` (values in §2) | `template`, `layout`, `spacing_size`, `margin_size`, `font`, `heading_font_family` |
+| Company seal (社印) | `image_base64`, `has_seal` | `seal`, `seal_url`, `stamp`, `seal_png`, `image`, `image_data` |
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
 | Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |

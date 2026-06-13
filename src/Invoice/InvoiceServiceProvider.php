@@ -18,6 +18,7 @@ use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
+use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\Invoice\Pdf\InvoicePdfGenerator;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
@@ -177,6 +178,7 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
                     self::resolve($c, PaymentRepositoryInterface::class),
                     self::resolve($c, CompanySettingsRepositoryInterface::class),
                     self::resolve($c, ClientRepositoryInterface::class),
+                    self::resolve($c, CompanySealRepositoryInterface::class),
                     self::orgHolder($c),
                 ),
             )

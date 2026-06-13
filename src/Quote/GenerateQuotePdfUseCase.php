@@ -9,6 +9,7 @@ use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
+use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\Quote\Pdf\QuotePdfData;
@@ -27,6 +28,7 @@ final readonly class GenerateQuotePdfUseCase implements GenerateQuotePdfUseCaseI
         private LineItemRepositoryInterface $lineItems,
         private CompanySettingsRepositoryInterface $companySettings,
         private ClientRepositoryInterface $clients,
+        private CompanySealRepositoryInterface $seals,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -57,6 +59,6 @@ final readonly class GenerateQuotePdfUseCase implements GenerateQuotePdfUseCaseI
                 name: '（取引先情報なし）',
             );
 
-        return new QuotePdfData($withLines, $company, $client);
+        return new QuotePdfData($withLines, $company, $client, $this->seals->find());
     }
 }

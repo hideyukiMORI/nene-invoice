@@ -533,6 +533,63 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '422':
           $ref: '#/components/responses/InvalidRegistrationNumber'
+  /admin/company-settings/seal:
+    get:
+      tags: [CompanySettings]
+      summary: Get company seal
+      description: Returns the organization's seal (社印) PNG as base64 for preview, or has_seal=false when none is set.
+      operationId: getCompanySeal
+      responses:
+        '200':
+          description: Seal image (or none)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySeal'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+    put:
+      tags: [CompanySettings]
+      summary: Upload company seal
+      description: Upserts the organization's seal from a base64 PNG. Validated as PNG within size and dimension caps.
+      operationId: putCompanySeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutCompanySealRequest'
+      responses:
+        '200':
+          description: Seal stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySealState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+    delete:
+      tags: [CompanySettings]
+      summary: Delete company seal
+      description: Removes the organization's seal. Idempotent.
+      operationId: deleteCompanySeal
+      responses:
+        '200':
+          description: Seal removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySealState'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
   /admin/clients:
     get:
       tags: [Clients]
@@ -2417,6 +2474,30 @@ components:
           enum: [gothic, mincho]
           description: PDF heading font (見出しフォント ゴシック/明朝).
       required: [legal_name]
+    CompanySeal:
+      type: object
+      description: Company seal (社印) image for preview.
+      properties:
+        has_seal:
+          type: boolean
+        image_base64:
+          type: [string, 'null']
+          description: Base64-encoded PNG (no data-URI prefix), or null when has_seal is false.
+      required: [has_seal, image_base64]
+    CompanySealState:
+      type: object
+      description: Result of a seal upsert / delete.
+      properties:
+        has_seal:
+          type: boolean
+      required: [has_seal]
+    PutCompanySealRequest:
+      type: object
+      properties:
+        image_base64:
+          type: string
+          description: Base64-encoded PNG. A `data:image/png;base64,` prefix is accepted and stripped. PNG only, ≤512KB, ≤1000×1000px.
+      required: [image_base64]
     Client:
       type: object
       properties:
