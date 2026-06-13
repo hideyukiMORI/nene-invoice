@@ -33,9 +33,10 @@ eligible, and support JPY. Distinguishing factors for our target operator
   **SAQ-A discipline**: the payment-link page MUST NOT carry operator-controlled
   scripts (analytics/GTM), which would expand scope to SAQ-A-EP. This becomes an
   operator-guide constraint.
-- This decision does **not** lift the implementation gate from ADR 0012: card
-  payment implementation still requires the accounting model + tax-advisor
-  (税理士) sign-off tracked in #430.
+- This decision does **not** lift the **release gate** from ADR 0012: the
+  accounting model may be implemented first, but card payment MUST NOT be
+  released until the accounting model + tax-advisor (税理士) sign-off (#430) is
+  recorded. Implementing ahead of sign-off is accepted **at the risk of rework**.
 
 ## Consequences
 

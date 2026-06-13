@@ -79,9 +79,12 @@ capability. The following are binding constraints, not implementation detail:
   and the invoice status updated automatically.
 - Fee handling, **net-of-fee deposit** vs gross amount, refunds, and chargebacks
   MUST be modelled against `docs/explanation/accounting-compliance.md`. This area
-  requires **tax-advisor (税理士) sign-off** before implementation, per CLAUDE.md
-  non-negotiable compliance rule. This ADR fixes the constraint, not the ledger
-  design.
+  requires **tax-advisor (税理士) sign-off**, per CLAUDE.md non-negotiable
+  compliance rule. The sign-off is a **release gate, not an implementation gate**:
+  the accounting model may be implemented beforehand, but card payment MUST NOT
+  be **released** until 税理士 sign-off is recorded (#430). Implementing ahead of
+  sign-off is done **at the risk of rework** if the model is rejected. This ADR
+  fixes the constraint, not the ledger design.
 
 ### Scope of this ADR
 
