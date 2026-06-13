@@ -81,6 +81,16 @@ final readonly class PdoPaymentLinkRepository implements PaymentLinkRepositoryIn
         return $row !== null ? $this->mapRow($row) : null;
     }
 
+    public function findByIdUnscoped(int $id): ?PaymentLink
+    {
+        $row = $this->query->fetchOne(
+            'SELECT ' . self::COLUMNS . ' FROM payment_links WHERE id = ?',
+            [$id],
+        );
+
+        return $row !== null ? $this->mapRow($row) : null;
+    }
+
     public function markRevoked(int $id, string $revokedAt): bool
     {
         $affected = $this->query->execute(

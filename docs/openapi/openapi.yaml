@@ -1694,6 +1694,37 @@ paths:
           content:
             text/html:
               schema: { type: string }
+  /webhooks/payjp:
+    post:
+      tags: [Payments]
+      summary: PAY.JP settlement webhook
+      description: >
+        Public ingress for PAY.JP webhook events, authenticated by the
+        `X-Payjp-Webhook-Token` header (PAY.JP does not HMAC-sign webhooks).
+        Records a confirmed `charge.succeeded` settlement against its payment link
+        (idempotent on the charge id). Returns 200 for handled, ignored, and
+        unresolvable events so PAY.JP stops retrying; 401 for a bad token.
+      operationId: payjpWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: PAY.JP event object (id, type, data charge, …).
+      responses:
+        '200':
+          description: Event acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+        '400':
+          description: Malformed body
+        '401':
+          description: Missing or incorrect webhook token
   /admin/invoices/{id}/issue:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'

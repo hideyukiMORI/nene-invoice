@@ -30,6 +30,15 @@ interface PaymentLinkRepositoryInterface
     public function findByGatewaySessionId(string $gatewaySessionId): ?PaymentLink;
 
     /**
+     * Lookup by primary key, **not** organization-scoped — webhook-only. The
+     * settlement webhook (#431) recovers the org from a gateway-authenticated
+     * event's `metadata.payment_link_id`, which works even when the synchronous
+     * charge crashed before persisting `gateway_session_id`. Do not use on
+     * tenant-facing paths; use {@see findById()} there.
+     */
+    public function findByIdUnscoped(int $id): ?PaymentLink;
+
+    /**
      * Marks an active link revoked. Org-scoped and idempotent: returns true only
      * when an active link in the caller's org transitioned to revoked.
      */
