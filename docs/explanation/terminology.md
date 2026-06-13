@@ -152,6 +152,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `service-token-revoked` | Presented service token has been revoked (401; service API) |
 | `service-token-not-found` | Service-token id not found in the caller's org (404; operator API) |
 | `payment-link-not-found` | Payment-link id not found in the caller's org (404; operator API) |
+| `invalid-webhook-token` | PAY.JP webhook `X-Payjp-Webhook-Token` missing or incorrect (401; public webhook) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is

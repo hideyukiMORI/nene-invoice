@@ -81,6 +81,7 @@ final class OpenApiContractTest extends TestCase
         'revokePaymentLink',
         'getPaymentPage',
         'chargePaymentLink',
+        'payjpWebhook',
         'sendInvoiceEmail',
         'exportInvoicesCsv',
         'exportPaymentsCsv',

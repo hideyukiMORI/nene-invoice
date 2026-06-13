@@ -17,6 +17,7 @@ use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 use NeneInvoice\Payment\Gateway\PayjpGateway;
+use NeneInvoice\Payment\Gateway\PayjpWebhookHandler;
 use NeneInvoice\Payment\Gateway\PaymentGatewayInterface;
 use NeneInvoice\Payment\PaymentRepositoryInterface;
 use NeneInvoice\Payment\RecordPaymentUseCaseInterface;
@@ -114,12 +115,31 @@ final readonly class PaymentLinkServiceProvider implements ServiceProviderInterf
                 ),
             )
             ->set(
+                RecordSettlementUseCaseInterface::class,
+                static fn (ContainerInterface $c): RecordSettlementUseCase => new RecordSettlementUseCase(
+                    self::resolve($c, PaymentLinkRepositoryInterface::class),
+                    self::resolve($c, RecordPaymentUseCaseInterface::class),
+                    self::resolve($c, ClockInterface::class),
+                    self::orgHolder($c),
+                ),
+            )
+            ->set(
+                PayjpWebhookHandler::class,
+                static fn (ContainerInterface $c): PayjpWebhookHandler => new PayjpWebhookHandler(
+                    self::resolve($c, RecordSettlementUseCaseInterface::class),
+                    self::resolve($c, JsonResponseFactory::class),
+                    self::resolve($c, ProblemDetailsResponseFactory::class),
+                    (string) (getenv('PAYJP_WEBHOOK_TOKEN') ?: ''),
+                ),
+            )
+            ->set(
                 PaymentLinkRouteRegistrar::class,
                 static fn (ContainerInterface $c): PaymentLinkRouteRegistrar => new PaymentLinkRouteRegistrar(
                     self::resolve($c, GeneratePaymentLinkHandler::class),
                     self::resolve($c, RevokePaymentLinkHandler::class),
                     self::resolve($c, PayPageHandler::class),
                     self::resolve($c, ChargePaymentLinkHandler::class),
+                    self::resolve($c, PayjpWebhookHandler::class),
                 ),
             );
     }

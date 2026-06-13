@@ -86,6 +86,11 @@ final class InMemoryPaymentLinkRepository implements PaymentLinkRepositoryInterf
         return null;
     }
 
+    public function findByIdUnscoped(int $id): ?PaymentLink
+    {
+        return $this->byId[$id] ?? null;
+    }
+
     public function markRevoked(int $id, string $revokedAt): bool
     {
         $link = $this->byId[$id] ?? null;
