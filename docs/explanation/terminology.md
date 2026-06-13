@@ -42,6 +42,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Document row | `LineItem` | `line_items` | `line_item_id` |
 | Template | `Template` | `templates` | `template_id` |
 | Receipt | `Payment` | `payments` | `payment_id` |
+| Payment link | `PaymentLink` | `payment_links` | `payment_link_id` |
 | Number generator | `DocumentSequence` | `document_sequences` | — |
 | Integration credential | `ServiceToken` | `service_tokens` | `service_token_id` |
 
@@ -64,6 +65,8 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
 | `user.status` | `active`, `invited` |
 | service_token status (computed) | `active`, `revoked` |
+| `payment_link.status` | `active`, `paid`, `revoked` (expiry derived from `expires_at`, not stored) |
+| `payment_link.gateway` | `payjp` (launch gateway — ADR 0013) |
 | Capability (enum) | `manage_organizations`, `manage_users`, `manage_company_settings`, `manage_billing`, `view_billing` |
 | Org resolution mode | `single` (default), `path`, `subdomain`, `custom_domain` |
 
@@ -101,6 +104,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
 | Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |
 | Service-token fields | `jti`, `subject`, `label`, `scopes`, `created_by`, `expires_at`, `revoked_at`, `ttl_seconds` | `jwt_id`, `name`, `scope`, `created_user_id`, `expiry`, `revoked`, `ttl` |
+| Payment-link fields | `token_hash`, `gateway`, `gateway_session_id`, `status`, `expires_at`, `paid_at`, `revoked_at` | `token`, `session`, `provider`, `expiry`, `paid`, `revoked` |
 | List envelope | `items`, `limit`, `offset` | `data`, `results`, `count` |
 | Dashboard read model | `unpaid_count`, `overdue_count`, `outstanding_total_cents`, `recent_unpaid`, `received_this_month_cents`, `received_last_month_cents`, `billed_this_month_cents`, `billed_last_month_cents`, `monthly_billed` (→ `month`, `billed_cents`, `count`), `billed_prev_year_month_cents`, `billed_daily_current` / `billed_daily_prev_month` (→ `day`, `cumulative_cents`) | `monthly_received_cents`, `received_this_month`, `mtd_cents`, `issued_this_month_cents`, `invoiced_cents`, `yoy_cents`, `daily_billed` |
 | Receivable aging buckets | `aging` → `current`, `overdue_1_30`, `overdue_31_plus` | `aging_buckets`, `bucket_*`, `over_30` |
@@ -147,6 +151,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `insufficient-scope` | Service token lacks the required scope (403; service API) |
 | `service-token-revoked` | Presented service token has been revoked (401; service API) |
 | `service-token-not-found` | Service-token id not found in the caller's org (404; operator API) |
+| `payment-link-not-found` | Payment-link id not found in the caller's org (404; operator API) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is

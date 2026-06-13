@@ -32,6 +32,7 @@ use NeneInvoice\Payment\PaymentExceedsOutstandingExceptionHandler;
 use NeneInvoice\Payment\PaymentNotFoundExceptionHandler;
 use NeneInvoice\Payment\PaymentRouteRegistrar;
 use NeneInvoice\Payment\PaymentValidationExceptionHandler;
+use NeneInvoice\PaymentLink\PaymentLinkRouteRegistrar;
 use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
 use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
@@ -96,6 +97,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $itemRoutes = $container->get(ItemRouteRegistrar::class);
                     $templateRoutes = $container->get(TemplateRouteRegistrar::class);
                     $serviceTokenRoutes = $container->get(ServiceTokenRouteRegistrar::class);
+                    $paymentLinkRoutes = $container->get(PaymentLinkRouteRegistrar::class);
 
                     if (!$dashboardRoutes instanceof DashboardRouteRegistrar) {
                         throw new LogicException('Dashboard route registrar service is invalid.');
@@ -161,7 +163,11 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Service token route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes];
+                    if (!$paymentLinkRoutes instanceof PaymentLinkRouteRegistrar) {
+                        throw new LogicException('Payment link route registrar service is invalid.');
+                    }
+
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes];
                 },
             )
             ->set(

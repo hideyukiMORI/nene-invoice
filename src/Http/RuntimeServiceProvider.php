@@ -46,6 +46,7 @@ use NeneInvoice\Organization\Resolution\OrgResolverMiddleware;
 use NeneInvoice\Organization\Resolution\PathPrefixResolutionStrategy;
 use NeneInvoice\Organization\Resolution\SubdomainResolutionStrategy;
 use NeneInvoice\Payment\PaymentServiceProvider;
+use NeneInvoice\PaymentLink\PaymentLinkServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
 use NeneInvoice\ServiceApi\ServiceApiServiceProvider;
 use NeneInvoice\ServiceApi\ServiceScopeMiddleware;
@@ -88,6 +89,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new PaymentServiceProvider());
         $builder->addProvider(new ServiceApiServiceProvider());
         $builder->addProvider(new ServiceTokenServiceProvider());
+        $builder->addProvider(new PaymentLinkServiceProvider());
 
         $builder
             ->set(Psr17Factory::class, static fn (ContainerInterface $container): Psr17Factory => new Psr17Factory())
