@@ -2,7 +2,7 @@
 
 ## Status
 
-proposed
+accepted
 
 ## Context
 
@@ -119,7 +119,8 @@ capability. The following are binding constraints, not implementation detail:
 ## Related
 
 - Issue: `#427`
-- PR: `#000`
+- PR: `#428` (proposed), `#429` selection ratified by ADR 0013
+- Launch gateway: `docs/adr/0013-launch-payment-gateway-payjp.md`
 - Product separation: `docs/adr/0002-separate-from-sibling-products.md`
 - Deployment tiers: `docs/adr/0003-dual-deployment-tiers.md`
 - Tax rounding: `docs/adr/0004-tax-rounding-per-rate.md`
