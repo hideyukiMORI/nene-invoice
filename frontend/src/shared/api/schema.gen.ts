@@ -223,6 +223,46 @@ export interface paths {
         patch: operations["updateUser"];
         trace?: never;
     };
+    "/admin/gateway-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get card payment gateway status
+         * @description Reports whether the PAY.JP gateway is configured (credentials live in the environment — ADR 0013). Never returns the secret key; the public key is masked. Capability: ManageCompanySettings.
+         */
+        get: operations["getGatewaySettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/gateway-settings/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test gateway connectivity
+         * @description Runs a live connectivity check against the gateway using the configured (env) credentials. Always 200 with an `ok` flag and a `detail` reason. Capability: ManageCompanySettings.
+         */
+        post: operations["testGatewayConnectivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/company-settings": {
         parameters: {
             query?: never;
@@ -809,6 +849,116 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/invoices/{id}/payment-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate a card payment link
+         * @description Issues a time-limited (7 days), revocable payment link that lets the payer settle the invoice on the hosted gateway (PAY.JP — ADR 0012/0013). Re-issuing auto-revokes any prior active link for the invoice. Card data never touches this API (SAQ-A). Requires ManageBilling capability.
+         */
+        post: operations["generatePaymentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/payment-links/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke a payment link
+         * @description Revokes an active payment link so it can no longer be paid. Idempotent: revoking an already-terminal link returns 200. Requires ManageBilling capability.
+         */
+        post: operations["revokePaymentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pay/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Public card payment page
+         * @description Public, no authentication. Renders a minimal HTML page that loads PAY.JP Checkout (hosted card iframe — SAQ-A; no operator scripts). Returns a 404 HTML page for unknown/expired/revoked/paid links.
+         */
+        get: operations["getPaymentPage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pay/{token}/charge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Charge a payment link
+         * @description Public, no authentication. Receives the single-use card token posted by PAY.JP Checkout (`payjp-token`) and charges the invoice's outstanding balance. Renders an HTML result page. No card data is read or stored.
+         */
+        post: operations["chargePaymentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/payjp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * PAY.JP settlement webhook
+         * @description Public ingress for PAY.JP webhook events, authenticated by the `X-Payjp-Webhook-Token` header (PAY.JP does not HMAC-sign webhooks). Records a confirmed `charge.succeeded` settlement against its payment link (idempotent on the charge id). Returns 200 for handled, ignored, and unresolvable events so PAY.JP stops retrying; 401 for a bad token.
+         */
+        post: operations["payjpWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/invoices/{id}/issue": {
         parameters: {
             query?: never;
@@ -967,6 +1117,40 @@ export interface components {
             url: string;
             /** @description Token expiry timestamp (Y-m-d H:i:s). */
             expires_at: string;
+        };
+        PaymentLinkResponse: {
+            /** @description Identifier of the generated payment link. */
+            payment_link_id: number;
+            /** @description Public payment URL (relative path, no auth required). */
+            url: string;
+            /** @description Link expiry timestamp (Y-m-d H:i:s). */
+            expires_at: string;
+        };
+        PaymentLinkRevokeResponse: {
+            /** @description Identifier of the targeted payment link. */
+            payment_link_id: number;
+            /**
+             * @description Resulting status (revoked).
+             * @enum {string}
+             */
+            status: "revoked";
+            /** @description True if this call transitioned an active link; false if it was already inactive. */
+            revoked: boolean;
+        };
+        GatewaySettingsResponse: {
+            /** @example payjp */
+            gateway: string;
+            /** @description Masked public key for display, or null when unset. */
+            public_key_masked: string | null;
+            secret_set: boolean;
+            webhook_token_set: boolean;
+            /** @description True when both secret and public key are present. */
+            configured: boolean;
+        };
+        GatewayConnectivityResponse: {
+            ok: boolean;
+            /** @enum {string} */
+            detail: "connected" | "not_configured" | "invalid_credentials" | "unreachable";
         };
         LineItemSuggestion: {
             /** @description A distinct line-item description the organization has used before. */
@@ -1928,6 +2112,50 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["EmailConflict"];
             422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getGatewaySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gateway status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewaySettingsResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    testGatewayConnectivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connectivity result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GatewayConnectivityResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
         };
     };
     getCompanySettings: {
@@ -3140,6 +3368,176 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
+        };
+    };
+    generatePaymentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment link generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentLinkResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokePaymentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment link revoked (or already inactive) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentLinkRevokeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPaymentPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment page (HTML) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Link not payable (HTML) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    chargePaymentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    /** @description Single-use card token from PAY.JP Checkout. */
+                    "payjp-token": string;
+                };
+            };
+        };
+        responses: {
+            /** @description Payment accepted (HTML) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Charge declined or failed (HTML) */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Link not payable (HTML) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    payjpWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Event acknowledged */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        status?: string;
+                    };
+                };
+            };
+            /** @description Malformed body */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or incorrect webhook token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     issueInvoice: {
