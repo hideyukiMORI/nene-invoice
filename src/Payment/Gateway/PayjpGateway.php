@@ -65,6 +65,55 @@ final readonly class PayjpGateway implements PaymentGatewayInterface
         );
     }
 
+    public function verifyConnectivity(): bool
+    {
+        if ($this->secretKey === '') {
+            throw new PaymentGatewayException('PAY.JP secret key is not configured.');
+        }
+
+        // Lightweight authenticated read; 200 confirms the key, 401 rejects it.
+        [$status] = $this->get('/v1/accounts');
+
+        if ($status >= 200 && $status < 300) {
+            return true;
+        }
+
+        if ($status === 401) {
+            return false;
+        }
+
+        throw new PaymentGatewayException('PAY.JP connectivity check failed (HTTP ' . $status . ').');
+    }
+
+    /**
+     * @return array{0: int, 1: string}
+     */
+    private function get(string $path): array
+    {
+        $handle = curl_init($this->apiBaseUrl . $path);
+        if ($handle === false) {
+            throw new PaymentGatewayException('Unable to initialise the PAY.JP request.');
+        }
+
+        curl_setopt_array($handle, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD        => $this->secretKey . ':',
+            CURLOPT_TIMEOUT        => $this->timeoutSeconds,
+        ]);
+
+        $body   = curl_exec($handle);
+        $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+        $errno  = curl_errno($handle);
+        $error  = curl_error($handle);
+        curl_close($handle);
+
+        if ($errno !== 0 || !is_string($body)) {
+            throw new PaymentGatewayException('PAY.JP request failed: ' . $error);
+        }
+
+        return [$status, $body];
+    }
+
     /**
      * @param array<string, string> $fields
      * @return array{0: int, 1: string}

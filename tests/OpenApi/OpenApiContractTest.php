@@ -38,6 +38,8 @@ final class OpenApiContractTest extends TestCase
         'createUser',
         'updateUser',
         'deleteUser',
+        'getGatewaySettings',
+        'testGatewayConnectivity',
         'getCompanySettings',
         'updateCompanySettings',
         'listClients',

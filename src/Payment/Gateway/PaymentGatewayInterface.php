@@ -24,4 +24,13 @@ interface PaymentGatewayInterface
      * @throws PaymentGatewayException on decline, gateway error, or transport failure
      */
     public function createCharge(GatewayChargeRequest $request): GatewayCharge;
+
+    /**
+     * Checks that the configured credentials authenticate against the gateway
+     * (e.g. a lightweight account read). Returns false when the credentials are
+     * present but rejected.
+     *
+     * @throws PaymentGatewayException on transport failure or when unconfigured
+     */
+    public function verifyConnectivity(): bool;
 }

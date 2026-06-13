@@ -41,6 +41,12 @@ final class CapabilityResolver
             return Capability::ManageCompanySettings;
         }
 
+        // Payment-gateway configuration is issuer-level setup (keys live in env;
+        // these endpoints only read status + run a connectivity test).
+        if (str_starts_with($path, '/admin/gateway-settings')) {
+            return Capability::ManageCompanySettings;
+        }
+
         if (str_starts_with($path, '/admin/dashboard')) {
             return Capability::ViewBilling;
         }
