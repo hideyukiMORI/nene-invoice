@@ -834,7 +834,10 @@
      .doc-head (title + meta) → .doc-parties (宛先／発行元) → .doc-body
      (明細 .tbl + .totals). Case C: ruled, no shadow, square corners. */
   .doc {
-    background: var(--color-surface);
+    /* spec .doc background = --surface (pure white), which maps to the
+       frontend's --color-surface-raised — NOT --color-surface (= spec --bg,
+       the off-white page background). */
+    background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
   }
   .doc-head {
@@ -923,6 +926,13 @@
     display: flex;
     gap: 0.5rem; /* spec 8px */
     align-items: center;
+    flex-wrap: wrap;
+  }
+  /* page-head action button cluster (spec .actions) */
+  .actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem; /* spec 10px */
     flex-wrap: wrap;
   }
 
