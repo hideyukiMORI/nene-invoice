@@ -819,6 +819,122 @@
     font-weight: 700;
     color: var(--color-fg);
   }
+  /* outstanding balance row (spec .totals-row.balance / .over) */
+  .totals-row.balance .t-label,
+  .totals-row.balance .t-val {
+    color: var(--color-accent-deep);
+    font-weight: 700;
+  }
+  .totals-row.balance.over .t-label,
+  .totals-row.balance.over .t-val {
+    color: var(--color-danger);
+  }
+
+  /* ── Document layout (見積・請求の詳細／プレビュー) — spec .doc ──────────
+     .doc-head (title + meta) → .doc-parties (宛先／発行元) → .doc-body
+     (明細 .tbl + .totals). Case C: ruled, no shadow, square corners. */
+  .doc {
+    /* spec .doc background = --surface (pure white), which maps to the
+       frontend's --color-surface-raised — NOT --color-surface (= spec --bg,
+       the off-white page background). */
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+  }
+  .doc-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem; /* spec 24px */
+    padding: 1.5rem 1.625rem; /* spec 24px 26px */
+    border-bottom: 1px solid var(--color-border);
+  }
+  .doc-title {
+    font-size: 1.375rem; /* spec 22px */
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--color-fg);
+  }
+  .doc-id-num {
+    font-family: var(--font-num);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.875rem; /* spec 14px */
+    color: var(--color-fg-muted);
+    margin-top: 0.25rem; /* spec 4px */
+    font-weight: 500;
+  }
+  .doc-meta {
+    text-align: right;
+    font-size: 0.71875rem; /* spec 11.5px */
+    color: var(--color-fg-muted);
+    line-height: 1.9;
+  }
+  .doc-meta b {
+    color: var(--color-fg);
+    font-weight: 600;
+  }
+  .doc-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem; /* spec 24px */
+    padding: 1.25rem 1.625rem; /* spec 20px 26px */
+    border-bottom: 1px solid var(--color-border);
+  }
+  .party-label {
+    font-size: 0.625rem; /* spec 10px */
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-fg-faint);
+    font-weight: 600;
+    margin-bottom: 0.375rem; /* spec 6px */
+  }
+  .party-name {
+    font-size: 0.875rem; /* spec 14px */
+    font-weight: 700;
+    color: var(--color-fg);
+  }
+  .party-line {
+    font-size: 0.71875rem; /* spec 11.5px */
+    color: var(--color-fg-muted);
+    margin-top: 0.125rem; /* spec 2px */
+  }
+  .doc-body {
+    padding: 1.375rem 1.625rem; /* spec 22px 26px */
+  }
+  /* spec .totals { width: 300px; margin-left: auto } — scoped to the document
+     so the shared full-width .totals (used by the create form) is unaffected. */
+  .doc-body .totals {
+    width: 18.75rem; /* spec 300px */
+    margin-left: auto;
+  }
+
+  /* back link above a detail page heading (spec .nav-back) */
+  .nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem; /* spec 5px */
+    font-size: 0.75rem; /* spec 12px */
+    color: var(--color-fg-muted);
+    font-weight: 500;
+    margin-bottom: 0.75rem; /* spec 12px */
+    cursor: pointer;
+  }
+  .nav-back:hover {
+    color: var(--color-accent-deep);
+    text-decoration: none;
+  }
+  /* inline heading + badges cluster (spec .row-gap) */
+  .row-gap {
+    display: flex;
+    gap: 0.5rem; /* spec 8px */
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  /* page-head action button cluster (spec .actions) */
+  .actions {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem; /* spec 10px */
+    flex-wrap: wrap;
+  }
 
   /* right-aligned form action row */
   .form-actions-end {
@@ -2403,6 +2519,29 @@
     }
     .filter-foot button {
       flex: 1;
+    }
+    /* document collapses to a single column (spec .doc @media) */
+    .doc-head {
+      flex-direction: column;
+      gap: 0.75rem; /* spec 12px */
+      padding: 1.125rem 1rem; /* spec 18px 16px */
+    }
+    .doc-meta {
+      text-align: left;
+    }
+    .doc-parties {
+      grid-template-columns: 1fr;
+      gap: 1rem; /* spec 16px */
+      padding: 1rem;
+    }
+    .doc-body {
+      padding: 1rem;
+    }
+    .doc-body .totals {
+      width: 100%;
+    }
+    .doc-title {
+      font-size: 1.1875rem; /* spec 19px */
     }
   }
 
