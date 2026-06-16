@@ -16,7 +16,7 @@ export function InvoiceDetailPage() {
   const invoiceId = toInvoiceId(numericId)
 
   return (
-    <Stack gap="lg">
+    <Stack gap="lg" className="content-mid">
       <ViewInvoice invoiceId={invoiceId} />
       <IssueInvoice invoiceId={invoiceId} />
       <ManagePayments invoiceId={invoiceId} />
