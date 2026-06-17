@@ -74,10 +74,12 @@ Goal: connect to sibling products.
 
 - CSV export (clients, quotes, invoices, payments, audit; list-filter aware; formula-injection safe) ✅
 - CSV import (template-only, clients + items) — design first, see ADR 0011 / `explanation/csv-import-design.md`
+- MCP tool catalog ✅
+- Service-token registry + management UI (issue / list / revoke; `/admin/service-tokens`) ✅
+- Optional hosted card payment — PAY.JP gateway, per-invoice pay links, webhook ingress, gateway settings UI (ADR 0012 / 0013) ✅
+- Silent re-authentication via httpOnly refresh cookie (ADR 0014) ✅ — remember-me + idle/absolute timeout (#464) and pre-release security review (#465) outstanding
 - NeNe Records product catalog import
 - NeNe Concierge lead → draft client / quote webhook
-- MCP tool catalog
-- Optional payment gateway
 
 **Status: 🔄 in progress.**
 

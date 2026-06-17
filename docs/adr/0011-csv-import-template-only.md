@@ -108,6 +108,6 @@ Adopt a **template-only** import model with explicit, stated rejection reasons.
 ## Related
 
 - Issue: `#384`
-- PR: `#000`
+- PR: `#385` (ADR + design memo; status still `proposed` — implementation pending)
 - Supersedes: none
 - Superseded by: none

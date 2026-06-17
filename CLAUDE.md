@@ -19,7 +19,7 @@ Ops / MCP         ──→         │
 
 ## 現在の開発状況
 
-> **最終更新: 2026-06-04**（`docs/todo/current.md` が正本）
+> **最終更新: 2026-06-17**（`docs/todo/current.md` が正本）
 
 | フェーズ | 状態 |
 | --- | --- |
@@ -28,7 +28,7 @@ Ops / MCP         ──→         │
 | Phase 2 管理 UI（React）＋ 適格請求書 PDF ＋ ダッシュボード ＋ 監査ログ ＋ ja/en | ✅ 完了 |
 | Phase 3 Tier A 共有ホスティング（インストーラ・リリース ZIP・運用ガイド） | ✅ 完了 |
 | セキュリティ診断 Round 1–2 | ✅ 完了（指摘修正済み） |
-| Phase 4 エコシステム連携（Records / Concierge・決済GW） | 🔄 進行中（CSV エクスポート・一覧の検索/フィルタ/ソート・言語切替UI は実装済み） |
+| Phase 4 エコシステム連携（Records / Concierge・決済GW） | 🔄 進行中（CSV エクスポート・一覧の検索/フィルタ/ソート・言語切替UI・service token 運用・カード決済（PAY.JP；決済リンク/webhook/設定UI・ADR 0013）・認証セッション永続化（サイレント再認証・ADR 0014）は実装済み。残り: Records カタログ連携・Concierge webhook・remember-me/タイムアウト #464・リリース前セキュリティレビュー #465） |
 
 ---
 

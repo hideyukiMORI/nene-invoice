@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-06-08 (NeNe Clear 連携の税務サインオフ状況・Clear 側完了を反映; merged through #413)
+Last updated: 2026-06-17 (カード決済（PAY.JP）・service token 運用・認証セッション永続化（ADR 0014）の完了を反映; merged through #469)
 
 ## Recently merged
 
@@ -402,15 +402,17 @@ Phase 1–3 後の運用・UX 強化と Phase 4 着手分（すべて merged）:
 - **PDF 日本語文字化け修正（#245/#246）** — mPDF のフォント上書き解消＋合計欄のリテラル表示バグ修正。
 - **一覧の検索・フィルタ・ソート（#247〜#252）** — 請求書/見積書（番号・取引先名検索、状態・期限・金額レンジ、全カラムソート）、取引先（名称・担当者・メール・登録番号検索＋ソート）。一覧の取引先 ID 数字表示も名前表示に修正。
 - **vitest v4 更新（#226/#227）** — critical CVE（GHSA-5xrq-8626-4rwp）解消。
+- **service token レジストリ運用（#416 PR #418 backend / #417 PR #419 frontend）** — 発行済みトークンを `service_tokens` レジストリに記録（メタデータ＋`jti` のみ・値は保存しない）し、`/admin/service-tokens`（admin）で発行・一覧・失効。失効は `ServiceScopeMiddleware` が `jti` 照合で即時拒否（`401 service-token-revoked`）。
+- **カード決済（PAY.JP・ADR 0012/0013）** — 請求書受領側のカード決済を hosted-only（SAQ-A）で追加。`PaymentGatewayInterface` 抽象 + PAY.JP 実装・公開決済ページ（#439 PR #441）、請求書ごとの決済リンク生成/失効（#436 PR #438）、webhook ingress（#431 PR #442）、ゲートウェイ設定の状態確認・疎通テスト API/UI（#432 PR #443/#444）。第1弾 GW を PAY.JP に確定（ADR 0013）。
+- **認証セッション永続化 — サイレント再認証（ADR 0014）** — access token はメモリ保持のまま、httpOnly refresh cookie でリロード後もサイレント再認証。ADR 起票/採択（#458 PR #459/#461）、backend `POST /auth/refresh`・`/auth/logout`（ローテーション/reuse 検知/CSRF・#462 PR #466）、frontend 起動時サイレントリフレッシュ＋logout 連動（#463 PR #467）。`npm audit` の vite high を chore 解消（#468 PR #469）。
 
-## Next steps（Phase 4 残り）
+## Next steps
 
-Phase 1–3・セキュリティ診断・上記 UX 強化は完了。Phase 4 の残り：
+Phase 1–3・セキュリティ診断・上記 UX 強化・カード決済（PAY.JP）・service token 運用・認証セッション永続化（ADR 0014 の backend/frontend）は完了。残り：
 
-- **NeNe Clear service token 運用（#416 backend / #417 frontend）** — 🔄 進行中。発行済みトークンを `service_tokens` レジストリに記録（メタデータ＋`jti` のみ・値は保存しない）し、`/admin/service-tokens`（admin）で発行・一覧・失効。失効は `ServiceScopeMiddleware` が `jti` 照合で即時拒否（`401 service-token-revoked`）。#416 が backend、#417 がオペレーター UI。
+- **認証セッション永続化の残（ADR 0014）** — remember-me（「ログイン状態を保持」チェックボックス配線・refresh 寿命可変）＋アイドル/絶対タイムアウト（#464）、リリース前セキュリティレビュー（CSRF・ローテーション/reuse・revocation の横断確認、#465）。
 - **NeNe Records 商品カタログ連携** — 明細行への商品インポート
 - **NeNe Concierge webhook** — リード → 取引先/見積下書き自動生成
-- **決済ゲートウェイ連携** — Stripe 等（任意）
 - **ユーザー一覧の検索/ソート**（任意・通常少人数のため未対応）
 
 ### 技術的負債（既知・低優先）

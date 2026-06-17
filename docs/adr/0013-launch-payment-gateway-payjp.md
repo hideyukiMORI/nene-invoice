@@ -63,7 +63,7 @@ eligible, and support JPY. Distinguishing factors for our target operator
 ## Related
 
 - Issue: `#429`
-- PR: `#000`
+- PR: `#434` (ADR); implementation `#438` (pay links), `#441` (gateway + pay page), `#442` (webhook), `#443`/`#444` (gateway settings API/UI)
 - Parent decision: `docs/adr/0012-card-payment-on-invoices.md`
 - Comparison input: `docs/integrations/payment-gateway-comparison.md`
 - Accounting gate (blocks implementation): `#430`
