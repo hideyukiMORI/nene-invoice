@@ -352,6 +352,17 @@ $vsteps = [
     ['t' => '完了', 'd' => 'セットアップ終了'],
 ];
 
+// レンタルサーバーのホスト記入例プリセット（チップ）。
+$hosts = [
+    ['id' => 'sakura', 'label' => 'さくら', 'host' => 'mysqlXXX.db.sakura.ne.jp', 'db' => 'yourname_invoice', 'user' => 'yourname', 'note' => '「データベース」→ 該当 DB の「データベースサーバ」欄がホスト名です。'],
+    ['id' => 'heteml', 'label' => 'ヘテムル', 'host' => 'mysqlXXX.heteml.lib', 'db' => '_invoice', 'user' => '_user', 'note' => '「データベース」→「データベース一覧」の「ホスト名（DB サーバー）」を使います。'],
+    ['id' => 'xserver', 'label' => 'エックスサーバー', 'host' => 'mysqlXXXX.xserver.jp', 'db' => 'yourid_invoice', 'user' => 'yourid_user', 'note' => 'サーバーパネル「MySQL 設定」→「MySQL ホスト名」を確認してください。'],
+    ['id' => 'conoha', 'label' => 'ConoHa WING', 'host' => 'mysqlXXX.conoha.ne.jp', 'db' => 'yourname_invoice', 'user' => 'yourname', 'note' => '「データベース」→ 対象 DB の「ホスト名」をコピーしてください。'],
+    ['id' => 'other', 'label' => 'その他 / わからない', 'host' => 'localhost', 'db' => 'yourname_invoice', 'user' => 'yourname', 'note' => '契約中のレンタルサーバー管理画面（コントロールパネル）の「データベース」欄で確認できます。'],
+];
+
+$hasError = $errors !== [] || $fieldErrors !== [];
+
 // POST 値の復元用ヘルパー
 $old = static fn (string $k, string $default = ''): string => h($_POST[$k] ?? $default);
 
@@ -572,7 +583,7 @@ code{font-family:var(--font-num)}
 @media (prefers-reduced-motion:reduce){.done-mark{animation:none}}
 </style>
 </head>
-<body>
+<body data-view="<?= h($view) ?>" data-error="<?= $hasError ? '1' : '0' ?>">
 <div class="iz">
   <div class="iz-stage">
 
@@ -653,7 +664,11 @@ code{font-family:var(--font-num)}
         <div class="host-help">
           <div class="hh-q"><?= ico('help') ?>お使いのレンタルサーバーは？</div>
           <div class="hh-sub">選ぶと、ホスト名の<b>記入例</b>を自動入力します（実際の値はコントロールパネルでご確認ください）。</div>
-          <div class="host-chips" id="hostChips"></div>
+          <div class="host-chips" id="hostChips">
+            <?php foreach ($hosts as $hh): ?>
+              <button type="button" class="host-chip" data-id="<?= h($hh['id']) ?>" data-host="<?= h($hh['host']) ?>" data-db="<?= h($hh['db']) ?>" data-user="<?= h($hh['user']) ?>" data-note="<?= h($hh['note']) ?>"><?= h($hh['label']) ?></button>
+            <?php endforeach; ?>
+          </div>
           <button type="button" class="linkbtn cp-toggle" id="cpToggle">コントロールパネルのどこを見る？</button>
           <div class="cp-diagram" id="cpDiagram" hidden>
             <div class="cp-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="cp-url">https://cp.your-host.example/database</span></div>
@@ -749,7 +764,7 @@ code{font-family:var(--font-num)}
             <label class="label" for="admin_email">管理者メールアドレス<span class="req">*</span>
               <span class="tip" tabindex="0">?<span class="tip-body">最初の管理者（admin）アカウントのログイン ID になります。運用担当者のメールを推奨します。</span></span>
             </label>
-            <input id="admin_email" name="admin_email" class="input<?= isset($fieldErrors['email']) ? ' is-error' : '' ?>" value="<?= $old('admin_email') ?>" placeholder="例: admin@yourcompany.co.jp" required>
+            <input id="admin_email" name="admin_email" type="email" class="input<?= isset($fieldErrors['email']) ? ' is-error' : '' ?>" value="<?= $old('admin_email') ?>" placeholder="例: admin@yourcompany.co.jp" required>
             <?php if (isset($fieldErrors['email'])): ?><p class="err-text"><?= ico('warn') ?><?= h($fieldErrors['email']) ?></p><?php else: ?><p class="hint">このメールが<b>最初の管理者ログイン ID</b> になります。</p><?php endif; ?>
           </div>
 
@@ -810,91 +825,6 @@ code{font-family:var(--font-num)}
   </div>
 </div>
 
-<script>
-(function () {
-  // ---- アイコン（チェブロン・スピナー・チェック） ----
-  var CHEVRON = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7.5l5 5 5-5"/></svg>';
-  var CHECK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>';
-  var EYE = <?= json_encode(ico('eye')) ?>;
-  var EYEOFF = <?= json_encode(ico('eyeoff')) ?>;
-
-  // ---- パスワード表示切替 ----
-  document.querySelectorAll('.pw-eye').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var inp = document.getElementById(btn.dataset.pw);
-      if (!inp) return;
-      var show = inp.type === 'password';
-      inp.type = show ? 'text' : 'password';
-      btn.innerHTML = show ? EYEOFF : EYE;
-    });
-  });
-
-  // ---- ホストプリセット + コントロールパネル図（DB 画面のみ） ----
-  var HOSTS = [
-    { id: 'sakura', label: 'さくら', host: 'mysqlXXX.db.sakura.ne.jp', db: 'yourname_invoice', user: 'yourname', note: '「データベース」→ 該当 DB の「データベースサーバ」欄がホスト名です。' },
-    { id: 'heteml', label: 'ヘテムル', host: 'mysqlXXX.heteml.lib', db: '_invoice', user: '_user', note: '「データベース」→「データベース一覧」の「ホスト名（DB サーバー）」を使います。' },
-    { id: 'xserver', label: 'エックスサーバー', host: 'mysqlXXXX.xserver.jp', db: 'yourid_invoice', user: 'yourid_user', note: 'サーバーパネル「MySQL 設定」→「MySQL ホスト名」を確認してください。' },
-    { id: 'conoha', label: 'ConoHa WING', host: 'mysqlXXX.conoha.ne.jp', db: 'yourname_invoice', user: 'yourname', note: '「データベース」→ 対象 DB の「ホスト名」をコピーしてください。' },
-    { id: 'other', label: 'その他 / わからない', host: 'localhost', db: 'yourname_invoice', user: 'yourname', note: '契約中のレンタルサーバー管理画面（コントロールパネル）の「データベース」欄で確認できます。' }
-  ];
-  var chipWrap = document.getElementById('hostChips');
-  if (chipWrap) {
-    var hostInput = document.getElementById('db_host');
-    var cpHost = document.getElementById('cpHost'), cpDb = document.getElementById('cpDb'),
-        cpUser = document.getElementById('cpUser'), cpNote = document.getElementById('cpNote');
-    var apply = function (h, fill) {
-      document.querySelectorAll('.host-chip').forEach(function (c) { c.classList.toggle('on', c.dataset.id === h.id); });
-      if (cpHost) cpHost.textContent = h.host;
-      if (cpDb) cpDb.textContent = h.db || 'yourname_invoice';
-      if (cpUser) cpUser.textContent = h.user || 'yourname';
-      if (cpNote) cpNote.innerHTML = h.note + ' 黄色の<b>ホスト名</b>を下のフォームにそのまま貼り付けてください。';
-      if (fill && hostInput && h.id !== 'other') hostInput.value = h.host;
-    };
-    HOSTS.forEach(function (h) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'host-chip'; b.dataset.id = h.id; b.textContent = h.label;
-      b.addEventListener('click', function () { apply(h, true); });
-      chipWrap.appendChild(b);
-    });
-
-    var cpToggle = document.getElementById('cpToggle'), cpDiagram = document.getElementById('cpDiagram');
-    cpToggle.innerHTML = 'コントロールパネルのどこを見る？' + CHEVRON;
-    cpToggle.addEventListener('click', function () {
-      var open = cpDiagram.hasAttribute('hidden');
-      if (open) { cpDiagram.removeAttribute('hidden'); cpToggle.classList.add('open'); }
-      else { cpDiagram.setAttribute('hidden', ''); cpToggle.classList.remove('open'); }
-    });
-  }
-
-  // ---- 送信時のローディング表示（接続確認 → テーブル作成 → 設定保存） ----
-  var view = document.getElementById('izView'), loading = document.getElementById('izLoading');
-  function startLoading() {
-    if (!view || !loading) return;
-    view.setAttribute('hidden', '');
-    loading.removeAttribute('hidden');
-    var lis = loading.querySelectorAll('[data-ss]'), bar = document.getElementById('ldBar');
-    var i = 0;
-    var advance = function () {
-      lis.forEach(function (li, n) {
-        li.className = n < i ? 'ss-done' : n === i ? 'ss-active' : 'ss-pending';
-        var ic = li.querySelector('.ss-ic'), meta = li.querySelector('.ss-meta');
-        ic.innerHTML = n < i ? CHECK : n === i ? '<span class="spinner"></span>' : '';
-        meta.textContent = n < i ? '完了' : n === i ? '実行中…' : '待機中';
-      });
-      if (bar) bar.style.width = Math.round((i / lis.length) * 100) + '%';
-    };
-    advance();
-    // サーバー応答までの体感進捗（実際の遷移はサーバー応答で起きる）。
-    [900, 1900, 2900].forEach(function (ms, n) { setTimeout(function () { i = n + 1; advance(); }, ms); });
-  }
-  ['dbForm', 'adminForm'].forEach(function (id) {
-    var f = document.getElementById(id);
-    if (f) f.addEventListener('submit', function () {
-      Array.prototype.forEach.call(f.querySelectorAll('button[type=submit]'), function (b) { b.disabled = true; });
-      startLoading();
-    });
-  });
-})();
-</script>
+<script src="installer.js"></script>
 </body>
 </html>
