@@ -1,4 +1,10 @@
+import { apiBasePath } from '@/shared/config/app-base'
 import { AppError } from './errors'
+
+/** Prefixes an absolute API path with the install base (ADR 0015); no-op at root. */
+function apiUrl(path: string): string {
+  return apiBasePath + path
+}
 
 /**
  * The only module that calls `fetch`. Transport only — no domain logic.
@@ -83,7 +89,7 @@ function refreshAccessToken(): Promise<boolean> {
     if (csrf !== null) headers[CSRF_HEADER] = csrf
 
     try {
-      const response = await fetch('/auth/refresh', { method: 'POST', headers })
+      const response = await fetch(apiUrl('/auth/refresh'), { method: 'POST', headers })
       if (!response.ok) return false
       const token = (safeJsonParse(await response.text()) as { token?: unknown } | null)?.token
       if (typeof token !== 'string') return false
@@ -120,7 +126,7 @@ export async function revokeSession(): Promise<void> {
   if (csrf !== null) headers[CSRF_HEADER] = csrf
 
   try {
-    await fetch('/auth/logout', { method: 'POST', headers })
+    await fetch(apiUrl('/auth/logout'), { method: 'POST', headers })
   } catch {
     // best-effort; the caller clears the in-memory token regardless
   }
@@ -150,7 +156,7 @@ async function request<T>(method: string, path: string, body?: Json, isRetry = f
 
   let response: Response
   try {
-    response = await fetch(path, {
+    response = await fetch(apiUrl(path), {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -193,7 +199,7 @@ async function requestBlob(path: string, isRetry = false): Promise<Blob> {
 
   let response: Response
   try {
-    response = await fetch(path, { method: 'GET', headers })
+    response = await fetch(apiUrl(path), { method: 'GET', headers })
   } catch {
     throw AppError.transport('Network request failed')
   }
@@ -221,7 +227,7 @@ async function postCsv<T>(path: string, csv: string, isRetry = false): Promise<T
 
   let response: Response
   try {
-    response = await fetch(path, { method: 'POST', headers, body: csv })
+    response = await fetch(apiUrl(path), { method: 'POST', headers, body: csv })
   } catch {
     throw AppError.transport('Network request failed')
   }

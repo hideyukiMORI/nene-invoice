@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { routerBasename } from '@/shared/config/app-base'
 import { AppShell } from '@/pages/layout'
 import { AuditLogsPage } from '@/pages/audit-logs'
 import { ClientCreatePage } from '@/pages/client-create'
@@ -26,41 +27,44 @@ import { UserCreatePage } from '@/pages/user-create'
 import { UserEditPage } from '@/pages/user-edit'
 import { ServiceTokensPage } from '@/pages/service-tokens'
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <AppShell />,
-    children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: 'dashboard', element: <DashboardPage /> },
-      { path: 'invoices', element: <InvoicesPage /> },
-      { path: 'invoices/new', element: <InvoiceCreatePage /> },
-      { path: 'invoices/:id', element: <InvoiceDetailPage /> },
-      { path: 'clients', element: <ClientsPage /> },
-      { path: 'clients/new', element: <ClientCreatePage /> },
-      { path: 'clients/import', element: <ClientImportPage /> },
-      { path: 'clients/:id/edit', element: <ClientEditPage /> },
-      { path: 'items', element: <ItemsPage /> },
-      { path: 'items/new', element: <ItemCreatePage /> },
-      { path: 'items/import', element: <ItemImportPage /> },
-      { path: 'items/:id/edit', element: <ItemEditPage /> },
-      { path: 'quotes', element: <QuotesPage /> },
-      { path: 'quotes/new', element: <QuoteCreatePage /> },
-      { path: 'quotes/:id', element: <QuoteDetailPage /> },
-      { path: 'templates', element: <TemplatesPage /> },
-      { path: 'templates/new', element: <TemplateCreatePage /> },
-      { path: 'templates/:id/edit', element: <TemplateEditPage /> },
-      { path: 'settings', element: <CompanySettingsPage /> },
-      { path: 'users', element: <UsersPage /> },
-      { path: 'users/new', element: <UserCreatePage /> },
-      { path: 'users/:id/edit', element: <UserEditPage /> },
-      { path: 'audit-logs', element: <AuditLogsPage /> },
-      { path: 'service-tokens', element: <ServiceTokensPage /> },
-      { path: 'help', element: <HelpPage /> },
-    ],
-  },
-  { path: '*', element: <Navigate to="/invoices" replace /> },
-])
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <AppShell />,
+      children: [
+        { index: true, element: <Navigate to="/dashboard" replace /> },
+        { path: 'dashboard', element: <DashboardPage /> },
+        { path: 'invoices', element: <InvoicesPage /> },
+        { path: 'invoices/new', element: <InvoiceCreatePage /> },
+        { path: 'invoices/:id', element: <InvoiceDetailPage /> },
+        { path: 'clients', element: <ClientsPage /> },
+        { path: 'clients/new', element: <ClientCreatePage /> },
+        { path: 'clients/import', element: <ClientImportPage /> },
+        { path: 'clients/:id/edit', element: <ClientEditPage /> },
+        { path: 'items', element: <ItemsPage /> },
+        { path: 'items/new', element: <ItemCreatePage /> },
+        { path: 'items/import', element: <ItemImportPage /> },
+        { path: 'items/:id/edit', element: <ItemEditPage /> },
+        { path: 'quotes', element: <QuotesPage /> },
+        { path: 'quotes/new', element: <QuoteCreatePage /> },
+        { path: 'quotes/:id', element: <QuoteDetailPage /> },
+        { path: 'templates', element: <TemplatesPage /> },
+        { path: 'templates/new', element: <TemplateCreatePage /> },
+        { path: 'templates/:id/edit', element: <TemplateEditPage /> },
+        { path: 'settings', element: <CompanySettingsPage /> },
+        { path: 'users', element: <UsersPage /> },
+        { path: 'users/new', element: <UserCreatePage /> },
+        { path: 'users/:id/edit', element: <UserEditPage /> },
+        { path: 'audit-logs', element: <AuditLogsPage /> },
+        { path: 'service-tokens', element: <ServiceTokensPage /> },
+        { path: 'help', element: <HelpPage /> },
+      ],
+    },
+    { path: '*', element: <Navigate to="/invoices" replace /> },
+  ],
+  { basename: routerBasename },
+)
 
 export function AppRouter() {
   return <RouterProvider router={router} />
