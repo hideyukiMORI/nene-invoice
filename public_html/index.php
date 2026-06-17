@@ -13,6 +13,20 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+// php built-in server only: serve real static files (admin/assets/*, favicons)
+// as-is by returning false from the router script. Production Apache handles this
+// via the `.htaccess` `!-f` condition and never invokes index.php for existing
+// files, so this branch is dead there (and guarded to the cli-server SAPI, which
+// only the php built-in server uses, to be safe).
+if (PHP_SAPI === 'cli-server') {
+    $requestedPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $candidate = is_string($requestedPath) ? realpath(__DIR__ . $requestedPath) : false;
+
+    if ($candidate !== false && is_file($candidate) && str_starts_with($candidate, __DIR__ . DIRECTORY_SEPARATOR)) {
+        return false;
+    }
+}
+
 // Do not advertise the PHP version (defense in depth; `expose_php` may be On).
 header_remove('X-Powered-By');
 
