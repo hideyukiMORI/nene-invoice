@@ -154,11 +154,36 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                RefreshTokenRepositoryInterface::class,
+                static function (ContainerInterface $container): RefreshTokenRepositoryInterface {
+                    $query = $container->get(DatabaseQueryExecutorInterface::class);
+
+                    if (!$query instanceof DatabaseQueryExecutorInterface) {
+                        throw new LogicException('Database query executor service is invalid.');
+                    }
+
+                    return new PdoRefreshTokenRepository($query);
+                },
+            )
+            ->set(
+                RefreshTokenIssuer::class,
+                static function (ContainerInterface $container): RefreshTokenIssuer {
+                    $repository = $container->get(RefreshTokenRepositoryInterface::class);
+
+                    if (!$repository instanceof RefreshTokenRepositoryInterface) {
+                        throw new LogicException('Refresh token repository service is invalid.');
+                    }
+
+                    return new RefreshTokenIssuer($repository);
+                },
+            )
+            ->set(
                 LoginUseCaseInterface::class,
                 static function (ContainerInterface $container): LoginUseCaseInterface {
                     $users = $container->get(UserRepositoryInterface::class);
                     $tokenIssuer = $container->get(TokenIssuerInterface::class);
                     $query = $container->get(DatabaseQueryExecutorInterface::class);
+                    $refreshTokenIssuer = $container->get(RefreshTokenIssuer::class);
 
                     if (!$users instanceof UserRepositoryInterface) {
                         throw new LogicException('User repository service is invalid.');
@@ -172,7 +197,50 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query));
+                    if (!$refreshTokenIssuer instanceof RefreshTokenIssuer) {
+                        throw new LogicException('Refresh token issuer service is invalid.');
+                    }
+
+                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query), $refreshTokenIssuer);
+                },
+            )
+            ->set(
+                RefreshSessionUseCaseInterface::class,
+                static function (ContainerInterface $container): RefreshSessionUseCaseInterface {
+                    $repository = $container->get(RefreshTokenRepositoryInterface::class);
+                    $users = $container->get(UserRepositoryInterface::class);
+                    $issuer = $container->get(RefreshTokenIssuer::class);
+                    $tokenIssuer = $container->get(TokenIssuerInterface::class);
+
+                    if (!$repository instanceof RefreshTokenRepositoryInterface) {
+                        throw new LogicException('Refresh token repository service is invalid.');
+                    }
+
+                    if (!$users instanceof UserRepositoryInterface) {
+                        throw new LogicException('User repository service is invalid.');
+                    }
+
+                    if (!$issuer instanceof RefreshTokenIssuer) {
+                        throw new LogicException('Refresh token issuer service is invalid.');
+                    }
+
+                    if (!$tokenIssuer instanceof TokenIssuerInterface) {
+                        throw new LogicException('Token issuer service is invalid.');
+                    }
+
+                    return new RefreshSessionUseCase($repository, $users, $issuer, $tokenIssuer);
+                },
+            )
+            ->set(
+                LogoutUseCaseInterface::class,
+                static function (ContainerInterface $container): LogoutUseCaseInterface {
+                    $repository = $container->get(RefreshTokenRepositoryInterface::class);
+
+                    if (!$repository instanceof RefreshTokenRepositoryInterface) {
+                        throw new LogicException('Refresh token repository service is invalid.');
+                    }
+
+                    return new LogoutUseCase($repository);
                 },
             )
             ->set(
@@ -232,10 +300,56 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                RefreshHandler::class,
+                static function (ContainerInterface $container): RefreshHandler {
+                    $useCase = $container->get(RefreshSessionUseCaseInterface::class);
+                    $json = $container->get(JsonResponseFactory::class);
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$useCase instanceof RefreshSessionUseCaseInterface) {
+                        throw new LogicException('Refresh session use case service is invalid.');
+                    }
+
+                    if (!$json instanceof JsonResponseFactory) {
+                        throw new LogicException('JSON response factory service is invalid.');
+                    }
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    return new RefreshHandler($useCase, $json, $problemDetails);
+                },
+            )
+            ->set(
+                LogoutHandler::class,
+                static function (ContainerInterface $container): LogoutHandler {
+                    $useCase = $container->get(LogoutUseCaseInterface::class);
+                    $json = $container->get(JsonResponseFactory::class);
+                    $problemDetails = $container->get(ProblemDetailsResponseFactory::class);
+
+                    if (!$useCase instanceof LogoutUseCaseInterface) {
+                        throw new LogicException('Logout use case service is invalid.');
+                    }
+
+                    if (!$json instanceof JsonResponseFactory) {
+                        throw new LogicException('JSON response factory service is invalid.');
+                    }
+
+                    if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                        throw new LogicException('Problem details response factory service is invalid.');
+                    }
+
+                    return new LogoutHandler($useCase, $json, $problemDetails);
+                },
+            )
+            ->set(
                 AuthRouteRegistrar::class,
                 static function (ContainerInterface $container): AuthRouteRegistrar {
                     $loginHandler = $container->get(LoginHandler::class);
                     $getCurrentUserHandler = $container->get(GetCurrentUserHandler::class);
+                    $refreshHandler = $container->get(RefreshHandler::class);
+                    $logoutHandler = $container->get(LogoutHandler::class);
 
                     if (!$loginHandler instanceof LoginHandler) {
                         throw new LogicException('Login handler service is invalid.');
@@ -245,7 +359,15 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Get current user handler service is invalid.');
                     }
 
-                    return new AuthRouteRegistrar($loginHandler, $getCurrentUserHandler);
+                    if (!$refreshHandler instanceof RefreshHandler) {
+                        throw new LogicException('Refresh handler service is invalid.');
+                    }
+
+                    if (!$logoutHandler instanceof LogoutHandler) {
+                        throw new LogicException('Logout handler service is invalid.');
+                    }
+
+                    return new AuthRouteRegistrar($loginHandler, $getCurrentUserHandler, $refreshHandler, $logoutHandler);
                 },
             );
     }

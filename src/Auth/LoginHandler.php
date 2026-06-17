@@ -54,6 +54,19 @@ final readonly class LoginHandler implements RequestHandlerInterface
             return $this->problemDetails->create($request, 'invalid-credentials', 'Invalid Credentials', 401, $e->getMessage());
         }
 
-        return $this->json->create(['token' => $output->token]);
+        return $this->withSessionCookies($this->json->create(['token' => $output->token]), $output->refreshToken);
+    }
+
+    /**
+     * Seats the rotated refresh token in its httpOnly cookie and issues a fresh
+     * double-submit CSRF cookie (readable by JS) alongside it (ADR 0014).
+     */
+    private function withSessionCookies(ResponseInterface $response, IssuedRefreshToken $refreshToken): ResponseInterface
+    {
+        $csrfToken = RefreshTokenSecret::generateCsrfToken();
+
+        return $response
+            ->withAddedHeader('Set-Cookie', SessionCookies::setRefresh($refreshToken->rawToken, $refreshToken->expiresAtTimestamp))
+            ->withAddedHeader('Set-Cookie', SessionCookies::setCsrf($csrfToken, $refreshToken->expiresAtTimestamp));
     }
 }

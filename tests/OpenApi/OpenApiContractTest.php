@@ -26,6 +26,8 @@ final class OpenApiContractTest extends TestCase
         'getDashboard',
         'listLineItemSuggestions',
         'login',
+        'refreshSession',
+        'logout',
         'getCurrentUser',
         'listAuditLogs',
         'exportAuditLogs',

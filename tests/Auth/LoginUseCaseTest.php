@@ -8,9 +8,11 @@ use Nene2\Auth\LocalBearerTokenVerifier;
 use NeneInvoice\Auth\InvalidCredentialsException;
 use NeneInvoice\Auth\LoginInput;
 use NeneInvoice\Auth\LoginUseCase;
+use NeneInvoice\Auth\RefreshTokenIssuer;
 use NeneInvoice\Auth\Role;
 use NeneInvoice\Auth\TooManyLoginAttemptsException;
 use NeneInvoice\Tests\Support\InMemoryLoginThrottle;
+use NeneInvoice\Tests\Support\InMemoryRefreshTokenRepository;
 use NeneInvoice\User\User;
 use NeneInvoice\User\UserRepositoryInterface;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +24,7 @@ final class LoginUseCaseTest extends TestCase
     public function test_issues_token_with_identity_claims_on_valid_credentials(): void
     {
         $verifier = new LocalBearerTokenVerifier(self::SECRET);
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), $verifier, new InMemoryLoginThrottle());
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), $verifier, new InMemoryLoginThrottle(), $this->refreshIssuer());
 
         $output = $useCase->execute(new LoginInput('admin@example.com', 'correct-horse'));
 
@@ -34,7 +36,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_rejects_wrong_password(): void
     {
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle());
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle(), $this->refreshIssuer());
 
         $this->expectException(InvalidCredentialsException::class);
         $useCase->execute(new LoginInput('admin@example.com', 'wrong'));
@@ -42,7 +44,7 @@ final class LoginUseCaseTest extends TestCase
 
     public function test_rejects_unknown_email(): void
     {
-        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle());
+        $useCase = new LoginUseCase($this->repositoryWithUser('correct-horse'), new LocalBearerTokenVerifier(self::SECRET), new InMemoryLoginThrottle(), $this->refreshIssuer());
 
         $this->expectException(InvalidCredentialsException::class);
         $useCase->execute(new LoginInput('nobody@example.com', 'correct-horse'));
@@ -54,6 +56,7 @@ final class LoginUseCaseTest extends TestCase
             $this->repositoryWithUser('correct-horse', 'disabled'),
             new LocalBearerTokenVerifier(self::SECRET),
             new InMemoryLoginThrottle(),
+            $this->refreshIssuer(),
         );
 
         $this->expectException(InvalidCredentialsException::class);
@@ -66,6 +69,7 @@ final class LoginUseCaseTest extends TestCase
             $this->repositoryWithUser('correct-horse', 'invited'),
             new LocalBearerTokenVerifier(self::SECRET),
             new InMemoryLoginThrottle(),
+            $this->refreshIssuer(),
         );
 
         $this->expectException(InvalidCredentialsException::class);
@@ -83,6 +87,7 @@ final class LoginUseCaseTest extends TestCase
             $this->repositoryWithUser('correct-horse'),
             new LocalBearerTokenVerifier(self::SECRET),
             $throttle,
+            $this->refreshIssuer(),
         );
 
         // Even with the correct password, the IP is over the failure ceiling.
@@ -97,6 +102,7 @@ final class LoginUseCaseTest extends TestCase
             $this->repositoryWithUser('correct-horse'),
             new LocalBearerTokenVerifier(self::SECRET),
             $throttle,
+            $this->refreshIssuer(),
         );
 
         try {
@@ -117,11 +123,17 @@ final class LoginUseCaseTest extends TestCase
             $this->repositoryWithUser('correct-horse'),
             new LocalBearerTokenVerifier(self::SECRET),
             $throttle,
+            $this->refreshIssuer(),
         );
 
         $useCase->execute(new LoginInput('admin@example.com', 'correct-horse', '203.0.113.9'));
 
         self::assertSame(0, $throttle->countFailuresSince('203.0.113.9', '1970-01-01 00:00:00'));
+    }
+
+    private function refreshIssuer(): RefreshTokenIssuer
+    {
+        return new RefreshTokenIssuer(new InMemoryRefreshTokenRepository());
     }
 
     private function repositoryWithUser(string $plainPassword, string $status = 'active'): UserRepositoryInterface
