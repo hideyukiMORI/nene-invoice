@@ -6,6 +6,7 @@ namespace NeneInvoice\Auth;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Http\BasePath;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -34,9 +35,10 @@ final readonly class LogoutHandler implements RequestHandlerInterface
         }
 
         $this->useCase->execute(SessionCookies::refreshToken($request));
+        $base = BasePath::fromRequest($request);
 
         return $this->json->createEmpty(204)
-            ->withAddedHeader('Set-Cookie', SessionCookies::clearRefresh())
-            ->withAddedHeader('Set-Cookie', SessionCookies::clearCsrf());
+            ->withAddedHeader('Set-Cookie', SessionCookies::clearRefresh($base))
+            ->withAddedHeader('Set-Cookie', SessionCookies::clearCsrf($base));
     }
 }
