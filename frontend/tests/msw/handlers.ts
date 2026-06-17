@@ -6,6 +6,10 @@ import { buildInvoiceDto, buildInvoiceWithLinesDto } from '@tests/factories/invo
 export const handlers = [
   http.post('/auth/login', () => HttpResponse.json({ token: 'test-token' })),
 
+  http.post('/auth/refresh', () => HttpResponse.json({ token: 'refreshed-token' })),
+
+  http.post('/auth/logout', () => new HttpResponse(null, { status: 204 })),
+
   http.get('/admin/me', () =>
     HttpResponse.json({ id: 1, email: 'admin@example.com', role: 'admin', organization_id: 1 }),
   ),

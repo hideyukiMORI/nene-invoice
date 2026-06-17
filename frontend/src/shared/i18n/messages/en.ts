@@ -79,6 +79,7 @@ export const enMessages: MessageCatalog = {
   'admin.auth.trustQualified': 'Qualified-invoice ready',
   'admin.auth.failed': 'Incorrect email or password.',
   'admin.auth.sessionExpired': 'Your session has expired. Please sign in again.',
+  'admin.auth.restoringSession': 'Restoring your session…',
   'admin.auth.emailInvalid': 'Enter a valid email address.',
   'admin.auth.passwordRequired': 'Enter your password.',
   'admin.account.signedInAs': 'Signed in as {{email}}',

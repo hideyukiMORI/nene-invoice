@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { hasAuthToken, setAuthToken } from '@/shared/api/client'
 import { server } from '@tests/msw/server'
 import { renderHookWithProviders } from '@tests/render/render-with-providers'
-import { useLogin } from './mutations'
+import { signOut, useLogin } from './mutations'
 
 describe('useLogin', () => {
   it('stores the bearer token on success', async () => {
@@ -44,5 +44,27 @@ describe('useLogin', () => {
     })
     expect(result.current.error?.slug).toBe('invalid-credentials')
     expect(hasAuthToken()).toBe(false)
+  })
+})
+
+describe('signOut', () => {
+  it('clears the in-memory token and revokes the session server-side', async () => {
+    let loggedOut = false
+    server.use(
+      http.post('/auth/logout', () => {
+        loggedOut = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    setAuthToken('active-token')
+
+    signOut()
+
+    // Local token is cleared immediately (fail-closed, no wait on the network) …
+    expect(hasAuthToken()).toBe(false)
+    // … and the server-side revocation is fired best-effort.
+    await waitFor(() => {
+      expect(loggedOut).toBe(true)
+    })
   })
 })

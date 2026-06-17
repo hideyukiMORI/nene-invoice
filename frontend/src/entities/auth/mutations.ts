@@ -1,5 +1,5 @@
 import { useMutation, type UseMutationResult } from '@tanstack/react-query'
-import { apiClient, setAuthToken } from '@/shared/api/client'
+import { apiClient, revokeSession, setAuthToken } from '@/shared/api/client'
 import type { AppError } from '@/shared/api/errors'
 import type { LoginResponseDto } from './api-types'
 import type { Credentials } from './model'
@@ -21,7 +21,13 @@ export function useLogin(): UseMutationResult<string, AppError, Credentials> {
   })
 }
 
-/** Clears the in-memory session; the auth shell observes this and shows login. */
+/**
+ * Signs out (ADR 0014): fires a best-effort server-side revocation of the
+ * refresh-token family (and cookie clear), then clears the in-memory token
+ * immediately so the fail-closed auth shell shows login without waiting on the
+ * network.
+ */
 export function signOut(): void {
+  void revokeSession()
   setAuthToken(null)
 }
