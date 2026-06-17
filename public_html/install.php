@@ -117,10 +117,14 @@ function applySchema(PDO $pdo, string $schemaFile): void
         throw new RuntimeException('スキーマファイルを読み込めませんでした: ' . $schemaFile);
     }
 
-    // 空行・コメント行を除いてセミコロン区切りで分割
+    // 分割前に `--` 行コメントを除去する。コメント自体に `;` を含むことがあり
+    // （例: "-- Metadata only; the token value is never stored."）、先に `;` で
+    // 分割するとコメント後半が SQL 文として実行され構文エラーになるため。
+    $withoutComments = preg_replace('/^\s*--.*$/m', '', $sql);
+
     $statements = array_filter(
-        array_map('trim', explode(';', $sql)),
-        static fn (string $s): bool => $s !== '' && !str_starts_with(ltrim($s), '--'),
+        array_map('trim', explode(';', (string) $withoutComments)),
+        static fn (string $s): bool => $s !== '',
     );
 
     foreach ($statements as $stmt) {

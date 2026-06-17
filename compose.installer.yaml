@@ -1,0 +1,58 @@
+# NeNe Invoice — インストーラ疑似体験スタック（ADR 0015 / Tier A 共有ホスティング相当）
+#
+# 開発スタック（compose.yaml）と違い、マイグレーションも seed も**自動実行しない**。
+# 空の MySQL と「新規展開されたアプリ」を用意し、ブラウザで install.php を体験する。
+#
+# 使い方:
+#   1) npm run build --prefix frontend          # 管理 UI をビルド（未ビルドなら）
+#   2) sh docker/installer-demo/setup.sh         # 新規展開を /tmp に作成（repo を汚さない）
+#   3) docker compose -p nene-installer -f compose.installer.yaml up -d --build
+#   4) ブラウザで http://localhost:8595/install.php
+#        DB: host=mysql / port=3306 / name=nene_invoice / user=nene_invoice / pass=nene_invoice
+#        管理者: 任意のメール・8文字以上のパスワード・会社名
+#   5) 完了後 http://localhost:8595/ でログイン
+#   後始末:
+#     docker compose -p nene-installer -f compose.installer.yaml down -v
+#     rm -rf /tmp/nene-installer-demo
+#
+# ポートは CLAUDE.md の 85**/35** 規約に従う（dev: 8510/3585・security: 8590/3385 と非衝突）。
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/installer-demo/Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8595:80"
+    volumes:
+      # リポジトリ外の「新規展開」をドキュメントルートにする。install.php が書く
+      # .env / var/.installed はここに残り、開発用の repo には影響しない。
+      - /tmp/nene-installer-demo:/var/www/html
+
+  mysql:
+    image: mysql:8.4
+    # 空の DB を 1 つだけ用意（共有ホスティングで「DB を 1 個もらった」状態）。
+    # マイグレーションも seed も行わない — スキーマ投入は install.php の役目。
+    environment:
+      MYSQL_DATABASE: nene_invoice
+      MYSQL_USER: nene_invoice
+      MYSQL_PASSWORD: nene_invoice
+      MYSQL_ROOT_PASSWORD: nene_invoice_root
+    ports:
+      - "3595:3306"
+    volumes:
+      - installer-mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  installer-mysql-data:

@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `clients` (
     `id`                  INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`     INT          NOT NULL,
     `name`                VARCHAR(255) NOT NULL,
+    `name_kana`           VARCHAR(255) DEFAULT NULL,
     `contact_name`        VARCHAR(255) DEFAULT NULL,
     `email`               VARCHAR(255) DEFAULT NULL,
     `billing_address`     TEXT         DEFAULT NULL,
@@ -245,4 +246,57 @@ CREATE TABLE IF NOT EXISTS `payment_links` (
     KEY `idx_payment_links_invoice_id` (`invoice_id`),
     KEY `idx_payment_links_gateway_session_id` (`gateway_session_id`),
     KEY `idx_payment_links_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- refresh_tokens — rotating refresh tokens for silent re-authentication
+-- (ADR 0014). Only the SHA-256 hash of the opaque token is stored. `family_id`
+-- ties a rotation lineage so presenting a used/revoked token revokes the family.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `refresh_tokens` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          DEFAULT NULL,
+    `user_id`         INT          NOT NULL,
+    `family_id`       VARCHAR(64)  NOT NULL,
+    `token_hash`      VARCHAR(64)  NOT NULL,
+    `issued_at`       DATETIME     NOT NULL,
+    `expires_at`      DATETIME     NOT NULL,
+    `used_at`         DATETIME     DEFAULT NULL,
+    `revoked_at`      DATETIME     DEFAULT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    UNIQUE KEY `uniq_refresh_tokens_token_hash` (`token_hash`),
+    KEY `idx_refresh_tokens_family_id` (`family_id`),
+    KEY `idx_refresh_tokens_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- items — reusable line-item master (品目マスタ), soft-deletable.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `items` (
+    `id`                       INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`          INT          NOT NULL,
+    `description`              VARCHAR(255) NOT NULL,
+    `default_unit_price_cents` INT          NOT NULL DEFAULT 0,
+    `default_tax_rate_bps`     INT          NOT NULL DEFAULT 1000,
+    `is_deleted`               TINYINT(1)   NOT NULL DEFAULT 0,
+    `deleted_at`               DATETIME     DEFAULT NULL,
+    `created_at`               DATETIME     NOT NULL,
+    `updated_at`               DATETIME     NOT NULL,
+    KEY `idx_items_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- templates — reusable document templates (header + shared line_items),
+-- soft-deletable.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `templates` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          NOT NULL,
+    `name`            VARCHAR(255) NOT NULL,
+    `notes`           TEXT         DEFAULT NULL,
+    `is_deleted`      TINYINT(1)   NOT NULL DEFAULT 0,
+    `deleted_at`      DATETIME     DEFAULT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    `updated_at`      DATETIME     NOT NULL,
+    KEY `idx_templates_organization_id` (`organization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
