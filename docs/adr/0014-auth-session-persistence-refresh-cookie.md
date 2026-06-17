@@ -156,8 +156,8 @@ scope here).
 
 ## Related
 
-- Issue: `#458`
-- PR: `#000`
+- Issue: `#458` (ADR); implementation `#462` (backend), `#463` (frontend), `#464` (remember-me), `#465` (security review)
+- PR: `#459` (proposed), `#461` (accepted); implementation `#466` (backend), `#467` (frontend)
 - Related: ADR 0006 (multi-tenancy and roles — refresh must stay tenant-scoped)
 - Supersedes: none
 - Superseded by: none

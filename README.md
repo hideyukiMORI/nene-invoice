@@ -21,7 +21,7 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 
 ## Quick Start
 
-**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress; CSV export already landed.
+**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress: CSV export, service-token management, optional hosted card payments (PAY.JP — pay links, webhook, gateway settings; [ADR 0013](./docs/adr/0013-launch-payment-gateway-payjp.md)), and silent re-authentication via an httpOnly refresh cookie ([ADR 0014](./docs/adr/0014-auth-session-persistence-refresh-cookie.md)) have landed.
 
 ### Option A — Docker (recommended, fastest)
 
