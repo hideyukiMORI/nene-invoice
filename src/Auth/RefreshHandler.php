@@ -6,6 +6,7 @@ namespace NeneInvoice\Auth;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\JsonResponseFactory;
+use NeneInvoice\Http\BasePath;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -46,18 +47,21 @@ final readonly class RefreshHandler implements RequestHandlerInterface
             return $this->failClosed($request);
         }
 
+        $base = BasePath::fromRequest($request);
         $csrfToken = RefreshTokenSecret::generateCsrfToken();
 
         return $this->json->create(['token' => $session->accessToken])
-            ->withAddedHeader('Set-Cookie', SessionCookies::setRefresh($session->refreshToken->rawToken, $session->refreshToken->expiresAtTimestamp))
-            ->withAddedHeader('Set-Cookie', SessionCookies::setCsrf($csrfToken, $session->refreshToken->expiresAtTimestamp));
+            ->withAddedHeader('Set-Cookie', SessionCookies::setRefresh($session->refreshToken->rawToken, $session->refreshToken->expiresAtTimestamp, $base))
+            ->withAddedHeader('Set-Cookie', SessionCookies::setCsrf($csrfToken, $session->refreshToken->expiresAtTimestamp, $base));
     }
 
     private function failClosed(ServerRequestInterface $request): ResponseInterface
     {
+        $base = BasePath::fromRequest($request);
+
         return $this->problemDetails
             ->create($request, 'invalid-refresh-token', 'Unauthorized', 401, 'The session could not be refreshed.')
-            ->withAddedHeader('Set-Cookie', SessionCookies::clearRefresh())
-            ->withAddedHeader('Set-Cookie', SessionCookies::clearCsrf());
+            ->withAddedHeader('Set-Cookie', SessionCookies::clearRefresh($base))
+            ->withAddedHeader('Set-Cookie', SessionCookies::clearCsrf($base));
     }
 }

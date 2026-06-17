@@ -21,6 +21,24 @@ final class SessionCookiesTest extends TestCase
         self::assertStringContainsString('SameSite=Strict', $cookie);
     }
 
+    public function test_cookie_paths_are_scoped_to_the_install_base(): void
+    {
+        // Subdirectory install (ADR 0015): cookies must scope under /invoice.
+        $refresh = SessionCookies::setRefresh('raw', 0, '/invoice');
+        $csrf = SessionCookies::setCsrf('csrf', 0, '/invoice');
+
+        self::assertStringContainsString('Path=/invoice/auth', $refresh);
+        self::assertStringContainsString('Path=/invoice/', $csrf);
+        // Not over-scoped to the whole domain.
+        self::assertStringNotContainsString('Path=/;', $csrf);
+    }
+
+    public function test_clearing_cookies_uses_the_same_base_scoped_path(): void
+    {
+        self::assertStringContainsString('Path=/invoice/auth', SessionCookies::clearRefresh('/invoice'));
+        self::assertStringContainsString('Path=/invoice/', SessionCookies::clearCsrf('/invoice'));
+    }
+
     public function test_csrf_cookie_is_readable_but_secure_and_strict(): void
     {
         $cookie = SessionCookies::setCsrf('csrf-token', strtotime('2026-07-01 00:00:00 UTC'));

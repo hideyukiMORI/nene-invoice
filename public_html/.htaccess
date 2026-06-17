@@ -7,10 +7,13 @@ RewriteRule ^ index.php [QSA,L]
 # Hardening (Apache + mod_headers). The Server version and TLS-level HSTS are
 # ultimately the web server / TLS-terminating proxy's responsibility.
 #
-# These run at the Apache layer with `always`, so they also cover the statically
-# served SPA shell + assets (admin/index.html, admin/assets/*) — which bypass
-# index.php (the `!-f` rewrite condition) and thus the PHP SecurityHeadersMiddleware
-# (FE-1). Without them the admin HTML had no anti-clickjacking / CSP headers.
+# These run at the Apache layer with `always`, so they cover every response:
+# the statically served SPA assets (admin/assets/* — real files, the `!-f`
+# rewrite condition), the JSON API (index.php), AND the SPA HTML shell, which is
+# now served *through* index.php so the install base can be injected (ADR 0015).
+# `always` applies to PHP-generated responses too, so the shell keeps its
+# anti-clickjacking / CSP headers (FE-1). The injected tags (<base>, <meta>) are
+# CSP-safe — no inline script, which `script-src 'self'` would block.
 <IfModule mod_headers.c>
     Header always unset X-Powered-By
     Header unset X-Powered-By
