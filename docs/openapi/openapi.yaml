@@ -90,6 +90,51 @@ paths:
           $ref: '#/components/responses/ValidationFailed'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Silent re-authentication
+      description: >
+        Exchanges the httpOnly refresh cookie for a fresh in-memory access token
+        and rotates the refresh token (ADR 0014). Requires the double-submit CSRF
+        header. On any failure the session fails closed (401) and the cookies are
+        cleared, so the SPA falls back to the login screen.
+      operationId: refreshSession
+      security:
+        - refreshCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '200':
+          description: Access token re-issued; refresh + CSRF cookies rotated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/CsrfForbidden'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout (server-side revocation)
+      description: >
+        Revokes the refresh-token family server-side and clears the cookies
+        (ADR 0014). Idempotent: returns 204 and clears the cookies even when no
+        valid cookie is presented. Requires the double-submit CSRF header.
+      operationId: logout
+      security:
+        - refreshCookieAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfTokenHeader'
+      responses:
+        '204':
+          description: Session revoked; cookies cleared.
+        '403':
+          $ref: '#/components/responses/CsrfForbidden'
   /admin/me:
     get:
       tags: [Auth]
@@ -1941,6 +1986,13 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    refreshCookieAuth:
+      type: apiKey
+      in: cookie
+      name: ni_refresh
+      description: >
+        httpOnly refresh-token cookie issued at login (ADR 0014). Sent
+        automatically by the browser to the /auth path; never readable by JS.
   parameters:
     LimitParam:
       name: limit
@@ -1969,6 +2021,15 @@ components:
       schema:
         type: integer
         minimum: 1
+    CsrfTokenHeader:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: >
+        Double-submit CSRF token — must echo the readable `ni_csrf` cookie
+        (ADR 0014). Required on cookie-authenticated, state-changing endpoints.
+      schema:
+        type: string
   responses:
     Unauthorized:
       description: Missing or invalid bearer token, or bad credentials.
@@ -1978,6 +2039,12 @@ components:
             $ref: '#/components/schemas/ProblemDetails'
     InsufficientCapability:
       description: Authenticated but lacking the required capability.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    CsrfForbidden:
+      description: Double-submit CSRF token missing or invalid (ADR 0014).
       content:
         application/problem+json:
           schema:

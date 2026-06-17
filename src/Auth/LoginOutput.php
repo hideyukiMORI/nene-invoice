@@ -8,6 +8,7 @@ final readonly class LoginOutput
 {
     public function __construct(
         public string $token,
+        public IssuedRefreshToken $refreshToken,
     ) {
     }
 }

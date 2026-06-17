@@ -145,6 +145,8 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `cannot-delete-self` | A user cannot delete their own account (409) |
 | `invalid-credentials` | Login failed — wrong email or password |
 | `too-many-requests` | Too many failed login attempts from the source IP (429; login throttling) |
+| `invalid-refresh-token` | Refresh cookie missing/expired/invalid or principal ineligible — silent re-auth fails closed (401; ADR 0014) |
+| `csrf-token-invalid` | Double-submit CSRF check failed on a cookie-authenticated endpoint (403; ADR 0014) |
 | `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
 | `insufficient-capability` | Authenticated but lacks required capability |
 | `organization-not-resolved` | Tenant could not be resolved for the request (404; OrgResolverMiddleware) |
@@ -175,7 +177,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | operationId | Resource |
 | --- | --- |
 | `getHealth` | System |
-| `login`, `getCurrentUser` | Auth |
+| `login`, `refreshSession`, `logout`, `getCurrentUser` | Auth |
 | `listAuditLogs`, `exportAuditLogs` | Audit (admin oversight) |
 | `listOrganizations`, `getOrganizationById`, `createOrganization`, `deleteOrganization` | Organization (superadmin) |
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |

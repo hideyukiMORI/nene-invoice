@@ -26,6 +26,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
         private UserRepositoryInterface $users,
         private TokenIssuerInterface $tokenIssuer,
         private LoginThrottleInterface $throttle,
+        private RefreshTokenIssuer $refreshTokenIssuer,
     ) {
     }
 
@@ -69,6 +70,10 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
             'exp' => $now + self::TOKEN_TTL_SECONDS,
         ]);
 
-        return new LoginOutput($token);
+        // Start a fresh refresh-token family for this login (ADR 0014). The
+        // plaintext is returned to the handler to seat in the httpOnly cookie.
+        $refreshToken = $this->refreshTokenIssuer->issue((int) $user->id, $user->organizationId);
+
+        return new LoginOutput($token, $refreshToken);
     }
 }
