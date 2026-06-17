@@ -93,5 +93,7 @@ two ways:
 - Builds on: ADR 0001 (inherit NENE2 governance), ADR 0002 (separate from siblings)
 - See: `docs/explanation/product-vision.md` (audiences), `docs/roadmap.md` (Phase 3),
   `docs/explanation/glossary.md` (Tier A / Tier B)
+- Updated by: ADR 0015 (location-independent install — relaxes the "served from
+  the document root" assumption via runtime base-path detection)
 - Supersedes: none
 - Superseded by: none
