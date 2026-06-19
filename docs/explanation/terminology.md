@@ -209,6 +209,59 @@ Extend this list (do not improvise) when adding operations.
 
 ---
 
+## 6. Suite federation (cross-repo — NeNe Suite is SSOT)
+
+Federation identifiers are **owned by the NeNe Suite terminology registry** (its
+§4–6) and reproduced here **verbatim** (Invoice ADR 0016 conforms to Suite ADR 0012,
+accepted 2026-06-19). Spelling must match Suite **exactly**; any divergence is a
+merge-blocking error in both repos. These are consumed by Invoice in **suite mode**
+only; standalone installs use none of them.
+
+### Membership / environment (`NENE_SUITE_*` — consumed, not minted, by Invoice)
+
+| Term | Canonical | Never |
+| --- | --- | --- |
+| Membership toggle | `NENE_SUITE_MODE` (**unset / `0` = standalone, `1` = suite**) | `SUITE_MODE`, `NENE2_SUITE_MODE`; string values like `standalone` / `suite` |
+| Suite issuer base | `NENE_SUITE_ISSUER_URL` | `ISSUER_URL`, `AUTH_URL` |
+| Federation JWKS endpoint | `NENE_SUITE_JWKS_URL` | `JWKS_URL`, `JWK_URI`, `NENE_SUITE_JWK_URL` |
+| Suite-minted org UUID | `NENE_SUITE_ORG_EXTERNAL_ID` | `ORG_UUID`, `TENANT_ID`, `NENE_ORG_ID` |
+| This app's launcher URL entry | `NENE_SUITE_APP_NENE_INVOICE_URL` | `NENE_INVOICE_URL`, `NENE_SUITE_INVOICE_URL` |
+| Sibling-local session secret | `NENE2_LOCAL_JWT_SECRET` (**sibling-generated; the suite does NOT distribute it**) | `JWT_SECRET`, `NENE_JWT_SECRET` |
+
+### Federation org link (Invoice DB column)
+
+| Term | Canonical | Never |
+| --- | --- | --- |
+| Federation UUID on the org row | `organizations.external_id` (**nullable**) | `org_uuid`, `suite_org_id`, `suite_external_id`, `externalId` |
+
+The local org id stays **`organization_id`** (§3, the immutable billing/numbering
+anchor); `external_id` is the **federation link only** and is never the billing
+anchor (ADR 0016 §2).
+
+### JWT claims
+
+Two distinct tokens (ADR 0016 §3) — do not conflate their claim sets:
+
+- **Suite federation assertion** (asymmetric, JWKS-verified): `sub`, `org_external_id`,
+  `suite_id`, `email`, the suite role claim, `iss`, `aud`, `exp`. It **never** carries
+  `org_id`.
+- **Invoice local session** (HMAC `NENE2_LOCAL_JWT_SECRET`, ADR 0014): standalone =
+  `sub`, `org_id` (local PK); suite mode also mirrors `org_external_id` (and `suite_id`
+  if needed). `org_external_id` / `suite_id` are present in **suite mode only**.
+
+| Term | Canonical | Never |
+| --- | --- | --- |
+| Federation org UUID (claim) | `org_external_id` | `external_id`, `org_uuid`, `suite_org_id` |
+| Installation id (claim) | `suite_id` | `install_id`, `NENE_SUITE_ID` (as claim name) |
+| Local PK (claim) | `org_id` | — |
+
+**Namespace note:** the claim `org_id` (local PK, **JWT-token namespace**, per the
+Suite contract) is distinct from the §3 rule that forbids `org_id` as a **DB column /
+JSON field** name (where the canonical column is `organization_id`). The prohibition
+in §3 is unaffected.
+
+---
+
 ## How to add or change a term
 
 1. Add/rename the entry **here** in the same PR as the code.
