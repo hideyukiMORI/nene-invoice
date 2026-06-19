@@ -2,7 +2,10 @@
 
 ## Status
 
-proposed
+accepted (2026-06-19 — direction and boundary decision. The security / failure-mode
+review of the in-process Tier A updater (signature verification, maintenance gate,
+partial-write handling) is an implementation-time follow-up, not a precondition of
+this decision. Announcements + free-tier house ads are deferred to ADR 0019.)
 
 ## Context
 
@@ -188,7 +191,7 @@ ADR being `proposed` does not yet freeze identifiers).
 ## Related
 
 - Issue: `#487`
-- PR: `#000`
+- PR: `#488`
 - Related: ADR 0003 (dual deployment / release ZIP), ADR 0002 (separate from
   siblings / HTTP-only), ADR 0006 (multi-tenancy), ADR 0015 (location-independent
   install), `docs/explanation/accounting-compliance.md` (immutability / numbering),

@@ -2,7 +2,11 @@
 
 ## Status
 
-proposed
+accepted (2026-06-19 — conformance to NeNe Suite ADR 0012, accepted 2026-06-19;
+inherits the 2026-05-31 公認会計士・税理士 sign-off and introduces no new compliance
+obligation. The security review of asymmetric assertion verification / key handling is
+an implementation-time follow-up per Suite ADR 0012, not a precondition of this
+decision.)
 
 ## Context
 
@@ -138,7 +142,7 @@ compliance obligation** (no change to immutability, numbering, rounding, retenti
 - Normative contract: **NeNe Suite ADR 0012 (accepted 2026-06-19)** — owns the
   enrollment, JWKS, claim, and roster schema.
 - Issue: `#486`
-- PR: `#000`
+- PR: `#489`
 - Terminology: `docs/explanation/terminology.md` §6 (Suite federation, cross-repo).
 - Related: ADR 0002 (separate from siblings / HTTP-only), ADR 0006 (multi-tenancy /
   roles), ADR 0014 (auth session / cookies), ADR 0015 (location-independent install /
