@@ -60,7 +60,10 @@ export function DatePicker({
 
   const [open, setOpen] = useState(false)
   const [view, setView] = useState(() => selected ?? new Date())
-  const [flip, setFlip] = useState({ up: false, right: false })
+  // Vertical flip depends on scroll position at open time; horizontal flip
+  // depends only on the field's stable left edge (see the two effects below).
+  const [flipUp, setFlipUp] = useState(false)
+  const [flipRight, setFlipRight] = useState(false)
   // Editable text mirrors `value`; kept local while typing, normalized on commit.
   const [text, setText] = useState(() => display(value))
   // Re-sync the field when the committed value changes (calendar pick, form
@@ -107,15 +110,35 @@ export function DatePicker({
     }
   }, [open])
 
+  // Horizontal anchor depends only on the field's left edge, which is stable
+  // whether the popover is open or closed. Compute it on mount + resize so the
+  // CLOSED-but-still-mounted popover of a right-edge field is right-anchored and
+  // never extends past the viewport — a left-anchored 270px popover on the
+  // right-most filter field grows the document width, showing a phantom
+  // horizontal (and knock-on vertical) scrollbar even when everything fits (#452).
+  useLayoutEffect(() => {
+    const measure = (): void => {
+      if (wrapRef.current === null) return
+      const r = wrapRef.current.getBoundingClientRect()
+      setFlipRight(r.left + 280 > window.innerWidth)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
+
+  // Vertical flip depends on scroll position, so it is recomputed each open.
   useLayoutEffect(() => {
     if (!open || popRef.current === null) return
     const r = popRef.current.getBoundingClientRect()
-    setFlip({ up: r.bottom > window.innerHeight - 8, right: r.right > window.innerWidth - 8 })
+    setFlipUp(r.bottom > window.innerHeight - 8)
   }, [open])
 
   const openPicker = (): void => {
     setView(selected ?? new Date())
-    setFlip({ up: false, right: false })
+    setFlipUp(false)
     setOpen(true)
   }
 
@@ -197,7 +220,7 @@ export function DatePicker({
 
       <div
         ref={popRef}
-        className={cn('dp-pop', flip.up && 'up', flip.right && 'right')}
+        className={cn('dp-pop', flipUp && 'up', flipRight && 'right')}
         role="dialog"
         // Closed popover stays in the DOM for the fade transition, but must be
         // removed from the tab order / a11y tree — otherwise tabbing into a
