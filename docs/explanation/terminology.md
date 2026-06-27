@@ -62,7 +62,7 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | `invoice.status` | `draft`, `issued`, `partially_paid`, `paid` |
 | invoice computed | `overdue` (computed flag, not a stored status in Phase 1) |
 | `payment.method` | `bank_transfer`, `cash`, `card`, `other` |
-| `line_item.parent_type` | `quote`, `invoice`, `template` |
+| `line_item.parent_type` | `quote`, `invoice`, `template`, `recurring_invoice` |
 | `line_item_suggestion.source` | `master`, `history` |
 | `user.role` | `superadmin`, `admin`, `member`, `viewer` (ADR 0006) |
 | `user.status` | `active`, `invited` |
