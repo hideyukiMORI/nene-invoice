@@ -15,6 +15,9 @@ import { ItemEditPage } from '@/pages/item-edit'
 import { ItemImportPage } from '@/pages/item-import'
 import { ItemsPage } from '@/pages/items'
 import { QuoteCreatePage } from '@/pages/quote-create'
+import { RecurringPage } from '@/pages/recurring'
+import { RecurringCreatePage } from '@/pages/recurring-create'
+import { RecurringEditPage } from '@/pages/recurring-edit'
 import { TemplateCreatePage } from '@/pages/template-create'
 import { TemplateEditPage } from '@/pages/template-edit'
 import { TemplatesPage } from '@/pages/templates'
@@ -49,6 +52,9 @@ const router = createBrowserRouter(
         { path: 'quotes', element: <QuotesPage /> },
         { path: 'quotes/new', element: <QuoteCreatePage /> },
         { path: 'quotes/:id', element: <QuoteDetailPage /> },
+        { path: 'recurring', element: <RecurringPage /> },
+        { path: 'recurring/new', element: <RecurringCreatePage /> },
+        { path: 'recurring/:id/edit', element: <RecurringEditPage /> },
         { path: 'templates', element: <TemplatesPage /> },
         { path: 'templates/new', element: <TemplateCreatePage /> },
         { path: 'templates/:id/edit', element: <TemplateEditPage /> },

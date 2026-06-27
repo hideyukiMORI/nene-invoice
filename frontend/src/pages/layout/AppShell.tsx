@@ -70,6 +70,14 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M7.5 7h5M7.5 10.5h5" />
     </>,
   ),
+  recurring: icon(
+    <>
+      <path d="M3.2 10a6.8 6.8 0 0 1 11.4-5" />
+      <path d="M16.8 10a6.8 6.8 0 0 1-11.4 5" />
+      <path d="M14.8 2.2v2.9h-2.9" />
+      <path d="M5.2 17.8v-2.9h2.9" />
+    </>,
+  ),
   clients: icon(
     <>
       <circle cx="10" cy="7" r="3" />
@@ -169,6 +177,7 @@ const NAV: NavGroup[] = [
     items: [
       { to: '/quotes', label: 'admin.nav.quotes', iconKey: 'quotes' },
       { to: '/invoices', label: 'admin.nav.invoices', iconKey: 'invoices' },
+      { to: '/recurring', label: 'admin.nav.recurring', iconKey: 'recurring' },
       { to: '/clients', label: 'admin.nav.clients', iconKey: 'clients' },
       { to: '/items', label: 'admin.nav.items', iconKey: 'items' },
       { to: '/templates', label: 'admin.nav.templates', iconKey: 'templates' },
