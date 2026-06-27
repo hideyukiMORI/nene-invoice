@@ -49,6 +49,7 @@ use NeneInvoice\Organization\Resolution\SubdomainResolutionStrategy;
 use NeneInvoice\Payment\PaymentServiceProvider;
 use NeneInvoice\PaymentLink\PaymentLinkServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
+use NeneInvoice\RecurringInvoice\RecurringInvoiceServiceProvider;
 use NeneInvoice\ServiceApi\ServiceApiServiceProvider;
 use NeneInvoice\ServiceApi\ServiceScopeMiddleware;
 use NeneInvoice\ServiceToken\ServiceTokenServiceProvider;
@@ -85,6 +86,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new LineItemServiceProvider());
         $builder->addProvider(new TemplateServiceProvider());
         $builder->addProvider(new QuoteServiceProvider());
+        $builder->addProvider(new RecurringInvoiceServiceProvider());
         $builder->addProvider(new MailerServiceProvider());
         $builder->addProvider(new InvoiceServiceProvider());
         $builder->addProvider(new PaymentServiceProvider());

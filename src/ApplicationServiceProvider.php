@@ -38,6 +38,9 @@ use NeneInvoice\Quote\InvalidStateTransitionExceptionHandler;
 use NeneInvoice\Quote\QuoteNotFoundExceptionHandler;
 use NeneInvoice\Quote\QuoteRouteRegistrar;
 use NeneInvoice\Quote\QuoteValidationExceptionHandler;
+use NeneInvoice\RecurringInvoice\RecurringInvoiceNotFoundExceptionHandler;
+use NeneInvoice\RecurringInvoice\RecurringInvoiceRouteRegistrar;
+use NeneInvoice\RecurringInvoice\RecurringInvoiceValidationExceptionHandler;
 use NeneInvoice\ServiceApi\ServiceApiRouteRegistrar;
 use NeneInvoice\ServiceToken\ServiceTokenNotFoundExceptionHandler;
 use NeneInvoice\ServiceToken\ServiceTokenRouteRegistrar;
@@ -90,6 +93,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $clientRoutes = $container->get(ClientRouteRegistrar::class);
                     $companyRoutes = $container->get(CompanyRouteRegistrar::class);
                     $quoteRoutes = $container->get(QuoteRouteRegistrar::class);
+                    $recurringInvoiceRoutes = $container->get(RecurringInvoiceRouteRegistrar::class);
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
@@ -133,6 +137,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Quote route registrar service is invalid.');
                     }
 
+                    if (!$recurringInvoiceRoutes instanceof RecurringInvoiceRouteRegistrar) {
+                        throw new LogicException('Recurring invoice route registrar service is invalid.');
+                    }
+
                     if (!$invoiceRoutes instanceof InvoiceRouteRegistrar) {
                         throw new LogicException('Invoice route registrar service is invalid.');
                     }
@@ -173,7 +181,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Gateway settings route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes, $gatewaySettingsRoutes];
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $recurringInvoiceRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes, $gatewaySettingsRoutes];
                 },
             )
             ->set(
@@ -194,6 +202,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $quoteNotFound = $container->get(QuoteNotFoundExceptionHandler::class);
                     $quoteValidation = $container->get(QuoteValidationExceptionHandler::class);
                     $quoteInvalidTransition = $container->get(InvalidStateTransitionExceptionHandler::class);
+                    $recurringInvoiceNotFound = $container->get(RecurringInvoiceNotFoundExceptionHandler::class);
+                    $recurringInvoiceValidation = $container->get(RecurringInvoiceValidationExceptionHandler::class);
                     $invoiceNotFound = $container->get(InvoiceNotFoundExceptionHandler::class);
                     $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
@@ -263,6 +273,14 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Quote invalid state transition exception handler service is invalid.');
                     }
 
+                    if (!$recurringInvoiceNotFound instanceof RecurringInvoiceNotFoundExceptionHandler) {
+                        throw new LogicException('Recurring invoice not-found exception handler service is invalid.');
+                    }
+
+                    if (!$recurringInvoiceValidation instanceof RecurringInvoiceValidationExceptionHandler) {
+                        throw new LogicException('Recurring invoice validation exception handler service is invalid.');
+                    }
+
                     if (!$invoiceNotFound instanceof InvoiceNotFoundExceptionHandler) {
                         throw new LogicException('Invoice not-found exception handler service is invalid.');
                     }
@@ -295,7 +313,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Service token not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $serviceTokenNotFound];
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $recurringInvoiceNotFound, $recurringInvoiceValidation, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $serviceTokenNotFound];
                 },
             );
     }
