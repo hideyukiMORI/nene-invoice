@@ -48,7 +48,8 @@ final class RegistrationNumberTest extends TestCase
     /**
      * Character-class and anchoring boundary: the prefix is a case-sensitive
      * uppercase T, the 13 body characters must all be ASCII digits, and the
-     * `^...$` anchors reject any surrounding whitespace (length stays 14).
+     * `^...\z` anchors reject any surrounding whitespace — including a trailing
+     * newline, which a `$` anchor would have let through (#500).
      */
     #[DataProvider('characterCases')]
     public function test_character_and_anchoring_boundary(string $value, bool $expected): void
@@ -59,28 +60,26 @@ final class RegistrationNumberTest extends TestCase
     /** @return iterable<string, array{string, bool}> */
     public static function characterCases(): iterable
     {
-        yield 'lowercase t prefix'   => ['t1234567890123', false];
-        yield 'space inside digits'  => ['T123456 890123', false];
-        yield 'hyphen inside digits' => ['T123456-890123', false];
-        yield 'dot inside digits'    => ['T123456.890123', false];
-        yield 'letter inside digits' => ['T12345678901X3', false];
-        yield 'leading whitespace'   => [' T1234567890123', false];
-        yield 'trailing whitespace'  => ['T1234567890123 ', false];
-        yield 'all valid (control)'  => ['T0000000000000', true];
+        yield 'lowercase t prefix'    => ['t1234567890123', false];
+        yield 'space inside digits'   => ['T123456 890123', false];
+        yield 'hyphen inside digits'  => ['T123456-890123', false];
+        yield 'dot inside digits'     => ['T123456.890123', false];
+        yield 'letter inside digits'  => ['T12345678901X3', false];
+        yield 'leading whitespace'    => [' T1234567890123', false];
+        yield 'trailing whitespace'   => ['T1234567890123 ', false];
+        yield 'trailing newline'      => ["T1234567890123\n", false];
+        yield 'leading newline'       => ["\nT1234567890123", false];
+        yield 'embedded newline'      => ["T1234567890123\n\n", false];
+        yield 'all valid (control)'   => ['T0000000000000', true];
     }
 
     /**
-     * Known quirk, asserted to current behavior (not a desired outcome): the
-     * pattern anchors the tail with `$`, which in PCRE matches *before* a single
-     * trailing newline — so "T…\n" is accepted. Hardening to `\z` is a separate
-     * production change (see follow-up issue). This test documents the boundary
-     * so a future `\z` fix flips it deliberately rather than silently.
+     * Regression for #500: the `\z` tail anchor rejects a value with a trailing
+     * newline. A `$` anchor matches before a final newline in PCRE, which used to
+     * accept "T…\n"; this guards against that hardening being reverted.
      */
-    public function test_trailing_newline_is_currently_accepted(): void
+    public function test_trailing_newline_is_rejected(): void
     {
-        self::assertTrue(RegistrationNumber::isValid("T1234567890123\n"));
-        // A newline anywhere but the very end is still rejected.
-        self::assertFalse(RegistrationNumber::isValid("T1234567890123\n\n"));
-        self::assertFalse(RegistrationNumber::isValid("\nT1234567890123"));
+        self::assertFalse(RegistrationNumber::isValid("T1234567890123\n"));
     }
 }
