@@ -190,6 +190,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listTemplates`, `getTemplateById`, `createTemplate`, `updateTemplate`, `deleteTemplate` | Template (雛形) |
 | `getDashboard` | Dashboard (unpaid / overdue summary) |
 | `listQuotes`, `getQuoteById`, `createQuote`, `changeQuoteStatus`, `getQuotePdf`, `convertQuoteToInvoice`, `exportQuotesCsv` | Quote |
+| `listRecurringInvoices`, `getRecurringInvoice`, `createRecurringInvoice`, `updateRecurringInvoice`, `deleteRecurringInvoice` | RecurringInvoice (継続請求, #503) |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |
 | `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
 | `listLineItemSuggestions` | LineItem (history-based suggestions) |
