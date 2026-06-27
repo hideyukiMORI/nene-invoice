@@ -46,6 +46,7 @@ See: [`glossary.md`](./glossary.md), [`../development/naming-conventions.md`](..
 | Payment link | `PaymentLink` | `payment_links` | `payment_link_id` |
 | Number generator | `DocumentSequence` | `document_sequences` | — |
 | Integration credential | `ServiceToken` | `service_tokens` | `service_token_id` |
+| Recurring billing | `RecurringInvoice` | `recurring_invoices` | `recurring_invoice_id` |
 
 Domain folders are **PascalCase singular**; tables are **snake_case plural**.
 
@@ -68,6 +69,7 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | service_token status (computed) | `active`, `revoked` |
 | `payment_link.status` | `active`, `paid`, `revoked` (expiry derived from `expires_at`, not stored) |
 | `payment_link.gateway` | `payjp` (launch gateway — ADR 0013) |
+| `recurring_invoice.frequency` | `monthly`, `quarterly` (#503) |
 | `company_settings.pdf_template` | `standard` (default), `modern`, `classic` (見積/請求 PDF レイアウト — Issue #449) |
 | `company_settings.pdf_spacing` | `small`, `medium` (default), `large` (PDF 余白スケール大中小 — Issue #449) |
 | `company_settings.pdf_heading_font` | `gothic` (default), `mincho` (PDF 見出しフォント — Issue #449) |
@@ -109,6 +111,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Billing defaults (issuer) | `default_quote_validity_days`, `default_payment_closing_day`, `default_payment_month_offset`, `default_payment_pay_day` | `quote_validity`, `closing_day`, `payment_site`, `pay_day`, `net_days` |
 | Client fields | `name_kana`, `contact_name`, `billing_address` | `kana`, `furigana`, `name_reading`, `contact`, `address` |
 | Item master defaults | `default_unit_price_cents`, `default_tax_rate_bps` | `default_price_cents`, `item_price_cents`, `default_rate`, `unit_price` |
+| Recurring-billing fields | `frequency` (values §2), `next_run_on`, `last_run_on` (calendar dates like `valid_until`), `is_active` | `interval`, `cycle`, `next_run`, `last_run`, `active`, `enabled` |
 | Service-token fields | `jti`, `subject`, `label`, `scopes`, `created_by`, `expires_at`, `revoked_at`, `ttl_seconds` | `jwt_id`, `name`, `scope`, `created_user_id`, `expiry`, `revoked`, `ttl` |
 | Payment-link fields | `token_hash`, `gateway`, `gateway_session_id`, `status`, `expires_at`, `paid_at`, `revoked_at` | `token`, `session`, `provider`, `expiry`, `paid`, `revoked` |
 | Gateway-settings fields | `gateway`, `public_key_masked`, `secret_set`, `webhook_token_set`, `configured`, `ok`, `detail` (`connected`/`not_configured`/`invalid_credentials`/`unreachable`) | `secret_key`, `api_key`, `public_key`, `status` |
