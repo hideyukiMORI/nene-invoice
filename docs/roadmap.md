@@ -78,10 +78,14 @@ Goal: connect to sibling products.
 - Service-token registry + management UI (issue / list / revoke; `/admin/service-tokens`) ✅
 - Optional hosted card payment — PAY.JP gateway, per-invoice pay links, webhook ingress, gateway settings UI (ADR 0012 / 0013) ✅
 - Silent re-authentication via httpOnly refresh cookie (ADR 0014) ✅ — remember-me + idle/absolute timeout (#464) and pre-release security review (#465) outstanding
+- **Recurring billing** (定期請求; persona-review "next move") — persistence / draft generation / CRUD / admin API+OpenAPI / `/recurring` UI ✅ (#519–#523); **execution route (cron/CLI/request-time) outstanding (#526, P0)**; auto-issue gated on tax sign-off (#503)
+- **Financial cluster live** — Clear↔Invoice upstream connection contract-verified (clear PR #215); Invoice is the billing SSOT
+- **MFA (standalone TOTP)** — design accepted (#524, `design/mfa-totp.md`, conforms to Suite ADR 0025); implementation pending
 - NeNe Records product catalog import
 - NeNe Concierge lead → draft client / quote webhook
+- org `external_id` federation link (#492, → federation epic) — Invoice's path into the NeNe Suite managed cloud
 
-**Status: 🔄 in progress.**
+**Status: 🔄 in progress.** Strategy (see `../_work`): clear = first cash wedge, **invoice = financial-cluster foundation**, NeNe Suite = managed cloud (free-trial / VPS-migration / paid-guarantee). Persona R4 (2026-06-28): managed cloud broke the self-host wall (見送り 8→0) but conversion needs feature completion — see `docs/research/persona-review-2026-06-27/` and `docs/handover/2026-06-28-status-and-next.md`.
 
 ## Non-goals
 
