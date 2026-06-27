@@ -1,6 +1,10 @@
 import { http, HttpResponse } from 'msw'
 import { buildClientDto } from '@tests/factories/client'
 import { buildInvoiceDto, buildInvoiceWithLinesDto } from '@tests/factories/invoice'
+import {
+  buildRecurringInvoiceDto,
+  buildRecurringInvoiceWithLinesDto,
+} from '@tests/factories/recurring-invoice'
 
 /** Default happy-path handlers mirroring the OpenAPI contract. */
 export const handlers = [
@@ -225,4 +229,22 @@ export const handlers = [
       { status: 201 },
     ),
   ),
+
+  http.get('/admin/recurring-invoices', () =>
+    HttpResponse.json({ items: [buildRecurringInvoiceDto()], total: 1, limit: 100, offset: 0 }),
+  ),
+
+  http.post('/admin/recurring-invoices', () =>
+    HttpResponse.json(buildRecurringInvoiceWithLinesDto(), { status: 201 }),
+  ),
+
+  http.get('/admin/recurring-invoices/:id', () =>
+    HttpResponse.json(buildRecurringInvoiceWithLinesDto()),
+  ),
+
+  http.patch('/admin/recurring-invoices/:id', () =>
+    HttpResponse.json(buildRecurringInvoiceWithLinesDto()),
+  ),
+
+  http.delete('/admin/recurring-invoices/:id', () => new HttpResponse(null, { status: 204 })),
 ]

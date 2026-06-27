@@ -44,6 +44,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Silent re-authentication
+         * @description Exchanges the httpOnly refresh cookie for a fresh in-memory access token and rotates the refresh token (ADR 0014). Requires the double-submit CSRF header. On any failure the session fails closed (401) and the cookies are cleared, so the SPA falls back to the login screen.
+         */
+        post: operations["refreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Logout (server-side revocation)
+         * @description Revokes the refresh-token family server-side and clears the cookies (ADR 0014). Idempotent: returns 204 and clears the cookies even when no valid cookie is presented. Requires the double-submit CSRF header.
+         */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/me": {
         parameters: {
             query?: never;
@@ -723,6 +763,58 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/admin/recurring-invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List recurring invoices
+         * @description Lists recurring-billing schedule headers for the organization (admin). Line templates are not included in the list response.
+         */
+        get: operations["listRecurringInvoices"];
+        put?: never;
+        /**
+         * Create recurring invoice
+         * @description Creates a recurring-billing schedule (header + line template); computes totals (round once per tax rate, ADR 0004).
+         */
+        post: operations["createRecurringInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/recurring-invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /** Get recurring invoice by id */
+        get: operations["getRecurringInvoice"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete recurring invoice
+         * @description Soft-deletes a recurring schedule.
+         */
+        delete: operations["deleteRecurringInvoice"];
+        options?: never;
+        head?: never;
+        /**
+         * Update recurring invoice
+         * @description Edits a recurring schedule: replaces the line template and recomputes totals (ADR 0004).
+         */
+        patch: operations["updateRecurringInvoice"];
         trace?: never;
     };
     "/admin/invoices/export": {
@@ -1515,6 +1607,56 @@ export interface components {
             /** @enum {string} */
             status: "draft" | "sent" | "accepted" | "rejected" | "expired";
         };
+        /** @description A recurring-billing schedule (継続請求). Money is integer cents. */
+        RecurringInvoice: {
+            id: number;
+            organization_id: number;
+            client_id: number;
+            /** @description Client display name (list responses only; null elsewhere). */
+            client_name?: string | null;
+            name: string;
+            /** @enum {string} */
+            frequency: "monthly" | "quarterly";
+            subtotal_cents: number;
+            tax_cents: number;
+            total_cents: number;
+            /** @description Next run calendar date (YYYY-MM-DD). */
+            next_run_on: string;
+            /** @description Last run calendar date (YYYY-MM-DD), or null if never run. */
+            last_run_on?: string | null;
+            is_active: boolean;
+            notes?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+        };
+        RecurringInvoiceWithLines: components["schemas"]["RecurringInvoice"] & {
+            line_items?: components["schemas"]["LineItem"][];
+        };
+        RecurringInvoiceList: components["schemas"]["PageEnvelope"];
+        CreateRecurringInvoiceRequest: {
+            client_id: number;
+            name: string;
+            /** @enum {string} */
+            frequency: "monthly" | "quarterly";
+            /** @description First run calendar date (YYYY-MM-DD). */
+            first_run_on: string;
+            line_items: components["schemas"]["LineItemInput"][];
+            /** @default true */
+            is_active: boolean;
+            notes?: string | null;
+        };
+        UpdateRecurringInvoiceRequest: {
+            client_id: number;
+            name: string;
+            /** @enum {string} */
+            frequency: "monthly" | "quarterly";
+            /** @description Next run calendar date (YYYY-MM-DD). */
+            next_run_on: string;
+            line_items: components["schemas"]["LineItemInput"][];
+            /** @default true */
+            is_active: boolean;
+            notes?: string | null;
+        };
         Invoice: {
             id: number;
             organization_id: number;
@@ -1635,6 +1777,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
+        /** @description Double-submit CSRF token missing or invalid (ADR 0014). */
+        CsrfForbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
         /** @description Resource not found (or not in the caller's organization). */
         NotFound: {
             headers: {
@@ -1726,6 +1877,8 @@ export interface components {
         OffsetParam: number;
         /** @description Resource identifier. */
         IdPathParam: number;
+        /** @description Double-submit CSRF token — must echo the readable `ni_csrf` cookie (ADR 0014). Required on cookie-authenticated, state-changing endpoints. */
+        CsrfTokenHeader: string;
     };
     requestBodies: never;
     headers: never;
@@ -1798,6 +1951,58 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["ValidationFailed"];
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Double-submit CSRF token — must echo the readable `ni_csrf` cookie (ADR 0014). Required on cookie-authenticated, state-changing endpoints. */
+                "X-CSRF-Token": components["parameters"]["CsrfTokenHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Access token re-issued; refresh + CSRF cookies rotated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["CsrfForbidden"];
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Double-submit CSRF token — must echo the readable `ni_csrf` cookie (ADR 0014). Required on cookie-authenticated, state-changing endpoints. */
+                "X-CSRF-Token": components["parameters"]["CsrfTokenHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Session revoked; cookies cleared. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["CsrfForbidden"];
         };
     };
     getCurrentUser: {
@@ -3273,6 +3478,174 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    listRecurringInvoices: {
+        parameters: {
+            query?: {
+                /** @description Maximum number of items to return (1–100, default 20). */
+                limit?: components["parameters"]["LimitParam"];
+                /** @description Number of items to skip (default 0). */
+                offset?: components["parameters"]["OffsetParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recurring invoice page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringInvoiceList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+        };
+    };
+    createRecurringInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "client_id": 1,
+                 *       "name": "月次顧問料",
+                 *       "frequency": "monthly",
+                 *       "first_run_on": "2026-07-01",
+                 *       "line_items": [
+                 *         {
+                 *           "description": "Consulting",
+                 *           "quantity": 1,
+                 *           "unit_price_cents": 100000,
+                 *           "tax_rate_bps": 1000
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateRecurringInvoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Recurring invoice created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringInvoiceWithLines"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getRecurringInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recurring invoice with line template */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringInvoiceWithLines"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteRecurringInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recurring invoice deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateRecurringInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "client_id": 1,
+                 *       "name": "改定 顧問料",
+                 *       "frequency": "quarterly",
+                 *       "next_run_on": "2026-09-01",
+                 *       "is_active": true,
+                 *       "line_items": [
+                 *         {
+                 *           "description": "Consulting",
+                 *           "quantity": 2,
+                 *           "unit_price_cents": 100000,
+                 *           "tax_rate_bps": 1000
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateRecurringInvoiceRequest"];
+            };
+        };
+        responses: {
+            /** @description Recurring invoice updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringInvoiceWithLines"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     exportInvoicesCsv: {
