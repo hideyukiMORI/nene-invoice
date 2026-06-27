@@ -45,6 +45,17 @@ final class InMemoryOrganizationRepository implements OrganizationRepositoryInte
         return null;
     }
 
+    public function findByExternalId(string $externalId): ?Organization
+    {
+        foreach ($this->byId as $organization) {
+            if ($organization->externalId === $externalId) {
+                return $organization;
+            }
+        }
+
+        return null;
+    }
+
     /** @return list<Organization> */
     public function findAll(int $limit, int $offset): array
     {
