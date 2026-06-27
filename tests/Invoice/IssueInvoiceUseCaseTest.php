@@ -25,6 +25,7 @@ use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class IssueInvoiceUseCaseTest extends TestCase
@@ -177,5 +178,47 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $this->expectException(InvoiceNotFoundException::class);
         $this->holder->set(2);
         $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
+    }
+
+    public function test_non_qualified_issue_succeeds_even_when_registration_configured(): void
+    {
+        // The registration number is required only for qualified invoices; a
+        // non-qualified issue must still succeed when one happens to be set.
+        $this->registerIssuer();
+        $id = $this->draftInvoice();
+
+        $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: false));
+
+        self::assertSame(InvoiceStatus::Issued, $result->invoice->status);
+        self::assertFalse($result->invoice->isQualifiedInvoice);
+    }
+
+    /** Only a draft is issuable; issued/partially_paid/paid are all immutable. */
+    #[DataProvider('nonDraftStatuses')]
+    public function test_non_draft_invoice_cannot_be_issued(InvoiceStatus $status): void
+    {
+        $this->registerIssuer();
+        $id = $this->invoices->save(new Invoice(
+            organizationId: 1,
+            clientId: 5,
+            status: $status,
+            subtotalCents: 2000,
+            taxCents: 200,
+            totalCents: 2200,
+        ));
+        $this->lineItems->replaceForParent(LineItemParent::Invoice, $id, [
+            new LineItem(LineItemParent::Invoice, $id, 'Std', 1, 2000, 1000, sortOrder: 0),
+        ]);
+
+        $this->expectException(InvoiceValidationException::class);
+        $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: true));
+    }
+
+    /** @return iterable<string, array{InvoiceStatus}> */
+    public static function nonDraftStatuses(): iterable
+    {
+        yield 'issued'         => [InvoiceStatus::Issued];
+        yield 'partially_paid' => [InvoiceStatus::PartiallyPaid];
+        yield 'paid'           => [InvoiceStatus::Paid];
     }
 }

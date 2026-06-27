@@ -182,4 +182,71 @@ final class RecordPaymentUseCaseTest extends TestCase
         $this->holder->set(2);
         $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000));
     }
+
+    public function test_one_cent_short_of_total_stays_partially_paid(): void
+    {
+        // Boundary just below full: status uses `>=`, so total-1 is partial.
+        $id = $this->issuedInvoice(2200);
+
+        $result = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 2199));
+
+        self::assertSame(InvoiceStatus::PartiallyPaid, $result->invoice->status);
+        self::assertSame(2199, $result->totalPaidCents);
+    }
+
+    public function test_exact_payment_equal_to_total_is_paid(): void
+    {
+        // Boundary at full: total exactly flips to paid (not over-payment).
+        $id = $this->issuedInvoice(2200);
+
+        $result = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 2200));
+
+        self::assertSame(InvoiceStatus::Paid, $result->invoice->status);
+    }
+
+    public function test_cumulative_crossing_the_full_boundary_exactly(): void
+    {
+        // 2199 (partial) then the final 1¢ lands exactly on the total → paid.
+        $id = $this->issuedInvoice(2200);
+
+        $partial = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 2199));
+        self::assertSame(InvoiceStatus::PartiallyPaid, $partial->invoice->status);
+
+        $full = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1));
+        self::assertSame(InvoiceStatus::Paid, $full->invoice->status);
+        self::assertSame(2200, $full->totalPaidCents);
+    }
+
+    public function test_idempotent_replay_ignores_a_different_amount(): void
+    {
+        // The replay returns the original payment verbatim; the new amount on the
+        // retried request is ignored (it never double-books or re-validates).
+        $id = $this->issuedInvoice(2200);
+        $first = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 800, idempotencyKey: 'k1'));
+        $second = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 500, idempotencyKey: 'k1'));
+
+        self::assertSame($first->payment->id, $second->payment->id);
+        self::assertSame(800, $second->payment->amountCents);
+        self::assertSame(800, $this->payments->totalPaidForInvoice($id));
+    }
+
+    public function test_paid_at_today_is_accepted(): void
+    {
+        // The future-date guard compares JST calendar dates; today (the fixed
+        // clock's JST date, 2026-06-06) is the inclusive upper boundary.
+        $id = $this->issuedInvoice(2200);
+
+        $result = $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000, paidAt: '2026-06-06'));
+
+        self::assertSame('2026-06-06', $result->payment->paidAt);
+    }
+
+    public function test_paid_at_tomorrow_is_rejected(): void
+    {
+        // One day past the fixed clock's JST date → future → rejected.
+        $id = $this->issuedInvoice(2200);
+
+        $this->expectException(PaymentValidationException::class);
+        $this->useCase->execute(7, $id, new RecordPaymentInput(amountCents: 1000, paidAt: '2026-06-07'));
+    }
 }

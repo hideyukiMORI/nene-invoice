@@ -86,6 +86,47 @@ final class ChangeQuoteStatusUseCaseTest extends TestCase
         $this->useCase->execute(7, $id, QuoteStatus::Rejected);
     }
 
+    public function test_sent_to_rejected_is_allowed(): void
+    {
+        $id = $this->draft();
+        $this->useCase->execute(7, $id, QuoteStatus::Sent);
+
+        $quote = $this->useCase->execute(7, $id, QuoteStatus::Rejected);
+        self::assertSame(QuoteStatus::Rejected, $quote->status);
+    }
+
+    public function test_sent_to_expired_is_allowed(): void
+    {
+        $id = $this->draft();
+        $this->useCase->execute(7, $id, QuoteStatus::Sent);
+
+        $quote = $this->useCase->execute(7, $id, QuoteStatus::Expired);
+        self::assertSame(QuoteStatus::Expired, $quote->status);
+    }
+
+    public function test_rejected_is_terminal(): void
+    {
+        $id = $this->draft();
+        $this->useCase->execute(7, $id, QuoteStatus::Sent);
+        $this->useCase->execute(7, $id, QuoteStatus::Rejected);
+
+        $this->expectException(InvalidStateTransitionException::class);
+        $this->useCase->execute(7, $id, QuoteStatus::Accepted);
+    }
+
+    public function test_issued_at_is_set_once_and_preserved_across_transitions(): void
+    {
+        $id = $this->draft();
+
+        $sent = $this->useCase->execute(7, $id, QuoteStatus::Sent);
+        $issuedAt = $sent->issuedAt;
+        self::assertNotNull($issuedAt);
+
+        // Accepting must not re-stamp issued_at (it marks first-send only).
+        $accepted = $this->useCase->execute(7, $id, QuoteStatus::Accepted);
+        self::assertSame($issuedAt, $accepted->issuedAt);
+    }
+
     public function test_cross_organization_quote_not_found(): void
     {
         $id = $this->draft();

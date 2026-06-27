@@ -18,6 +18,7 @@ use NeneInvoice\Tests\Support\InMemoryInvoiceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
@@ -77,12 +78,23 @@ final class ConvertQuoteToInvoiceUseCaseTest extends TestCase
         self::assertSame('invoice.created', $this->audit->records[0]['action']);
     }
 
-    public function test_rejects_non_accepted_quote(): void
+    /** Only an accepted quote converts; every other status is rejected. */
+    #[DataProvider('nonAcceptedStatuses')]
+    public function test_rejects_conversion_of_non_accepted_quote(QuoteStatus $status): void
     {
-        $quoteId = $this->quote(QuoteStatus::Sent);
+        $quoteId = $this->quote($status);
 
         $this->expectException(QuoteValidationException::class);
         $this->useCase->execute(7, $quoteId);
+    }
+
+    /** @return iterable<string, array{QuoteStatus}> */
+    public static function nonAcceptedStatuses(): iterable
+    {
+        yield 'draft'    => [QuoteStatus::Draft];
+        yield 'sent'     => [QuoteStatus::Sent];
+        yield 'rejected' => [QuoteStatus::Rejected];
+        yield 'expired'  => [QuoteStatus::Expired];
     }
 
     public function test_rejects_re_conversion_of_already_converted_quote(): void

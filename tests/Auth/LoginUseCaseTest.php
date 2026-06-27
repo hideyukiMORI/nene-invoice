@@ -95,6 +95,27 @@ final class LoginUseCaseTest extends TestCase
         $useCase->execute(new LoginInput('admin@example.com', 'correct-horse', '203.0.113.7'));
     }
 
+    public function test_login_allowed_just_below_the_failure_ceiling(): void
+    {
+        $throttle = new InMemoryLoginThrottle();
+        for ($i = 0; $i < 9; $i++) {
+            $throttle->recordFailure('203.0.113.10');
+        }
+
+        $useCase = new LoginUseCase(
+            $this->repositoryWithUser('correct-horse'),
+            new LocalBearerTokenVerifier(self::SECRET),
+            $throttle,
+            $this->refreshIssuer(),
+        );
+
+        // 9 failures is one below the ceiling of 10: the correct password
+        // still authenticates (the block is `>= 10`, not `> 10`).
+        $output = $useCase->execute(new LoginInput('admin@example.com', 'correct-horse', '203.0.113.10'));
+
+        self::assertNotSame('', $output->token);
+    }
+
     public function test_a_failed_attempt_is_recorded_against_the_ip(): void
     {
         $throttle = new InMemoryLoginThrottle();

@@ -66,4 +66,49 @@ final class CsvImportTest extends TestCase
         self::assertFalse($parse->rows[1]['well_formed']); // 3 cells vs 2
         self::assertSame(4, $parse->rows[1]['line']); // blank line 3 was skipped
     }
+
+    public function test_accepts_upload_exactly_at_byte_cap_and_rejects_one_over(): void
+    {
+        // The cap is `strlen > maxBytes`: exactly at the cap is accepted, one over rejected.
+        $csv = "__template,name\nclients/v1,Acme\n";
+        $size = strlen($csv);
+
+        $atCap = CsvImport::parse($csv, self::HEADER, maxRows: 5000, maxBytes: $size);
+        self::assertNull($atCap->formatError);
+
+        $overByOne = CsvImport::parse($csv, self::HEADER, maxRows: 5000, maxBytes: $size - 1);
+        self::assertNotNull($overByOne->formatError);
+        self::assertStringContainsString('ファイルサイズ', $overByOne->formatError);
+    }
+
+    public function test_accepts_exactly_max_rows_and_rejects_one_more(): void
+    {
+        // The cap is `count(rows) > maxRows`: exactly maxRows is accepted, +1 rejected.
+        $header = "__template,name\n";
+
+        $atCap = CsvImport::parse($header . "c/v1,A\nc/v1,B\n", self::HEADER, maxRows: 2);
+        self::assertNull($atCap->formatError);
+        self::assertCount(2, $atCap->rows);
+
+        $over = CsvImport::parse($header . "c/v1,A\nc/v1,B\nc/v1,C\n", self::HEADER, maxRows: 2);
+        self::assertNotNull($over->formatError);
+        self::assertStringContainsString('行数', $over->formatError);
+    }
+
+    public function test_rejects_truly_empty_file(): void
+    {
+        $parse = CsvImport::parse('', self::HEADER);
+
+        self::assertNotNull($parse->formatError);
+        self::assertStringContainsString('空', $parse->formatError);
+    }
+
+    public function test_header_only_is_accepted_with_zero_rows(): void
+    {
+        // Contrast with the truly-empty case: a header and no data rows is valid.
+        $parse = CsvImport::parse("__template,name\n", self::HEADER);
+
+        self::assertNull($parse->formatError);
+        self::assertSame([], $parse->rows);
+    }
 }
