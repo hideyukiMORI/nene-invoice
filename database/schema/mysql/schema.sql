@@ -300,3 +300,29 @@ CREATE TABLE IF NOT EXISTS `templates` (
     `updated_at`      DATETIME     NOT NULL,
     KEY `idx_templates_organization_id` (`organization_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- recurring_invoices — recurring-billing schedules (#503). Generates an invoice
+-- every period (顧問料・保守費・管理料・月謝). Line template lives in line_items;
+-- next_run_on/last_run_on are calendar dates. frequency: monthly | quarterly.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `recurring_invoices` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          NOT NULL,
+    `client_id`       INT          NOT NULL,
+    `name`            VARCHAR(255) NOT NULL,
+    `frequency`       VARCHAR(16)  NOT NULL,
+    `subtotal_cents`  INT          NOT NULL DEFAULT 0,
+    `tax_cents`       INT          NOT NULL DEFAULT 0,
+    `total_cents`     INT          NOT NULL DEFAULT 0,
+    `next_run_on`     DATE         NOT NULL,
+    `last_run_on`     DATE         DEFAULT NULL,
+    `is_active`       TINYINT(1)   NOT NULL DEFAULT 1,
+    `notes`           TEXT         DEFAULT NULL,
+    `is_deleted`      TINYINT(1)   NOT NULL DEFAULT 0,
+    `deleted_at`      DATETIME     DEFAULT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    `updated_at`      DATETIME     NOT NULL,
+    KEY `idx_recurring_invoices_organization_id` (`organization_id`),
+    KEY `idx_recurring_invoices_due` (`organization_id`, `is_active`, `next_run_on`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
