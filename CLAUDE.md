@@ -19,7 +19,7 @@ Ops / MCP         ──→         │
 
 ## 現在の開発状況
 
-> **最終更新: 2026-06-17**（`docs/todo/current.md` が正本）
+> **最終更新: 2026-06-28**（`docs/todo/current.md` が正本）
 
 | フェーズ | 状態 |
 | --- | --- |
@@ -28,7 +28,7 @@ Ops / MCP         ──→         │
 | Phase 2 管理 UI（React）＋ 適格請求書 PDF ＋ ダッシュボード ＋ 監査ログ ＋ ja/en | ✅ 完了 |
 | Phase 3 Tier A 共有ホスティング（インストーラ・リリース ZIP・運用ガイド） | ✅ 完了 |
 | セキュリティ診断 Round 1–2 | ✅ 完了（指摘修正済み） |
-| Phase 4 エコシステム連携（Records / Concierge・決済GW） | 🔄 進行中（CSV エクスポート・一覧の検索/フィルタ/ソート・言語切替UI・service token 運用・カード決済（PAY.JP；決済リンク/webhook/設定UI・ADR 0013）・認証セッション永続化（サイレント再認証・ADR 0014）は実装済み。残り: Records カタログ連携・Concierge webhook・remember-me/タイムアウト #464・リリース前セキュリティレビュー #465） |
+| Phase 4 エコシステム連携（財務クラスタ・決済GW・managed） | 🔄 進行中。実装/設計済み: CSV・検索/フィルタ/ソート・言語切替・service token・カード決済（PAY.JP・ADR 0013）・認証セッション永続化（ADR 0014）・**定期請求（#519–#523, `/recurring`）**・**NeNe Clear 実接続（契約検証済み）**・**MFA 設計（#524・`docs/design/mfa-totp.md`・Suite ADR 0025 準拠）**。残り: **定期請求の実行ルート配線 #526（P0・最優先）**・自動issue（採番=税理士ゲート）・MFA 実装・銀行自動消込 #505・一括発行 #527・業種テンプレ #528/#513・Records カタログ・Concierge webhook・#464/#465。戦略: clear=現金の楔 / **invoice=財務クラスタの土台** / Suite=managed クラウド。詳細 → `docs/handover/2026-06-28-status-and-next.md`、ペルソナ評価 → `docs/research/persona-review-2026-06-27/` |
 
 ---
 
