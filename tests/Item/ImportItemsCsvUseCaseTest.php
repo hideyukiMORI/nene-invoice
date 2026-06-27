@@ -149,4 +149,57 @@ final class ImportItemsCsvUseCaseTest extends TestCase
         self::assertFalse($result->accepted);
         self::assertNotNull($result->formatError);
     }
+
+    public function test_zero_price_is_accepted(): void
+    {
+        // 0 is the lower boundary of the non-negative rule (ctype_digit('0') is true).
+        $result = $this->useCase()->execute(1, $this->csv([
+            ['items/v1', '', 'Free sample', '0', '10'],
+        ]), false);
+
+        self::assertTrue($result->accepted);
+        self::assertSame(1, $result->created);
+        self::assertSame(0, $this->repo->findForExport(new ItemListFilter())[0]->defaultUnitPriceCents);
+    }
+
+    public function test_large_price_is_accepted(): void
+    {
+        $result = $this->useCase()->execute(1, $this->csv([
+            ['items/v1', '', 'Pricey', '999999999', '10'],
+        ]), false);
+
+        self::assertTrue($result->accepted);
+        self::assertSame(999999999, $this->repo->findForExport(new ItemListFilter())[0]->defaultUnitPriceCents);
+    }
+
+    public function test_empty_description_is_rejected_as_required(): void
+    {
+        $result = $this->useCase()->execute(1, $this->csv([
+            ['items/v1', '', '', '100', '10'],
+        ]), false);
+
+        self::assertFalse($result->accepted);
+        self::assertSame('required', $result->errors[0]['code']);
+    }
+
+    public function test_empty_price_is_rejected_as_required(): void
+    {
+        $result = $this->useCase()->execute(1, $this->csv([
+            ['items/v1', '', 'x', '', '10'],
+        ]), false);
+
+        self::assertFalse($result->accepted);
+        self::assertSame('required', $result->errors[0]['code']);
+    }
+
+    public function test_id_zero_is_treated_as_not_found(): void
+    {
+        // id '0' parses as a digit but no item 0 exists → not-found (not invalid_id).
+        $result = $this->useCase()->execute(1, $this->csv([
+            ['items/v1', '0', 'x', '100', '10'],
+        ]), false);
+
+        self::assertFalse($result->accepted);
+        self::assertSame('item_not_found', $result->errors[0]['code']);
+    }
 }

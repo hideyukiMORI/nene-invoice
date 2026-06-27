@@ -24,6 +24,13 @@ final class PasswordPolicyTest extends TestCase
         PasswordPolicy::assert(str_repeat('a', PasswordPolicy::MIN_LENGTH - 1));
     }
 
+    public function test_accepts_a_password_at_the_maximum_length(): void
+    {
+        PasswordPolicy::assert(str_repeat('a', PasswordPolicy::MAX_LENGTH));
+
+        $this->expectNotToPerformAssertions();
+    }
+
     public function test_rejects_a_password_above_the_maximum_length(): void
     {
         $this->expectException(ValidationException::class);

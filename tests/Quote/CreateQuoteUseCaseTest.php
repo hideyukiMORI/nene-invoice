@@ -24,6 +24,7 @@ use NeneInvoice\Tests\Support\InMemoryDocumentSequenceRepository;
 use NeneInvoice\Tests\Support\InMemoryLineItemRepository;
 use NeneInvoice\Tests\Support\InMemoryQuoteRepository;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class CreateQuoteUseCaseTest extends TestCase
@@ -145,5 +146,82 @@ final class CreateQuoteUseCaseTest extends TestCase
     {
         $this->expectException(QuoteValidationException::class);
         $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 1000, 500)]));
+    }
+
+    /** Only 800/1000 bps are allowed; every adjacent value is rejected (§3). */
+    #[DataProvider('disallowedTaxRates')]
+    public function test_rejects_tax_rate_outside_allowed_set(int $rateBps): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 1000, $rateBps)]));
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function disallowedTaxRates(): iterable
+    {
+        yield '0 bps'              => [0];
+        yield '799 (below 8%)'     => [799];
+        yield '801 (above 8%)'     => [801];
+        yield '999 (below 10%)'    => [999];
+        yield '1001 (above 10%)'   => [1001];
+        yield '2000 (20%)'         => [2000];
+        yield 'negative'           => [-800];
+    }
+
+    #[DataProvider('allowedTaxRates')]
+    public function test_accepts_allowed_tax_rate(int $rateBps): void
+    {
+        $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 1000, $rateBps)]));
+
+        self::assertSame(QuoteStatus::Draft, $result->quote->status);
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function allowedTaxRates(): iterable
+    {
+        yield '8% (lower boundary)'  => [800];
+        yield '10% (upper boundary)' => [1000];
+    }
+
+    public function test_rejects_zero_quantity(): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 0, 1000, 1000)]));
+    }
+
+    public function test_rejects_negative_quantity(): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', -1, 1000, 1000)]));
+    }
+
+    public function test_accepts_minimum_quantity_of_one(): void
+    {
+        $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 1000, 1000)]));
+
+        self::assertSame(1000, $result->quote->subtotalCents);
+    }
+
+    public function test_accepts_large_quantity_without_overflow(): void
+    {
+        $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1_000_000, 1000, 1000)]));
+
+        self::assertSame(1_000_000_000, $result->quote->subtotalCents);
+        self::assertSame(100_000_000, $result->quote->taxCents);
+    }
+
+    public function test_rejects_negative_unit_price(): void
+    {
+        $this->expectException(QuoteValidationException::class);
+        $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, -1, 1000)]));
+    }
+
+    public function test_accepts_zero_unit_price(): void
+    {
+        // Zero is the lower boundary of the >= 0 rule (free/discount lines).
+        $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 0, 1000)]));
+
+        self::assertSame(0, $result->quote->subtotalCents);
+        self::assertSame(0, $result->quote->taxCents);
     }
 }
