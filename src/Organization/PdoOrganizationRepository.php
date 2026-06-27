@@ -46,6 +46,16 @@ final readonly class PdoOrganizationRepository implements OrganizationRepository
         return $row !== null ? $this->mapRow($row) : null;
     }
 
+    public function findByExternalId(string $externalId): ?Organization
+    {
+        $row = $this->query->fetchOne(
+            'SELECT ' . self::COLUMNS . ' FROM organizations WHERE external_id = ?',
+            [$externalId],
+        );
+
+        return $row !== null ? $this->mapRow($row) : null;
+    }
+
     /** @return list<Organization> */
     public function findAll(int $limit, int $offset): array
     {
