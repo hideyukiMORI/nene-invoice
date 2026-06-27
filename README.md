@@ -21,7 +21,7 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 
 ## Quick Start
 
-**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress: CSV export, service-token management, optional hosted card payments (PAY.JP — pay links, webhook, gateway settings; [ADR 0013](./docs/adr/0013-launch-payment-gateway-payjp.md)), and silent re-authentication via an httpOnly refresh cookie ([ADR 0014](./docs/adr/0014-auth-session-persistence-refresh-cookie.md)) have landed.
+**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress: CSV export, service-token management, optional hosted card payments (PAY.JP — pay links, webhook, gateway settings; [ADR 0013](./docs/adr/0013-launch-payment-gateway-payjp.md)), and silent re-authentication via an httpOnly refresh cookie ([ADR 0014](./docs/adr/0014-auth-session-persistence-refresh-cookie.md)) have landed. **Recurring billing** (定期請求 — schedule → auto-draft generation, `/recurring`) and a contract-verified upstream link to **NeNe Clear** (reconciliation / dunning) are in; **MFA (standalone TOTP)** is designed ([`docs/design/mfa-totp.md`](./docs/design/mfa-totp.md), conforming to Suite ADR 0025). Managed-cloud delivery is provided by **NeNe Suite** (free-trial / VPS-migration / paid-guarantee). See [`docs/handover/2026-06-28-status-and-next.md`](./docs/handover/2026-06-28-status-and-next.md).
 
 ### Option A — Docker (recommended, fastest)
 
@@ -65,10 +65,14 @@ Shared-hosting / production install uses the web installer (`public_html/install
 
 ```
 Admin UI (React SPA)  ──→  NeNe Invoice API (NENE2 / PHP 8.4)  ──→  MySQL / SQLite
-Ops / MCP             ──→            │
+Ops / MCP             ──→            │  ▲
+NeNe Clear ──HTTP /api/*─────────────┘  │   (reconciliation / dunning — Invoice = billing SSOT)
                                      ↓ HTTP (optional)
                           NeNe Records / NeNe Concierge
 ```
+
+Managed-cloud delivery is orchestrated by **NeNe Suite** (federation IdP + installer); Invoice's
+path into it is the `organizations.external_id` federation link (#492) and the federation epic.
 
 - **Backend**: PHP 8.4, NENE2, Handler → UseCase → Repository (org-scoped, ADR 0006)
 - **Money**: integer cents everywhere — no floats; tax rounded once per rate (ADR 0004)
@@ -85,7 +89,7 @@ Ops / MCP             ──→            │
 | 2 | Admin UI (React) + qualified-invoice PDF + dashboard + audit log + ja/en | ✅ |
 | 3 | Tier A shared hosting — installer, release ZIP, operator guide | ✅ |
 | Sec | Security assessment rounds 1–2 (findings fixed) | ✅ |
-| 4 | Ecosystem integration (Records / Concierge, payment gateway) | 🔄 In progress — CSV export ✅ |
+| 4 | Ecosystem integration — CSV export ✅, service tokens ✅, PAY.JP ✅, refresh-cookie auth ✅, **recurring billing** (`/recurring`) ✅ (execution route #526 pending), live **NeNe Clear** link ✅, **MFA design** ✅ (impl pending) | 🔄 In progress |
 
 See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
 
@@ -122,7 +126,9 @@ Part of the [hideyukiMORI NeNe portfolio](https://github.com/hideyukiMORI):
 | [nene-records](https://github.com/hideyukiMORI/nene-records) | CMS · optional product catalog |
 | [nene-corpus](https://github.com/hideyukiMORI/nene-corpus) | Knowledge chat |
 | [nene-concierge](https://github.com/hideyukiMORI/nene-concierge) | Scenario chat · optional leads |
-| **nene-invoice** | Quote · invoice · payment (this repo) |
+| [nene-clear](https://github.com/hideyukiMORI/nene-clear) | Reconciliation · dunning — downstream consumer of this billing SSOT |
+| [nene-suite](https://github.com/hideyukiMORI/nene-suite) | Multi-app installer · federation IdP · managed cloud |
+| **nene-invoice** | Quote · invoice · payment — financial-cluster foundation (this repo) |
 
 ## Contributing
 

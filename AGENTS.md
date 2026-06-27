@@ -20,7 +20,8 @@ This file is the entry point for AI agents working on NeNe Invoice.
 - Commit messages: `docs/development/commit-conventions.md`
 - AI tool policy: `docs/integrations/ai-tools.md`
 - Roadmap: `docs/roadmap.md`
-- Milestones: `docs/milestones/2026-05-governance-and-foundation.md`
+- Milestones: `docs/milestones/` (latest: `2026-06-financial-cluster-and-recurring.md`)
+- Handover (current status + open tasks): `docs/handover/2026-06-28-status-and-next.md`
 
 ## Operating Rules
 
