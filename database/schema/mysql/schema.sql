@@ -326,3 +326,30 @@ CREATE TABLE IF NOT EXISTS `recurring_invoices` (
     KEY `idx_recurring_invoices_organization_id` (`organization_id`),
     KEY `idx_recurring_invoices_due` (`organization_id`, `is_active`, `next_run_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- bank_transactions — staging for bank-deposit CSV auto-reconciliation (#505).
+-- One line imported from a bank CSV; integer cents (ADR 0004); value_date is a
+-- calendar date. Importing only stages rows — matching/posting a payment is a
+-- separate, compliance-reviewed step. direction: credit | debit.
+-- status: unmatched | matched | posted | ignored.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `bank_transactions` (
+    `id`                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id`    INT          NOT NULL,
+    `value_date`         DATE         NOT NULL,
+    `direction`          VARCHAR(8)   NOT NULL,
+    `amount_cents`       INT          NOT NULL,
+    `payer_name`         VARCHAR(255) DEFAULT NULL,
+    `description`        VARCHAR(512) DEFAULT NULL,
+    `bank_reference`     VARCHAR(255) DEFAULT NULL,
+    `status`             VARCHAR(16)  NOT NULL DEFAULT 'unmatched',
+    `matched_invoice_id` INT          DEFAULT NULL,
+    `matched_payment_id` INT          DEFAULT NULL,
+    `imported_at`        DATETIME     NOT NULL,
+    `created_at`         DATETIME     NOT NULL,
+    `updated_at`         DATETIME     NOT NULL,
+    KEY `idx_bank_transactions_organization_id` (`organization_id`),
+    KEY `idx_bank_transactions_status` (`organization_id`, `status`),
+    KEY `idx_bank_transactions_bank_reference` (`organization_id`, `bank_reference`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
