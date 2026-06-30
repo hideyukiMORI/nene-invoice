@@ -49,6 +49,7 @@ use NeneInvoice\Organization\Resolution\SubdomainResolutionStrategy;
 use NeneInvoice\Payment\PaymentServiceProvider;
 use NeneInvoice\PaymentLink\PaymentLinkServiceProvider;
 use NeneInvoice\Quote\QuoteServiceProvider;
+use NeneInvoice\RecurringInvoice\RecurringDueCheckMiddleware;
 use NeneInvoice\RecurringInvoice\RecurringInvoiceServiceProvider;
 use NeneInvoice\ServiceApi\ServiceApiServiceProvider;
 use NeneInvoice\ServiceApi\ServiceScopeMiddleware;
@@ -267,12 +268,29 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
 
                     /** @var list<DomainExceptionHandlerInterface> $exceptionHandlers */
 
+                    $authMiddleware = [$orgResolverMiddleware, $bearerTokenMiddleware, $orgGuardMiddleware, $capabilityMiddleware, $serviceScopeMiddleware];
+
+                    // Tier A execution route for recurring billing (#526): on
+                    // shared hosting (no cron) an authenticated /admin/ request
+                    // generates any due recurring drafts, throttled once/org/day.
+                    // Tier B installs set RECURRING_INLINE=0 and run the cron
+                    // script (tools/run-recurring.php) instead.
+                    if (self::env('RECURRING_INLINE', '1') !== '0') {
+                        $recurringDueCheck = $container->get(RecurringDueCheckMiddleware::class);
+
+                        if (!$recurringDueCheck instanceof RecurringDueCheckMiddleware) {
+                            throw new LogicException('Recurring due-check middleware service is invalid.');
+                        }
+
+                        $authMiddleware[] = $recurringDueCheck;
+                    }
+
                     return new RuntimeApplicationFactory(
                         responseFactory: $psr17,
                         streamFactory: $psr17,
                         domainExceptionHandlers: $exceptionHandlers,
                         routeRegistrars: $routeRegistrars,
-                        authMiddleware: [$orgResolverMiddleware, $bearerTokenMiddleware, $orgGuardMiddleware, $capabilityMiddleware, $serviceScopeMiddleware],
+                        authMiddleware: $authMiddleware,
                         healthChecks: [$databaseHealthCheck],
                         debug: $config->debug,
                     );

@@ -10,11 +10,15 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Client\ClientRepositoryInterface;
+use NeneInvoice\Http\RuntimeServiceProvider;
+use NeneInvoice\Invoice\InvoiceRepositoryInterface;
+use NeneInvoice\Invoice\PdoInvoiceRepository;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 use NeneInvoice\LineItem\PdoLineItemRepository;
 use NeneInvoice\LineItem\TaxCalculator;
@@ -101,6 +105,63 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
                     self::resolve($c, LineItemRepositoryInterface::class),
                 ),
             )
+            // Execution route (#526): generate due drafts. The use case has no
+            // operator path — it is driven by cron (tools/run-recurring.php, all
+            // orgs) and the inline Tier A middleware (current org, throttled).
+            ->set(
+                GenerateDueRecurringInvoicesUseCase::class,
+                static function (ContainerInterface $c): GenerateDueRecurringInvoicesUseCase {
+                    $orgHolder = self::orgHolder($c);
+
+                    return new GenerateDueRecurringInvoicesUseCase(
+                        self::recurring($c),
+                        self::resolve($c, LineItemRepositoryInterface::class),
+                        self::resolve($c, ClientRepositoryInterface::class),
+                        self::resolve($c, TaxCalculator::class),
+                        self::resolve($c, DatabaseTransactionManagerInterface::class),
+                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        AuditServiceProvider::recorderFactory($c),
+                        self::resolve($c, ClockInterface::class),
+                        $orgHolder,
+                    );
+                },
+            )
+            ->set(
+                RecurringRunThrottleInterface::class,
+                static fn (ContainerInterface $c): RecurringRunThrottleInterface => new FileRecurringRunThrottle(self::projectRoot($c) . '/var'),
+            )
+            ->set(
+                RecurringDueRunnerInterface::class,
+                static function (ContainerInterface $c): RecurringDueRunnerInterface {
+                    $useCase = $c->get(GenerateDueRecurringInvoicesUseCase::class);
+
+                    if (!$useCase instanceof GenerateDueRecurringInvoicesUseCase) {
+                        throw new LogicException('Recurring generator service is invalid.');
+                    }
+
+                    $throttle = $c->get(RecurringRunThrottleInterface::class);
+
+                    if (!$throttle instanceof RecurringRunThrottleInterface) {
+                        throw new LogicException('Recurring run throttle service is invalid.');
+                    }
+
+                    return new ThrottledRecurringDueRunner($useCase, $throttle, self::resolve($c, ClockInterface::class), self::orgHolder($c));
+                },
+            )
+            ->set(
+                RecurringDueCheckMiddleware::class,
+                static function (ContainerInterface $c): RecurringDueCheckMiddleware {
+                    $runner = $c->get(RecurringDueRunnerInterface::class);
+
+                    if (!$runner instanceof RecurringDueRunnerInterface) {
+                        throw new LogicException('Recurring due runner service is invalid.');
+                    }
+
+                    return new RecurringDueCheckMiddleware($runner);
+                },
+            )
             ->set(
                 ListRecurringInvoicesHandler::class,
                 static fn (ContainerInterface $c): ListRecurringInvoicesHandler => new ListRecurringInvoicesHandler(
@@ -171,6 +232,17 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
         }
 
         return $repo;
+    }
+
+    private static function projectRoot(ContainerInterface $c): string
+    {
+        $root = $c->get(RuntimeServiceProvider::PROJECT_ROOT);
+
+        if (!is_string($root) || $root === '') {
+            throw new LogicException('Project root service is invalid.');
+        }
+
+        return $root;
     }
 
     /** @return RequestScopedHolder<int> */
