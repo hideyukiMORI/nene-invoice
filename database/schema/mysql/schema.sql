@@ -353,3 +353,19 @@ CREATE TABLE IF NOT EXISTS `bank_transactions` (
     KEY `idx_bank_transactions_status` (`organization_id`, `status`),
     KEY `idx_bank_transactions_bank_reference` (`organization_id`, `bank_reference`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------------------------------------------------------------------------
+-- payer_aliases — learned remitter-name → client map for auto-reconciliation
+-- (#505). normalized_name is produced by PayerNameNormalizer and is unique per
+-- organization. Matching metadata, not a billing record.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `payer_aliases` (
+    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `organization_id` INT          NOT NULL,
+    `normalized_name` VARCHAR(255) NOT NULL,
+    `client_id`       INT          NOT NULL,
+    `created_at`      DATETIME     NOT NULL,
+    `updated_at`      DATETIME     NOT NULL,
+    UNIQUE KEY `uq_payer_aliases_org_name` (`organization_id`, `normalized_name`),
+    KEY `idx_payer_aliases_organization_id` (`organization_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
