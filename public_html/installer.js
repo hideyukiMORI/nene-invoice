@@ -69,6 +69,11 @@
     adminForm: [
       { t: '管理者アカウントを作成しています', d: 'ユーザーを登録中' },
       { t: 'セットアップを完了しています', d: '最終処理中' }
+    ],
+    acquireForm: [
+      { t: 'ファイルをアップロードしています', d: 'ZIP を送信中' },
+      { t: 'ハッシュを照合しています', d: 'SHA-256 を検証中' },
+      { t: 'アプリを展開しています', d: 'ファイルを配置中' }
     ]
   };
   var STEP_MS = 720;
@@ -149,7 +154,63 @@
     });
   }
 
-  ['dbForm', 'adminForm'].forEach(function (id) {
+  /* ---------- 利用形態（single/multi）＋解決方式（Feature A） ---------- */
+  var multiOpts = el('multiOpts');
+  var resSelect = el('tenant_resolution');
+  var baseDomainField = el('baseDomainField');
+
+  function syncTenant() {
+    var checked = document.querySelector('input[name="tenant_mode"]:checked');
+    var mode = checked ? checked.value : 'single';
+    Array.prototype.forEach.call(document.querySelectorAll('.opt-card[data-tenant]'), function (card) {
+      card.classList.toggle('on', card.getAttribute('data-tenant') === mode);
+    });
+    if (multiOpts) {
+      if (mode === 'multi') { multiOpts.removeAttribute('hidden'); }
+      else { multiOpts.setAttribute('hidden', ''); }
+    }
+  }
+
+  function syncResolution() {
+    if (!resSelect) { return; }
+    var res = resSelect.value;
+    Array.prototype.forEach.call(document.querySelectorAll('.res-hint[data-res]'), function (hint) {
+      if (hint.getAttribute('data-res') === res) { hint.removeAttribute('hidden'); }
+      else { hint.setAttribute('hidden', ''); }
+    });
+    if (baseDomainField) {
+      if (res === 'subdomain') { baseDomainField.removeAttribute('hidden'); }
+      else { baseDomainField.setAttribute('hidden', ''); }
+    }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="tenant_mode"]'), function (r) {
+    r.addEventListener('change', syncTenant);
+  });
+  if (resSelect) { resSelect.addEventListener('change', syncResolution); }
+  syncTenant();
+  syncResolution();
+
+  /* ---------- アップロード取得（Feature B）: 選択ファイル名を表示 ---------- */
+  var fileInput = el('payloadFile');
+  var drop = el('upDrop');
+  var fileName = el('upFileName');
+  if (fileInput && drop) {
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files.length > 0) {
+        drop.classList.add('has-file');
+        if (fileName) {
+          fileName.textContent = fileInput.files[0].name;
+          fileName.removeAttribute('hidden');
+        }
+      } else {
+        drop.classList.remove('has-file');
+        if (fileName) { fileName.setAttribute('hidden', ''); }
+      }
+    });
+  }
+
+  ['dbForm', 'adminForm', 'acquireForm'].forEach(function (id) {
     var f = el(id);
     if (f) {
       f.addEventListener('submit', function (e) {
