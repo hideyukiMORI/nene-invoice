@@ -653,7 +653,8 @@ if (!$payloadPresent) {
                                 ->execute([$adminEmail, $hash, 'admin', $orgId, 'active', $now, $now]);
                         } else {
                             // 複数組織: superadmin（organization_id=NULL / クロステナント）。
-                            // 組織・company_settings は作らない（superadmin がアプリ内で追加）。
+                            // 組織・company_settings は作らない（superadmin が API 経由で追加。
+                            // 組織管理 UI は未提供 = #546 の注意喚起どおり上級者向け運用）。
                             $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
                                 ->execute([$adminEmail, $hash, 'superadmin', null, 'active', $now, $now]);
                         }
@@ -838,6 +839,7 @@ code{font-family:var(--font-num)}
 .alert .a-text{margin-top:3px;color:inherit;opacity:.92}
 .alert.error{background:var(--danger-soft);color:var(--danger);border-color:color-mix(in oklch,var(--danger) 30%,transparent)}
 .alert.ok{background:var(--ok-soft);color:var(--ok);border-color:color-mix(in oklch,var(--ok) 30%,transparent)}
+.alert.warn{background:var(--warn-soft);color:color-mix(in oklch,var(--warn) 82%,var(--fg));border-color:color-mix(in oklch,var(--warn) 32%,transparent)}
 .alert .det{margin-top:8px;font-family:var(--font-num);font-size:11px;background:color-mix(in oklch,var(--danger) 8%,transparent);border:1px solid color-mix(in oklch,var(--danger) 22%,transparent);border-radius:5px;padding:7px 9px;word-break:break-all}
 .alert summary{cursor:pointer;font-weight:600;font-size:11.5px;margin-top:8px}
 .reqs{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
@@ -1187,12 +1189,13 @@ code{font-family:var(--font-num)}
             <label class="opt-card<?= $tmOld === 'multi' ? ' on' : '' ?>" data-tenant="multi">
               <input type="radio" name="tenant_mode" value="multi"<?= $tmOld === 'multi' ? ' checked' : '' ?>>
               <div>
-                <div class="oc-t">複数組織（multi）</div>
-                <div class="oc-d">複数の組織（テナント）を 1 つのインストールで運用します。全体管理者（superadmin）を作成し、組織はアプリ内で追加します。</div>
+                <div class="oc-t">複数組織（multi）<span class="oc-badge">上級者向け</span></div>
+                <div class="oc-d">複数の組織（テナント）を 1 つのインストールで運用します。全体管理者（superadmin）を作成します。<b>組織を管理する画面は現在未提供</b>のため、組織の作成・管理は API 経由（または managed / NeNe Suite 運用）が前提です（詳細は下記）。</div>
               </div>
             </label>
 
             <div id="multiOpts"<?= $tmOld === 'multi' ? '' : ' hidden' ?>>
+              <div class="alert warn" style="margin-top:12px"><?= ico('warn') ?><div class="a-body"><div class="a-title">上級者向け構成です</div><div class="a-text">現在、<b>組織を作成・管理する管理画面（superadmin 用）は未提供</b>です。マルチテナントの組織作成・切替は <b>API 経由</b>（または managed / NeNe Suite 運用）が前提になります。1 事業者でお使いの場合は上の「単一組織」を選んでください。</div></div></div>
               <div class="field" style="margin-top:12px">
                 <label class="label" for="tenant_resolution">組織の振り分け方式
                   <span class="tip" tabindex="0">?<span class="tip-body">URL からどの組織かを判別する方式です。あとで <code>.env</code> の <code>TENANT_RESOLUTION</code> で変更できます。</span></span>
@@ -1226,7 +1229,7 @@ code{font-family:var(--font-num)}
         <?php elseif ($view === 'admin'): ?>
         <div class="iz-head"><?= $isMultiInstall ? '全体管理者アカウントを作成' : '管理者アカウントを作成' ?></div>
         <?php if ($isMultiInstall): ?>
-        <div class="iz-headsub"><b>複数組織（multi）</b>構成です。全体管理者（<b>superadmin</b>）アカウントを作成します。組織・会社情報はログイン後にアプリ内で追加します。</div>
+        <div class="iz-headsub"><b>複数組織（multi・上級者向け）</b>構成です。全体管理者（<b>superadmin</b>）アカウントを作成します。<b>組織の作成・管理は現在 API 経由</b>（管理画面は未提供）です。1 事業者の場合は戻って「単一組織」を推奨します。</div>
         <?php else: ?>
         <div class="iz-headsub">最初の管理者アカウントと、請求書に印字する会社情報を設定します。</div>
         <?php endif; ?>
