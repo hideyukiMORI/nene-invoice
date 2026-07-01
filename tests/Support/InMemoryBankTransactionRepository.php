@@ -8,6 +8,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\BankTransaction\BankTransaction;
 use NeneInvoice\BankTransaction\BankTransactionNotFoundException;
 use NeneInvoice\BankTransaction\BankTransactionRepositoryInterface;
+use NeneInvoice\BankTransaction\BankTransactionStatus;
 
 /**
  * In-memory fake for use-case tests (no database). `save` forces the org from
@@ -58,6 +59,30 @@ final class InMemoryBankTransactionRepository implements BankTransactionReposito
     public function countByOrganization(): int
     {
         return count($this->mine());
+    }
+
+    /** @return list<BankTransaction> */
+    public function findByStatus(?BankTransactionStatus $status, int $limit, int $offset): array
+    {
+        return array_slice($this->withStatus($status), $offset, $limit);
+    }
+
+    public function countByStatus(?BankTransactionStatus $status): int
+    {
+        return count($this->withStatus($status));
+    }
+
+    /** @return list<BankTransaction> newest first, org-scoped, optionally status-filtered */
+    private function withStatus(?BankTransactionStatus $status): array
+    {
+        if ($status === null) {
+            return $this->mine();
+        }
+
+        return array_values(array_filter(
+            $this->mine(),
+            static fn (BankTransaction $t): bool => $t->status === $status,
+        ));
     }
 
     public function findByBankReference(string $bankReference): ?BankTransaction

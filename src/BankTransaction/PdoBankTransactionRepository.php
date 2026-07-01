@@ -81,6 +81,37 @@ final readonly class PdoBankTransactionRepository implements BankTransactionRepo
         return $row !== null ? (int) $row['cnt'] : 0;
     }
 
+    /** @return list<BankTransaction> */
+    public function findByStatus(?BankTransactionStatus $status, int $limit, int $offset): array
+    {
+        if ($status === null) {
+            return $this->findByOrganization($limit, $offset);
+        }
+
+        $rows = $this->query->fetchAll(
+            'SELECT ' . self::COLUMNS . ' FROM bank_transactions
+             WHERE organization_id = ? AND status = ?
+             ORDER BY value_date DESC, id DESC LIMIT ? OFFSET ?',
+            [$this->orgId->get(), $status->value, $limit, $offset],
+        );
+
+        return array_map(fn (array $row): BankTransaction => $this->mapRow($row), $rows);
+    }
+
+    public function countByStatus(?BankTransactionStatus $status): int
+    {
+        if ($status === null) {
+            return $this->countByOrganization();
+        }
+
+        $row = $this->query->fetchOne(
+            'SELECT COUNT(*) AS cnt FROM bank_transactions WHERE organization_id = ? AND status = ?',
+            [$this->orgId->get(), $status->value],
+        );
+
+        return $row !== null ? (int) $row['cnt'] : 0;
+    }
+
     public function findByBankReference(string $bankReference): ?BankTransaction
     {
         $row = $this->query->fetchOne(

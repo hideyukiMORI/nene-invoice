@@ -74,6 +74,8 @@ Stored and transmitted **exactly** as written (lowercase snake_case).
 | `recurring_invoice.frequency` | `monthly`, `quarterly` (#503) |
 | `bank_transaction.status` | `unmatched`, `matched`, `posted`, `ignored` (#505) |
 | `bank_transaction.direction` | `credit`, `debit` (#505) |
+| bank match reason (`reasons[]`) | `amount-exact`, `amount-within-fee`, `amount-partial`, `amount-over`, `payer-alias`, `name-exact`, `name-contains`, `name-similar` (#505) |
+| bank import preset (`?preset=`) | `net_bank_credit_debit`, `signed_amount` (#505) |
 | `company_settings.pdf_template` | `standard` (default), `modern`, `classic` (見積/請求 PDF レイアウト — Issue #449) |
 | `company_settings.pdf_spacing` | `small`, `medium` (default), `large` (PDF 余白スケール大中小 — Issue #449) |
 | `company_settings.pdf_heading_font` | `gothic` (default), `mincho` (PDF 見出しフォント — Issue #449) |
@@ -118,6 +120,9 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Recurring-billing fields | `frequency` (values §2), `next_run_on`, `last_run_on` (calendar dates like `valid_until`), `is_active` | `interval`, `cycle`, `next_run`, `last_run`, `active`, `enabled` |
 | Bank-transaction fields | `value_date`, `direction` (values §2), `amount_cents`, `payer_name`, `bank_reference`, `status` (values §2), `matched_invoice_id`, `matched_payment_id`, `imported_at` | `date`, `txn_type`, `cr_dr`, `amount`, `payer`, `remitter`, `ref`, `bank_ref`, `ext_ref`, `matched_id` |
 | Payer-alias fields | `normalized_name`, `client_id` | `payer`, `alias`, `name_key`, `normalized`, `customer_id` |
+| Bank match suggestion read model | `invoice_id`, `invoice_number`, `client_id`, `client_name`, `outstanding_cents`, `score`, `reasons` (values §2) | `match_score`, `confidence`, `why`, `candidate_id` |
+| Bank import result read model | `imported_count`, `skipped_duplicate_count`, `row_errors` (→ `line`, `reason`), `format_error` | `imported`, `skipped`, `errors`, `error` |
+| Bank confirm result read model | `transaction`, `payment` (→ `id`, `invoice_id`, `amount_cents`, `invoice_status` (values §2), `total_paid_cents`) | `bank_transaction`, `payment_id`, `status`, `paid_cents` |
 | Service-token fields | `jti`, `subject`, `label`, `scopes`, `created_by`, `expires_at`, `revoked_at`, `ttl_seconds` | `jwt_id`, `name`, `scope`, `created_user_id`, `expiry`, `revoked`, `ttl` |
 | Payment-link fields | `token_hash`, `gateway`, `gateway_session_id`, `status`, `expires_at`, `paid_at`, `revoked_at` | `token`, `session`, `provider`, `expiry`, `paid`, `revoked` |
 | Gateway-settings fields | `gateway`, `public_key_masked`, `secret_set`, `webhook_token_set`, `configured`, `ok`, `detail` (`connected`/`not_configured`/`invalid_credentials`/`unreachable`) | `secret_key`, `api_key`, `public_key`, `status` |
@@ -170,6 +175,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `service-token-revoked` | Presented service token has been revoked (401; service API) |
 | `service-token-not-found` | Service-token id not found in the caller's org (404; operator API) |
 | `payment-link-not-found` | Payment-link id not found in the caller's org (404; operator API) |
+| `bank-transaction-not-found` | Bank transaction id not found in the caller's org (404; #505) |
 | `invalid-webhook-token` | PAY.JP webhook `X-Payjp-Webhook-Token` missing or incorrect (401; public webhook) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
@@ -199,6 +205,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `listRecurringInvoices`, `getRecurringInvoice`, `createRecurringInvoice`, `updateRecurringInvoice`, `deleteRecurringInvoice` | RecurringInvoice (継続請求, #503) |
 | `listInvoices`, `getInvoiceById`, `createInvoice`, `issueInvoice`, `getInvoicePdf`, `generateDownloadToken`, `downloadInvoicePdf`, `sendInvoiceEmail` | Invoice |
 | `listPayments`, `recordPayment` | Payment (operator `/admin/*`) |
+| `listBankTransactions`, `importBankTransactions`, `getBankTransactionSuggestions`, `confirmBankTransactionMatch`, `ignoreBankTransaction` | BankTransaction (自動消込, #505) |
 | `listLineItemSuggestions` | LineItem (history-based suggestions) |
 | `listServiceTokens`, `issueServiceToken`, `revokeServiceToken` | ServiceToken (NeNe Clear integration credentials; admin oversight) |
 

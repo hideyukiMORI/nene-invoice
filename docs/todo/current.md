@@ -420,7 +420,7 @@ Phase 1–3 後の運用・UX 強化と Phase 4 着手分（すべて merged）:
 
 優先（課金転換に直結する順）:
 1. ~~**#526（P0）定期請求の実行ルート配線（cron/CLI/リクエスト時 due）**~~ — ✅ **実装済（`feat/526-recurring-execution-route`）**。Tier B cron＋Tier A 自動、下書きのみ・冪等。看板機能が自動で回るようになった。
-2. **#505 銀行入金CSVの真の自動消込（P0・進行中）** — 渡辺の支払条件・佐藤のゲート（R4 再確認）。多増分エピックで進行: ①`bank_transactions` ステージング永続化 ②列マッピングCSVパーサ＋取込（Shift_JIS・冪等）③名義ゆれ辞書(`payer_aliases`)＋カナ正規化 ④スコアリング照合 いずれも **merged**。⑤確認→一括起票（`ConfirmMatchUseCase`＝税理士サインオフ済み `RecordPaymentUseCase` 再利用・`external_reference=bank_reference`・冪等・alias 学習・過入金は拒否）＋候補生成（`SuggestMatchesUseCase`）＋消込SQL（`PdoMatchCandidateRepository`）＝**this**。残: ⑥手数料差引 write-off・過入金按分〔税理士ゲート〕⑦HTTP+OpenAPI ⑧消込UI。**取込・照合は会計影響ゼロ／起票は税理士サインオフ済み RecordPayment 再利用**。
+2. **#505 銀行入金CSVの真の自動消込（P0・進行中）** — 渡辺の支払条件・佐藤のゲート（R4 再確認）。多増分エピックで進行: ①`bank_transactions` ステージング永続化 ②列マッピングCSVパーサ＋取込（Shift_JIS・冪等）③名義ゆれ辞書(`payer_aliases`)＋カナ正規化 ④スコアリング照合 いずれも **merged**。⑤確認→一括起票（`ConfirmMatchUseCase`＝税理士サインオフ済み `RecordPaymentUseCase` 再利用・`external_reference=bank_reference`・冪等・alias 学習・過入金は拒否）＋候補生成（`SuggestMatchesUseCase`）＋消込SQL（`PdoMatchCandidateRepository`）**merged**。⑦HTTP+OpenAPI（`/admin/bank-transactions` import/list/suggestions/confirm/ignore・ViewBilling/ManageBilling・OpenAPI＋用語登録）＝**this**。残: ⑥手数料差引 write-off・過入金按分〔税理士ゲート〕⑧消込UI。**取込・照合は会計影響ゼロ／起票は税理士サインオフ済み RecordPayment 再利用**。
 3. **#527（P1）一括発行・一括メール** — 会計事務所セグメント（¥49,800）解錠（岡田）。
 4. **業種テンプレ**: #528（見積の単位欄/小数数量/工種内訳・中村）、#513（源泉徴収・清水）。
 5. **MFA（standalone TOTP）#524** — エンタープライズ信頼。**R4 では決め手に挙げた人ゼロ＝最優先でない**（裏で進行可）。
