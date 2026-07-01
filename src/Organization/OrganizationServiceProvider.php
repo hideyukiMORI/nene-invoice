@@ -38,7 +38,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             )
             ->set(ListOrganizationsUseCaseInterface::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
             ->set(GetOrganizationByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
-            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
+            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c), self::initialAdminFactory()))
             ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
             ->set(
                 ListOrganizationsHandler::class,
@@ -123,6 +123,12 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
     private static function organizationsFactory(): Closure
     {
         return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => new PdoOrganizationRepository($exec);
+    }
+
+    /** @return Closure(DatabaseQueryExecutorInterface): InitialAdminRepositoryInterface */
+    private static function initialAdminFactory(): Closure
+    {
+        return static fn (DatabaseQueryExecutorInterface $exec): InitialAdminRepositoryInterface => new PdoInitialAdminRepository($exec);
     }
 
     private static function listUseCase(ContainerInterface $c): ListOrganizationsUseCase

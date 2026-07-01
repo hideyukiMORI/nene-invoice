@@ -94,6 +94,7 @@ Do not invent `cancelled`, `void`, `unpaid`, `pending`, etc. without registering
 | Organization slug | `slug` | `org_slug`, `code` |
 | User role | `role` (values in §2) | `user_role`, `permission` |
 | User credential | `password_hash` | `password`, `pass_hash` |
+| Initial-admin provisioning (create-org request only) | `admin_email`, `admin_password` | `owner_email`, `admin_pass`, `initial_admin_email`, `first_admin_password` |
 | Invoice registration number | `registration_number` | `tax_registration_number`, `invoice_registration_number`, `t_number` |
 | Qualified-invoice flag | `is_qualified_invoice` | `qualified`, `is_qualified` |
 | Soft-delete flag / time | `is_deleted`, `deleted_at` | `deleted`, `is_del` |

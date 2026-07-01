@@ -1337,9 +1337,22 @@ export interface components {
             updated_at?: string | null;
         };
         OrganizationList: components["schemas"]["PageEnvelope"];
+        /** @description Creates a tenant (superadmin only). The optional admin_email / admin_password fields provision the tenant's first admin atomically with the organization; they are both-or-neither — supplying only one is a 422. */
         CreateOrganizationRequest: {
             name: string;
             slug: string;
+            /** @description Billing plan slug. Defaults to "free" when omitted. */
+            plan?: string;
+            /**
+             * Format: email
+             * @description Email of the tenant's initial admin. Requires admin_password.
+             */
+            admin_email?: string;
+            /**
+             * Format: password
+             * @description Plaintext password for the tenant's initial admin (hashed server-side). Requires admin_email.
+             */
+            admin_password?: string;
         };
         DownloadTokenResponse: {
             /** @description Public PDF download URL (relative path, no auth required). */
