@@ -1,5 +1,6 @@
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { routerBasename } from '@/shared/config/app-base'
+import { HomeRedirect } from '@/app/home-redirect'
 import { AppShell } from '@/pages/layout'
 import { AuditLogsPage } from '@/pages/audit-logs'
 import { BankReconciliationPage } from '@/pages/bank-reconciliation'
@@ -29,6 +30,8 @@ import { InvoicesPage } from '@/pages/invoices'
 import { UsersPage } from '@/pages/users'
 import { UserCreatePage } from '@/pages/user-create'
 import { UserEditPage } from '@/pages/user-edit'
+import { OrganizationsPage } from '@/pages/organizations'
+import { OrganizationCreatePage } from '@/pages/organization-create'
 import { ServiceTokensPage } from '@/pages/service-tokens'
 
 const router = createBrowserRouter(
@@ -37,7 +40,7 @@ const router = createBrowserRouter(
       path: '/',
       element: <AppShell />,
       children: [
-        { index: true, element: <Navigate to="/dashboard" replace /> },
+        { index: true, element: <HomeRedirect /> },
         { path: 'dashboard', element: <DashboardPage /> },
         { path: 'invoices', element: <InvoicesPage /> },
         { path: 'invoices/new', element: <InvoiceCreatePage /> },
@@ -64,12 +67,14 @@ const router = createBrowserRouter(
         { path: 'users', element: <UsersPage /> },
         { path: 'users/new', element: <UserCreatePage /> },
         { path: 'users/:id/edit', element: <UserEditPage /> },
+        { path: 'organizations', element: <OrganizationsPage /> },
+        { path: 'organizations/new', element: <OrganizationCreatePage /> },
         { path: 'audit-logs', element: <AuditLogsPage /> },
         { path: 'service-tokens', element: <ServiceTokensPage /> },
         { path: 'help', element: <HelpPage /> },
       ],
     },
-    { path: '*', element: <Navigate to="/invoices" replace /> },
+    { path: '*', element: <HomeRedirect /> },
   ],
   { basename: routerBasename },
 )

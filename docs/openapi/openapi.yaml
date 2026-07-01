@@ -2532,11 +2532,29 @@ components:
       $ref: '#/components/schemas/PageEnvelope'
     CreateOrganizationRequest:
       type: object
+      description: >-
+        Creates a tenant (superadmin only). The optional admin_email /
+        admin_password fields provision the tenant's first admin atomically with
+        the organization; they are both-or-neither — supplying only one is a 422.
       properties:
         name:
           type: string
         slug:
           type: string
+        plan:
+          type: string
+          description: Billing plan slug. Defaults to "free" when omitted.
+        admin_email:
+          type: string
+          format: email
+          description: >-
+            Email of the tenant's initial admin. Requires admin_password.
+        admin_password:
+          type: string
+          format: password
+          description: >-
+            Plaintext password for the tenant's initial admin (hashed
+            server-side). Requires admin_email.
       required: [name, slug]
     DownloadTokenResponse:
       type: object

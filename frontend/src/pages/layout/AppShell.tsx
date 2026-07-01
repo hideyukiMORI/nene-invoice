@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useCurrentUser } from '@/entities/auth'
 import { AccountMenu } from '@/features/account-menu'
 import { useTranslation, type MessageKey } from '@/shared/i18n'
 import { KeyboardShortcuts } from '@/shared/keyboard'
@@ -148,6 +149,14 @@ const ICONS: Record<string, ReactNode> = {
       <circle cx="6.5" cy="10" r="0.9" fill="currentColor" stroke="none" />
     </>,
   ),
+  organizations: icon(
+    <>
+      <path d="M3.5 17.5V4.5h7v13" />
+      <path d="M10.5 8.5h6v9" />
+      <path d="M2.5 17.5h15" />
+      <path d="M6 7.5h2M6 10.5h2M6 13.5h2M13 11.5h1M13 14.5h1" />
+    </>,
+  ),
 }
 
 /** Hamburger (mobile drawer toggle). */
@@ -207,6 +216,17 @@ const NAV: NavGroup[] = [
   },
 ]
 
+/**
+ * A superadmin is org-less (cross-tenant host); every org-scoped screen 404s for
+ * them, so their shell exposes only tenant management. See ADR 0006 / Issue #552.
+ */
+const SUPERADMIN_NAV: NavGroup[] = [
+  {
+    label: 'admin.nav.group.host',
+    items: [{ to: '/organizations', label: 'admin.nav.organizations', iconKey: 'organizations' }],
+  },
+]
+
 /** Primary tabs for the mobile bottom bar (thumb-reachable). The remaining nav
  *  items (users / settings / audit) live behind the 「メニュー」 tab, which opens
  *  the sidebar drawer. */
@@ -221,20 +241,25 @@ const BOTTOM_TABS: BottomTab[] = [
   { to: '/invoices', label: 'admin.bottomNav.invoices', iconKey: 'invoices' },
   { to: '/clients', label: 'admin.bottomNav.clients', iconKey: 'clients' },
 ]
+/** Superadmin (org-less) only manages tenants, so the mobile bar mirrors that. */
+const SUPERADMIN_BOTTOM_TABS: BottomTab[] = [
+  { to: '/organizations', label: 'admin.nav.organizations', iconKey: 'organizations' },
+]
 /** Routes that live behind the 「メニュー」 tab (not direct bottom tabs). */
 const DRAWER_ROUTES = ['/users', '/audit-logs', '/service-tokens', '/help', '/settings']
 
 interface BottomNavProps {
   pathname: string
+  tabs: BottomTab[]
   menuActive: boolean
   onMenu: () => void
 }
 
-function BottomNav({ pathname, menuActive, onMenu }: BottomNavProps) {
+function BottomNav({ pathname, tabs, menuActive, onMenu }: BottomNavProps) {
   const { t } = useTranslation()
   return (
     <nav className="bottom-nav" aria-label={t('admin.nav.primary')}>
-      {BOTTOM_TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = pathname === tab.to || pathname.startsWith(`${tab.to}/`)
         return (
           <NavLink key={tab.to} to={tab.to} className={cn('bn-item', active && 'active')}>
@@ -261,15 +286,22 @@ function BottomNav({ pathname, menuActive, onMenu }: BottomNavProps) {
 export function AppShell() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
+  const me = useCurrentUser(true)
+  const isSuperadmin = me.data?.role === 'superadmin'
   const [navOpen, setNavOpen] = useState(false)
   const closeNav = (): void => {
     setNavOpen(false)
   }
 
+  // A superadmin is org-less: expose only tenant management (org-scoped screens
+  // 404 for them). Every other role keeps the full billing shell unchanged.
+  const nav = isSuperadmin ? SUPERADMIN_NAV : NAV
+  const bottomTabs = isSuperadmin ? SUPERADMIN_BOTTOM_TABS : BOTTOM_TABS
+
   // Breadcrumb tail = the nav item whose route prefixes the current path.
-  const activeItem = NAV.flatMap((g) => g.items).find(
-    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
-  )
+  const activeItem = nav
+    .flatMap((g) => g.items)
+    .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
 
   const linkClass = ({ isActive }: { isActive: boolean }): string =>
     cn(
@@ -292,7 +324,7 @@ export function AppShell() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-inline-sm">
-          {NAV.map((group) => (
+          {nav.map((group) => (
             <div key={group.label} className="mb-stack-md">
               <div className="px-inline-sm pb-stack-xs text-caption font-medium uppercase tracking-wide text-side-fg-muted">
                 {t(group.label)}
@@ -342,9 +374,11 @@ export function AppShell() {
 
       <BottomNav
         pathname={pathname}
-        menuActive={DRAWER_ROUTES.some(
-          (route) => pathname === route || pathname.startsWith(`${route}/`),
-        )}
+        tabs={bottomTabs}
+        menuActive={
+          !isSuperadmin &&
+          DRAWER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+        }
         onMenu={() => {
           setNavOpen(true)
         }}
