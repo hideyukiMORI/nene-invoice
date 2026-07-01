@@ -45,6 +45,10 @@ cp -r "$ROOT/src"                 "$WORK/src"
 cp -r "$ROOT/vendor"              "$WORK/vendor"
 cp -r "$ROOT/database"            "$WORK/database"
 cp -r "$ROOT/public_html"         "$WORK/public_html"
+# resources/fonts holds the bundled IPAex fonts that MpdfFactory loads at PDF
+# render time (resources/fonts/ipaexg.ttf). Without this the installed app throws
+# "Cannot find TTF TrueType font file" and every invoice/quote PDF 500s (#550).
+cp -r "$ROOT/resources"           "$WORK/resources"
 cp    "$ROOT/.env.example"        "$WORK/.env.example"
 cp    "$ROOT/phinx.php"           "$WORK/phinx.php"
 cp    "$ROOT/composer.json"       "$WORK/composer.json"
