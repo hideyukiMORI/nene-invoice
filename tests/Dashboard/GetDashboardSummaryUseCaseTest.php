@@ -18,6 +18,8 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
 
     private InMemoryPaymentRepository $payments;
 
+    private FixedClock $clock;
+
     private GetDashboardSummaryUseCase $useCase;
 
     protected function setUp(): void
@@ -26,7 +28,8 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         $holder->set(1);
         $this->invoices = new InMemoryInvoiceRepository($holder);
         $this->payments = new InMemoryPaymentRepository($holder);
-        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, $this->payments, new FixedClock());
+        $this->clock    = new FixedClock();
+        $this->useCase  = new GetDashboardSummaryUseCase($this->invoices, $this->payments, $this->clock);
     }
 
     public function test_empty_organization_returns_zeros(): void
@@ -55,9 +58,10 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
         $issue = function (string $issuedAt, int $cents): void {
             $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Issued, subtotalCents: $cents, taxCents: 0, totalCents: $cents, issuedAt: $issuedAt));
         };
-        $issue(date('Y-m-01 10:00:00'), 3000); // this month, day 1
-        $issue(date('Y-m-01 10:00:00', (int) strtotime('first day of last month')), 4000); // last month, day 1
-        $issue(date('Y-m-01 10:00:00', (int) strtotime('-1 year')), 5000); // same month last year, day 1
+        $now = $this->clock->now();
+        $issue($now->format('Y-m') . '-01 10:00:00', 3000); // this month, day 1
+        $issue($now->modify('first day of last month')->format('Y-m') . '-01 10:00:00', 4000); // last month, day 1
+        $issue($now->modify('-1 year')->format('Y-m') . '-01 10:00:00', 5000); // same month last year, day 1
 
         $summary = $this->useCase->execute();
 
@@ -70,8 +74,9 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
 
     public function test_billed_metrics_and_monthly_trend(): void
     {
-        $thisMonth = date('Y-m-10 09:00:00');
-        $lastMonth = date('Y-m-10 09:00:00', (int) strtotime('first day of last month'));
+        $now       = $this->clock->now();
+        $thisMonth = $now->format('Y-m') . '-10 09:00:00';
+        $lastMonth = $now->modify('first day of last month')->format('Y-m') . '-10 09:00:00';
 
         // Issued this month: 1000 + 2000 (paid still counts as issued).
         $this->invoices->save(new Invoice(organizationId: 1, clientId: 1, status: InvoiceStatus::Issued, subtotalCents: 1000, taxCents: 0, totalCents: 1000, issuedAt: $thisMonth));
@@ -88,7 +93,7 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
 
         self::assertCount(6, $summary->monthlyBilled);
         // Last bucket is the current month (oldest→newest).
-        self::assertSame(date('Y-m'), $summary->monthlyBilled[5]['month']);
+        self::assertSame($this->clock->now()->format('Y-m'), $summary->monthlyBilled[5]['month']);
         self::assertSame(3000, $summary->monthlyBilled[5]['billed_cents']);
         self::assertSame(2, $summary->monthlyBilled[5]['count']);
         self::assertSame(5000, $summary->monthlyBilled[4]['billed_cents']);
@@ -97,7 +102,7 @@ final class GetDashboardSummaryUseCaseTest extends TestCase
 
     public function test_received_this_month_sums_current_month_payments(): void
     {
-        $thisMonth = date('Y-m-15 12:00:00');
+        $thisMonth = $this->clock->now()->format('Y-m') . '-15 12:00:00';
         $this->payments->save(new \NeneInvoice\Payment\Payment(organizationId: 1, invoiceId: 1, amountCents: 4200, paidAt: $thisMonth));
 
         $summary = $this->useCase->execute();

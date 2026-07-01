@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Invoice;
 
-use DateTimeImmutable;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\Company\PaymentTerms;
@@ -36,6 +35,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
     private InMemoryLineItemRepository $lineItems;
     private InMemoryCompanySettingsRepository $companySettings;
     private RecordingAuditRecorder $audit;
+    private FixedClock $clock;
     private IssueInvoiceUseCase $useCase;
 
     protected function setUp(): void
@@ -46,6 +46,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
         $this->lineItems = new InMemoryLineItemRepository();
         $this->companySettings = new InMemoryCompanySettingsRepository();
         $this->audit = new RecordingAuditRecorder();
+        $this->clock = new FixedClock();
         $this->useCase = new IssueInvoiceUseCase(
             $this->invoices,
             $this->lineItems,
@@ -54,7 +55,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
             new ImmediateTransactionManager(),
             fn () => $this->invoices,
             fn () => $this->audit,
-            new FixedClock(),
+            $this->clock,
             $this->holder,
         );
     }
@@ -114,7 +115,9 @@ final class IssueInvoiceUseCaseTest extends TestCase
 
         $result = $this->useCase->execute(7, $id, new IssueInvoiceInput(qualified: false));
 
-        $expected = (new PaymentTerms(null, 1, null))->dueDateFrom(new DateTimeImmutable('today'));
+        // Derive the expected due date from the same clock the use case uses, not
+        // real "today" — otherwise this drifts a month at every month boundary (#538).
+        $expected = (new PaymentTerms(null, 1, null))->dueDateFrom($this->clock->now());
         self::assertSame($expected, substr((string) $result->invoice->dueAt, 0, 10));
     }
 
