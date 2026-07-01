@@ -15,7 +15,7 @@ rm -rf "$DEST"
 mkdir -p "$DEST/var"
 
 # リリース ZIP（tools/build-release.sh）と同じ構成。
-for d in src vendor database public_html; do
+for d in src vendor database public_html resources; do
   cp -r "$ROOT/$d" "$DEST/$d"
 done
 cp "$ROOT/composer.json" "$ROOT/phinx.php" "$ROOT/.env.example" "$DEST/"
