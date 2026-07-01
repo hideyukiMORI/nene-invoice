@@ -188,8 +188,8 @@ describe('KeyboardShortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
 
     const dialog = getByRole('dialog')
-    // Group headers are presentation (not options); 9 navigable options remain.
-    expect(getAllByRole('option')).toHaveLength(9)
+    // Group headers are presentation (not options); 10 navigable options remain.
+    expect(getAllByRole('option')).toHaveLength(10)
     expect(dialog.querySelectorAll('.cmdp-grp')).toHaveLength(3)
     // Keys render as the joined .keycombo (not the 3D .kbd).
     expect(dialog.querySelector('.keycombo')).not.toBeNull()

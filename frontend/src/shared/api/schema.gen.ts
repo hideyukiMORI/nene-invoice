@@ -1152,6 +1152,115 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/bank-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List staged bank transactions
+         * @description Lists staged bank lines for the reconciliation workbench (自動消込), newest first, optionally filtered by status. Read-only (ViewBilling).
+         */
+        get: operations["listBankTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bank-transactions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a bank statement CSV
+         * @description Imports a bank statement CSV uploaded as the raw text/csv body (raw bytes preserve Shift_JIS for the encoding auto-detector). `?preset=` selects the column mapping. Staging only — records no payment; idempotent on bank_reference. A whole-file format error returns 422; otherwise 200 with per-row counts. Requires ManageBilling.
+         */
+        post: operations["importBankTransactions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bank-transactions/{id}/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Suggest invoice matches for a bank line
+         * @description Ranked invoice candidates a staged deposit might settle (score + reasons + display fields). Read-only; only credit lines yield suggestions.
+         */
+        get: operations["getBankTransactionSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bank-transactions/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a bank match and record payment
+         * @description Confirms an operator's match to an invoice and records the payment, reusing the tax-signed-off RecordPayment path (idempotent on the bank line; external_reference = bank_reference). The exact deposit amount is recorded — a short deposit leaves the remainder outstanding (no write-off). Over-payment is rejected (payment-exceeds-outstanding). Requires ManageBilling.
+         */
+        post: operations["confirmBankTransactionMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/bank-transactions/{id}/ignore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ignore a staged bank line
+         * @description Dismisses a staged line the operator will not reconcile (fees, non-AR transfers, duplicates). A posted line cannot be ignored. Requires ManageBilling.
+         */
+        post: operations["ignoreBankTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1606,6 +1715,64 @@ export interface components {
         ChangeQuoteStatusRequest: {
             /** @enum {string} */
             status: "draft" | "sent" | "accepted" | "rejected" | "expired";
+        };
+        /** @description A staged bank statement line for reconciliation (自動消込). Money is integer cents. */
+        BankTransaction: {
+            id: number;
+            /** @description Value date (YYYY-MM-DD, JST). */
+            value_date: string;
+            /** @enum {string} */
+            direction: "credit" | "debit";
+            amount_cents: number;
+            payer_name?: string | null;
+            description?: string | null;
+            bank_reference?: string | null;
+            /** @enum {string} */
+            status: "unmatched" | "matched" | "posted" | "ignored";
+            matched_invoice_id?: number | null;
+            matched_payment_id?: number | null;
+            imported_at?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+        };
+        BankTransactionList: components["schemas"]["PageEnvelope"];
+        /** @description A scored invoice candidate for a staged deposit (advice only; */
+        BankMatchSuggestion: {
+            invoice_id: number;
+            invoice_number?: string | null;
+            client_id: number;
+            client_name?: string | null;
+            outstanding_cents: number;
+            score: number;
+            reasons: string[];
+        };
+        BankMatchSuggestionList: {
+            items: components["schemas"]["BankMatchSuggestion"][];
+        };
+        /** @description Outcome of a CSV import. A non-null format_error means nothing was staged. */
+        BankImportResult: {
+            imported_count: number;
+            skipped_duplicate_count: number;
+            row_errors: {
+                line: number;
+                reason: string;
+            }[];
+            format_error: string | null;
+        };
+        ConfirmBankMatchRequest: {
+            invoice_id: number;
+        };
+        /** @description Outcome of confirming a bank match — the posted line plus the recorded payment. */
+        BankConfirmResult: {
+            transaction: components["schemas"]["BankTransaction"];
+            payment: {
+                id: number;
+                invoice_id: number;
+                amount_cents: number;
+                /** @enum {string} */
+                invoice_status: "issued" | "partially_paid" | "paid";
+                total_paid_cents: number;
+            };
         };
         /** @description A recurring-billing schedule (継続請求). Money is integer cents. */
         RecurringInvoice: {
@@ -4172,6 +4339,163 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecordPaymentResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    listBankTransactions: {
+        parameters: {
+            query?: {
+                /** @description Filter by reconciliation status. */
+                status?: "unmatched" | "matched" | "posted" | "ignored";
+                /** @description Maximum number of items to return (1–100, default 20). */
+                limit?: components["parameters"]["LimitParam"];
+                /** @description Number of items to skip (default 0). */
+                offset?: components["parameters"]["OffsetParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bank transaction page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankTransactionList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    importBankTransactions: {
+        parameters: {
+            query?: {
+                /** @description Column-mapping preset. */
+                preset?: "net_bank_credit_debit" | "signed_amount";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "text/csv": string;
+            };
+        };
+        responses: {
+            /** @description Import accepted; staged rows counted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankImportResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            /** @description Rejected — whole-file format error; nothing staged */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankImportResult"];
+                };
+            };
+        };
+    };
+    getBankTransactionSuggestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ranked match suggestions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankMatchSuggestionList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    confirmBankTransactionMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "invoice_id": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["ConfirmBankMatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Match confirmed; payment recorded */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankConfirmResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    ignoreBankTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Line moved to ignored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankTransaction"];
                 };
             };
             401: components["responses"]["Unauthorized"];

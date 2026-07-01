@@ -22,6 +22,12 @@ const COMMANDS: Command[] = [
   { id: 'dashboard', labelKey: 'admin.nav.dashboard', path: '/dashboard', combo: ['g', 'd'] },
   { id: 'quotes', labelKey: 'admin.nav.quotes', path: '/quotes', combo: ['g', 'q'] },
   { id: 'invoices', labelKey: 'admin.nav.invoices', path: '/invoices', combo: ['g', 'i'] },
+  {
+    id: 'bank-reconciliation',
+    labelKey: 'admin.nav.bankReconciliation',
+    path: '/bank-reconciliation',
+    combo: ['g', 'b'],
+  },
   { id: 'clients', labelKey: 'admin.nav.clients', path: '/clients', combo: ['g', 'c'] },
   { id: 'items', labelKey: 'admin.nav.items', path: '/items', combo: ['g', 'm'] },
   { id: 'templates', labelKey: 'admin.nav.templates', path: '/templates', combo: ['g', 't'] },
@@ -35,7 +41,7 @@ const GROUPS: Group[] = [
   { labelKey: 'admin.nav.group.overview', ids: ['dashboard'] },
   {
     labelKey: 'admin.nav.group.transactions',
-    ids: ['quotes', 'invoices', 'clients', 'items', 'templates'],
+    ids: ['quotes', 'invoices', 'bank-reconciliation', 'clients', 'items', 'templates'],
   },
   { labelKey: 'admin.nav.group.admin', ids: ['users', 'settings', 'audit'] },
 ]
