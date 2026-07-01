@@ -64,7 +64,7 @@ final class OrgResolverMiddlewareTest extends TestCase
     {
         $handler = $this->passthroughHandler();
 
-        foreach (['/health', '/auth/login', '/api/invoices', '/invoices/download/x', '/admin/organizations'] as $path) {
+        foreach (['/health', '/auth/login', '/api/invoices', '/invoices/download/x', '/admin/organizations', '/admin/me'] as $path) {
             $request  = $this->psr17->createServerRequest('GET', "https://app.example.com{$path}");
             $response = $this->middleware('', false)->process($request, $handler);
             self::assertSame(200, $response->getStatusCode(), "bypass failed for {$path}");

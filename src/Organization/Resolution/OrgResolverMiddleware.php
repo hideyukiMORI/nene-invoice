@@ -38,6 +38,11 @@ final readonly class OrgResolverMiddleware implements MiddlewareInterface
         '/api/',
         '/invoices/download/',
         '/admin/organizations',
+        // Self-service identity: `/admin/me` returns the caller's own record from
+        // token claims (user lookup is by id, not org-scoped), so it needs no org
+        // context. Bypassing lets a cross-tenant superadmin (organization_id NULL)
+        // bootstrap the admin SPA where there is no org in the URL (#552).
+        '/admin/me',
     ];
 
     /**
