@@ -246,9 +246,43 @@ async function postCsv<T>(path: string, csv: string, isRetry = false): Promise<T
   throw AppError.fromProblem(response.status, parsed)
 }
 
+/**
+ * POSTs the RAW bytes of a file (a Blob / File body) with `Content-Type: text/csv`,
+ * unchanged. Unlike `postCsv` (which sends a decoded string), this never touches
+ * the encoding — required for Japanese bank CSVs that are Shift_JIS, which
+ * `File.text()` would corrupt by decoding as UTF-8. Both 200 (accepted) and 422
+ * (rejected — the report carries the format/row errors) resolve with the body;
+ * only auth / transport / 5xx throw.
+ */
+async function postBytes<T>(path: string, body: Blob, isRetry = false): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
+  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+
+  let response: Response
+  try {
+    response = await fetch(apiUrl(path), { method: 'POST', headers, body })
+  } catch {
+    throw AppError.transport('Network request failed')
+  }
+
+  const text = await response.text()
+  const parsed: unknown = text === '' ? null : safeJsonParse(text)
+
+  if (response.status === 200 || response.status === 422) {
+    return parsed as T
+  }
+
+  if (await shouldRetryAfterRefresh(response.status, path, isRetry)) {
+    return postBytes<T>(path, body, true)
+  }
+  handleUnauthorized(response.status)
+  throw AppError.fromProblem(response.status, parsed)
+}
+
 export const apiClient = {
   get: <T>(path: string): Promise<T> => request<T>('GET', path),
   postCsv: <T>(path: string, csv: string): Promise<T> => postCsv<T>(path, csv),
+  postBytes: <T>(path: string, body: Blob): Promise<T> => postBytes<T>(path, body),
   post: <T>(path: string, body?: Json): Promise<T> => request<T>('POST', path, body),
   put: <T>(path: string, body?: Json): Promise<T> => request<T>('PUT', path, body),
   patch: <T>(path: string, body?: Json): Promise<T> => request<T>('PATCH', path, body),

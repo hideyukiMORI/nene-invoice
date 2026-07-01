@@ -5,6 +5,12 @@ import {
   buildRecurringInvoiceDto,
   buildRecurringInvoiceWithLinesDto,
 } from '@tests/factories/recurring-invoice'
+import {
+  buildBankConfirmResultDto,
+  buildBankImportResultDto,
+  buildBankMatchSuggestionDto,
+  buildBankTransactionDto,
+} from '@tests/factories/bank-transaction'
 
 /** Default happy-path handlers mirroring the OpenAPI contract. */
 export const handlers = [
@@ -247,4 +253,22 @@ export const handlers = [
   ),
 
   http.delete('/admin/recurring-invoices/:id', () => new HttpResponse(null, { status: 204 })),
+
+  http.get('/admin/bank-transactions', () =>
+    HttpResponse.json({ items: [buildBankTransactionDto()], total: 1, limit: 50, offset: 0 }),
+  ),
+
+  http.post('/admin/bank-transactions/import', () => HttpResponse.json(buildBankImportResultDto())),
+
+  http.get('/admin/bank-transactions/:id/suggestions', () =>
+    HttpResponse.json({ items: [buildBankMatchSuggestionDto()] }),
+  ),
+
+  http.post('/admin/bank-transactions/:id/confirm', () =>
+    HttpResponse.json(buildBankConfirmResultDto()),
+  ),
+
+  http.post('/admin/bank-transactions/:id/ignore', () =>
+    HttpResponse.json(buildBankTransactionDto({ status: 'ignored' })),
+  ),
 ]

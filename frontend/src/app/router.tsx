@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { routerBasename } from '@/shared/config/app-base'
 import { AppShell } from '@/pages/layout'
 import { AuditLogsPage } from '@/pages/audit-logs'
+import { BankReconciliationPage } from '@/pages/bank-reconciliation'
 import { ClientCreatePage } from '@/pages/client-create'
 import { ClientEditPage } from '@/pages/client-edit'
 import { ClientImportPage } from '@/pages/client-import'
@@ -55,6 +56,7 @@ const router = createBrowserRouter(
         { path: 'recurring', element: <RecurringPage /> },
         { path: 'recurring/new', element: <RecurringCreatePage /> },
         { path: 'recurring/:id/edit', element: <RecurringEditPage /> },
+        { path: 'bank-reconciliation', element: <BankReconciliationPage /> },
         { path: 'templates', element: <TemplatesPage /> },
         { path: 'templates/new', element: <TemplateCreatePage /> },
         { path: 'templates/:id/edit', element: <TemplateEditPage /> },

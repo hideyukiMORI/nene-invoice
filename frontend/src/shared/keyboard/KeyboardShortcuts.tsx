@@ -17,6 +17,7 @@ const GOTO: Record<string, string> = {
   d: '/dashboard',
   q: '/quotes',
   i: '/invoices',
+  b: '/bank-reconciliation',
   c: '/clients',
   m: '/items',
   t: '/templates',

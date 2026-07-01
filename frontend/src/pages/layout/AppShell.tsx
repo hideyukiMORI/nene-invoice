@@ -98,6 +98,13 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M6.5 11h6M6.5 13.5h6" />
     </>,
   ),
+  bank: icon(
+    <>
+      <path d="M10 2.5 17 6H3z" />
+      <path d="M4.5 6v8M8 6v8M12 6v8M15.5 6v8" />
+      <path d="M3 16.5h14" />
+    </>,
+  ),
   users: icon(
     <>
       <circle cx="7" cy="7" r="2.6" />
@@ -178,6 +185,11 @@ const NAV: NavGroup[] = [
       { to: '/quotes', label: 'admin.nav.quotes', iconKey: 'quotes' },
       { to: '/invoices', label: 'admin.nav.invoices', iconKey: 'invoices' },
       { to: '/recurring', label: 'admin.nav.recurring', iconKey: 'recurring' },
+      {
+        to: '/bank-reconciliation',
+        label: 'admin.nav.bankReconciliation',
+        iconKey: 'bank',
+      },
       { to: '/clients', label: 'admin.nav.clients', iconKey: 'clients' },
       { to: '/items', label: 'admin.nav.items', iconKey: 'items' },
       { to: '/templates', label: 'admin.nav.templates', iconKey: 'templates' },
