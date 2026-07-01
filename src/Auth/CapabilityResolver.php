@@ -51,7 +51,7 @@ final class CapabilityResolver
             return Capability::ViewBilling;
         }
 
-        foreach (['/admin/clients', '/admin/items', '/admin/templates', '/admin/quotes', '/admin/recurring-invoices', '/admin/invoices', '/admin/payments', '/admin/payment-links', '/admin/line-items'] as $prefix) {
+        foreach (['/admin/clients', '/admin/items', '/admin/templates', '/admin/quotes', '/admin/recurring-invoices', '/admin/invoices', '/admin/payments', '/admin/payment-links', '/admin/bank-transactions', '/admin/line-items'] as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 return self::isReadMethod($method) ? Capability::ViewBilling : Capability::ManageBilling;
             }

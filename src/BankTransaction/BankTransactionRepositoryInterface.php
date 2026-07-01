@@ -16,6 +16,17 @@ interface BankTransactionRepositoryInterface
     public function countByOrganization(): int;
 
     /**
+     * Org-scoped page of staged lines, optionally filtered by reconciliation
+     * status (null = every status), newest first (value_date desc, id desc).
+     *
+     * @return list<BankTransaction>
+     */
+    public function findByStatus(?BankTransactionStatus $status, int $limit, int $offset): array;
+
+    /** Org-scoped count of staged lines, optionally filtered by status (null = all). */
+    public function countByStatus(?BankTransactionStatus $status): int;
+
+    /**
      * The org-scoped row already imported with this bank line identifier, or
      * null. Used to skip re-importing the same line (idempotent import).
      */

@@ -37,6 +37,8 @@ tags:
     description: Invoices (請求書), including issue and quote conversion.
   - name: Payments
     description: Payments (入金) recorded against invoices.
+  - name: BankTransactions
+    description: Bank statement import and receivable auto-reconciliation (自動消込) — staging, match suggestions, confirm-to-payment (#505).
   - name: LineItems
     description: Document line items (品目) and history-based suggestions.
   - name: ServiceTokens
@@ -2113,6 +2115,163 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+  /admin/bank-transactions:
+    get:
+      tags: [BankTransactions]
+      summary: List staged bank transactions
+      operationId: listBankTransactions
+      description: >
+        Lists staged bank lines for the reconciliation workbench (自動消込),
+        newest first, optionally filtered by status. Read-only (ViewBilling).
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter by reconciliation status.
+          schema:
+            type: string
+            enum: [unmatched, matched, posted, ignored]
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: Bank transaction page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankTransactionList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/bank-transactions/import:
+    post:
+      tags: [BankTransactions]
+      summary: Import a bank statement CSV
+      description: >
+        Imports a bank statement CSV uploaded as the raw text/csv body (raw bytes
+        preserve Shift_JIS for the encoding auto-detector). `?preset=` selects the
+        column mapping. Staging only — records no payment; idempotent on
+        bank_reference. A whole-file format error returns 422; otherwise 200 with
+        per-row counts. Requires ManageBilling.
+      operationId: importBankTransactions
+      parameters:
+        - name: preset
+          in: query
+          required: false
+          description: Column-mapping preset.
+          schema:
+            type: string
+            enum: [net_bank_credit_debit, signed_amount]
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Import accepted; staged rows counted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankImportResult'
+        '422':
+          description: Rejected — whole-file format error; nothing staged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankImportResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+  /admin/bank-transactions/{id}/suggestions:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [BankTransactions]
+      summary: Suggest invoice matches for a bank line
+      operationId: getBankTransactionSuggestions
+      description: >
+        Ranked invoice candidates a staged deposit might settle (score + reasons +
+        display fields). Read-only; only credit lines yield suggestions.
+      responses:
+        '200':
+          description: Ranked match suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankMatchSuggestionList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/bank-transactions/{id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [BankTransactions]
+      summary: Confirm a bank match and record payment
+      operationId: confirmBankTransactionMatch
+      description: >
+        Confirms an operator's match to an invoice and records the payment,
+        reusing the tax-signed-off RecordPayment path (idempotent on the bank line;
+        external_reference = bank_reference). The exact deposit amount is recorded —
+        a short deposit leaves the remainder outstanding (no write-off). Over-payment
+        is rejected (payment-exceeds-outstanding). Requires ManageBilling.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmBankMatchRequest'
+            example:
+              invoice_id: 1
+      responses:
+        '200':
+          description: Match confirmed; payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankConfirmResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+  /admin/bank-transactions/{id}/ignore:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    post:
+      tags: [BankTransactions]
+      summary: Ignore a staged bank line
+      operationId: ignoreBankTransaction
+      description: >
+        Dismisses a staged line the operator will not reconcile (fees, non-AR
+        transfers, duplicates). A posted line cannot be ignored. Requires ManageBilling.
+      responses:
+        '200':
+          description: Line moved to ignored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankTransaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
 components:
   securitySchemes:
     bearerAuth:
@@ -3045,6 +3204,120 @@ components:
           type: string
           enum: [draft, sent, accepted, rejected, expired]
       required: [status]
+    BankTransaction:
+      type: object
+      description: A staged bank statement line for reconciliation (自動消込). Money is integer cents.
+      properties:
+        id:
+          type: integer
+        value_date:
+          type: string
+          description: Value date (YYYY-MM-DD, JST).
+        direction:
+          type: string
+          enum: [credit, debit]
+        amount_cents:
+          type: integer
+        payer_name:
+          type: [string, 'null']
+        description:
+          type: [string, 'null']
+        bank_reference:
+          type: [string, 'null']
+        status:
+          type: string
+          enum: [unmatched, matched, posted, ignored]
+        matched_invoice_id:
+          type: [integer, 'null']
+        matched_payment_id:
+          type: [integer, 'null']
+        imported_at:
+          type: [string, 'null']
+        created_at:
+          type: [string, 'null']
+        updated_at:
+          type: [string, 'null']
+      required: [id, value_date, direction, amount_cents, status]
+    BankTransactionList:
+      $ref: '#/components/schemas/PageEnvelope'
+    BankMatchSuggestion:
+      type: object
+      description: A scored invoice candidate for a staged deposit (advice only; #505).
+      properties:
+        invoice_id:
+          type: integer
+        invoice_number:
+          type: [string, 'null']
+        client_id:
+          type: integer
+        client_name:
+          type: [string, 'null']
+        outstanding_cents:
+          type: integer
+        score:
+          type: integer
+        reasons:
+          type: array
+          items:
+            type: string
+      required: [invoice_id, client_id, outstanding_cents, score, reasons]
+    BankMatchSuggestionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankMatchSuggestion'
+      required: [items]
+    BankImportResult:
+      type: object
+      description: Outcome of a CSV import. A non-null format_error means nothing was staged.
+      properties:
+        imported_count:
+          type: integer
+        skipped_duplicate_count:
+          type: integer
+        row_errors:
+          type: array
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+              reason:
+                type: string
+            required: [line, reason]
+        format_error:
+          type: [string, 'null']
+      required: [imported_count, skipped_duplicate_count, row_errors, format_error]
+    ConfirmBankMatchRequest:
+      type: object
+      properties:
+        invoice_id:
+          type: integer
+      required: [invoice_id]
+    BankConfirmResult:
+      type: object
+      description: Outcome of confirming a bank match — the posted line plus the recorded payment.
+      properties:
+        transaction:
+          $ref: '#/components/schemas/BankTransaction'
+        payment:
+          type: object
+          properties:
+            id:
+              type: integer
+            invoice_id:
+              type: integer
+            amount_cents:
+              type: integer
+            invoice_status:
+              type: string
+              enum: [issued, partially_paid, paid]
+            total_paid_cents:
+              type: integer
+          required: [id, invoice_id, amount_cents, invoice_status, total_paid_cents]
+      required: [transaction, payment]
     RecurringInvoice:
       type: object
       description: A recurring-billing schedule (継続請求). Money is integer cents.

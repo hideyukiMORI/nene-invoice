@@ -9,6 +9,9 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use NeneInvoice\Audit\AuditRouteRegistrar;
 use NeneInvoice\Auth\AuthRouteRegistrar;
+use NeneInvoice\BankTransaction\BankTransactionNotFoundExceptionHandler;
+use NeneInvoice\BankTransaction\BankTransactionRouteRegistrar;
+use NeneInvoice\BankTransaction\BankTransactionValidationExceptionHandler;
 use NeneInvoice\Client\ClientNotFoundExceptionHandler;
 use NeneInvoice\Client\ClientRouteRegistrar;
 use NeneInvoice\Client\InvalidRegistrationNumberExceptionHandler;
@@ -96,6 +99,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $recurringInvoiceRoutes = $container->get(RecurringInvoiceRouteRegistrar::class);
                     $invoiceRoutes = $container->get(InvoiceRouteRegistrar::class);
                     $paymentRoutes = $container->get(PaymentRouteRegistrar::class);
+                    $bankTransactionRoutes = $container->get(BankTransactionRouteRegistrar::class);
                     $serviceApiRoutes = $container->get(ServiceApiRouteRegistrar::class);
                     $downloadTokenRoutes = $container->get(InvoiceDownloadTokenRouteRegistrar::class);
                     $lineItemRoutes = $container->get(LineItemRouteRegistrar::class);
@@ -149,6 +153,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment route registrar service is invalid.');
                     }
 
+                    if (!$bankTransactionRoutes instanceof BankTransactionRouteRegistrar) {
+                        throw new LogicException('Bank transaction route registrar service is invalid.');
+                    }
+
                     if (!$serviceApiRoutes instanceof ServiceApiRouteRegistrar) {
                         throw new LogicException('Service API route registrar service is invalid.');
                     }
@@ -181,7 +189,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Gateway settings route registrar service is invalid.');
                     }
 
-                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $recurringInvoiceRoutes, $invoiceRoutes, $paymentRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes, $gatewaySettingsRoutes];
+                    return [$dashboardRoutes, $authRoutes, $auditRoutes, $organizationRoutes, $userRoutes, $clientRoutes, $companyRoutes, $quoteRoutes, $recurringInvoiceRoutes, $invoiceRoutes, $paymentRoutes, $bankTransactionRoutes, $serviceApiRoutes, $downloadTokenRoutes, $lineItemRoutes, $itemRoutes, $templateRoutes, $serviceTokenRoutes, $paymentLinkRoutes, $gatewaySettingsRoutes];
                 },
             )
             ->set(
@@ -211,6 +219,8 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
                     $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
                     $paymentNotFound = $container->get(PaymentNotFoundExceptionHandler::class);
+                    $bankTransactionNotFound = $container->get(BankTransactionNotFoundExceptionHandler::class);
+                    $bankTransactionValidation = $container->get(BankTransactionValidationExceptionHandler::class);
                     $serviceTokenNotFound = $container->get(ServiceTokenNotFoundExceptionHandler::class);
 
                     if (!$orgNotFound instanceof OrganizationNotFoundExceptionHandler) {
@@ -309,11 +319,19 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Payment not-found exception handler service is invalid.');
                     }
 
+                    if (!$bankTransactionNotFound instanceof BankTransactionNotFoundExceptionHandler) {
+                        throw new LogicException('Bank transaction not-found exception handler service is invalid.');
+                    }
+
+                    if (!$bankTransactionValidation instanceof BankTransactionValidationExceptionHandler) {
+                        throw new LogicException('Bank transaction validation exception handler service is invalid.');
+                    }
+
                     if (!$serviceTokenNotFound instanceof ServiceTokenNotFoundExceptionHandler) {
                         throw new LogicException('Service token not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $recurringInvoiceNotFound, $recurringInvoiceValidation, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $serviceTokenNotFound];
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $recurringInvoiceNotFound, $recurringInvoiceValidation, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $bankTransactionNotFound, $bankTransactionValidation, $serviceTokenNotFound];
                 },
             );
     }

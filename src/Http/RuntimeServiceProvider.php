@@ -29,6 +29,7 @@ use NeneInvoice\Audit\AuditServiceProvider;
 use NeneInvoice\Auth\AuthServiceProvider;
 use NeneInvoice\Auth\CapabilityMiddleware;
 use NeneInvoice\Auth\OrgGuardMiddleware;
+use NeneInvoice\BankTransaction\BankTransactionServiceProvider;
 use NeneInvoice\Client\ClientServiceProvider;
 use NeneInvoice\Company\CompanyServiceProvider;
 use NeneInvoice\Dashboard\DashboardServiceProvider;
@@ -91,6 +92,7 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
         $builder->addProvider(new MailerServiceProvider());
         $builder->addProvider(new InvoiceServiceProvider());
         $builder->addProvider(new PaymentServiceProvider());
+        $builder->addProvider(new BankTransactionServiceProvider());
         $builder->addProvider(new ServiceApiServiceProvider());
         $builder->addProvider(new ServiceTokenServiceProvider());
         $builder->addProvider(new PaymentLinkServiceProvider());
