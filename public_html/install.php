@@ -23,6 +23,19 @@ define('MYSQL_SCHEMA', ROOT . '/database/schema/mysql/schema.sql');
 define('ENV_FILE', ROOT . '/.env');
 
 // -------------------------------------------------------------------
+// Feature B（手動アップロードによるアプリ取得）用の定数。
+//
+// このラウンドは「配布元の SHA-256 照合のみ」。ADR 0018 の署名検証は
+// updater / 自動取得ラウンドで同時導入する（本 install は署名検証を行わない）。
+// -------------------------------------------------------------------
+// 配布 ZIP のトップレベル・エントリはこの集合の部分集合でなければならない。
+// （build-release.sh が同梱するもの＝無関係／悪意ある ZIP を弾くためのガード）
+const ACQUIRE_ALLOWED_TOP = ['src', 'vendor', 'database', 'public_html', 'composer.json', 'phinx.php', '.env.example', 'var'];
+// アップロード上限（.zip のみ受け付ける）。共有ホスティングの実効値
+// （upload_max_filesize / post_max_size）がこれより小さいこともある。
+const ACQUIRE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
+// -------------------------------------------------------------------
 // Guard: すでにインストール済みならブロック
 // -------------------------------------------------------------------
 if (file_exists(INSTALLED_MARKER)) {
@@ -161,8 +174,22 @@ function applySchema(PDO $pdo, string $schemaFile): void
     }
 }
 
-function writeEnv(string $dbHost, int $dbPort, string $dbName, string $dbUser, string $dbPass): void
-{
+/**
+ * .env をアトミックに書き出す。
+ *
+ * $tenantResolution は用語レジストリ（terminology.md §2）の登録値のみ:
+ * single / path / subdomain / custom_domain。$baseDomain は subdomain 方式でのみ
+ * 使用する（それ以外は空）。JWT シークレットは random_bytes で生成し、ログしない。
+ */
+function writeEnv(
+    string $dbHost,
+    int $dbPort,
+    string $dbName,
+    string $dbUser,
+    string $dbPass,
+    string $tenantResolution,
+    string $baseDomain,
+): void {
     $secret = bin2hex(random_bytes(32));
 
     $content = <<<ENV
@@ -172,9 +199,9 @@ APP_NAME="NeNe Invoice"
 PROBLEM_DETAILS_BASE_URL=https://nene-invoice.dev/problems/
 
 # --- Tenancy ---
-TENANT_RESOLUTION=single
+TENANT_RESOLUTION={$tenantResolution}
 ORG_SLUG=
-BASE_DOMAIN=
+BASE_DOMAIN={$baseDomain}
 
 # --- Auth ---
 NENE2_LOCAL_JWT_SECRET={$secret}
@@ -189,7 +216,241 @@ DB_PASSWORD={$dbPass}
 DB_CHARSET=utf8mb4
 ENV;
 
-    file_put_contents(ENV_FILE, $content);
+    // アトミック書き込み: 同一ディレクトリに一時ファイルを作って rename する
+    // （中断による .env の半端書き込みを避ける）。
+    $tmp = ENV_FILE . '.tmp.' . bin2hex(random_bytes(6));
+
+    if (file_put_contents($tmp, $content) === false) {
+        throw new RuntimeException('.env ファイルを書き込めませんでした。ルートディレクトリの権限を確認してください。');
+    }
+
+    @chmod($tmp, 0640);
+
+    if (!@rename($tmp, ENV_FILE)) {
+        @unlink($tmp);
+        throw new RuntimeException('.env ファイルを保存できませんでした。ルートディレクトリの権限を確認してください。');
+    }
+}
+
+// ===================================================================
+// Feature B — 手動アップロードによるアプリ取得（vendor/ 不在時）
+// ===================================================================
+
+/**
+ * 展開（アップロード取得）に必要な最小要件を返す。通常の requirementChecks()
+ * とは別で、DB 接続や vendor/ の存在は問わない（vendor/ はこの手順で入る）。
+ *
+ * @return list<array{label: string, detail: string, ok: bool, fix: string}>
+ */
+function acquireRequirementChecks(): array
+{
+    $phpOk  = PHP_VERSION_ID >= 80400;
+    $zipOk  = class_exists('ZipArchive');
+    $varOk  = (is_dir(ROOT . '/var') || @mkdir(ROOT . '/var', 0755, true)) && is_writable(ROOT . '/var');
+    $rootOk = is_writable(ROOT);
+
+    return [
+        [
+            'label' => 'PHP 8.4 以上',
+            'detail' => '現在: ' . PHP_VERSION,
+            'ok' => $phpOk,
+            'fix' => 'サーバーのコントロールパネルで使用する PHP のバージョンを 8.4 以上に切り替えてください。',
+        ],
+        [
+            'label' => 'zip 拡張モジュール（ZipArchive）',
+            'detail' => $zipOk ? '利用可' : '利用不可',
+            'ok' => $zipOk,
+            'fix' => 'アップロードした ZIP を展開するには <code>zip</code> 拡張が必要です。ホスティングのサポートにご確認ください。',
+        ],
+        [
+            'label' => 'var/ ディレクトリへの書き込み権限',
+            'detail' => $varOk ? '書き込み可' : '書き込み不可',
+            'ok' => $varOk,
+            'fix' => 'ファイルマネージャまたは FTP で <code>var/</code> フォルダのパーミッションを「書き込み可（755 または 775）」に変更してください。',
+        ],
+        [
+            'label' => 'ルートディレクトリへの書き込み権限',
+            'detail' => 'アプリ本体を展開します',
+            'ok' => $rootOk,
+            'fix' => '展開先フォルダ（public_html の 1 つ上）を一時的に書き込み可にしてください。展開後は元の権限に戻して構いません。',
+        ],
+    ];
+}
+
+/**
+ * ZIP エントリ名が展開先 ROOT の外へ書き込もうとしていないか（zip-slip）を判定する。
+ * 絶対パス・ドライブレター・`..` セグメントを含むものはすべて「脱出」とみなす（厳格）。
+ */
+function acquireEntryEscapesRoot(string $entry): bool
+{
+    $norm = str_replace('\\', '/', $entry);
+
+    if ($norm === '' || $norm === '/') {
+        return false;
+    }
+
+    // 絶対パス（/foo）または Windows ドライブレター（C:\）は拒否。
+    if ($norm[0] === '/' || preg_match('#^[A-Za-z]:#', $norm) === 1) {
+        return true;
+    }
+
+    foreach (explode('/', $norm) as $seg) {
+        if ($seg === '..') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * ZIP のトップレベル・エントリ名（第 1 セグメント）を返す。
+ */
+function acquireTopSegment(string $entry): string
+{
+    $norm = ltrim(str_replace('\\', '/', $entry), '/');
+    $slash = strpos($norm, '/');
+
+    return $slash === false ? $norm : substr($norm, 0, $slash);
+}
+
+/**
+ * ZIP を厳格に検証してから ROOT へ展開する。
+ *
+ * ガード:
+ *  - すべてのエントリについて zip-slip（`..` / 絶対パス）を拒否。
+ *  - トップレベル・エントリが ACQUIRE_ALLOWED_TOP の部分集合でなければ拒否。
+ *  - 検証を全通過してから初めて extractTo() する（部分展開を避ける）。
+ */
+function extractPayloadZip(string $zipPath, string $root): void
+{
+    if (!class_exists('ZipArchive')) {
+        throw new RuntimeException('zip 拡張（ZipArchive）が有効ではありません。');
+    }
+
+    $zip = new ZipArchive();
+
+    if ($zip->open($zipPath) !== true) {
+        throw new RuntimeException('アップロードされた ZIP を開けませんでした。ファイルが壊れていないか確認してください。');
+    }
+
+    try {
+        if ($zip->numFiles === 0) {
+            throw new RuntimeException('ZIP が空です。公式配布元の ZIP をアップロードしてください。');
+        }
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $entry = $zip->getNameIndex($i);
+
+            if ($entry === false) {
+                throw new RuntimeException('ZIP のエントリを読み取れませんでした。');
+            }
+
+            if (acquireEntryEscapesRoot($entry)) {
+                throw new RuntimeException('ZIP に不正なパス（zip-slip の疑い）が含まれています。展開を中止しました。');
+            }
+
+            $top = acquireTopSegment($entry);
+
+            if ($top !== '' && !in_array($top, ACQUIRE_ALLOWED_TOP, true)) {
+                throw new RuntimeException('想定外のエントリ「' . $top . '」が ZIP に含まれています。NeNe Invoice の配布 ZIP をアップロードしてください。');
+            }
+        }
+
+        if ($zip->extractTo($root) !== true) {
+            throw new RuntimeException('ZIP の展開に失敗しました。書き込み権限とディスク容量を確認してください。');
+        }
+    } finally {
+        $zip->close();
+    }
+}
+
+/**
+ * SHA-256 を照合してから ZIP を展開する（Feature B の中核・単体テスト可能）。
+ * ハッシュ不一致・書式不正・空欄はいずれも拒否（展開しない）。
+ */
+function verifyAndExtractPayload(string $zipPath, string $expectedHash, string $root): void
+{
+    $expected = strtolower(trim($expectedHash));
+
+    if ($expected === '') {
+        throw new RuntimeException('公式配布元のリリースページに記載された SHA-256 を入力してください。');
+    }
+
+    if (preg_match('/^[0-9a-f]{64}$/', $expected) !== 1) {
+        throw new RuntimeException('SHA-256 の形式が正しくありません（64 桁の 16 進数を入力してください）。');
+    }
+
+    $actual = hash_file('sha256', $zipPath);
+
+    if ($actual === false) {
+        throw new RuntimeException('アップロードされたファイルのハッシュを計算できませんでした。');
+    }
+
+    // タイミング攻撃対策として hash_equals を使う（照合は展開の前に必ず行う）。
+    if (!hash_equals($expected, strtolower($actual))) {
+        throw new RuntimeException('SHA-256 が一致しません。公式配布元からダウンロードした ZIP と、そのページに記載のハッシュを確認してください。');
+    }
+
+    extractPayloadZip($zipPath, $root);
+}
+
+/**
+ * Web アップロード（multipart POST）を検証し、一時ファイル経由で展開する。
+ * 一時 ZIP は成功・失敗いずれの場合も必ず削除する。
+ */
+function handleAcquireUpload(): void
+{
+    if (!isset($_FILES['payload']) || !is_array($_FILES['payload'])) {
+        throw new RuntimeException('ZIP ファイルが選択されていません。');
+    }
+
+    $err = $_FILES['payload']['error'] ?? UPLOAD_ERR_NO_FILE;
+
+    if ($err !== UPLOAD_ERR_OK) {
+        throw new RuntimeException(match ($err) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'アップロードされたファイルがサーバーの上限を超えています（php.ini の upload_max_filesize / post_max_size をご確認ください）。',
+            UPLOAD_ERR_PARTIAL => 'アップロードが中断されました。もう一度お試しください。',
+            UPLOAD_ERR_NO_FILE => 'ZIP ファイルが選択されていません。',
+            default => 'ファイルのアップロードに失敗しました（コード: ' . (int) $err . '）。',
+        });
+    }
+
+    $size = (int) ($_FILES['payload']['size'] ?? 0);
+
+    if ($size <= 0) {
+        throw new RuntimeException('アップロードされたファイルが空です。');
+    }
+
+    if ($size > ACQUIRE_MAX_UPLOAD_BYTES) {
+        throw new RuntimeException('ファイルサイズが上限（' . (int) (ACQUIRE_MAX_UPLOAD_BYTES / 1024 / 1024) . 'MB）を超えています。');
+    }
+
+    $origName = (string) ($_FILES['payload']['name'] ?? '');
+
+    if (strtolower((string) pathinfo($origName, PATHINFO_EXTENSION)) !== 'zip') {
+        throw new RuntimeException('.zip ファイルのみアップロードできます。');
+    }
+
+    $tmpName = (string) ($_FILES['payload']['tmp_name'] ?? '');
+
+    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+        throw new RuntimeException('アップロードされたファイルを検証できませんでした。');
+    }
+
+    $dest = ROOT . '/var/payload-upload-' . bin2hex(random_bytes(8)) . '.zip';
+
+    if (!move_uploaded_file($tmpName, $dest)) {
+        throw new RuntimeException('アップロードされたファイルを保存できませんでした。var/ の書き込み権限を確認してください。');
+    }
+
+    try {
+        // SHA-256 照合 → zip-slip / トップレベル検証 → 展開（すべて展開前に検証）。
+        verifyAndExtractPayload($dest, (string) ($_POST['expected_sha256'] ?? ''), ROOT);
+    } finally {
+        // 一致・不一致・例外いずれでも一時 ZIP を削除する。
+        @unlink($dest);
+    }
 }
 
 /** SVG アイコン（静的・信頼済みマークアップ）。 */
@@ -210,6 +471,9 @@ function ico(string $name): string
         'warn' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l8 14H2z"/><path d="M10 8v4M10 14.5v.01"/></svg>',
         'trash' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5h13M8 5.5V4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M5.5 5.5l.7 10a1.5 1.5 0 0 0 1.5 1.4h4.6a1.5 1.5 0 0 0 1.5-1.4l.7-10"/></svg>',
         'login' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/><path d="M12 6l4 4-4 4M16 10H8"/></svg>',
+        'upload' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13v2.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5V13"/><path d="M10 3v10M6 7l4-4 4 4"/></svg>',
+        'file' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2.5H6A1.5 1.5 0 0 0 4.5 4v12A1.5 1.5 0 0 0 6 17.5h8a1.5 1.5 0 0 0 1.5-1.5V7z"/><path d="M11 2.5V7h4.5"/></svg>',
+        'org' => '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="6" height="10" rx="1"/><rect x="11" y="3" width="6" height="14" rx="1"/><path d="M5 10h2M5 13h2M13 6h2M13 9h2M13 12h2"/></svg>',
         default => '',
     };
 }
@@ -221,44 +485,111 @@ $step        = (int) ($_GET['step'] ?? 0);   // 0=要件チェック(landing) / 
 $errors      = [];                            // バナー用
 $fieldErrors = [];                            // フィールド単位（管理者ステップ）
 $success     = false;
-$checks      = requirementChecks();
-$reqErrors   = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $reqErrors === []) {
-    if ($step === 1) {
-        // DB 接続テスト + スキーマ適用
-        $dbHost = trim($_POST['db_host'] ?? 'localhost');
-        $dbPort = (int) ($_POST['db_port'] ?? 3306);
-        $dbName = trim($_POST['db_name'] ?? '');
-        $dbUser = trim($_POST['db_user'] ?? '');
-        $dbPass = $_POST['db_pass'] ?? '';
+// Feature B: アプリ本体（vendor/）が展開されていなければ、要件チェックで
+// ハードに失敗させる代わりに「アプリの取得（アップロード）」ビューを先に出す。
+$payloadPresent = file_exists(ROOT . '/vendor/autoload.php');
 
-        if ($dbName === '' || $dbUser === '') {
-            $errors[] = 'データベース名とユーザー名は必須です。';
-        } else {
-            try {
-                $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
-                $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                applySchema($pdo, MYSQL_SCHEMA);
-                writeEnv($dbHost, $dbPort, $dbName, $dbUser, $dbPass);
+// 既に書き込まれた .env から利用形態を読む（管理者ステップの分岐用）。
+$installedMode = 'single';
+if (is_file(ENV_FILE)) {
+    $envForMode    = parse_ini_file(ENV_FILE) ?: [];
+    $installedMode = (string) ($envForMode['TENANT_RESOLUTION'] ?? 'single');
+}
+$isMultiInstall = $installedMode !== 'single';
 
-                header('Location: install.php?step=2');
-                exit;
-            } catch (PDOException $e) {
-                $errors[] = 'DB 接続エラー: ' . $e->getMessage();
-            } catch (RuntimeException $e) {
-                $errors[] = $e->getMessage();
-            }
+if (!$payloadPresent) {
+    // ================= Feature B: アプリ取得（アップロード）フロー =================
+    $view      = 'acquire';
+    $checks    = acquireRequirementChecks();
+    $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'acquire' && $reqErrors === []) {
+        try {
+            handleAcquireUpload();
+            // 展開成功 → install.php を再読み込み（今度は payload あり → 通常フロー）。
+            header('Location: install.php');
+            exit;
+        } catch (RuntimeException $e) {
+            $errors[] = $e->getMessage();
         }
-    } elseif ($step === 2) {
-        // 管理者ユーザー作成
-        $adminEmail    = trim($_POST['admin_email'] ?? '');
-        $adminPassword = $_POST['admin_password'] ?? '';
-        $companyName   = trim($_POST['company_name'] ?? '');
+    } elseif (
+        $_SERVER['REQUEST_METHOD'] === 'POST'
+        && $reqErrors === []
+        && $_POST === []
+        && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0
+    ) {
+        // POST 本体がサーバーの post_max_size を超えると PHP は $_POST/$_FILES を
+        // 空にする。ZIP が大きい場合に無言で失敗しないよう明示的に案内する。
+        $errors[] = 'アップロードがサーバーの上限（post_max_size / upload_max_filesize）を超えた可能性があります。ホスティングの PHP 設定をご確認ください。';
+    }
+} else {
+    // ================= 通常フロー（要件 → DB → 管理者） =================
+    $checks    = requirementChecks();
+    $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
 
-        if ($companyName === '' || $adminEmail === '' || $adminPassword === '') {
-            $errors[] = 'すべての項目を入力してください。';
-            if ($companyName === '') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && $reqErrors === []) {
+        if ($step === 1) {
+            // DB 接続テスト + スキーマ適用 + 利用形態（Feature A）
+            $dbHost = trim($_POST['db_host'] ?? 'localhost');
+            $dbPort = (int) ($_POST['db_port'] ?? 3306);
+            $dbName = trim($_POST['db_name'] ?? '');
+            $dbUser = trim($_POST['db_user'] ?? '');
+            $dbPass = $_POST['db_pass'] ?? '';
+
+            // 利用形態: single（既定・単一組織）/ multi（複数組織）。
+            // multi の解決方式は用語レジストリ登録値のみ（path/subdomain/custom_domain）。
+            $tenantMode = ($_POST['tenant_mode'] ?? 'single') === 'multi' ? 'multi' : 'single';
+            $resolution = (string) ($_POST['tenant_resolution'] ?? 'path');
+            $baseDomain = trim($_POST['base_domain'] ?? '');
+
+            if ($tenantMode === 'multi') {
+                if (!in_array($resolution, ['path', 'subdomain', 'custom_domain'], true)) {
+                    $resolution = 'path';
+                }
+                $tenantResolution = $resolution;
+                // BASE_DOMAIN は subdomain 方式のときのみ使用（他は空）。
+                $envBaseDomain = $resolution === 'subdomain' ? $baseDomain : '';
+
+                if ($resolution === 'subdomain' && $baseDomain === '') {
+                    $errors[] = 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。';
+                } elseif ($resolution === 'subdomain' && preg_match('/^[A-Za-z0-9.-]+$/', $baseDomain) !== 1) {
+                    // 英数字・ドット・ハイフンのみに限定し、改行/空白/引用符による
+                    // .env 破損・行インジェクションを防ぐ（値は .env にそのまま書かれる）。
+                    $errors[] = '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。';
+                }
+            } else {
+                $tenantResolution = 'single';
+                $envBaseDomain    = '';
+            }
+
+            if ($dbName === '' || $dbUser === '') {
+                $errors[] = 'データベース名とユーザー名は必須です。';
+            }
+
+            if ($errors === []) {
+                try {
+                    $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
+                    $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+                    applySchema($pdo, MYSQL_SCHEMA);
+                    writeEnv($dbHost, $dbPort, $dbName, $dbUser, $dbPass, $tenantResolution, $envBaseDomain);
+
+                    header('Location: install.php?step=2');
+                    exit;
+                } catch (PDOException $e) {
+                    $errors[] = 'DB 接続エラー: ' . $e->getMessage();
+                } catch (RuntimeException $e) {
+                    $errors[] = $e->getMessage();
+                }
+            }
+        } elseif ($step === 2) {
+            // 管理者ユーザー作成。利用形態を .env から読み、single/multi で分岐。
+            $adminEmail    = trim($_POST['admin_email'] ?? '');
+            $adminPassword = $_POST['admin_password'] ?? '';
+            $companyName   = trim($_POST['company_name'] ?? '');
+
+            // 会社名は single のみ必須（multi では組織はアプリ内で superadmin が作る）。
+            if (!$isMultiInstall && $companyName === '') {
                 $fieldErrors['company'] = '会社名を入力してください。';
             }
             if ($adminEmail === '') {
@@ -267,80 +598,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $reqErrors === []) {
             if ($adminPassword === '') {
                 $fieldErrors['pw'] = 'パスワードを入力してください。';
             }
-        } else {
-            if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
-                $fieldErrors['email'] = '有効なメールアドレスを入力してください。';
+
+            if ($fieldErrors === []) {
+                if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+                    $fieldErrors['email'] = '有効なメールアドレスを入力してください。';
+                }
+                if (strlen($adminPassword) < 8) {
+                    $fieldErrors['pw'] = 'パスワードは 8 文字以上にしてください。';
+                }
             }
-            if (strlen($adminPassword) < 8) {
-                $fieldErrors['pw'] = 'パスワードは 8 文字以上にしてください。';
-            }
+
             if ($fieldErrors !== []) {
                 $errors[] = '入力内容に誤りがあります。';
             }
-        }
 
-        if ($errors === [] && $fieldErrors === []) {
-            if (!file_exists(ENV_FILE)) {
-                $errors[] = '.env ファイルが見つかりません。ステップ 1 からやり直してください。';
-            } else {
-                try {
-                    $env = parse_ini_file(ENV_FILE);
+            if ($errors === [] && $fieldErrors === []) {
+                if (!file_exists(ENV_FILE)) {
+                    $errors[] = '.env ファイルが見つかりません。ステップ 1 からやり直してください。';
+                } else {
+                    try {
+                        $env = parse_ini_file(ENV_FILE);
 
-                    if ($env === false) {
-                        throw new RuntimeException('.env ファイルを読み込めませんでした。');
+                        if ($env === false) {
+                            throw new RuntimeException('.env ファイルを読み込めませんでした。');
+                        }
+
+                        // 分岐の権威は書き込み済み .env の TENANT_RESOLUTION。
+                        $isSingle = (string) ($env['TENANT_RESOLUTION'] ?? 'single') === 'single';
+
+                        $dsn = sprintf(
+                            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+                            $env['DB_HOST'] ?? 'localhost',
+                            $env['DB_PORT'] ?? '3306',
+                            $env['DB_NAME'] ?? '',
+                        );
+                        $pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASSWORD'] ?? '', [
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        ]);
+
+                        $now  = date('Y-m-d H:i:s');
+                        $hash = password_hash($adminPassword, PASSWORD_BCRYPT);
+
+                        if ($isSingle) {
+                            // 単一組織: 組織 + company_settings + admin（organization_id 紐付け）。
+                            $orgSlug = preg_replace('/[^a-z0-9\-]/', '-', strtolower($companyName)) ?: 'default';
+                            $pdo->prepare('INSERT INTO organizations (name, slug, plan, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)')
+                                ->execute([$companyName, $orgSlug, 'free', $now, $now]);
+                            $orgId = (int) $pdo->lastInsertId();
+
+                            $pdo->prepare('INSERT INTO company_settings (organization_id, legal_name, created_at, updated_at) VALUES (?, ?, ?, ?)')
+                                ->execute([$orgId, $companyName, $now, $now]);
+
+                            $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                                ->execute([$adminEmail, $hash, 'admin', $orgId, 'active', $now, $now]);
+                        } else {
+                            // 複数組織: superadmin（organization_id=NULL / クロステナント）。
+                            // 組織・company_settings は作らない（superadmin がアプリ内で追加）。
+                            $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                                ->execute([$adminEmail, $hash, 'superadmin', null, 'active', $now, $now]);
+                        }
+
+                        file_put_contents(INSTALLED_MARKER, date('c'));
+
+                        $success = true;
+                    } catch (PDOException $e) {
+                        $errors[] = 'データベースエラー: ' . $e->getMessage();
+                    } catch (RuntimeException $e) {
+                        $errors[] = $e->getMessage();
                     }
-
-                    $dsn = sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                        $env['DB_HOST'] ?? 'localhost',
-                        $env['DB_PORT'] ?? '3306',
-                        $env['DB_NAME'] ?? '',
-                    );
-                    $pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASSWORD'] ?? '', [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    ]);
-
-                    $now = date('Y-m-d H:i:s');
-
-                    $orgSlug = preg_replace('/[^a-z0-9\-]/', '-', strtolower($companyName)) ?: 'default';
-                    $pdo->prepare('INSERT INTO organizations (name, slug, plan, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)')
-                        ->execute([$companyName, $orgSlug, 'free', $now, $now]);
-                    $orgId = (int) $pdo->lastInsertId();
-
-                    $pdo->prepare('INSERT INTO company_settings (organization_id, legal_name, created_at, updated_at) VALUES (?, ?, ?, ?)')
-                        ->execute([$orgId, $companyName, $now, $now]);
-
-                    $hash = password_hash($adminPassword, PASSWORD_BCRYPT);
-                    $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                        ->execute([$adminEmail, $hash, 'admin', $orgId, 'active', $now, $now]);
-
-                    file_put_contents(INSTALLED_MARKER, date('c'));
-
-                    $success = true;
-                } catch (PDOException $e) {
-                    $errors[] = 'データベースエラー: ' . $e->getMessage();
-                } catch (RuntimeException $e) {
-                    $errors[] = $e->getMessage();
                 }
             }
         }
     }
+
+    // 表示する画面を決定。要件不合格なら常に要件画面でブロック。
+    if ($reqErrors !== []) {
+        $view = 'requirements';
+    } elseif ($success) {
+        $view = 'complete';
+    } elseif ($step === 2) {
+        $view = 'admin';
+    } elseif ($step === 1) {
+        $view = 'database';
+    } else {
+        $view = 'requirements';
+    }
 }
 
-// 表示する画面を決定。要件不合格なら常に要件画面でブロック。
-if ($reqErrors !== []) {
-    $view = 'requirements';
-} elseif ($success) {
-    $view = 'complete';
-} elseif ($step === 2) {
-    $view = 'admin';
-} elseif ($step === 1) {
-    $view = 'database';
-} else {
-    $view = 'requirements';
-}
-
-// ステッパー位置（0=DB / 1=管理者 / 2=完了）。要件・DB は 0。
+// ステッパー位置（0=DB / 1=管理者 / 2=完了）。要件・DB・取得は 0。
 $stepIdx = match ($view) {
     'admin' => 1,
     'complete' => 2,
@@ -365,6 +710,13 @@ $hasError = $errors !== [] || $fieldErrors !== [];
 
 // POST 値の復元用ヘルパー
 $old = static fn (string $k, string $default = ''): string => h($_POST[$k] ?? $default);
+
+// 利用形態フォームの復元値（DB ステップ再表示時）。
+$tmOld  = ($_POST['tenant_mode'] ?? 'single') === 'multi' ? 'multi' : 'single';
+$resOld = (string) ($_POST['tenant_resolution'] ?? 'path');
+if (!in_array($resOld, ['path', 'subdomain', 'custom_domain'], true)) {
+    $resOld = 'path';
+}
 
 ?>
 <!DOCTYPE html>
@@ -571,6 +923,31 @@ code{font-family:var(--font-num)}
 .next-list li:last-child{border-bottom:none}
 .next-list .nl-n{width:22px;height:22px;flex:none;border-radius:50%;background:var(--brand-soft);color:var(--brand-strong);display:grid;place-items:center;font-size:11.5px;font-weight:700;font-family:var(--font-num);margin-top:1px}
 .next-list .nl-d{font-size:11.5px;color:var(--fg-muted);margin-top:2px}
+/* 利用形態（single/multi）＋解決方式（Feature A） */
+.tenant-sec{margin:6px 0 20px;padding:15px 15px 4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius)}
+.tenant-sec .ts-h{font-size:12.5px;font-weight:700;color:var(--fg);display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.tenant-sec .ts-h svg{width:15px;height:15px;color:var(--brand-strong);flex:none}
+.opt-card{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;margin-bottom:9px;transition:border-color .12s,box-shadow .12s,background .12s}
+.opt-card:hover{border-color:var(--brand)}
+.opt-card input{margin-top:2px;accent-color:var(--brand);flex:none;width:15px;height:15px}
+.opt-card.on{border-color:var(--brand);background:var(--brand-softer);box-shadow:var(--ring)}
+.opt-card .oc-t{font-size:13px;font-weight:600;color:var(--fg)}
+.opt-card .oc-d{font-size:11.5px;color:var(--fg-muted);margin-top:2px;line-height:1.6}
+.opt-card .oc-badge{display:inline-block;font-size:10px;font-weight:700;color:var(--brand-strong);background:var(--brand-soft);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.select{display:block;width:100%;font-family:inherit;font-size:13.5px;color:var(--fg);background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:10px 12px}
+.select:focus{outline:none;border-color:var(--brand);box-shadow:var(--ring)}
+.res-hint{font-size:11.5px;color:var(--fg-muted);margin-top:7px;line-height:1.65;display:flex;gap:6px;align-items:flex-start}
+.res-hint svg{width:13px;height:13px;flex:none;margin-top:2px;color:var(--brand-strong)}
+/* アップロード取得（Feature B） */
+.up-drop{border:1.5px dashed var(--border-strong);border-radius:var(--radius);background:var(--surface-2);padding:20px 16px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s}
+.up-drop:hover{border-color:var(--brand);background:var(--brand-softer)}
+.up-drop.has-file{border-color:var(--brand);border-style:solid;background:var(--brand-softer)}
+.up-drop .ud-ic{width:34px;height:34px;margin:0 auto 8px;color:var(--brand-strong)}
+.up-drop .ud-ic svg{width:100%;height:100%}
+.up-drop .ud-t{font-size:13px;font-weight:600;color:var(--fg)}
+.up-drop .ud-d{font-size:11.5px;color:var(--fg-muted);margin-top:3px}
+.up-drop .ud-file{font-family:var(--font-num);font-size:11.5px;color:var(--brand-strong);font-weight:600;margin-top:6px;word-break:break-all}
+.up-drop input[type=file]{display:none}
 [hidden]{display:none !important}
 @media (max-width:900px){
   .iz-stage{grid-template-columns:1fr}
@@ -622,7 +999,68 @@ code{font-family:var(--font-num)}
           <?php endforeach; ?>
         </div>
 
-        <?php if ($view === 'requirements'): ?>
+        <?php if ($view === 'acquire'): ?>
+        <div class="iz-head">アプリの取得（アップロード）</div>
+        <div class="iz-headsub">アプリ本体（<code>vendor/</code> など）がまだ展開されていません。<b>公式配布元からダウンロードした ZIP</b> をアップロードして展開します。</div>
+
+        <?php if ($errors !== []): ?>
+          <div class="alert error"><?= ico('warn') ?><div class="a-body"><div class="a-title">アップロードを処理できませんでした</div><div class="a-text"><?= h(implode(' ', $errors)) ?></div></div></div>
+        <?php endif; ?>
+
+        <?php if ($reqErrors !== []): ?>
+          <div class="alert error"><?= ico('warn') ?><div class="a-body"><div class="a-title">展開に必要な条件が不足しています</div><div class="a-text">以下を解消してから、ページを再読み込みしてください。</div></div></div>
+        <?php endif; ?>
+
+        <ul class="reqs" style="margin-bottom:20px">
+          <?php foreach ($checks as $c): ?>
+            <li class="<?= $c['ok'] ? 'pass' : 'fail' ?>">
+              <span class="ic"><?= $c['ok'] ? ico('check') : ico('x') ?></span>
+              <div class="rq-body">
+                <div class="rq-t"><?= h($c['label']) ?></div>
+                <div class="rq-d"><?= h($c['detail']) ?></div>
+                <?php if (!$c['ok']): ?><div class="rq-fix"><b>解決方法:</b> <?= $c['fix'] ?></div><?php endif; ?>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+
+        <?php if ($reqErrors === []): ?>
+        <form method="post" action="install.php" id="acquireForm" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="acquire">
+
+          <div class="field">
+            <label class="label">配布 ZIP ファイル<span class="req">*</span>
+              <span class="tip" tabindex="0">?<span class="tip-body">NeNe Invoice の公式リリースページからダウンロードした <code>nene-invoice-*.zip</code> を選んでください。他のファイルはアップロードしないでください。</span></span>
+            </label>
+            <label class="up-drop" id="upDrop" for="payloadFile">
+              <span class="ud-ic"><?= ico('upload') ?></span>
+              <span class="ud-t">ZIP ファイルを選択</span>
+              <span class="ud-d">クリックして <code>nene-invoice-*.zip</code> を選択（.zip のみ）</span>
+              <span class="ud-file" id="upFileName" hidden></span>
+              <input type="file" id="payloadFile" name="payload" accept=".zip,application/zip">
+            </label>
+            <p class="hint"><b>公式配布元からダウンロードした ZIP のみを使用してください。</b> 出所不明の ZIP はアップロードしないでください。</p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="expected_sha256">期待する SHA-256<span class="req">*</span>
+              <span class="tip" tabindex="0">?<span class="tip-body">公式リリースページに記載されている ZIP の SHA-256（64 桁の 16 進数）を貼り付けてください。アップロードしたファイルのハッシュと照合し、一致した場合のみ展開します。</span></span>
+            </label>
+            <input id="expected_sha256" name="expected_sha256" class="input mono" value="<?= $old('expected_sha256') ?>" placeholder="例: d27ef479…（64 桁の 16 進数）" autocomplete="off" spellcheck="false" required>
+            <p class="hint">公式リリースページ記載の <b>SHA-256</b> を貼り付けます。展開の<b>前</b>にハッシュを照合します（不一致なら展開しません）。<br>この段階では<b>署名検証は行いません</b>（配布元の SHA-256 照合のみ）。</p>
+          </div>
+
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary btn-block">アップロードして展開<?= ico('arrow') ?></button>
+          </div>
+        </form>
+        <?php else: ?>
+        <div class="btn-row">
+          <a class="btn btn-primary btn-block" href="install.php">再読み込みして再チェック</a>
+        </div>
+        <?php endif; ?>
+
+        <?php elseif ($view === 'requirements'): ?>
         <div class="iz-head">サーバー要件の確認</div>
         <div class="iz-headsub">インストールを始める前に、サーバーが NeNe Invoice の動作条件を満たしているか確認します。</div>
 
@@ -737,6 +1175,48 @@ code{font-family:var(--font-num)}
             <p class="hint">サーバーの DB ユーザーのパスワード。<b>NeNe Invoice のログインパスワードとは別物</b>です。</p>
           </div>
 
+          <div class="tenant-sec">
+            <div class="ts-h"><?= ico('org') ?>利用形態</div>
+            <label class="opt-card<?= $tmOld === 'single' ? ' on' : '' ?>" data-tenant="single">
+              <input type="radio" name="tenant_mode" value="single"<?= $tmOld === 'single' ? ' checked' : '' ?>>
+              <div>
+                <div class="oc-t">単一組織（single）<span class="oc-badge">既定</span></div>
+                <div class="oc-d">1 つの会社／組織だけで使う一般的な構成。管理者（admin）アカウントと会社情報を作成します。</div>
+              </div>
+            </label>
+            <label class="opt-card<?= $tmOld === 'multi' ? ' on' : '' ?>" data-tenant="multi">
+              <input type="radio" name="tenant_mode" value="multi"<?= $tmOld === 'multi' ? ' checked' : '' ?>>
+              <div>
+                <div class="oc-t">複数組織（multi）</div>
+                <div class="oc-d">複数の組織（テナント）を 1 つのインストールで運用します。全体管理者（superadmin）を作成し、組織はアプリ内で追加します。</div>
+              </div>
+            </label>
+
+            <div id="multiOpts"<?= $tmOld === 'multi' ? '' : ' hidden' ?>>
+              <div class="field" style="margin-top:12px">
+                <label class="label" for="tenant_resolution">組織の振り分け方式
+                  <span class="tip" tabindex="0">?<span class="tip-body">URL からどの組織かを判別する方式です。あとで <code>.env</code> の <code>TENANT_RESOLUTION</code> で変更できます。</span></span>
+                </label>
+                <select id="tenant_resolution" name="tenant_resolution" class="select">
+                  <option value="path"<?= $resOld === 'path' ? ' selected' : '' ?>>パス方式（/組織名/…）</option>
+                  <option value="subdomain"<?= $resOld === 'subdomain' ? ' selected' : '' ?>>サブドメイン方式（組織名.ドメイン）</option>
+                  <option value="custom_domain"<?= $resOld === 'custom_domain' ? ' selected' : '' ?>>独自ドメイン方式（組織ごとにドメイン）</option>
+                </select>
+                <div class="res-hint" data-res="path"<?= $resOld === 'path' ? '' : ' hidden' ?>><?= ico('check') ?><span><b>何が必要か:</b> DNS 設定不要。<code>/{org}/…</code> のパスで振り分けます。まず試すのに最適です。</span></div>
+                <div class="res-hint" data-res="subdomain"<?= $resOld === 'subdomain' ? '' : ' hidden' ?>><?= ico('warn') ?><span><b>何が必要か:</b> ワイルドカード DNS（<code>*.ドメイン</code>）を 1 つのディレクトリに向ける設定が必要です。</span></div>
+                <div class="res-hint" data-res="custom_domain"<?= $resOld === 'custom_domain' ? '' : ' hidden' ?>><?= ico('server') ?><span><b>何が必要か:</b> 組織ごとにドメインを用意し、それぞれをこのインストールに向けます。</span></div>
+              </div>
+
+              <div class="field" id="baseDomainField"<?= $resOld === 'subdomain' ? '' : ' hidden' ?>>
+                <label class="label" for="base_domain">基準ドメイン（BASE_DOMAIN）<span class="req">*</span>
+                  <span class="tip" tabindex="0">?<span class="tip-body">サブドメイン方式の親ドメイン。例: <code>example.com</code> とすると <code>acme.example.com</code> が組織 acme になります。</span></span>
+                </label>
+                <input id="base_domain" name="base_domain" class="input mono" value="<?= $old('base_domain') ?>" placeholder="例: example.com">
+                <p class="hint">サブドメイン方式でのみ使用します（例: <code>example.com</code>）。</p>
+              </div>
+            </div>
+          </div>
+
           <div class="btn-row">
             <a class="btn btn-ghost btn-back" href="install.php" aria-label="戻る"><?= ico('back') ?></a>
             <button type="submit" class="btn btn-primary">接続テスト＆スキーマ適用<?= ico('arrow') ?></button>
@@ -744,14 +1224,19 @@ code{font-family:var(--font-num)}
         </form>
 
         <?php elseif ($view === 'admin'): ?>
-        <div class="iz-head">管理者アカウントを作成</div>
+        <div class="iz-head"><?= $isMultiInstall ? '全体管理者アカウントを作成' : '管理者アカウントを作成' ?></div>
+        <?php if ($isMultiInstall): ?>
+        <div class="iz-headsub"><b>複数組織（multi）</b>構成です。全体管理者（<b>superadmin</b>）アカウントを作成します。組織・会社情報はログイン後にアプリ内で追加します。</div>
+        <?php else: ?>
         <div class="iz-headsub">最初の管理者アカウントと、請求書に印字する会社情報を設定します。</div>
+        <?php endif; ?>
 
         <?php if ($errors !== []): ?>
           <div class="alert error"><?= ico('warn') ?><div class="a-body"><div class="a-title">入力内容を確認してください</div><div class="a-text"><?= h(implode(' ', $errors)) ?></div></div></div>
         <?php endif; ?>
 
         <form method="post" action="install.php?step=2" id="adminForm">
+          <?php if (!$isMultiInstall): ?>
           <div class="field">
             <label class="label" for="company_name">会社名（法人名）<span class="req">*</span>
               <span class="tip" tabindex="0">?<span class="tip-body">適格請求書（インボイス）の<b>発行者名</b>として、見積書・請求書 PDF に印字されます。正式名称を入力してください。後から設定画面で変更できます。</span></span>
@@ -759,10 +1244,11 @@ code{font-family:var(--font-num)}
             <input id="company_name" name="company_name" class="input<?= isset($fieldErrors['company']) ? ' is-error' : '' ?>" value="<?= $old('company_name') ?>" placeholder="例: 株式会社ねね商事" required>
             <?php if (isset($fieldErrors['company'])): ?><p class="err-text"><?= ico('warn') ?><?= h($fieldErrors['company']) ?></p><?php else: ?><p class="hint">請求書 PDF に発行者として印字されます（後から変更可）。</p><?php endif; ?>
           </div>
+          <?php endif; ?>
 
           <div class="field">
-            <label class="label" for="admin_email">管理者メールアドレス<span class="req">*</span>
-              <span class="tip" tabindex="0">?<span class="tip-body">最初の管理者（admin）アカウントのログイン ID になります。運用担当者のメールを推奨します。</span></span>
+            <label class="label" for="admin_email"><?= $isMultiInstall ? '全体管理者メールアドレス' : '管理者メールアドレス' ?><span class="req">*</span>
+              <span class="tip" tabindex="0">?<span class="tip-body"><?= $isMultiInstall ? '全体管理者（superadmin）アカウントのログイン ID になります。組織に属さず、すべての組織を管理できます。' : '最初の管理者（admin）アカウントのログイン ID になります。運用担当者のメールを推奨します。' ?></span></span>
             </label>
             <input id="admin_email" name="admin_email" type="email" class="input<?= isset($fieldErrors['email']) ? ' is-error' : '' ?>" value="<?= $old('admin_email') ?>" placeholder="例: admin@yourcompany.co.jp" required>
             <?php if (isset($fieldErrors['email'])): ?><p class="err-text"><?= ico('warn') ?><?= h($fieldErrors['email']) ?></p><?php else: ?><p class="hint">このメールが<b>最初の管理者ログイン ID</b> になります。</p><?php endif; ?>
