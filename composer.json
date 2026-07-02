@@ -3,9 +3,19 @@
     "description": "NeNe Invoice — self-hosted, multi-tenant quote, invoice, and payment platform on NENE2.",
     "type": "project",
     "license": "MIT",
+    "repositories": [
+        {
+            "//": "S2 dev only (#562) — link local NENE2 for the Nene2\\Install toolkit before its 1.6.0 release. MUST be reverted (back to Packagist ^1.6) before merge.",
+            "type": "path",
+            "url": "../NENE2",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "require": {
         "php": ">=8.4.1 <9.0",
-        "hideyukimori/nene2": "^1.5",
+        "hideyukimori/nene2": "dev-main as 1.6.0",
         "mpdf/mpdf": "^8.3",
         "phpmailer/phpmailer": "^7.1"
     },

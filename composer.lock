@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "294fcfbb173b97421455a24691c0321d",
+    "content-hash": "0eb39dc485cec277e47ba00b5696b9d4",
     "packages": [
         {
             "name": "graham-campbell/result-type",
@@ -70,17 +70,11 @@
         },
         {
             "name": "hideyukimori/nene2",
-            "version": "v1.5.323",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/hideyukiMORI/NENE2.git",
-                "reference": "965f51b39941427d2837a653d5cfd57cb4c86ced"
-            },
+            "version": "dev-main",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/hideyukiMORI/NENE2/zipball/965f51b39941427d2837a653d5cfd57cb4c86ced",
-                "reference": "965f51b39941427d2837a653d5cfd57cb4c86ced",
-                "shasum": ""
+                "type": "path",
+                "url": "../NENE2",
+                "reference": "8e5f7249939586c02fa44b6587572e9f3c61685b"
             },
             "require": {
                 "monolog/monolog": "^3.0",
@@ -101,6 +95,7 @@
                 "symfony/yaml": "^8.0"
             },
             "suggest": {
+                "robmorgan/phinx": "Required by Nene2\\Install\\DatabaseSchemaApplier. A consumer that uses it MUST add phinx to its require (NOT require-dev) — it is here only as a dev dependency, so a --no-dev production build would omit it and installs would fatally fail when applying migrations.",
                 "symfony/yaml": "Required to run validate-mcp-tools.php from a consumer project (add to your require-dev)"
             },
             "type": "library",
@@ -109,16 +104,77 @@
                     "Nene2\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Nene2\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "phpunit --testsuite NENE2,Database"
+                ],
+                "test:database": [
+                    "phpunit --testsuite Database"
+                ],
+                "test:database:mysql": [
+                    "phpunit --testsuite DatabaseMySQL"
+                ],
+                "analyse": [
+                    "phpstan analyse --memory-limit 512M"
+                ],
+                "cs": [
+                    "php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php"
+                ],
+                "cs:fix": [
+                    "php-cs-fixer fix --config=.php-cs-fixer.php"
+                ],
+                "openapi": [
+                    "php tools/validate-openapi.php"
+                ],
+                "openapi:docs": [
+                    "php tools/openapi-to-md.php"
+                ],
+                "howto:index": [
+                    "php tools/build-howto-index.php"
+                ],
+                "howto:frontmatter": [
+                    "php tools/validate-howto-frontmatter.php"
+                ],
+                "mcp": [
+                    "php tools/validate-mcp-tools.php"
+                ],
+                "version:check": [
+                    "php tools/validate-version.php"
+                ],
+                "migrations:status": [
+                    "phinx status -c phinx.php"
+                ],
+                "migrations:migrate": [
+                    "phinx migrate -c phinx.php"
+                ],
+                "migrations:rollback": [
+                    "phinx rollback -c phinx.php"
+                ],
+                "migrations:seed": [
+                    "phinx seed:run -c phinx.php"
+                ],
+                "check": [
+                    "@test",
+                    "@analyse",
+                    "@cs",
+                    "@openapi",
+                    "@mcp",
+                    "@version:check"
+                ]
+            },
             "license": [
                 "MIT"
             ],
             "description": "PHP micro-framework: JSON APIs first, minimal server HTML, easy React/SPA integration, structure friendly to AI tooling.",
-            "support": {
-                "issues": "https://github.com/hideyukiMORI/NENE2/issues",
-                "source": "https://github.com/hideyukiMORI/NENE2/tree/v1.5.323"
-            },
-            "time": "2026-05-27T14:30:34+00:00"
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "monolog/monolog",
@@ -6551,9 +6607,18 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "hideyukimori/nene2",
+            "version": "dev-main",
+            "alias": "1.6.0",
+            "alias_normalized": "1.6.0.0"
+        }
+    ],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "hideyukimori/nene2": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
