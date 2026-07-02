@@ -17,6 +17,8 @@ declare(strict_types=1);
  * テーマ）に準拠。React プロトタイプを自己完結 PHP + バニラ JS に移植している。
  */
 
+use Nene2\Install\EnvironmentWriter;
+
 define('ROOT', dirname(__DIR__));
 define('INSTALLED_MARKER', ROOT . '/var/.installed');
 define('MYSQL_SCHEMA', ROOT . '/database/schema/mysql/schema.sql');
@@ -171,64 +173,6 @@ function applySchema(PDO $pdo, string $schemaFile): void
 
     foreach ($statements as $stmt) {
         $pdo->exec($stmt);
-    }
-}
-
-/**
- * .env をアトミックに書き出す。
- *
- * $tenantResolution は用語レジストリ（terminology.md §2）の登録値のみ:
- * single / path / subdomain / custom_domain。$baseDomain は subdomain 方式でのみ
- * 使用する（それ以外は空）。JWT シークレットは random_bytes で生成し、ログしない。
- */
-function writeEnv(
-    string $dbHost,
-    int $dbPort,
-    string $dbName,
-    string $dbUser,
-    string $dbPass,
-    string $tenantResolution,
-    string $baseDomain,
-): void {
-    $secret = bin2hex(random_bytes(32));
-
-    $content = <<<ENV
-APP_ENV=production
-APP_DEBUG=false
-APP_NAME="NeNe Invoice"
-PROBLEM_DETAILS_BASE_URL=https://nene-invoice.dev/problems/
-
-# --- Tenancy ---
-TENANT_RESOLUTION={$tenantResolution}
-ORG_SLUG=
-BASE_DOMAIN={$baseDomain}
-
-# --- Auth ---
-NENE2_LOCAL_JWT_SECRET={$secret}
-
-# --- Database ---
-DB_ADAPTER=mysql
-DB_NAME={$dbName}
-DB_HOST={$dbHost}
-DB_PORT={$dbPort}
-DB_USER={$dbUser}
-DB_PASSWORD={$dbPass}
-DB_CHARSET=utf8mb4
-ENV;
-
-    // アトミック書き込み: 同一ディレクトリに一時ファイルを作って rename する
-    // （中断による .env の半端書き込みを避ける）。
-    $tmp = ENV_FILE . '.tmp.' . bin2hex(random_bytes(6));
-
-    if (file_put_contents($tmp, $content) === false) {
-        throw new RuntimeException('.env ファイルを書き込めませんでした。ルートディレクトリの権限を確認してください。');
-    }
-
-    @chmod($tmp, 0640);
-
-    if (!@rename($tmp, ENV_FILE)) {
-        @unlink($tmp);
-        throw new RuntimeException('.env ファイルを保存できませんでした。ルートディレクトリの権限を確認してください。');
     }
 }
 
@@ -525,6 +469,10 @@ if (!$payloadPresent) {
     }
 } else {
     // ================= 通常フロー（要件 → DB → 管理者） =================
+    // vendor/ が存在する通常フローでのみ toolkit（Nene2\Install）を配線する。
+    // Feature B（取得）は vendor 不在時に走るため toolkit に依存できない。
+    require_once ROOT . '/vendor/autoload.php';
+
     $checks    = requirementChecks();
     $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
 
@@ -572,7 +520,26 @@ if (!$payloadPresent) {
                     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
                     $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
                     applySchema($pdo, MYSQL_SCHEMA);
-                    writeEnv($dbHost, $dbPort, $dbName, $dbUser, $dbPass, $tenantResolution, $envBaseDomain);
+                    // .env は toolkit の EnvironmentWriter で原子書き込みする。
+                    // 従来の heredoc 生補間と違い値をエスケープするため、パスワード等に
+                    // " $ # 空白が含まれても .env が壊れない（invoice の潜在バグを解消）。
+                    (new EnvironmentWriter())->write(ENV_FILE, [
+                        'APP_ENV' => 'production',
+                        'APP_DEBUG' => 'false',
+                        'APP_NAME' => 'NeNe Invoice',
+                        'PROBLEM_DETAILS_BASE_URL' => 'https://nene-invoice.dev/problems/',
+                        'TENANT_RESOLUTION' => $tenantResolution,
+                        'ORG_SLUG' => '',
+                        'BASE_DOMAIN' => $envBaseDomain,
+                        'NENE2_LOCAL_JWT_SECRET' => EnvironmentWriter::generateSecret(32),
+                        'DB_ADAPTER' => 'mysql',
+                        'DB_NAME' => $dbName,
+                        'DB_HOST' => $dbHost,
+                        'DB_PORT' => (string) $dbPort,
+                        'DB_USER' => $dbUser,
+                        'DB_PASSWORD' => $dbPass,
+                        'DB_CHARSET' => 'utf8mb4',
+                    ]);
 
                     header('Location: install.php?step=2');
                     exit;
