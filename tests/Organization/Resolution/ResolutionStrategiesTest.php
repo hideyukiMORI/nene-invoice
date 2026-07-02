@@ -54,6 +54,23 @@ final class ResolutionStrategiesTest extends TestCase
         }
     }
 
+    public function test_path_prefix_strips_slug_segment_for_routing(): void
+    {
+        $strategy = new PathPrefixResolutionStrategy();
+
+        self::assertSame('/admin/invoices', $strategy->stripPrefix('/acme/admin/invoices'));
+        self::assertSame('/admin/me', $strategy->stripPrefix('/acme/admin/me'));
+        self::assertSame('/auth/login', $strategy->stripPrefix('/acme/auth/login'));
+    }
+
+    public function test_path_prefix_strip_returns_root_when_only_slug(): void
+    {
+        $strategy = new PathPrefixResolutionStrategy();
+
+        self::assertSame('/', $strategy->stripPrefix('/acme'));
+        self::assertSame('/', $strategy->stripPrefix('/acme/'));
+    }
+
     public function test_subdomain_extracts_label(): void
     {
         $strategy = new SubdomainResolutionStrategy('example.com');

@@ -86,10 +86,20 @@ final readonly class OrgResolverMiddleware implements MiddlewareInterface
 
         $this->orgId->set($org->id ?? 0);
 
-        return $handler->handle(
-            $request->withAttribute('nene2.org.id', $org->id)
-                ->withAttribute('nene2.org.slug', $org->slug),
-        );
+        $request = $request->withAttribute('nene2.org.id', $org->id)
+            ->withAttribute('nene2.org.slug', $org->slug);
+
+        // Path-based tenancy carries the slug in the URL (`/org1/admin/...`).
+        // Strip it now — before the bearer-token / capability guards (which gate
+        // on `/admin` · `/api` prefixes) and the router run — so they see the
+        // canonical `/admin/...` path. This is the first middleware, so the
+        // rewrite propagates to the whole downstream pipeline.
+        if ($this->strategy instanceof PathScopedResolutionStrategyInterface) {
+            $uri     = $request->getUri();
+            $request = $request->withUri($uri->withPath($this->strategy->stripPrefix($uri->getPath())));
+        }
+
+        return $handler->handle($request);
     }
 
     /**

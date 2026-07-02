@@ -23,3 +23,17 @@ describe('install base derivation (ADR 0015)', () => {
     expect(deriveApiBasePath('invoice/')).toBe('')
   })
 })
+
+describe('path tenancy app base (型B Phase 2)', () => {
+  it('org slug at root → "/acme" API prefix and basename', () => {
+    // Backend injects app-base=<install>/<slug>/; the same generic derivation
+    // scopes both the router and every API call under the slug.
+    expect(deriveApiBasePath('/acme/')).toBe('/acme')
+    expect(deriveRouterBasename('/acme')).toBe('/acme')
+  })
+
+  it('org slug under a subdirectory install → "/invoice/acme"', () => {
+    expect(deriveApiBasePath('/invoice/acme/')).toBe('/invoice/acme')
+    expect(deriveRouterBasename('/invoice/acme')).toBe('/invoice/acme')
+  })
+})

@@ -12,8 +12,12 @@ use Psr\Http\Message\ServerRequestInterface;
  * Best for shared-host deployments where wildcard subdomains are not available.
  * Bypass paths (health, auth, service API, public download, superadmin org
  * management) return null so the middleware passes them through unresolved.
+ *
+ * Because the slug lives in the path, this strategy also strips it once resolved
+ * ({@see PathScopedResolutionStrategyInterface}) so `/org1/admin/...` reaches the
+ * `/admin/...` routes.
  */
-final readonly class PathPrefixResolutionStrategy implements OrgResolutionStrategyInterface
+final readonly class PathPrefixResolutionStrategy implements PathScopedResolutionStrategyInterface
 {
     /** @var list<string> */
     private const BYPASS_PREFIXES = [
@@ -38,5 +42,15 @@ final readonly class PathPrefixResolutionStrategy implements OrgResolutionStrate
         $candidate = $parts[0];
 
         return $candidate !== '' ? $candidate : null;
+    }
+
+    /**
+     * Drops the leading slug segment: `/org1/admin/x` → `/admin/x`, `/org1` → `/`.
+     */
+    public function stripPrefix(string $path): string
+    {
+        $parts = explode('/', ltrim($path, '/'), 2);
+
+        return '/' . ($parts[1] ?? '');
     }
 }
