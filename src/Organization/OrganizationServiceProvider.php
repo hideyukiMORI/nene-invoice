@@ -39,6 +39,7 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
             ->set(ListOrganizationsUseCaseInterface::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
             ->set(GetOrganizationByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
             ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c), self::initialAdminFactory()))
+            ->set(UpdateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): UpdateOrganizationUseCase => new UpdateOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
             ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
             ->set(
                 ListOrganizationsHandler::class,
@@ -58,6 +59,13 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                 CreateOrganizationHandler::class,
                 static fn (ContainerInterface $c): CreateOrganizationHandler => new CreateOrganizationHandler(
                     self::createUseCase($c),
+                    self::json($c),
+                ),
+            )
+            ->set(
+                UpdateOrganizationHandler::class,
+                static fn (ContainerInterface $c): UpdateOrganizationHandler => new UpdateOrganizationHandler(
+                    self::updateUseCase($c),
                     self::json($c),
                 ),
             )
@@ -82,17 +90,19 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                     $list = $c->get(ListOrganizationsHandler::class);
                     $get = $c->get(GetOrganizationByIdHandler::class);
                     $create = $c->get(CreateOrganizationHandler::class);
+                    $update = $c->get(UpdateOrganizationHandler::class);
                     $delete = $c->get(DeleteOrganizationHandler::class);
 
                     if (!$list instanceof ListOrganizationsHandler
                         || !$get instanceof GetOrganizationByIdHandler
                         || !$create instanceof CreateOrganizationHandler
+                        || !$update instanceof UpdateOrganizationHandler
                         || !$delete instanceof DeleteOrganizationHandler
                     ) {
                         throw new LogicException('Organization handler services are invalid.');
                     }
 
-                    return new OrganizationRouteRegistrar($list, $get, $create, $delete);
+                    return new OrganizationRouteRegistrar($list, $get, $create, $update, $delete);
                 },
             );
     }
@@ -159,6 +169,17 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
 
         if (!$u instanceof CreateOrganizationUseCase) {
             throw new LogicException('Create organization use case service is invalid.');
+        }
+
+        return $u;
+    }
+
+    private static function updateUseCase(ContainerInterface $c): UpdateOrganizationUseCase
+    {
+        $u = $c->get(UpdateOrganizationUseCaseInterface::class);
+
+        if (!$u instanceof UpdateOrganizationUseCase) {
+            throw new LogicException('Update organization use case service is invalid.');
         }
 
         return $u;

@@ -369,6 +369,37 @@ paths:
           $ref: '#/components/responses/InsufficientCapability'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Organizations]
+      summary: Update organization
+      description: >-
+        Partial update (superadmin). Only the provided fields change; is_active
+        suspends (false) or reactivates (true) the tenant. slug and external_id
+        are immutable here.
+      operationId: updateOrganization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrganizationRequest'
+            example:
+              is_active: false
+      responses:
+        '200':
+          description: Organization updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientCapability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
     delete:
       tags: [Organizations]
       summary: Delete organization
@@ -2556,6 +2587,21 @@ components:
             Plaintext password for the tenant's initial admin (hashed
             server-side). Requires admin_email.
       required: [name, slug]
+    UpdateOrganizationRequest:
+      type: object
+      description: >-
+        Partial update of a tenant (superadmin only). Every field is optional;
+        at least one must be present (else 422). is_active suspends (false) or
+        reactivates (true) the tenant. slug and external_id are immutable here.
+      properties:
+        name:
+          type: string
+        plan:
+          type: string
+          description: Billing plan slug.
+        is_active:
+          type: boolean
+          description: false suspends the tenant (its users are locked out); true reactivates it.
     DownloadTokenResponse:
       type: object
       properties:

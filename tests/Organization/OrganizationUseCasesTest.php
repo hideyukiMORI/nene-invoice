@@ -12,6 +12,8 @@ use NeneInvoice\Organization\GetOrganizationByIdUseCase;
 use NeneInvoice\Organization\ListOrganizationsUseCase;
 use NeneInvoice\Organization\OrganizationNotFoundException;
 use NeneInvoice\Organization\OrganizationSlugConflictException;
+use NeneInvoice\Organization\UpdateOrganizationInput;
+use NeneInvoice\Organization\UpdateOrganizationUseCase;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\InMemoryInitialAdminRepository;
 use NeneInvoice\Tests\Support\InMemoryOrganizationRepository;
@@ -143,5 +145,54 @@ final class OrganizationUseCasesTest extends TestCase
 
         $this->expectException(OrganizationNotFoundException::class);
         $delete->execute(1, $id);
+    }
+
+    private function updateUseCase(): UpdateOrganizationUseCase
+    {
+        return new UpdateOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
+    }
+
+    public function test_update_changes_fields_suspends_and_audits_before_after(): void
+    {
+        $id = $this->createUseCase()->execute(1, new CreateOrganizationInput('Acme', 'acme'))->id;
+        self::assertNotNull($id);
+
+        $result = $this->updateUseCase()->execute(7, $id, new UpdateOrganizationInput(name: 'Acme Renamed', plan: 'pro', isActive: false));
+
+        self::assertSame('Acme Renamed', $result->name);
+        self::assertSame('pro', $result->plan);
+        self::assertFalse($result->isActive);
+        self::assertSame('acme', $result->slug); // slug is immutable
+
+        // records[0] = organization.created, records[1] = organization.updated
+        self::assertSame('organization.updated', $this->audit->records[1]['action']);
+        self::assertSame(7, $this->audit->records[1]['actor_user_id']);
+        self::assertSame($id, $this->audit->records[1]['organization_id']);
+        self::assertIsArray($this->audit->records[1]['before']);
+        self::assertIsArray($this->audit->records[1]['after']);
+        self::assertTrue($this->audit->records[1]['before']['is_active']);
+        self::assertFalse($this->audit->records[1]['after']['is_active']);
+        self::assertSame('Acme', $this->audit->records[1]['before']['name']);
+        self::assertSame('Acme Renamed', $this->audit->records[1]['after']['name']);
+    }
+
+    public function test_update_partial_toggles_is_active_and_preserves_other_fields(): void
+    {
+        $id = $this->createUseCase()->execute(1, new CreateOrganizationInput('Acme', 'acme', 'pro'))->id;
+        self::assertNotNull($id);
+
+        $suspended = $this->updateUseCase()->execute(1, $id, new UpdateOrganizationInput(isActive: false));
+        self::assertFalse($suspended->isActive);
+        self::assertSame('Acme', $suspended->name); // unchanged
+        self::assertSame('pro', $suspended->plan);  // unchanged
+
+        $reactivated = $this->updateUseCase()->execute(1, $id, new UpdateOrganizationInput(isActive: true));
+        self::assertTrue($reactivated->isActive);
+    }
+
+    public function test_update_throws_when_missing(): void
+    {
+        $this->expectException(OrganizationNotFoundException::class);
+        $this->updateUseCase()->execute(1, 999, new UpdateOrganizationInput(name: 'Ghost'));
     }
 }

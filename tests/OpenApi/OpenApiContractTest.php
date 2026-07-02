@@ -34,6 +34,7 @@ final class OpenApiContractTest extends TestCase
         'listOrganizations',
         'getOrganizationById',
         'createOrganization',
+        'updateOrganization',
         'deleteOrganization',
         'listUsers',
         'getUserById',

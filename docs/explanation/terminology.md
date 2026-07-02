@@ -195,7 +195,7 @@ match between OpenAPI, route registration, and `docs/mcp/tools.json`.
 | `getHealth` | System |
 | `login`, `refreshSession`, `logout`, `getCurrentUser` | Auth |
 | `listAuditLogs`, `exportAuditLogs` | Audit (admin oversight) |
-| `listOrganizations`, `getOrganizationById`, `createOrganization`, `deleteOrganization` | Organization (superadmin) |
+| `listOrganizations`, `getOrganizationById`, `createOrganization`, `updateOrganization`, `deleteOrganization` | Organization (superadmin) |
 | `listUsers`, `getUserById`, `createUser`, `updateUser`, `deleteUser` | User (admin) |
 | `getCompanySettings`, `updateCompanySettings` | Company (issuer profile, per org) |
 | `listClients`, `getClientById`, `createClient`, `updateClient`, `deleteClient`, `exportClientsCsv`, `getClientsImportTemplate`, `importClientsCsv` | Client |
