@@ -10,16 +10,21 @@ use Psr\Http\Message\StreamFactoryInterface;
 
 /**
  * Serves the built admin SPA shell for non-API routes, injecting the detected
- * install base so one artifact works at any path (ADR 0015).
+ * install base so one artifact works at any path (ADR 0015) — and, under path
+ * tenancy, the org prefix so the tenant SPA runs under `/<slug>/` (型B Phase 2).
  *
  * Two tags are injected into `<head>` — both CSP-safe (no inline script, which
- * `script-src 'self'` would block):
+ * `script-src 'self'` would block). They intentionally use *different* bases:
  *
- * - `<base href="<base>/admin/">` so the shell's relative asset references
+ * - `<base href="<assetBase>/admin/">` so the shell's relative asset references
  *   (`./assets/…`, built by Vite with `base: './'`) resolve to the real files
- *   under `admin/`, even though the shell itself is served from the install root.
- * - `<meta name="app-base" content="<base>/">` which the frontend reads to set
- *   the router basename and prefix every API call.
+ *   under `admin/`. Assets are a single physical copy under the install root, so
+ *   this is the install base only — never the org slug.
+ * - `<meta name="app-base" content="<appBase>/">` which the frontend reads to set
+ *   the router basename and prefix every API call. This is the install base plus
+ *   the tenant slug (`/invoice/acme`) in path mode, so the tenant SPA routes and
+ *   calls stay under `/<slug>/`; it equals the install base when there is no slug
+ *   (single/subdomain installs, or the org-less superadmin shell).
  *
  * Serving the shell through the front controller (rather than a static file)
  * also fixes SPA deep-links / F5: any non-API GET returns the shell.
@@ -36,8 +41,11 @@ final readonly class SpaShell
     /**
      * Returns the base-injected shell, or null when the built shell is absent
      * (e.g. a backend-only checkout) so the caller can fall back to the API.
+     *
+     * @param string $assetBase install base for static assets (`''` at root, `/invoice`)
+     * @param string $appBase   install base plus tenant slug for router/API (`''`, `/invoice`, `/invoice/acme`)
      */
-    public function serve(string $base): ?ResponseInterface
+    public function serve(string $assetBase, string $appBase): ?ResponseInterface
     {
         if (!is_file($this->shellPath)) {
             return null;
@@ -51,17 +59,17 @@ final readonly class SpaShell
 
         $response = $this->responseFactory->createResponse(200)
             ->withHeader('Content-Type', 'text/html; charset=UTF-8')
-            ->withBody($this->streamFactory->createStream($this->inject($html, $base)));
+            ->withBody($this->streamFactory->createStream($this->inject($html, $assetBase, $appBase)));
 
         return $response;
     }
 
-    private function inject(string $html, string $base): string
+    private function inject(string $html, string $assetBase, string $appBase): string
     {
-        $assetBase = htmlspecialchars($base . '/admin/', ENT_QUOTES);
-        $appBase = htmlspecialchars($base . '/', ENT_QUOTES);
+        $assetHref = htmlspecialchars($assetBase . '/admin/', ENT_QUOTES);
+        $appHref = htmlspecialchars($appBase . '/', ENT_QUOTES);
 
-        $tags = "<head>\n    <base href=\"{$assetBase}\" />\n    <meta name=\"app-base\" content=\"{$appBase}\" />";
+        $tags = "<head>\n    <base href=\"{$assetHref}\" />\n    <meta name=\"app-base\" content=\"{$appHref}\" />";
 
         // Inject right after the opening <head> so <base> precedes any relative
         // URL. If the marker is absent (unexpected), serve the shell unchanged.

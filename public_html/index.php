@@ -6,7 +6,9 @@ use Nene2\Config\AppConfig;
 use Nene2\Http\ResponseEmitter;
 use NeneInvoice\Http\BasePath;
 use NeneInvoice\Http\RuntimeContainerFactory;
+use NeneInvoice\Http\SpaBasePlan;
 use NeneInvoice\Http\SpaShell;
+use NeneInvoice\Organization\OrganizationRepositoryInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -58,14 +60,33 @@ $request = $request
     ->withUri($request->getUri()->withPath($strippedPath))
     ->withAttribute(BasePath::REQUEST_ATTRIBUTE, $base);
 
+// Merge the install base (ADR 0015) with the path-tenancy org prefix (型B Phase
+// 2): under `path` mode a leading `/<slug>/` that names a real org makes the
+// shell serve the tenant SPA with `app-base=<base>/<slug>/`, so its router and
+// API calls stay under the slug. The slug lookup only runs in path mode.
+$modeRaw = $_ENV['TENANT_RESOLUTION'] ?? getenv('TENANT_RESOLUTION');
+$mode    = is_string($modeRaw) && $modeRaw !== '' ? $modeRaw : 'single';
+
+$spaPlan = SpaBasePlan::resolve(
+    $base,
+    $strippedPath,
+    $mode,
+    static function (string $slug) use ($container): bool {
+        $repository = $container->get(OrganizationRepositoryInterface::class);
+        assert($repository instanceof OrganizationRepositoryInterface);
+
+        return $repository->findBySlug($slug) !== null;
+    },
+);
+
 // Non-API GET/HEAD requests get the SPA shell (with the base injected), which
 // also serves deep-links / F5. Everything else goes to the JSON API router.
 $method = $request->getMethod();
 $response = null;
 
-if (($method === 'GET' || $method === 'HEAD') && !BasePath::isApiPath($strippedPath)) {
+if (($method === 'GET' || $method === 'HEAD') && !BasePath::isApiPath($spaPlan->spaPath)) {
     $shell = new SpaShell($projectRoot . '/public_html/admin/index.html', $psr17Factory, $psr17Factory);
-    $response = $shell->serve($base);
+    $response = $shell->serve($spaPlan->assetBase, $spaPlan->appBase);
 }
 
 if ($response === null) {
