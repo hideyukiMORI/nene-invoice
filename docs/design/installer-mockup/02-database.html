@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 データベース接続 — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">02 / ステップ1 データベース &nbsp;·&nbsp; <a href="index.html">← 目次</a> &nbsp;·&nbsp; 次: <a href="03-admin.html">03 管理者設定 →</a></div>
+<div class="wrap">
+
+  <div class="card">
+    <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+    <p class="subtitle">セットアップウィザード</p>
+
+    <div class="steps">
+      <div class="step active">1. データベース</div>
+      <div class="step">2. 管理者設定</div>
+      <div class="step">3. 完了</div>
+    </div>
+
+    <p class="lede">MySQL の接続情報を入力してください。<br>
+      <span class="help">この情報は契約中の<b>レンタルサーバーの管理画面（コントロールパネル）の「データベース」欄</b>で確認できます。</span>
+    </p>
+
+    <div class="note"><b>最大の詰まりどころ:</b> 共有ホスティングの<b>ホスト名は <code>localhost</code> とは限らない</b>（例: ヘテムル <code>mysqlXXX.heteml.lib</code> / さくら <code>mysqlXXX.db.sakura.ne.jp</code>）。プレースホルダ・ツールチップ・「ホストの調べ方」リンクで強く誘導したい。</div>
+
+    <form onsubmit="return false">
+      <div class="field">
+        <label for="db_host">ホスト<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">データベースサーバーのアドレス。多くの共有ホスティングでは <code>localhost</code> ではなく専用ホスト名（例 mysqlXXX.example.ne.jp）です。コントロールパネルの DB 情報で確認してください。</span></span>
+        </label>
+        <input type="text" id="db_host" value="localhost" placeholder="例: mysqlXXX.db.sakura.ne.jp">
+        <p class="help">初期値は <code>localhost</code>。共有ホスティングでは専用ホスト名に書き換えることが多いです。</p>
+      </div>
+
+      <div class="field">
+        <label for="db_port">ポート<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">通常は MySQL 既定の <code>3306</code> のままで問題ありません。指定がある場合のみ変更します。</span></span>
+        </label>
+        <input type="number" id="db_port" value="3306">
+        <p class="help">通常はそのまま（3306）。</p>
+      </div>
+
+      <div class="field">
+        <label for="db_name">データベース名<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">コントロールパネルで作成済みのデータベース名。多くのホスティングでは契約時に1つ以上払い出されています。空のデータベースを指定してください（既存データには触れません）。</span></span>
+        </label>
+        <input type="text" id="db_name" placeholder="例: yourname_invoice">
+        <p class="help">事前に作成した<b>空のデータベース</b>を指定します。テーブルはこのインストーラが作成します。</p>
+      </div>
+
+      <div class="field">
+        <label for="db_user">ユーザー名<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">そのデータベースにアクセスできる MySQL ユーザー名。コントロールパネルの DB 情報に記載されています。</span></span>
+        </label>
+        <input type="text" id="db_user" placeholder="例: yourname_invoice">
+      </div>
+
+      <div class="field">
+        <label for="db_pass">パスワード
+          <span class="tip" tabindex="0">?<span class="tip__body">上記 MySQL ユーザーのパスワード。コントロールパネルで設定/確認できます。入力は伏字表示。</span></span>
+        </label>
+        <input type="password" id="db_pass" placeholder="••••••••">
+        <p class="help">サーバーの DB ユーザーのパスワード。NeNe Invoice のログインパスワードとは別物です。</p>
+      </div>
+
+      <button type="submit">接続テスト &amp; スキーマ適用 →</button>
+    </form>
+
+    <div class="note"><b>ローディング状態が必須:</b> このボタンは「接続確認 → テーブル作成（スキーマ適用）」を行い<b>数秒かかりうる</b>。押下後はボタンを「適用中…」に変えてスピナー表示＋二重送信防止。失敗時は同画面にエラー表示で<b>入力値を保持</b>。</div>
+    <div class="note"><b>成功時:</b> ステップ2（管理者設定）へ遷移。<b>失敗時:</b> 「DB 接続エラー: （詳細）」を上部バナーに赤表示（→ <a href="90-states-and-errors.html">状態・エラー集</a>）。</div>
+  </div>
+
+  <p class="foot">出典: <code>public_html/install.php</code> step 1（db_host / db_port / db_name / db_user / db_pass）</p>
+</div>
+</body>
+</html>

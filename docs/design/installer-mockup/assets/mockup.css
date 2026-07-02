@@ -1,0 +1,174 @@
+/* NeNe Invoice — インストーラ デザインハンドオフ用モックアップ CSS
+ *
+ * これは「中立なたたき台」です。ClaudeDesign が自由に再デザインする前提で、
+ * 構造・状態・コピーが伝わる最小限のスタイルだけを当てています。色・余白・
+ * タイポgrafィ・ロゴは確定値ではありません（デザイン対象）。
+ *
+ * 注釈（📝 デザインメモ）と凡例は印刷物には出ない「制作者向けメモ」です。
+ */
+
+:root {
+  --bg: #f4f5f7;
+  --card: #ffffff;
+  --ink: #1f2430;
+  --muted: #6b7280;
+  --line: #e3e6ea;
+  --accent: #315345;        /* 仮のブランドカラー（要確定） */
+  --accent-ink: #ffffff;
+  --ok: #1f8a4c;
+  --ok-bg: #eafaf0;
+  --err: #c0392b;
+  --err-bg: #fdf0ee;
+  --warn: #9a6a00;
+  --warn-bg: #fff8e6;
+  --note: #6b4fbb;
+  --note-bg: #f3effc;
+  --radius: 8px;
+  --font: -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+.wrap--wide { max-width: 1000px; }
+
+/* --- ハンドオフ用ヘッダ（実画面ではない・制作メモ） --- */
+.handoff-bar {
+  background: #11161f;
+  color: #cfd6e4;
+  font-size: .82rem;
+  padding: .5rem 1rem;
+  text-align: center;
+}
+.handoff-bar strong { color: #fff; }
+.handoff-bar a { color: #8fd0ff; }
+
+/* --- インストーラ カード --- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 2rem 2.25rem 2.25rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(20,30,50,.05);
+}
+
+.brand { display: flex; align-items: center; gap: .65rem; margin-bottom: .25rem; }
+.brand__logo {
+  width: 38px; height: 38px; border-radius: 9px;
+  background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center; font-weight: 800; font-size: 1.1rem;
+}
+.brand__name { font-size: 1.35rem; font-weight: 800; letter-spacing: .01em; }
+.subtitle { color: var(--muted); margin: 0 0 1.5rem; font-size: .95rem; }
+
+/* --- ステッパー --- */
+.steps { display: flex; gap: .5rem; margin: 0 0 1.75rem; }
+.step {
+  flex: 1; text-align: center; font-size: .8rem; padding: .5rem .25rem;
+  border-radius: 6px; background: #eef0f3; color: #9aa1ab; font-weight: 600;
+}
+.step.active { background: var(--accent); color: #fff; }
+.step.done { background: var(--ok); color: #fff; }
+.step.done::before { content: "✓ "; }
+
+/* --- フォーム --- */
+.lede { font-size: .92rem; color: #444; margin: 0 0 1.25rem; }
+label { display: block; font-weight: 700; font-size: .9rem; margin: 1.1rem 0 .35rem; }
+.req { color: var(--err); font-weight: 700; margin-left: .15rem; }
+.opt { color: var(--muted); font-weight: 400; font-size: .8rem; margin-left: .35rem; }
+input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
+  width: 100%; padding: .6rem .7rem; font-size: 1rem; font-family: inherit;
+  border: 1px solid #cfd4da; border-radius: 6px; background: #fff;
+}
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.field { margin-bottom: .25rem; }
+.help { color: var(--muted); font-size: .82rem; margin: .35rem 0 0; }
+
+button, .btn {
+  margin-top: 1.6rem; width: 100%; padding: .75rem 1rem; font-size: 1rem; font-weight: 700;
+  font-family: inherit; color: #fff; background: var(--accent); border: 0; border-radius: 6px;
+  cursor: pointer;
+}
+.btn--ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+.btn-row { display: flex; gap: .75rem; }
+.btn-row .btn { margin-top: 1.6rem; }
+
+/* --- ツールチップ（? アイコン） --- */
+.tip {
+  display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: .3rem;
+  border-radius: 50%; background: #c9cfd6; color: #fff; font-size: 11px; font-weight: 700;
+  cursor: help; vertical-align: middle; position: relative;
+}
+.tip:hover .tip__body, .tip:focus .tip__body { display: block; }
+.tip__body {
+  display: none; position: absolute; z-index: 10; left: 50%; bottom: 140%; transform: translateX(-50%);
+  width: 260px; background: #11161f; color: #eef2f8; font-size: .78rem; font-weight: 400;
+  line-height: 1.55; padding: .6rem .7rem; border-radius: 6px; text-align: left;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+.tip__body::after {
+  content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 6px solid transparent; border-top-color: #11161f;
+}
+
+/* --- 状態バナー（成功/エラー/警告） --- */
+.banner { border-radius: 6px; padding: .8rem 1rem; margin: 0 0 1.25rem; font-size: .9rem; }
+.banner--ok { background: var(--ok-bg); border: 1px solid #bfe6cd; color: #155f34; }
+.banner--err { background: var(--err-bg); border: 1px solid #f3c3bc; color: var(--err); }
+.banner--warn { background: var(--warn-bg); border: 1px solid #f0dca3; color: var(--warn); }
+.banner ul { margin: .4rem 0 0; padding-left: 1.2rem; }
+.field-error { color: var(--err); font-size: .82rem; margin: .35rem 0 0; }
+input.is-error { border-color: var(--err); background: #fff7f6; }
+
+/* --- 要件チェックリスト --- */
+.reqs { list-style: none; padding: 0; margin: 0; }
+.reqs li { padding: .5rem .25rem; border-bottom: 1px solid var(--line); display: flex; gap: .6rem; align-items: baseline; }
+.reqs li:last-child { border-bottom: 0; }
+.reqs .ic { font-weight: 800; }
+.reqs .pass .ic { color: var(--ok); }
+.reqs .fail .ic { color: var(--err); }
+.reqs .fail { color: var(--err); }
+
+/* --- 完了画面 --- */
+.done-mark { font-size: 2.5rem; color: var(--ok); text-align: center; margin: .5rem 0 0; }
+.done-title { text-align: center; font-size: 1.4rem; font-weight: 800; margin: .25rem 0 1rem; }
+.next-list { padding-left: 1.2rem; }
+
+/* --- 注釈（📝 デザインメモ）: UI ではなく制作者向け --- */
+.note {
+  background: var(--note-bg); border: 1px dashed #c8bce8; border-left: 4px solid var(--note);
+  border-radius: 6px; padding: .7rem .85rem; margin: 1rem 0; font-size: .83rem; color: #3f3168;
+}
+.note b { color: var(--note); }
+.note::before { content: "📝 デザインメモ — "; font-weight: 800; color: var(--note); }
+
+/* --- 凡例 / インデックス --- */
+.legend { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1rem 0; }
+.legend span { font-size: .8rem; padding: .25rem .6rem; border-radius: 20px; border: 1px solid var(--line); background:#fff; }
+.screen-index { list-style: none; padding: 0; margin: 1.25rem 0; }
+.screen-index li { padding: .6rem 0; border-bottom: 1px solid var(--line); }
+.screen-index a { font-weight: 700; }
+.screen-index .desc { color: var(--muted); font-size: .85rem; }
+.pageflow { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; font-size:.85rem; color:var(--muted); }
+.pageflow b { color: var(--ink); }
+
+/* --- コピーデック表 --- */
+table.copy { width: 100%; border-collapse: collapse; font-size: .85rem; margin: 1rem 0; }
+table.copy th, table.copy td { border: 1px solid var(--line); padding: .5rem .6rem; text-align: left; vertical-align: top; }
+table.copy th { background: #f0f2f5; }
+table.copy code { background: #eef0f3; padding: .05rem .3rem; border-radius: 4px; font-size: .85em; }
+
+.foot { margin-top: 2rem; color: var(--muted); font-size: .8rem; text-align: center; }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+h2.sec { font-size: 1.05rem; margin: 2rem 0 .5rem; }

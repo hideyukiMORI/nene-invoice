@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>99 コピーデック — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">99 / コピーデック（全文言） &nbsp;·&nbsp; <a href="index.html">← 目次</a></div>
+<div class="wrap wrap--wide">
+
+  <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+  <p class="subtitle">インストーラの全コピー（ラベル・補助文・ツールチップ・エラー・ボタン）</p>
+  <div class="note">推敲・英訳（ADR 0005: ja/en）・トーン調整の元データ。<b>太字=実装に存在する確定文言</b>、それ以外（補助文・ツールチップ）は本ハンドオフでの提案で、デザイン/コピーで磨いてよい。</div>
+
+  <h2 class="sec">共通</h2>
+  <table class="copy">
+    <tr><th>要素</th><th>文言</th><th>備考</th></tr>
+    <tr><td>プロダクト名</td><td><b>NeNe Invoice</b></td><td>ロゴ＋名称</td></tr>
+    <tr><td>サブタイトル</td><td><b>セットアップウィザード</b></td><td></td></tr>
+    <tr><td>ステッパー</td><td><b>1. データベース</b> / <b>2. 管理者設定</b> / <b>3. 完了</b></td><td>3ステップ</td></tr>
+    <tr><td>必須印</td><td>* （必須）</td><td>赤</td></tr>
+  </table>
+
+  <h2 class="sec">ステップ1: データベース</h2>
+  <table class="copy">
+    <tr><th>要素</th><th>文言</th><th>種別</th></tr>
+    <tr><td>リード文</td><td><b>MySQL の接続情報を入力してください。</b></td><td>確定</td></tr>
+    <tr><td>補助（リード）</td><td>レンタルサーバーの管理画面（コントロールパネル）の「データベース」欄で確認できます。</td><td>提案</td></tr>
+    <tr><td>ホスト ラベル</td><td><b>ホスト</b>（db_host）</td><td>確定 / 初期値 <code>localhost</code></td></tr>
+    <tr><td>ホスト ツールチップ</td><td>DB サーバーのアドレス。共有ホスティングでは <code>localhost</code> ではなく専用ホスト名（例 mysqlXXX.example.ne.jp）のことが多い。</td><td>提案</td></tr>
+    <tr><td>ポート ラベル</td><td><b>ポート</b>（db_port）</td><td>確定 / 初期値 <code>3306</code></td></tr>
+    <tr><td>ポート ツールチップ</td><td>通常は MySQL 既定の 3306 のまま。</td><td>提案</td></tr>
+    <tr><td>DB 名 ラベル</td><td><b>データベース名</b>（db_name）</td><td>確定 / 必須</td></tr>
+    <tr><td>DB 名 補助</td><td>事前に作成した空のデータベースを指定。テーブルはインストーラが作成。</td><td>提案</td></tr>
+    <tr><td>ユーザー名 ラベル</td><td><b>ユーザー名</b>（db_user）</td><td>確定 / 必須</td></tr>
+    <tr><td>パスワード ラベル</td><td><b>パスワード</b>（db_pass）</td><td>確定 / 任意</td></tr>
+    <tr><td>パスワード 補助</td><td>サーバーの DB ユーザーのパスワード。NeNe Invoice のログインパスワードとは別。</td><td>提案</td></tr>
+    <tr><td>ボタン</td><td><b>接続テスト &amp; スキーマ適用 →</b></td><td>確定</td></tr>
+    <tr><td>ローディング</td><td>適用中… テーブルを作成しています</td><td>提案</td></tr>
+    <tr><td>DB 必須エラー</td><td><b>DB 名とユーザー名は必須です</b></td><td>確定</td></tr>
+    <tr><td>接続エラー</td><td><b>DB 接続エラー: （詳細メッセージ）</b></td><td>確定 / SQLSTATE を含む</td></tr>
+  </table>
+
+  <h2 class="sec">ステップ2: 管理者設定</h2>
+  <table class="copy">
+    <tr><th>要素</th><th>文言</th><th>種別</th></tr>
+    <tr><td>リード文</td><td><b>管理者アカウントと会社情報を設定します。</b></td><td>確定</td></tr>
+    <tr><td>会社名 ラベル</td><td><b>会社名（法人名）</b>（company_name）</td><td>確定 / 必須</td></tr>
+    <tr><td>会社名 ツールチップ</td><td>適格請求書の発行者名として PDF に印字。後から変更可。</td><td>提案</td></tr>
+    <tr><td>メール ラベル</td><td><b>管理者メールアドレス</b>（admin_email）</td><td>確定 / 必須・形式チェック</td></tr>
+    <tr><td>メール 補助</td><td>最初の管理者ログイン ID になります。</td><td>提案</td></tr>
+    <tr><td>パスワード ラベル</td><td><b>管理者パスワード（8 文字以上）</b>（admin_password）</td><td>確定 / 必須・8文字以上</td></tr>
+    <tr><td>パスワード 補助</td><td>ハッシュ化して安全に保管されます（元の文字列は保存しません）。</td><td>提案</td></tr>
+    <tr><td>ボタン</td><td><b>インストール実行 →</b></td><td>確定</td></tr>
+    <tr><td>必須未入力</td><td><b>すべての項目を入力してください</b></td><td>確定</td></tr>
+    <tr><td>メール不正</td><td><b>有効なメールアドレスを入力してください</b></td><td>確定</td></tr>
+    <tr><td>パスワード短</td><td><b>パスワードは 8 文字以上にしてください</b></td><td>確定</td></tr>
+  </table>
+
+  <h2 class="sec">ステップ3: 完了</h2>
+  <table class="copy">
+    <tr><th>要素</th><th>文言</th><th>種別</th></tr>
+    <tr><td>見出し</td><td><b>✓ インストール完了</b></td><td>確定</td></tr>
+    <tr><td>セキュリティ警告</td><td><b>インストール完了後は install.php を削除またはリネームしてください</b></td><td>確定 / 最重要</td></tr>
+    <tr><td>ログイン導線</td><td>管理画面にログイン →</td><td>提案 / base-path 追従</td></tr>
+  </table>
+
+  <h2 class="sec">要件チェック / ブロック</h2>
+  <table class="copy">
+    <tr><th>要素</th><th>文言</th><th>種別</th></tr>
+    <tr><td>不合格見出し</td><td>要件チェックに失敗しました</td><td>提案（実装はリスト直出し）</td></tr>
+    <tr><td>PHP</td><td><b>PHP 8.4 以上が必要です（現在: …）</b></td><td>確定</td></tr>
+    <tr><td>拡張</td><td><b>PHP 拡張モジュール {名前} が見つかりません</b></td><td>確定（pdo/pdo_mysql/mbstring/openssl/json）</td></tr>
+    <tr><td>var 権限</td><td><b>var/ ディレクトリへの書き込み権限がありません</b></td><td>確定</td></tr>
+    <tr><td>root 権限</td><td><b>ルートディレクトリへの書き込み権限がありません（.env ファイルを作成できません）</b></td><td>確定</td></tr>
+    <tr><td>vendor 欠落</td><td><b>vendor/ ディレクトリが見つかりません。ZIP ファイルが完全に展開されているか確認してください</b></td><td>確定</td></tr>
+    <tr><td>インストール済</td><td><b>インストール済みです。install.php を削除してください。</b></td><td>確定 / 403</td></tr>
+  </table>
+
+  <p class="foot">出典: <code>public_html/install.php</code>（確定文言は実装からの抜粋）。提案文言はデザイン/コピーで自由に改善可。</p>
+</div>
+</body>
+</html>

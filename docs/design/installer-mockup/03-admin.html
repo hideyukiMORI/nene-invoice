@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 管理者設定 — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">03 / ステップ2 管理者設定 &nbsp;·&nbsp; <a href="index.html">← 目次</a> &nbsp;·&nbsp; 次: <a href="04-complete.html">04 完了 →</a></div>
+<div class="wrap">
+
+  <div class="card">
+    <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+    <p class="subtitle">セットアップウィザード</p>
+
+    <div class="steps">
+      <div class="step done">1. データベース</div>
+      <div class="step active">2. 管理者設定</div>
+      <div class="step">3. 完了</div>
+    </div>
+
+    <p class="lede">管理者アカウントと会社情報を設定します。</p>
+
+    <form onsubmit="return false">
+      <div class="field">
+        <label for="company_name">会社名（法人名）<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">適格請求書（インボイス）の<b>発行者名</b>として、発行する見積書・請求書 PDF に印字されます。正式名称を入力してください。後から設定画面で変更できます。</span></span>
+        </label>
+        <input type="text" id="company_name" placeholder="例: 株式会社ねね商事">
+        <p class="help">請求書 PDF に発行者として印字されます（後から変更可）。</p>
+      </div>
+
+      <div class="field">
+        <label for="admin_email">管理者メールアドレス<span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">最初の管理者（admin）アカウントのログイン ID になります。組織の運用担当者のメールを推奨。</span></span>
+        </label>
+        <input type="email" id="admin_email" placeholder="例: admin@yourcompany.co.jp">
+        <p class="help">このメールが最初の管理者ログイン ID になります。</p>
+      </div>
+
+      <div class="field">
+        <label for="admin_password">管理者パスワード<span class="opt">（8 文字以上）</span><span class="req">*</span>
+          <span class="tip" tabindex="0">?<span class="tip__body">8 文字以上。パスワードは安全にハッシュ化して保存され、元の文字列は保持されません。DB 接続パスワードとは別物です。</span></span>
+        </label>
+        <input type="password" id="admin_password" placeholder="8 文字以上">
+        <p class="help">8 文字以上。<b>ハッシュ化して安全に保管</b>されます（元の文字列は保存されません）。</p>
+      </div>
+
+      <button type="submit">インストール実行 →</button>
+    </form>
+
+    <div class="note"><b>バリデーション（実装準拠）:</b> 3項目すべて必須 → 未入力なら「すべての項目を入力してください」。メール形式不正 → 「有効なメールアドレスを入力してください」。パスワード8文字未満 → 「パスワードは 8 文字以上にしてください」。エラー時は<b>入力値を保持</b>して同画面に表示（→ <a href="90-states-and-errors.html">状態・エラー集</a>）。</div>
+    <div class="note">「ログイン状態を保持」等はここには無い（ログイン画面の話）。ここは<b>初期管理者の作成</b>のみ。</div>
+  </div>
+
+  <p class="foot">出典: <code>public_html/install.php</code> step 2（company_name / admin_email / admin_password）</p>
+</div>
+</body>
+</html>

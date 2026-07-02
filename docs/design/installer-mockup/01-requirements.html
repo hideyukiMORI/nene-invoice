@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 要件チェック — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">01 / 要件チェック &nbsp;·&nbsp; <a href="index.html">← 目次</a> &nbsp;·&nbsp; 次: <a href="02-database.html">02 データベース →</a></div>
+<div class="wrap">
+
+  <div class="note"><b>表示条件:</b> 要件チェックは毎リクエスト走る。<b>合格なら何も出さずステップ1のフォームを表示</b>。1つでも<b>不合格なら下記をブロック表示</b>し、フォーム送信を止める。下は「不合格」状態。合格時の見せ方（チェックが緑で並ぶ安心感を出すか、無音で進めるか）はデザイン判断。</div>
+
+  <div class="card">
+    <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+    <p class="subtitle">セットアップウィザード</p>
+
+    <div class="steps">
+      <div class="step active">1. データベース</div>
+      <div class="step">2. 管理者設定</div>
+      <div class="step">3. 完了</div>
+    </div>
+
+    <div class="banner banner--err">
+      <strong>要件チェックに失敗しました</strong> — 以下を解消してから再読み込みしてください。
+    </div>
+
+    <ul class="reqs">
+      <li class="pass"><span class="ic">✓</span><span>PHP 8.4 以上（現在: 8.4.22）</span></li>
+      <li class="pass"><span class="ic">✓</span><span>PHP 拡張モジュール: pdo / pdo_mysql / mbstring / openssl / json</span></li>
+      <li class="fail"><span class="ic">✕</span><span><b>var/ ディレクトリへの書き込み権限がありません</b><div class="help">解決: <code>var/</code> のパーミッションを書き込み可（755/775）にしてください。</div></span></li>
+      <li class="fail"><span class="ic">✕</span><span><b>ルートディレクトリへの書き込み権限がありません（.env ファイルを作成できません）</b><div class="help">解決: 展開先フォルダを書き込み可にしてください。インストール完了後は戻して構いません。</div></span></li>
+      <li class="pass"><span class="ic">✓</span><span>vendor/ ディレクトリ（依存一式）が存在</span></li>
+    </ul>
+
+    <div class="note"><b>実際のメッセージ（実装準拠）:</b> 「PHP 8.4 以上が必要です（現在: …）」「PHP 拡張モジュール {名前} が見つかりません」「var/ ディレクトリへの書き込み権限がありません」「ルートディレクトリへの書き込み権限がありません（.env ファイルを作成できません）」「vendor/ ディレクトリが見つかりません。ZIP ファイルが完全に展開されているか確認してください」。<br>各項目に<b>「どう直すか」</b>の補助文／FAQ リンクを添えたい（対象ユーザーは権限変更の操作に不慣れ）。</div>
+
+    <div class="note"><b>合格時の案:</b> このチェックリストを<b>緑のチェックで一瞬見せてからステップ1へ</b>、または<b>無音でステップ1表示</b>。前者は安心感、後者は最短。デザインで選択。</div>
+  </div>
+
+  <p class="foot">出典: <code>public_html/install.php</code> checkRequirements()</p>
+</div>
+</body>
+</html>

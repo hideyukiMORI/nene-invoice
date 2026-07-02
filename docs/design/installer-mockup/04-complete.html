@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 完了 — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">04 / ステップ3 完了 &nbsp;·&nbsp; <a href="index.html">← 目次</a> &nbsp;·&nbsp; <a href="90-states-and-errors.html">状態・エラー集 →</a></div>
+<div class="wrap">
+
+  <div class="card">
+    <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+    <p class="subtitle">セットアップウィザード</p>
+
+    <div class="steps">
+      <div class="step done">1. データベース</div>
+      <div class="step done">2. 管理者設定</div>
+      <div class="step done">3. 完了</div>
+    </div>
+
+    <div class="done-mark">✓</div>
+    <div class="done-title">インストール完了</div>
+
+    <div class="banner banner--warn">
+      <strong>⚠ セキュリティ: 必ず <code>install.php</code> を削除（またはリネーム）してください。</strong>
+      <div class="help" style="margin-top:.4rem">放置すると第三者に再セットアップされる恐れがあります。FTP／ファイルマネージャから削除してください。</div>
+    </div>
+
+    <h2 class="sec">次のステップ</h2>
+    <ol class="next-list">
+      <li><code>install.php</code> を削除する（最優先）。</li>
+      <li>管理画面にログインする（先ほど設定した管理者メール・パスワード）。</li>
+      <li>会社情報・登録番号・銀行口座などを設定して、最初の請求書を作成。</li>
+    </ol>
+
+    <a class="btn" href="#">管理画面にログイン →</a>
+
+    <div class="note"><b>実装の現状:</b> 完了文言は「✓ インストール完了」＋「インストール完了後は install.php を削除またはリネームしてください」。<b>削除の導線を最も目立たせる</b>のがこの画面の主目的。ログインボタンは設置ルート（base-path）に追従する想定（ADR 0015）。</div>
+    <div class="note"><b>検討:</b> 削除を促すだけでなく、可能なら「削除済みか自動チェックして警告を出す」UX も将来あり得る（今は手動前提）。チェックリスト風 UI も候補。</div>
+  </div>
+
+  <p class="foot">出典: <code>public_html/install.php</code> 完了表示 ＋ .installed マーカー生成</p>
+</div>
+</body>
+</html>
