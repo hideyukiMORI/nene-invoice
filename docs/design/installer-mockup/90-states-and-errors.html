@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>90 状態・エラー集 — NeNe Invoice インストーラ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">90 / 状態・エラー集 &nbsp;·&nbsp; <a href="index.html">← 目次</a> &nbsp;·&nbsp; <a href="99-copy-deck.html">99 コピーデック →</a></div>
+<div class="wrap wrap--wide">
+
+  <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+  <p class="subtitle">インストーラの全状態・エラーパターン</p>
+  <div class="note">画面ごとの<b>正常系は 01〜04</b> に、ここには<b>異常系・特殊状態</b>をまとめます。各カードがデザイン対象の1状態。</div>
+
+  <h2 class="sec">A. インストール済みブロック（403）</h2>
+  <div class="card">
+    <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+    <div class="banner banner--err" style="margin-top:1rem">
+      <strong>インストール済みです。</strong> <code>install.php</code> を削除してください。
+    </div>
+    <div class="note"><b>表示条件:</b> 既に <code>var/.installed</code> がある、または DB に既存ユーザーがいる場合、インストーラは全機能を拒否してこれだけ出す（再セットアップ・<code>.env</code> 上書き防止）。最低限の1メッセージで OK だが、<b>「正常です。install.php を消してください」</b>と安心感を出す案も。</div>
+  </div>
+
+  <h2 class="sec">B. ステップ1 DB 接続エラー</h2>
+  <div class="card">
+    <div class="steps"><div class="step active">1. データベース</div><div class="step">2. 管理者設定</div><div class="step">3. 完了</div></div>
+    <div class="banner banner--err">
+      <strong>DB 接続エラー:</strong> SQLSTATE[HY000] [2002] php_network_getaddresses: getaddrinfo failed（ホスト名が見つかりません）
+    </div>
+    <label>ホスト<span class="req">*</span></label>
+    <input type="text" class="is-error" value="localhost">
+    <p class="field-error">接続できませんでした。ホスト名・ポート・ユーザー・パスワードをご確認ください。</p>
+    <div class="note"><b>頻出原因:</b> ① ホストが <code>localhost</code> のまま（共有ホスティングは専用ホスト名）② パスワード誤り ③ DB 未作成。<b>原因別の対処ヒント</b>を出せると親切（生の SQLSTATE は折りたたみ/詳細表示に）。入力値は保持。</div>
+  </div>
+
+  <h2 class="sec">C. ステップ2 バリデーションエラー</h2>
+  <div class="card">
+    <div class="steps"><div class="step done">1. データベース</div><div class="step active">2. 管理者設定</div><div class="step">3. 完了</div></div>
+    <div class="banner banner--err"><strong>入力内容を確認してください。</strong></div>
+    <label>管理者メールアドレス<span class="req">*</span></label>
+    <input type="email" class="is-error" value="admin(at)example">
+    <p class="field-error">有効なメールアドレスを入力してください。</p>
+    <label>管理者パスワード<span class="opt">（8 文字以上）</span><span class="req">*</span></label>
+    <input type="password" class="is-error" value="123">
+    <p class="field-error">パスワードは 8 文字以上にしてください。</p>
+    <div class="note"><b>実装の3パターン:</b>「すべての項目を入力してください」／「有効なメールアドレスを入力してください」／「パスワードは 8 文字以上にしてください」。<b>フィールド単位のインラインエラー</b>が望ましい（実装は上部まとめ表示なので、デザインで個別化を提案可）。</div>
+  </div>
+
+  <h2 class="sec">D. ローディング（接続テスト & スキーマ適用 中）</h2>
+  <div class="card">
+    <div class="steps"><div class="step active">1. データベース</div><div class="step">2. 管理者設定</div><div class="step">3. 完了</div></div>
+    <button type="button" disabled style="opacity:.7;cursor:progress">⏳ 適用中… テーブルを作成しています</button>
+    <div class="note"><b>必須状態:</b> 接続確認＋スキーマ適用は数秒〜十数秒かかりうる。<b>進捗テキスト＋スピナー＋ボタン無効化</b>で「固まった?」という不安と二重送信を防ぐ。可能なら「接続確認 → テーブル作成 → 設定保存」のサブステップ表示も。</div>
+  </div>
+
+  <h2 class="sec">E. 要件チェック不合格</h2>
+  <div class="card">
+    <div class="banner banner--err"><strong>要件チェックに失敗しました</strong></div>
+    <ul class="reqs">
+      <li class="fail"><span class="ic">✕</span><span>PHP 8.4 以上が必要です（現在: 8.1.0）</span></li>
+      <li class="fail"><span class="ic">✕</span><span>PHP 拡張モジュール pdo_mysql が見つかりません</span></li>
+    </ul>
+    <div class="note">詳細は <a href="01-requirements.html">01 要件チェック</a>。共有ホスティングでは PHP バージョンをコントロールパネルで切り替える必要がある場合があり、その案内リンクがあると親切。</div>
+  </div>
+
+  <p class="foot">出典: <code>public_html/install.php</code>（databaseAlreadyProvisioned / step1 PDOException / step2 validation / checkRequirements）</p>
+</div>
+</body>
+</html>

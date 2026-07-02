@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeNe Invoice インストーラ — デザインハンドオフ</title>
+<link rel="stylesheet" href="assets/mockup.css">
+</head>
+<body>
+<div class="handoff-bar">これは <strong>デザインハンドオフ用の静的モックアップ</strong>です（実装ではありません）。全画面・状態・コピー・ツールチップ・注釈を収録しています。</div>
+<div class="wrap wrap--wide">
+
+  <div class="brand"><span class="brand__logo">NN</span><span class="brand__name">NeNe Invoice</span></div>
+  <p class="subtitle">セットアップウィザード — デザインハンドオフ資料 v1</p>
+
+  <div class="card">
+    <h2 class="sec" style="margin-top:0">これは何か</h2>
+    <p>自己ホスト型の見積・請求 OSS「NeNe Invoice」を、<b>共有ホスティング（ヘテムル / さくら等）にブラウザだけでインストールする</b>ウィザード（<code>install.php</code>）の全画面です。対象ユーザーは <b>shell も CLI も使えない・「サブドメインって何?」レベルの中小企業の担当者</b>。専門知識ゼロで完了できることが最重要。</p>
+
+    <div class="note">この資料の HTML/CSS は<b>中立なたたき台</b>です。色・余白・タイポ・ロゴ・イラストは確定値ではありません。<b>自由に再デザインしてください</b>。確定しているのは「画面の順序・各画面の項目・コピー文言・出る/出ないの条件」です。</div>
+
+    <h2 class="sec">画面フロー</h2>
+    <p class="pageflow">
+      <b>要件チェック</b> → <b>1. データベース</b> → <b>2. 管理者設定</b> → <b>3. 完了</b> → （ログイン画面へ）
+    </p>
+    <div class="note">ステッパーは「1 データベース / 2 管理者設定 / 3 完了」の 3 ステップ表記。<b>要件チェック</b>はステップ 1 の手前で毎回走る前提条件で、失敗時のみ専用表示になりブロックする（ステッパー上は独立カウントしない）。</div>
+
+    <h2 class="sec">収録画面・状態</h2>
+    <ul class="screen-index">
+      <li><a href="01-requirements.html">01 — 要件チェック</a><div class="desc">PHP バージョン・拡張・書き込み権限・vendor の確認。合格（通過）/ 不合格（ブロック）の両状態。</div></li>
+      <li><a href="02-database.html">02 — ステップ1: データベース接続</a><div class="desc">DB ホスト/ポート/名前/ユーザー/パスワード入力。空 / 入力済 / 接続エラー / 適用中（ローディング）。</div></li>
+      <li><a href="03-admin.html">03 — ステップ2: 管理者設定</a><div class="desc">会社名・管理者メール・パスワード。バリデーションエラー各種。</div></li>
+      <li><a href="04-complete.html">04 — ステップ3: 完了</a><div class="desc">成功画面。<code>install.php</code> 削除のセキュリティ警告・ログインへの導線。</div></li>
+      <li><a href="90-states-and-errors.html">90 — 状態・エラー集</a><div class="desc">インストール済みブロック(403)・DB エラー・各バリデーション・要件不合格を一覧。</div></li>
+      <li><a href="99-copy-deck.html">99 — コピーデック</a><div class="desc">全文言（ラベル/プレースホルダ/補助/ツールチップ/エラー/ボタン）を一覧。翻訳・推敲の元データ。</div></li>
+    </ul>
+
+    <h2 class="sec">凡例</h2>
+    <div class="legend">
+      <span>🟣 注釈 = 制作者向けメモ（UI に出さない）</span>
+      <span>? アイコン = ツールチップ（ホバー）</span>
+      <span><span class="req">*</span> = 必須項目</span>
+    </div>
+
+    <h2 class="sec">デザインで特に考えてほしいこと</h2>
+    <ul>
+      <li><b>非エンジニアでも迷わない</b>導線・言葉づかい（専門用語にはツールチップ/補助文を必ず添える）。</li>
+      <li><b>DB 接続情報の在りか</b>をどう案内するか（共有ホスティングのコントロールパネルから取得する旨）。ホストは <code>localhost</code> とは限らない点が最大の詰まりどころ。</li>
+      <li><b>ローディング状態</b>（「接続テスト & スキーマ適用」は数秒かかりうる）。二重送信防止。</li>
+      <li><b>セキュリティ警告</b>（完了後に <code>install.php</code> を削除）を見落とさせない設計。</li>
+      <li><b>エラーからの復帰</b>（入力値は保持される前提）。</li>
+      <li>レスポンシブ（スマホのコントロールパネルからコピペする人も多い）。</li>
+      <li>ブランド/ロゴ・トーン（信頼感・適格請求書＝堅めの業務ソフト）。</li>
+    </ul>
+
+    <p class="foot">出典: 実装 <code>public_html/install.php</code>（項目名・文言・バリデーション・要件チェックはこれに準拠）。NeNe Invoice / MIT。</p>
+  </div>
+</div>
+</body>
+</html>
