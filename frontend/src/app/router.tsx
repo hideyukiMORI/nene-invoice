@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { routerBasename } from '@/shared/config/app-base'
 import { HomeRedirect } from '@/app/home-redirect'
+import { RequireRole } from '@/app/require-role'
 import { AppShell } from '@/pages/layout'
 import { AuditLogsPage } from '@/pages/audit-logs'
 import { BankReconciliationPage } from '@/pages/bank-reconciliation'
@@ -41,36 +42,51 @@ const router = createBrowserRouter(
       element: <AppShell />,
       children: [
         { index: true, element: <HomeRedirect /> },
-        { path: 'dashboard', element: <DashboardPage /> },
-        { path: 'invoices', element: <InvoicesPage /> },
-        { path: 'invoices/new', element: <InvoiceCreatePage /> },
-        { path: 'invoices/:id', element: <InvoiceDetailPage /> },
-        { path: 'clients', element: <ClientsPage /> },
-        { path: 'clients/new', element: <ClientCreatePage /> },
-        { path: 'clients/import', element: <ClientImportPage /> },
-        { path: 'clients/:id/edit', element: <ClientEditPage /> },
-        { path: 'items', element: <ItemsPage /> },
-        { path: 'items/new', element: <ItemCreatePage /> },
-        { path: 'items/import', element: <ItemImportPage /> },
-        { path: 'items/:id/edit', element: <ItemEditPage /> },
-        { path: 'quotes', element: <QuotesPage /> },
-        { path: 'quotes/new', element: <QuoteCreatePage /> },
-        { path: 'quotes/:id', element: <QuoteDetailPage /> },
-        { path: 'recurring', element: <RecurringPage /> },
-        { path: 'recurring/new', element: <RecurringCreatePage /> },
-        { path: 'recurring/:id/edit', element: <RecurringEditPage /> },
-        { path: 'bank-reconciliation', element: <BankReconciliationPage /> },
-        { path: 'templates', element: <TemplatesPage /> },
-        { path: 'templates/new', element: <TemplateCreatePage /> },
-        { path: 'templates/:id/edit', element: <TemplateEditPage /> },
-        { path: 'settings', element: <CompanySettingsPage /> },
-        { path: 'users', element: <UsersPage /> },
-        { path: 'users/new', element: <UserCreatePage /> },
-        { path: 'users/:id/edit', element: <UserEditPage /> },
-        { path: 'organizations', element: <OrganizationsPage /> },
-        { path: 'organizations/new', element: <OrganizationCreatePage /> },
-        { path: 'audit-logs', element: <AuditLogsPage /> },
-        { path: 'service-tokens', element: <ServiceTokensPage /> },
+        // Org-scoped screens need a tenant context; the org-less superadmin is
+        // redirected to organization management (型B Phase 2 — RequireRole).
+        {
+          element: <RequireRole audience="org" />,
+          children: [
+            { path: 'dashboard', element: <DashboardPage /> },
+            { path: 'invoices', element: <InvoicesPage /> },
+            { path: 'invoices/new', element: <InvoiceCreatePage /> },
+            { path: 'invoices/:id', element: <InvoiceDetailPage /> },
+            { path: 'clients', element: <ClientsPage /> },
+            { path: 'clients/new', element: <ClientCreatePage /> },
+            { path: 'clients/import', element: <ClientImportPage /> },
+            { path: 'clients/:id/edit', element: <ClientEditPage /> },
+            { path: 'items', element: <ItemsPage /> },
+            { path: 'items/new', element: <ItemCreatePage /> },
+            { path: 'items/import', element: <ItemImportPage /> },
+            { path: 'items/:id/edit', element: <ItemEditPage /> },
+            { path: 'quotes', element: <QuotesPage /> },
+            { path: 'quotes/new', element: <QuoteCreatePage /> },
+            { path: 'quotes/:id', element: <QuoteDetailPage /> },
+            { path: 'recurring', element: <RecurringPage /> },
+            { path: 'recurring/new', element: <RecurringCreatePage /> },
+            { path: 'recurring/:id/edit', element: <RecurringEditPage /> },
+            { path: 'bank-reconciliation', element: <BankReconciliationPage /> },
+            { path: 'templates', element: <TemplatesPage /> },
+            { path: 'templates/new', element: <TemplateCreatePage /> },
+            { path: 'templates/:id/edit', element: <TemplateEditPage /> },
+            { path: 'settings', element: <CompanySettingsPage /> },
+            { path: 'users', element: <UsersPage /> },
+            { path: 'users/new', element: <UserCreatePage /> },
+            { path: 'users/:id/edit', element: <UserEditPage /> },
+            { path: 'audit-logs', element: <AuditLogsPage /> },
+            { path: 'service-tokens', element: <ServiceTokensPage /> },
+          ],
+        },
+        // Cross-tenant organization management is superadmin-only; a tenant
+        // operator is redirected to their dashboard.
+        {
+          element: <RequireRole audience="superadmin" />,
+          children: [
+            { path: 'organizations', element: <OrganizationsPage /> },
+            { path: 'organizations/new', element: <OrganizationCreatePage /> },
+          ],
+        },
+        // Neutral (no tenant context, any role).
         { path: 'help', element: <HelpPage /> },
       ],
     },
