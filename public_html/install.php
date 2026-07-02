@@ -18,6 +18,7 @@ declare(strict_types=1);
  */
 
 use Nene2\Install\EnvironmentWriter;
+use Nene2\Install\TenantConfigurationValidator;
 
 define('ROOT', dirname(__DIR__));
 define('INSTALLED_MARKER', ROOT . '/var/.installed');
@@ -491,24 +492,33 @@ if (!$payloadPresent) {
             $resolution = (string) ($_POST['tenant_resolution'] ?? 'path');
             $baseDomain = trim($_POST['base_domain'] ?? '');
 
-            if ($tenantMode === 'multi') {
-                if (!in_array($resolution, ['path', 'subdomain', 'custom_domain'], true)) {
-                    $resolution = 'path';
-                }
-                $tenantResolution = $resolution;
-                // BASE_DOMAIN は subdomain 方式のときのみ使用（他は空）。
-                $envBaseDomain = $resolution === 'subdomain' ? $baseDomain : '';
+            // 実効モード: single は 'single'、multi は解決方式（未登録値は path に丸め）。
+            // 検証は toolkit の TenantConfigurationValidator に委譲する。invoice の登録語彙
+            // （single/path/subdomain/custom_domain・subdomain のみ基準ドメイン必須）を注入し、
+            // reason code を既存の日本語メッセージへ写して UI・文言は不変に保つ。
+            $effectiveMode = $tenantMode === 'multi'
+                ? (in_array($resolution, ['path', 'subdomain', 'custom_domain'], true) ? $resolution : 'path')
+                : 'single';
 
-                if ($resolution === 'subdomain' && $baseDomain === '') {
-                    $errors[] = 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。';
-                } elseif ($resolution === 'subdomain' && preg_match('/^[A-Za-z0-9.-]+$/', $baseDomain) !== 1) {
-                    // 英数字・ドット・ハイフンのみに限定し、改行/空白/引用符による
-                    // .env 破損・行インジェクションを防ぐ（値は .env にそのまま書かれる）。
-                    $errors[] = '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。';
-                }
+            $tenantResult = (new TenantConfigurationValidator(
+                ['single', 'path', 'subdomain', 'custom_domain'],
+                ['subdomain'],
+            ))->validate($effectiveMode, $baseDomain);
+
+            if ($tenantResult->valid && $tenantResult->configuration !== null) {
+                $tenantResolution = $tenantResult->configuration->mode;
+                $envBaseDomain    = $tenantResult->configuration->baseDomain;
             } else {
-                $tenantResolution = 'single';
+                $tenantResolution = $effectiveMode;
                 $envBaseDomain    = '';
+
+                foreach ($tenantResult->errors as $code) {
+                    $errors[] = match ($code) {
+                        'base_domain_required' => 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。',
+                        'base_domain_invalid'  => '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。',
+                        default                => '利用形態の設定が正しくありません。',
+                    };
+                }
             }
 
             if ($dbName === '' || $dbUser === '') {
