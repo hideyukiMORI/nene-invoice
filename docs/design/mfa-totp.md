@@ -71,9 +71,10 @@ and `ApplicationServiceProvider` like every other domain.
 
 ## 3. Data model
 
-Three tables. **All three must satisfy schema parity** (Phinx migration **and**
-SQLite snapshot in `database/schema/*.sql` **and** installer `database/schema/mysql/schema.sql`;
-guarded by `tests/Installer/SchemaParityTest`).
+Three tables. Each needs a Phinx migration **and** a SQLite snapshot in
+`database/schema/*.sql`. (The installer's hand-maintained MySQL DDL and its
+parity test were removed by #562 決定A — the Tier A installer now applies the
+migrations directly, so migrations are the single schema truth.)
 
 ### `totp_secrets` (one row per user)
 | column | type | notes |

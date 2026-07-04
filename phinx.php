@@ -31,5 +31,6 @@ return [
                 'suffix' => '',
             ],
     ],
+    // install.php（決定A・DatabaseSchemaApplier のインライン Config）と揃えること。
     'version_order' => 'creation',
 ];

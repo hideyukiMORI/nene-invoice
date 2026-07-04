@@ -17,9 +17,17 @@ declare(strict_types=1);
  * テーマ）に準拠。React プロトタイプを自己完結 PHP + バニラ JS に移植している。
  */
 
+use Nene2\Install\DatabaseSchemaApplier;
+use Nene2\Install\EnvironmentWriter;
+use Nene2\Install\ProvisioningProbe;
+use Nene2\Install\ReInstallationGuard;
+use Nene2\Install\ServerRequirementChecker;
+use Nene2\Install\ServerRequirements;
+use Nene2\Install\TenantConfigurationValidator;
+use Phinx\Config\Config;
+
 define('ROOT', dirname(__DIR__));
 define('INSTALLED_MARKER', ROOT . '/var/.installed');
-define('MYSQL_SCHEMA', ROOT . '/database/schema/mysql/schema.sql');
 define('ENV_FILE', ROOT . '/.env');
 
 // -------------------------------------------------------------------
@@ -39,9 +47,7 @@ const ACQUIRE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 // Guard: すでにインストール済みならブロック
 // -------------------------------------------------------------------
 if (file_exists(INSTALLED_MARKER)) {
-    http_response_code(403);
-    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">インストール済みです。install.php を削除してください。</p>';
-    exit;
+    refuseInstall('インストール済みです。install.php を削除してください。');
 }
 
 // -------------------------------------------------------------------
@@ -83,9 +89,7 @@ function databaseAlreadyProvisioned(): bool
 }
 
 if (databaseAlreadyProvisioned()) {
-    http_response_code(403);
-    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。</p>';
-    exit;
+    refuseInstall('既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。');
 }
 
 // -------------------------------------------------------------------
@@ -97,25 +101,60 @@ function h(string $s): string
 }
 
 /**
+ * インストールを 403 で拒否して終了する（冒頭ガードと管理者ステップ直前の
+ * 再設置確認で共用。文言は呼び出し側が持つ）。
+ */
+function refuseInstall(string $message): never
+{
+    http_response_code(403);
+    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">' . h($message) . '</p>';
+    exit;
+}
+
+/**
  * 各サーバー要件を構造化して返す（画面表示・合否判定の単一の真実）。
+ *
+ * 判定は toolkit の ServerRequirementChecker に委譲する（診断のみ・FS 非変更。
+ * 旧実装が判定中に行っていた var/ の @mkdir は Feature A 冒頭で明示補完する）。
+ * checker は要件ごとの typed verdict を返すため、拡張 5 件を 1 行に束ねる既存
+ * UI へはここで集約し、日本語の label / fix は従来のまま保つ（UI 不変）。
  *
  * @return list<array{label: string, detail: string, ok: bool, fix: string}>
  */
 function requirementChecks(): array
 {
-    $phpOk = PHP_VERSION_ID >= 80400;
+    $verdicts = (new ServerRequirementChecker())->check(new ServerRequirements(
+        minPhpVersion: '8.4.0',
+        requiredExtensions: ['pdo', 'pdo_mysql', 'mbstring', 'openssl', 'json'],
+        writablePaths: [ROOT . '/var', ROOT],
+        requiredFiles: [ROOT . '/vendor/autoload.php'],
+    ));
 
-    $extOk = true;
-    foreach (['pdo', 'pdo_mysql', 'mbstring', 'openssl', 'json'] as $ext) {
-        if (!extension_loaded($ext)) {
-            $extOk = false;
+    // kind（＋target）単位の合否集約。checker の reason code は表示に使わず、
+    // 行ごとの日本語文言は下の配列が単一の持ち主。
+    $ok = static function (string $requirement, ?string $target = null) use ($verdicts): bool {
+        foreach ($verdicts as $verdict) {
+            if ($verdict->requirement !== $requirement) {
+                continue;
+            }
+
+            if ($target !== null && $verdict->target !== $target) {
+                continue;
+            }
+
+            if (!$verdict->satisfied) {
+                return false;
+            }
         }
-    }
 
-    $varOk = is_writable(ROOT . '/var') || @mkdir(ROOT . '/var', 0755, true) || is_dir(ROOT . '/var');
-    $varOk = $varOk && is_writable(ROOT . '/var');
-    $rootOk = is_writable(ROOT);
-    $vendorOk = file_exists(ROOT . '/vendor/autoload.php');
+        return true;
+    };
+
+    $phpOk    = $ok(ServerRequirementChecker::REQUIREMENT_PHP);
+    $extOk    = $ok(ServerRequirementChecker::REQUIREMENT_EXTENSION);
+    $varOk    = $ok(ServerRequirementChecker::REQUIREMENT_WRITABLE, ROOT . '/var');
+    $rootOk   = $ok(ServerRequirementChecker::REQUIREMENT_WRITABLE, ROOT);
+    $vendorOk = $ok(ServerRequirementChecker::REQUIREMENT_FILE, ROOT . '/vendor/autoload.php');
 
     return [
         [
@@ -149,87 +188,6 @@ function requirementChecks(): array
             'fix' => 'ZIP ファイルが完全に展開されているか確認してください。',
         ],
     ];
-}
-
-function applySchema(PDO $pdo, string $schemaFile): void
-{
-    $sql = file_get_contents($schemaFile);
-
-    if ($sql === false) {
-        throw new RuntimeException('スキーマファイルを読み込めませんでした: ' . $schemaFile);
-    }
-
-    // 分割前に `--` 行コメントを除去する。コメント自体に `;` を含むことがあり
-    // （例: "-- Metadata only; the token value is never stored."）、先に `;` で
-    // 分割するとコメント後半が SQL 文として実行され構文エラーになるため。
-    $withoutComments = preg_replace('/^\s*--.*$/m', '', $sql);
-
-    $statements = array_filter(
-        array_map('trim', explode(';', (string) $withoutComments)),
-        static fn (string $s): bool => $s !== '',
-    );
-
-    foreach ($statements as $stmt) {
-        $pdo->exec($stmt);
-    }
-}
-
-/**
- * .env をアトミックに書き出す。
- *
- * $tenantResolution は用語レジストリ（terminology.md §2）の登録値のみ:
- * single / path / subdomain / custom_domain。$baseDomain は subdomain 方式でのみ
- * 使用する（それ以外は空）。JWT シークレットは random_bytes で生成し、ログしない。
- */
-function writeEnv(
-    string $dbHost,
-    int $dbPort,
-    string $dbName,
-    string $dbUser,
-    string $dbPass,
-    string $tenantResolution,
-    string $baseDomain,
-): void {
-    $secret = bin2hex(random_bytes(32));
-
-    $content = <<<ENV
-APP_ENV=production
-APP_DEBUG=false
-APP_NAME="NeNe Invoice"
-PROBLEM_DETAILS_BASE_URL=https://nene-invoice.dev/problems/
-
-# --- Tenancy ---
-TENANT_RESOLUTION={$tenantResolution}
-ORG_SLUG=
-BASE_DOMAIN={$baseDomain}
-
-# --- Auth ---
-NENE2_LOCAL_JWT_SECRET={$secret}
-
-# --- Database ---
-DB_ADAPTER=mysql
-DB_NAME={$dbName}
-DB_HOST={$dbHost}
-DB_PORT={$dbPort}
-DB_USER={$dbUser}
-DB_PASSWORD={$dbPass}
-DB_CHARSET=utf8mb4
-ENV;
-
-    // アトミック書き込み: 同一ディレクトリに一時ファイルを作って rename する
-    // （中断による .env の半端書き込みを避ける）。
-    $tmp = ENV_FILE . '.tmp.' . bin2hex(random_bytes(6));
-
-    if (file_put_contents($tmp, $content) === false) {
-        throw new RuntimeException('.env ファイルを書き込めませんでした。ルートディレクトリの権限を確認してください。');
-    }
-
-    @chmod($tmp, 0640);
-
-    if (!@rename($tmp, ENV_FILE)) {
-        @unlink($tmp);
-        throw new RuntimeException('.env ファイルを保存できませんでした。ルートディレクトリの権限を確認してください。');
-    }
 }
 
 // ===================================================================
@@ -525,6 +483,28 @@ if (!$payloadPresent) {
     }
 } else {
     // ================= 通常フロー（要件 → DB → 管理者） =================
+    // vendor/ が存在する通常フローでのみ toolkit（Nene2\Install）を配線する。
+    // Feature B（取得）は vendor 不在時に走るため toolkit に依存できない。
+    require_once ROOT . '/vendor/autoload.php';
+
+    // 旧 requirementChecks() は判定中に var/ を @mkdir していた（診断と副作用の
+    // 同居）。toolkit の checker は診断のみで FS を変更しないため、marker
+    // （var/.installed）書き込みが依存する var/ の作成をここで明示的に補完する。
+    if (!is_dir(ROOT . '/var')) {
+        @mkdir(ROOT . '/var', 0755, true);
+    }
+
+    // 再設置ガード（.installed marker ＋ DB probe）。probe は冒頭の pre-vendor
+    // ガードと同じ databaseAlreadyProvisioned() を単一の真実として包む。無名
+    // クラスなのは、トップレベルで vendor の interface を implements すると
+    // pre-vendor 相（Feature B）で class binding に失敗し fatal になるため。
+    $reinstallGuard = new ReInstallationGuard(INSTALLED_MARKER, new class () implements ProvisioningProbe {
+        public function isProvisioned(): bool
+        {
+            return databaseAlreadyProvisioned();
+        }
+    });
+
     $checks    = requirementChecks();
     $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
 
@@ -543,24 +523,35 @@ if (!$payloadPresent) {
             $resolution = (string) ($_POST['tenant_resolution'] ?? 'path');
             $baseDomain = trim($_POST['base_domain'] ?? '');
 
-            if ($tenantMode === 'multi') {
-                if (!in_array($resolution, ['path', 'subdomain', 'custom_domain'], true)) {
-                    $resolution = 'path';
-                }
-                $tenantResolution = $resolution;
-                // BASE_DOMAIN は subdomain 方式のときのみ使用（他は空）。
-                $envBaseDomain = $resolution === 'subdomain' ? $baseDomain : '';
+            // 実効モード: single は 'single'、multi は解決方式（未登録値は path に丸め）。
+            // 検証は toolkit の TenantConfigurationValidator に委譲する。invoice の登録語彙
+            // （single/path/subdomain/custom_domain・subdomain のみ基準ドメイン必須）を注入し、
+            // reason code を既存の日本語メッセージへ写して UI・文言は不変に保つ。
+            $effectiveMode = $tenantMode === 'multi'
+                ? (in_array($resolution, ['path', 'subdomain', 'custom_domain'], true) ? $resolution : 'path')
+                : 'single';
 
-                if ($resolution === 'subdomain' && $baseDomain === '') {
-                    $errors[] = 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。';
-                } elseif ($resolution === 'subdomain' && preg_match('/^[A-Za-z0-9.-]+$/', $baseDomain) !== 1) {
-                    // 英数字・ドット・ハイフンのみに限定し、改行/空白/引用符による
-                    // .env 破損・行インジェクションを防ぐ（値は .env にそのまま書かれる）。
-                    $errors[] = '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。';
-                }
+            $tenantResult = (new TenantConfigurationValidator(
+                ['single', 'path', 'subdomain', 'custom_domain'],
+                ['subdomain'],
+            ))->validate($effectiveMode, $baseDomain);
+
+            if ($tenantResult->valid && $tenantResult->configuration !== null) {
+                $tenantResolution = $tenantResult->configuration->mode;
+                $envBaseDomain    = $tenantResult->configuration->baseDomain;
             } else {
-                $tenantResolution = 'single';
+                $tenantResolution = $effectiveMode;
                 $envBaseDomain    = '';
+
+                foreach ($tenantResult->errors as $code) {
+                    // default（unknown_mode 等）は上の path 丸めが先に走るため通常
+                    // 到達しない防御枝（語彙を広げた将来の取りこぼし対策）。
+                    $errors[] = match ($code) {
+                        'base_domain_required' => 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。',
+                        'base_domain_invalid'  => '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。',
+                        default                => '利用形態の設定が正しくありません。',
+                    };
+                }
             }
 
             if ($dbName === '' || $dbUser === '') {
@@ -569,10 +560,55 @@ if (!$payloadPresent) {
 
             if ($errors === []) {
                 try {
+                    // 接続テスト（資格情報の検証・失敗は PDOException → 専用の
+                    // 日本語バナー）。スキーマ適用そのものは phinx が別接続で行う。
                     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
                     $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                    applySchema($pdo, MYSQL_SCHEMA);
-                    writeEnv($dbHost, $dbPort, $dbName, $dbUser, $dbPass, $tenantResolution, $envBaseDomain);
+
+                    // スキーマは phinx migration が唯一の正（決定A）。toolkit の
+                    // DatabaseSchemaApplier が Manager API で pending migration を
+                    // CLI なしに適用する — fresh install と upgrade が同一経路に
+                    // 収束し、dump（database/schema/*.sql・参照資料へ降格）との
+                    // 乖離が構造的に起きない。接続情報は検証済み POST 値から直接
+                    // 渡す（.env 非依存。「schema 適用 → .env 書込」の順序と
+                    // 失敗時挙動は従来どおり）。
+                    (new DatabaseSchemaApplier())->apply(new Config([
+                        'paths' => ['migrations' => ROOT . '/database/migrations'],
+                        'environments' => [
+                            'default_environment' => 'install',
+                            'install' => [
+                                'adapter' => 'mysql',
+                                'host' => $dbHost,
+                                'port' => $dbPort,
+                                'name' => $dbName,
+                                'user' => $dbUser,
+                                'pass' => $dbPass,
+                                'charset' => 'utf8mb4',
+                            ],
+                        ],
+                        // phinx.php と揃えること（二重管理はこの値と migrations パスのみ）。
+                        'version_order' => 'creation',
+                    ]));
+                    // .env は toolkit の EnvironmentWriter で原子書き込みする。
+                    // 従来の heredoc 生補間と違い値をエスケープするため、パスワード等に
+                    // " $ # 空白が含まれても .env が壊れない（invoice の潜在バグを解消）。
+                    (new EnvironmentWriter())->write(ENV_FILE, [
+                        'APP_ENV' => 'production',
+                        'APP_DEBUG' => 'false',
+                        'APP_NAME' => 'NeNe Invoice',
+                        'PROBLEM_DETAILS_BASE_URL' => 'https://nene-invoice.dev/problems/',
+                        'TENANT_RESOLUTION' => $tenantResolution,
+                        'ORG_SLUG' => '',
+                        'BASE_DOMAIN' => $envBaseDomain,
+                        'NENE2_LOCAL_JWT_SECRET' => EnvironmentWriter::generateSecret(32),
+                        'DB_ADAPTER' => 'mysql',
+                        'DB_NAME' => $dbName,
+                        'DB_HOST' => $dbHost,
+                        'DB_PORT' => (string) $dbPort,
+                        'DB_USER' => $dbUser,
+                        'DB_PASSWORD' => $dbPass,
+                        'DB_CHARSET' => 'utf8mb4',
+                    ]);
 
                     header('Location: install.php?step=2');
                     exit;
@@ -583,6 +619,17 @@ if (!$payloadPresent) {
                 }
             }
         } elseif ($step === 2) {
+            // 管理者作成＝不可逆な最終ミューテーションの直前に、再設置を最終
+            // 確認する（冒頭ガード通過後に並行タブ等で設置が完了した場合の
+            // 二重プロビジョニング防止）。文言は冒頭ガードと同一。
+            $blockedReason = $reinstallGuard->blockedReason();
+
+            if ($blockedReason !== null) {
+                refuseInstall($blockedReason === 'marker_present'
+                    ? 'インストール済みです。install.php を削除してください。'
+                    : '既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。');
+            }
+
             // 管理者ユーザー作成。利用形態を .env から読み、single/multi で分岐。
             $adminEmail    = trim($_POST['admin_email'] ?? '');
             $adminPassword = $_POST['admin_password'] ?? '';
@@ -659,7 +706,7 @@ if (!$payloadPresent) {
                                 ->execute([$adminEmail, $hash, 'superadmin', null, 'active', $now, $now]);
                         }
 
-                        file_put_contents(INSTALLED_MARKER, date('c'));
+                        $reinstallGuard->markInstalled(date('c'));
 
                         $success = true;
                     } catch (PDOException $e) {
