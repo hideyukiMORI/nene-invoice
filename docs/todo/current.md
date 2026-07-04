@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-07-04 (型B マルチテナント Phase 2 完了 #556/#558/#560 merged＋掃除 #563。S2＝install.php の toolkit consumer 化 #562 進行中: 4スライス済・残り schema 決定A＋ハイブリッド出口。それ以前: #505 自動消込 増分⑤まで・定期請求 #526・Clear↔Invoice ライブ化・MFA 設計 #524/#525)
+Last updated: 2026-07-04 (S2＝install.php の toolkit consumer 化 #562 **✅ 完了・PR #569 merged**（NENE2 v1.6.0 release 済・`^1.6` 依存へ）。型B マルチテナント Phase 2 完了 #556/#558/#560＋掃除 #563。それ以前: #505 自動消込 増分⑤まで・定期請求 #526・Clear↔Invoice ライブ化・MFA 設計 #524/#525)
 
 ## Recently merged
 
@@ -67,7 +67,7 @@ Last updated: 2026-07-04 (型B マルチテナント Phase 2 完了 #556/#558/#5
 ## Active（2026-07-01〜04 セッション）
 
 - **型B マルチテナント Phase 2 — ✅ 完了（2026-07-02 main merged）** — ① 顧問先 SPA を `/{slug}/` 配下で end-to-end 稼働（#556/PR #557・OrgResolver の slug-strip ルーティング＋SPA app-base 分離注入）② superadmin/顧問先の per-route guard（#558/PR #559・FE `app/require-role.tsx`、BE のクロステナント防御は既存 OrgGuard で穴なし）③ 組織の停止/更新 API `PATCH /admin/organizations/{id}`（#560/PR #561・is_active/name/plan、slug/external_id は immutable）。Phase 1（#552/PR #554 superadmin プロビジョニング＋組織管理UI）と合わせ「org 払い出し → 顧問先が `/{slug}/` でログイン・発行 → 停止/更新」が閉じた。詳細 → `docs/handover/2026-07-03-typeb-phase2-complete-and-cleanup.md`。残（任意）: 停止/更新の FE 導線。
-- **S2 = インストーラを NENE2 `Nene2\Install` toolkit の consumer 化（#562・branch `refactor/562-install-toolkit-consumer`）** — NENE2 側 toolkit（29 部品）は完成・main merged。invoice 側スライス4枚済: .env 書込→`EnvironmentWriter`／テナント検証→`TenantConfigurationValidator`／サーバー要件→`ServerRequirementChecker`（var/ @mkdir 副作用は Feature A 冒頭で明示補完）／再設置ガード→`ReInstallationGuard`+`ProvisioningProbe`（marker は原子書込・失敗を可視化）。**冒頭 pre-vendor ガードと Feature B（zip 取得）はインライン維持**。**schema 決定A も済**（2026-07-04・phinx を require へ・fresh install を `DatabaseSchemaApplier` に統一・受入4点クリア: 等価 diff=phinxlog のみ／--no-dev vendor で 25 migrations 完走／実機スモーク 設置→ログイン→CRUD→PDF／zip 増分 +1.22MB。等価検証で手書き schema.sql の実ドリフト（collation・unsigned・列順）を発見。schema.sql＋SchemaParityTest は施主決定（07-04）で**削除**＝手同期の廃止・参照 DDL は mysqldump で都度生成（`database/schema/mysql/README.md`））。残り: NENE2 1.6.0 release（施主 GO）→ `^1.6` 切替（path repo scaffolding commit を落とす）→ packagist vendor で実機スモーク・ZIP 実測 → マージ。正本 `../_work/handoff-installer-2026-07-02.md`。
+- **S2 = インストーラを NENE2 `Nene2\Install` toolkit の consumer 化（#562）— ✅ 完了（PR #569 merged・2026-07-04・関所レビュー全スライス合格）**。refactor 4枚（.env→`EnvironmentWriter`／tenant→`TenantConfigurationValidator`／要件→`ServerRequirementChecker`／再設置→`ReInstallationGuard`+`ProvisioningProbe`）＋ schema 決定A（fresh install を phinx `DatabaseSchemaApplier` へ統一・phinx は require・手書き schema.sql＋SchemaParityTest は施主決定で削除＝migrations が唯一の正・参照 DDL は mysqldump（`database/schema/mysql/README.md`））。冒頭 pre-vendor ガードと Feature B はインライン維持。出口: **NENE2 v1.6.0 release（#1480/#1481・Packagist）→ `^1.6` 切替**。最終検証: リリース ZIP（89MB・phinx 増分 zip +1.22MB）展開物で 設置→25 migrations→ログイン→発行 INV→PDF 200。次レーン: S3（records の薄い install.php）。記録 `../_work/handoff-installer-2026-07-02.md`。
 
 ## Active（2026-06-27〜28 セッション）
 
