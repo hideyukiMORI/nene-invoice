@@ -566,6 +566,8 @@ if (!$payloadPresent) {
                 $envBaseDomain    = '';
 
                 foreach ($tenantResult->errors as $code) {
+                    // default（unknown_mode 等）は上の path 丸めが先に走るため通常
+                    // 到達しない防御枝（語彙を広げた将来の取りこぼし対策）。
                     $errors[] = match ($code) {
                         'base_domain_required' => 'サブドメイン方式では基準ドメイン（BASE_DOMAIN）を入力してください。',
                         'base_domain_invalid'  => '基準ドメイン（BASE_DOMAIN）の形式が正しくありません（英数字・ドット・ハイフンのみ）。',
