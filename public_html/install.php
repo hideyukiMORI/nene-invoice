@@ -18,6 +18,8 @@ declare(strict_types=1);
  */
 
 use Nene2\Install\EnvironmentWriter;
+use Nene2\Install\ProvisioningProbe;
+use Nene2\Install\ReInstallationGuard;
 use Nene2\Install\ServerRequirementChecker;
 use Nene2\Install\ServerRequirements;
 use Nene2\Install\TenantConfigurationValidator;
@@ -44,9 +46,7 @@ const ACQUIRE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 // Guard: すでにインストール済みならブロック
 // -------------------------------------------------------------------
 if (file_exists(INSTALLED_MARKER)) {
-    http_response_code(403);
-    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">インストール済みです。install.php を削除してください。</p>';
-    exit;
+    refuseInstall('インストール済みです。install.php を削除してください。');
 }
 
 // -------------------------------------------------------------------
@@ -88,9 +88,7 @@ function databaseAlreadyProvisioned(): bool
 }
 
 if (databaseAlreadyProvisioned()) {
-    http_response_code(403);
-    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。</p>';
-    exit;
+    refuseInstall('既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。');
 }
 
 // -------------------------------------------------------------------
@@ -99,6 +97,17 @@ if (databaseAlreadyProvisioned()) {
 function h(string $s): string
 {
     return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * インストールを 403 で拒否して終了する（冒頭ガードと管理者ステップ直前の
+ * 再設置確認で共用。文言は呼び出し側が持つ）。
+ */
+function refuseInstall(string $message): never
+{
+    http_response_code(403);
+    echo '<p style="font-family:sans-serif;color:#c00;padding:2em">' . h($message) . '</p>';
+    exit;
 }
 
 /**
@@ -507,6 +516,17 @@ if (!$payloadPresent) {
         @mkdir(ROOT . '/var', 0755, true);
     }
 
+    // 再設置ガード（.installed marker ＋ DB probe）。probe は冒頭の pre-vendor
+    // ガードと同じ databaseAlreadyProvisioned() を単一の真実として包む。無名
+    // クラスなのは、トップレベルで vendor の interface を implements すると
+    // pre-vendor 相（Feature B）で class binding に失敗し fatal になるため。
+    $reinstallGuard = new ReInstallationGuard(INSTALLED_MARKER, new class () implements ProvisioningProbe {
+        public function isProvisioned(): bool
+        {
+            return databaseAlreadyProvisioned();
+        }
+    });
+
     $checks    = requirementChecks();
     $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
 
@@ -593,6 +613,17 @@ if (!$payloadPresent) {
                 }
             }
         } elseif ($step === 2) {
+            // 管理者作成＝不可逆な最終ミューテーションの直前に、再設置を最終
+            // 確認する（冒頭ガード通過後に並行タブ等で設置が完了した場合の
+            // 二重プロビジョニング防止）。文言は冒頭ガードと同一。
+            $blockedReason = $reinstallGuard->blockedReason();
+
+            if ($blockedReason !== null) {
+                refuseInstall($blockedReason === 'marker_present'
+                    ? 'インストール済みです。install.php を削除してください。'
+                    : '既にプロビジョニング済みのデータベースが検出されました。再インストールはできません。install.php を削除してください。');
+            }
+
             // 管理者ユーザー作成。利用形態を .env から読み、single/multi で分岐。
             $adminEmail    = trim($_POST['admin_email'] ?? '');
             $adminPassword = $_POST['admin_password'] ?? '';
@@ -669,7 +700,7 @@ if (!$payloadPresent) {
                                 ->execute([$adminEmail, $hash, 'superadmin', null, 'active', $now, $now]);
                         }
 
-                        file_put_contents(INSTALLED_MARKER, date('c'));
+                        $reinstallGuard->markInstalled(date('c'));
 
                         $success = true;
                     } catch (PDOException $e) {
