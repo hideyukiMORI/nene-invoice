@@ -586,6 +586,7 @@ if (!$payloadPresent) {
                                 'charset' => 'utf8mb4',
                             ],
                         ],
+                        // phinx.php と揃えること（二重管理はこの値と migrations パスのみ）。
                         'version_order' => 'creation',
                     ]));
                     // .env は toolkit の EnvironmentWriter で原子書き込みする。
