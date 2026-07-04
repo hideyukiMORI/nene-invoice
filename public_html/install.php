@@ -18,6 +18,8 @@ declare(strict_types=1);
  */
 
 use Nene2\Install\EnvironmentWriter;
+use Nene2\Install\ServerRequirementChecker;
+use Nene2\Install\ServerRequirements;
 use Nene2\Install\TenantConfigurationValidator;
 
 define('ROOT', dirname(__DIR__));
@@ -102,23 +104,47 @@ function h(string $s): string
 /**
  * 各サーバー要件を構造化して返す（画面表示・合否判定の単一の真実）。
  *
+ * 判定は toolkit の ServerRequirementChecker に委譲する（診断のみ・FS 非変更。
+ * 旧実装が判定中に行っていた var/ の @mkdir は Feature A 冒頭で明示補完する）。
+ * checker は要件ごとの typed verdict を返すため、拡張 5 件を 1 行に束ねる既存
+ * UI へはここで集約し、日本語の label / fix は従来のまま保つ（UI 不変）。
+ *
  * @return list<array{label: string, detail: string, ok: bool, fix: string}>
  */
 function requirementChecks(): array
 {
-    $phpOk = PHP_VERSION_ID >= 80400;
+    $verdicts = (new ServerRequirementChecker())->check(new ServerRequirements(
+        minPhpVersion: '8.4.0',
+        requiredExtensions: ['pdo', 'pdo_mysql', 'mbstring', 'openssl', 'json'],
+        writablePaths: [ROOT . '/var', ROOT],
+        requiredFiles: [ROOT . '/vendor/autoload.php'],
+    ));
 
-    $extOk = true;
-    foreach (['pdo', 'pdo_mysql', 'mbstring', 'openssl', 'json'] as $ext) {
-        if (!extension_loaded($ext)) {
-            $extOk = false;
+    // kind（＋target）単位の合否集約。checker の reason code は表示に使わず、
+    // 行ごとの日本語文言は下の配列が単一の持ち主。
+    $ok = static function (string $requirement, ?string $target = null) use ($verdicts): bool {
+        foreach ($verdicts as $verdict) {
+            if ($verdict->requirement !== $requirement) {
+                continue;
+            }
+
+            if ($target !== null && $verdict->target !== $target) {
+                continue;
+            }
+
+            if (!$verdict->satisfied) {
+                return false;
+            }
         }
-    }
 
-    $varOk = is_writable(ROOT . '/var') || @mkdir(ROOT . '/var', 0755, true) || is_dir(ROOT . '/var');
-    $varOk = $varOk && is_writable(ROOT . '/var');
-    $rootOk = is_writable(ROOT);
-    $vendorOk = file_exists(ROOT . '/vendor/autoload.php');
+        return true;
+    };
+
+    $phpOk    = $ok(ServerRequirementChecker::REQUIREMENT_PHP);
+    $extOk    = $ok(ServerRequirementChecker::REQUIREMENT_EXTENSION);
+    $varOk    = $ok(ServerRequirementChecker::REQUIREMENT_WRITABLE, ROOT . '/var');
+    $rootOk   = $ok(ServerRequirementChecker::REQUIREMENT_WRITABLE, ROOT);
+    $vendorOk = $ok(ServerRequirementChecker::REQUIREMENT_FILE, ROOT . '/vendor/autoload.php');
 
     return [
         [
@@ -473,6 +499,13 @@ if (!$payloadPresent) {
     // vendor/ が存在する通常フローでのみ toolkit（Nene2\Install）を配線する。
     // Feature B（取得）は vendor 不在時に走るため toolkit に依存できない。
     require_once ROOT . '/vendor/autoload.php';
+
+    // 旧 requirementChecks() は判定中に var/ を @mkdir していた（診断と副作用の
+    // 同居）。toolkit の checker は診断のみで FS を変更しないため、marker
+    // （var/.installed）書き込みが依存する var/ の作成をここで明示的に補完する。
+    if (!is_dir(ROOT . '/var')) {
+        @mkdir(ROOT . '/var', 0755, true);
+    }
 
     $checks    = requirementChecks();
     $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
