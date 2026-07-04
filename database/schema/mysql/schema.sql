@@ -1,13 +1,15 @@
 -- NeNe Invoice — MySQL schema (generated from Phinx migrations)
--- Used by the Tier A web installer (public_html/install.php).
--- Must be kept in sync with database/migrations/ after any schema change.
+-- 参照資料（reference only）。スキーマの正は database/migrations/ — Tier A web
+-- installer も phinx（Nene2\Install\DatabaseSchemaApplier）で migration を直接
+-- 適用する（決定A・#562）。このファイルはランタイムでは読まれない。
+-- Must be kept in sync with database/migrations/ (SchemaParityTest が番人).
 -- Encoding: utf8mb4
 
 SET NAMES utf8mb4;
 SET foreign_key_checks = 0;
 
 CREATE TABLE IF NOT EXISTS `organizations` (
-    `id`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`            INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `name`          VARCHAR(255) NOT NULL,
     `slug`          VARCHAR(100) NOT NULL,
     `external_id`   VARCHAR(255) DEFAULT NULL,
@@ -18,10 +20,10 @@ CREATE TABLE IF NOT EXISTS `organizations` (
     `updated_at`    DATETIME     NOT NULL,
     UNIQUE KEY `uniq_organizations_slug` (`slug`),
     UNIQUE KEY `uniq_organizations_external_id` (`external_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `users` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `email`           VARCHAR(255) NOT NULL,
     `password_hash`   VARCHAR(255) NOT NULL,
     `role`            VARCHAR(32)  NOT NULL DEFAULT 'admin',
@@ -31,10 +33,10 @@ CREATE TABLE IF NOT EXISTS `users` (
     `updated_at`      DATETIME     NOT NULL,
     UNIQUE KEY `uniq_users_email` (`email`),
     KEY `idx_users_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `clients` (
-    `id`                  INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                  INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`     INT          NOT NULL,
     `name`                VARCHAR(255) NOT NULL,
     `name_kana`           VARCHAR(255) DEFAULT NULL,
@@ -47,10 +49,10 @@ CREATE TABLE IF NOT EXISTS `clients` (
     `created_at`          DATETIME     NOT NULL,
     `updated_at`          DATETIME     NOT NULL,
     KEY `idx_clients_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `company_settings` (
-    `id`                  INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                  INT UNSIGNED           NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`     INT           NOT NULL,
     `legal_name`          VARCHAR(255)  NOT NULL,
     `address`             TEXT          DEFAULT NULL,
@@ -62,6 +64,8 @@ CREATE TABLE IF NOT EXISTS `company_settings` (
     `account_type`        VARCHAR(32)   DEFAULT NULL,
     `account_number`      VARCHAR(64)   DEFAULT NULL,
     `logo_url`            VARCHAR(1024) DEFAULT NULL,
+    `created_at`          DATETIME      NOT NULL,
+    `updated_at`          DATETIME      NOT NULL,
     `default_quote_validity_days`  INT  DEFAULT NULL,
     `default_payment_closing_day`  INT  DEFAULT NULL,
     `default_payment_month_offset` INT  DEFAULT NULL,
@@ -69,22 +73,20 @@ CREATE TABLE IF NOT EXISTS `company_settings` (
     `pdf_template`        VARCHAR(16)   NOT NULL DEFAULT 'standard',
     `pdf_spacing`         VARCHAR(16)   NOT NULL DEFAULT 'medium',
     `pdf_heading_font`    VARCHAR(16)   NOT NULL DEFAULT 'gothic',
-    `created_at`          DATETIME      NOT NULL,
-    `updated_at`          DATETIME      NOT NULL,
     UNIQUE KEY `uniq_company_settings_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `company_seal_images` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          NOT NULL,
     `image_base64`    MEDIUMTEXT   NOT NULL,
     `created_at`      DATETIME     NOT NULL,
     `updated_at`      DATETIME     NOT NULL,
     UNIQUE KEY `uniq_company_seal_images_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `audit_logs` (
-    `id`           INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`           INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `actor_user_id` INT        DEFAULT NULL,
     `organization_id` INT      DEFAULT NULL,
     `action`       VARCHAR(64) NOT NULL,
@@ -95,19 +97,19 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
     `created_at`   DATETIME    NOT NULL,
     KEY `idx_audit_logs_organization_id` (`organization_id`),
     KEY `idx_audit_logs_entity` (`entity_type`, `entity_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `document_sequences` (
-    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT         NOT NULL,
     `doc_type`        VARCHAR(32) NOT NULL,
     `year`            INT         NOT NULL,
     `last_number`     INT         NOT NULL DEFAULT 0,
     UNIQUE KEY `uniq_document_sequences_scope` (`organization_id`, `doc_type`, `year`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `line_items` (
-    `id`               INT           NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`               INT UNSIGNED           NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `parent_type`      VARCHAR(16)   NOT NULL,
     `parent_id`        INT           NOT NULL,
     `description`      VARCHAR(1024) NOT NULL,
@@ -118,10 +120,10 @@ CREATE TABLE IF NOT EXISTS `line_items` (
     `created_at`       DATETIME      NOT NULL,
     `updated_at`       DATETIME      NOT NULL,
     KEY `idx_line_items_parent` (`parent_type`, `parent_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `quotes` (
-    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT         NOT NULL,
     `client_id`       INT         NOT NULL,
     `quote_number`    VARCHAR(32) NOT NULL,
@@ -138,10 +140,10 @@ CREATE TABLE IF NOT EXISTS `quotes` (
     `updated_at`      DATETIME    NOT NULL,
     KEY `idx_quotes_organization_id` (`organization_id`),
     UNIQUE KEY `uniq_quotes_org_number` (`organization_id`, `quote_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `invoices` (
-    `id`                   INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                   INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`      INT         NOT NULL,
     `client_id`            INT         NOT NULL,
     `quote_id`             INT         DEFAULT NULL,
@@ -160,29 +162,29 @@ CREATE TABLE IF NOT EXISTS `invoices` (
     `updated_at`           DATETIME    NOT NULL,
     KEY `idx_invoices_organization_id` (`organization_id`),
     UNIQUE KEY `uniq_invoices_org_number` (`organization_id`, `invoice_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `payments` (
-    `id`                  INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                  INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`     INT          NOT NULL,
     `invoice_id`          INT          NOT NULL,
     `amount_cents`        INT          NOT NULL,
     `paid_at`             DATETIME     NOT NULL,
     `method`              VARCHAR(32)  DEFAULT NULL,
     `note`                TEXT         DEFAULT NULL,
-    `external_reference`  VARCHAR(255) DEFAULT NULL,
-    `idempotency_key`     VARCHAR(255) DEFAULT NULL,
     `is_deleted`          TINYINT(1)   NOT NULL DEFAULT 0,
     `deleted_at`          DATETIME     DEFAULT NULL,
     `created_at`          DATETIME     NOT NULL,
     `updated_at`          DATETIME     NOT NULL,
+    `external_reference`  VARCHAR(255) DEFAULT NULL,
+    `idempotency_key`     VARCHAR(255) DEFAULT NULL,
     KEY `idx_payments_organization_id` (`organization_id`),
     KEY `idx_payments_invoice_id` (`invoice_id`),
     UNIQUE KEY `uniq_payments_idempotency_key` (`idempotency_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `invoice_download_tokens` (
-    `id`              INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `invoice_id`      INT         NOT NULL,
     `organization_id` INT         NOT NULL,
     `token_hash`      VARCHAR(64) NOT NULL,
@@ -190,7 +192,7 @@ CREATE TABLE IF NOT EXISTS `invoice_download_tokens` (
     `created_at`      DATETIME    NOT NULL,
     UNIQUE KEY `uniq_download_tokens_hash` (`token_hash`),
     KEY `idx_download_tokens_invoice_id` (`invoice_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET foreign_key_checks = 1;
 
@@ -198,18 +200,18 @@ SET foreign_key_checks = 1;
 -- login_attempts — failed login throttling per source IP (security: F-2).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `login_attempts` (
-    `id`         INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`         INT UNSIGNED         NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `ip_address` VARCHAR(45) NOT NULL,
     `created_at` DATETIME    NOT NULL,
     KEY `idx_login_attempts_ip_time` (`ip_address`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- service_tokens — registry of issued NeNe Clear service tokens (ADR 0009).
 -- Metadata only; the token value is never stored. `jti` keys revocation.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `service_tokens` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          NOT NULL,
     `jti`             VARCHAR(64)  NOT NULL,
     `subject`         VARCHAR(255) NOT NULL,
@@ -221,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `service_tokens` (
     `revoked_at`      DATETIME     DEFAULT NULL,
     UNIQUE KEY `uniq_service_tokens_jti` (`jti`),
     KEY `idx_service_tokens_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- payment_links — hashed, time-limited, revocable links that let a payer settle
@@ -230,7 +232,7 @@ CREATE TABLE IF NOT EXISTS `service_tokens` (
 -- status: active | paid | revoked (expiry is derived from expires_at).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `payment_links` (
-    `id`                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                 INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`    INT          NOT NULL,
     `invoice_id`         INT          NOT NULL,
     `token_hash`         VARCHAR(64)  NOT NULL,
@@ -246,7 +248,7 @@ CREATE TABLE IF NOT EXISTS `payment_links` (
     KEY `idx_payment_links_invoice_id` (`invoice_id`),
     KEY `idx_payment_links_gateway_session_id` (`gateway_session_id`),
     KEY `idx_payment_links_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- refresh_tokens — rotating refresh tokens for silent re-authentication
@@ -254,7 +256,7 @@ CREATE TABLE IF NOT EXISTS `payment_links` (
 -- ties a rotation lineage so presenting a used/revoked token revokes the family.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `refresh_tokens` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          DEFAULT NULL,
     `user_id`         INT          NOT NULL,
     `family_id`       VARCHAR(64)  NOT NULL,
@@ -267,13 +269,13 @@ CREATE TABLE IF NOT EXISTS `refresh_tokens` (
     UNIQUE KEY `uniq_refresh_tokens_token_hash` (`token_hash`),
     KEY `idx_refresh_tokens_family_id` (`family_id`),
     KEY `idx_refresh_tokens_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- items — reusable line-item master (品目マスタ), soft-deletable.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `items` (
-    `id`                       INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                       INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`          INT          NOT NULL,
     `description`              VARCHAR(255) NOT NULL,
     `default_unit_price_cents` INT          NOT NULL DEFAULT 0,
@@ -283,14 +285,14 @@ CREATE TABLE IF NOT EXISTS `items` (
     `created_at`               DATETIME     NOT NULL,
     `updated_at`               DATETIME     NOT NULL,
     KEY `idx_items_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- templates — reusable document templates (header + shared line_items),
 -- soft-deletable.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `templates` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          NOT NULL,
     `name`            VARCHAR(255) NOT NULL,
     `notes`           TEXT         DEFAULT NULL,
@@ -299,7 +301,7 @@ CREATE TABLE IF NOT EXISTS `templates` (
     `created_at`      DATETIME     NOT NULL,
     `updated_at`      DATETIME     NOT NULL,
     KEY `idx_templates_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- recurring_invoices — recurring-billing schedules (#503). Generates an invoice
@@ -307,7 +309,7 @@ CREATE TABLE IF NOT EXISTS `templates` (
 -- next_run_on/last_run_on are calendar dates. frequency: monthly | quarterly.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `recurring_invoices` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          NOT NULL,
     `client_id`       INT          NOT NULL,
     `name`            VARCHAR(255) NOT NULL,
@@ -325,7 +327,7 @@ CREATE TABLE IF NOT EXISTS `recurring_invoices` (
     `updated_at`      DATETIME     NOT NULL,
     KEY `idx_recurring_invoices_organization_id` (`organization_id`),
     KEY `idx_recurring_invoices_due` (`organization_id`, `is_active`, `next_run_on`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- bank_transactions — staging for bank-deposit CSV auto-reconciliation (#505).
@@ -335,7 +337,7 @@ CREATE TABLE IF NOT EXISTS `recurring_invoices` (
 -- status: unmatched | matched | posted | ignored.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `bank_transactions` (
-    `id`                 INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`                 INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id`    INT          NOT NULL,
     `value_date`         DATE         NOT NULL,
     `direction`          VARCHAR(8)   NOT NULL,
@@ -352,7 +354,7 @@ CREATE TABLE IF NOT EXISTS `bank_transactions` (
     KEY `idx_bank_transactions_organization_id` (`organization_id`),
     KEY `idx_bank_transactions_status` (`organization_id`, `status`),
     KEY `idx_bank_transactions_bank_reference` (`organization_id`, `bank_reference`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- payer_aliases — learned remitter-name → client map for auto-reconciliation
@@ -360,7 +362,7 @@ CREATE TABLE IF NOT EXISTS `bank_transactions` (
 -- organization. Matching metadata, not a billing record.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `payer_aliases` (
-    `id`              INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    `id`              INT UNSIGNED          NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `organization_id` INT          NOT NULL,
     `normalized_name` VARCHAR(255) NOT NULL,
     `client_id`       INT          NOT NULL,
@@ -368,4 +370,4 @@ CREATE TABLE IF NOT EXISTS `payer_aliases` (
     `updated_at`      DATETIME     NOT NULL,
     UNIQUE KEY `uq_payer_aliases_org_name` (`organization_id`, `normalized_name`),
     KEY `idx_payer_aliases_organization_id` (`organization_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

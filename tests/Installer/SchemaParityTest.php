@@ -7,14 +7,15 @@ namespace NeneInvoice\Tests\Installer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Guards the Tier A web installer against schema drift (issue #482).
+ * Keeps the reference DDL (`database/schema/mysql/schema.sql`) in sync with the
+ * migrations (issue #482; scope revised by #562 決定A).
  *
- * The CLI-less installer (`public_html/install.php`) provisions the database
- * from a hand-maintained DDL file rather than Phinx, so the two can diverge — as
- * happened when `refresh_tokens` (ADR 0014) was added by a migration but not to
- * the installer schema, leaving fresh installs unable to silent-refresh. This
- * test fails if any table created by a migration is absent from the installer
- * schema, so a real install would have provisioned it.
+ * Since #562 the Tier A web installer provisions via phinx
+ * (`Nene2\Install\DatabaseSchemaApplier`), so migrations are the single source
+ * of truth and installs can no longer drift. The hand-maintained DDL remains as
+ * reference documentation only; this test keeps that reference honest — a stale
+ * reference once hid the missing `refresh_tokens` table (ADR 0014). Whether to
+ * drop the file (and this test) entirely is a follow-up decision.
  */
 final class SchemaParityTest extends TestCase
 {

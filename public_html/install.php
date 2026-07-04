@@ -17,16 +17,17 @@ declare(strict_types=1);
  * テーマ）に準拠。React プロトタイプを自己完結 PHP + バニラ JS に移植している。
  */
 
+use Nene2\Install\DatabaseSchemaApplier;
 use Nene2\Install\EnvironmentWriter;
 use Nene2\Install\ProvisioningProbe;
 use Nene2\Install\ReInstallationGuard;
 use Nene2\Install\ServerRequirementChecker;
 use Nene2\Install\ServerRequirements;
 use Nene2\Install\TenantConfigurationValidator;
+use Phinx\Config\Config;
 
 define('ROOT', dirname(__DIR__));
 define('INSTALLED_MARKER', ROOT . '/var/.installed');
-define('MYSQL_SCHEMA', ROOT . '/database/schema/mysql/schema.sql');
 define('ENV_FILE', ROOT . '/.env');
 
 // -------------------------------------------------------------------
@@ -187,29 +188,6 @@ function requirementChecks(): array
             'fix' => 'ZIP ファイルが完全に展開されているか確認してください。',
         ],
     ];
-}
-
-function applySchema(PDO $pdo, string $schemaFile): void
-{
-    $sql = file_get_contents($schemaFile);
-
-    if ($sql === false) {
-        throw new RuntimeException('スキーマファイルを読み込めませんでした: ' . $schemaFile);
-    }
-
-    // 分割前に `--` 行コメントを除去する。コメント自体に `;` を含むことがあり
-    // （例: "-- Metadata only; the token value is never stored."）、先に `;` で
-    // 分割するとコメント後半が SQL 文として実行され構文エラーになるため。
-    $withoutComments = preg_replace('/^\s*--.*$/m', '', $sql);
-
-    $statements = array_filter(
-        array_map('trim', explode(';', (string) $withoutComments)),
-        static fn (string $s): bool => $s !== '',
-    );
-
-    foreach ($statements as $stmt) {
-        $pdo->exec($stmt);
-    }
 }
 
 // ===================================================================
@@ -582,9 +560,34 @@ if (!$payloadPresent) {
 
             if ($errors === []) {
                 try {
+                    // 接続テスト（資格情報の検証・失敗は PDOException → 専用の
+                    // 日本語バナー）。スキーマ適用そのものは phinx が別接続で行う。
                     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
                     $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-                    applySchema($pdo, MYSQL_SCHEMA);
+
+                    // スキーマは phinx migration が唯一の正（決定A）。toolkit の
+                    // DatabaseSchemaApplier が Manager API で pending migration を
+                    // CLI なしに適用する — fresh install と upgrade が同一経路に
+                    // 収束し、dump（database/schema/*.sql・参照資料へ降格）との
+                    // 乖離が構造的に起きない。接続情報は検証済み POST 値から直接
+                    // 渡す（.env 非依存。「schema 適用 → .env 書込」の順序と
+                    // 失敗時挙動は従来どおり）。
+                    (new DatabaseSchemaApplier())->apply(new Config([
+                        'paths' => ['migrations' => ROOT . '/database/migrations'],
+                        'environments' => [
+                            'default_environment' => 'install',
+                            'install' => [
+                                'adapter' => 'mysql',
+                                'host' => $dbHost,
+                                'port' => $dbPort,
+                                'name' => $dbName,
+                                'user' => $dbUser,
+                                'pass' => $dbPass,
+                                'charset' => 'utf8mb4',
+                            ],
+                        ],
+                        'version_order' => 'creation',
+                    ]));
                     // .env は toolkit の EnvironmentWriter で原子書き込みする。
                     // 従来の heredoc 生補間と違い値をエスケープするため、パスワード等に
                     // " $ # 空白が含まれても .env が壊れない（invoice の潜在バグを解消）。
