@@ -28,6 +28,7 @@ use Nene2\Install\TenantConfigurationValidator;
 use NeneInvoice\Http\RuntimeContainerFactory;
 use NeneInvoice\Install\InstallApplication;
 use NeneInvoice\Install\InstallConfig;
+use NeneInvoice\Install\PayloadAcquisition;
 use NeneInvoice\Install\PdoInstallProvisioningRepository;
 use NeneInvoice\Organization\CreateOrganizationUseCaseInterface;
 use NeneInvoice\Organization\PdoOrganizationRepository;
@@ -36,19 +37,6 @@ use Phinx\Config\Config;
 define('ROOT', dirname(__DIR__));
 define('INSTALLED_MARKER', ROOT . '/var/.installed');
 define('ENV_FILE', ROOT . '/.env');
-
-// -------------------------------------------------------------------
-// Feature B（手動アップロードによるアプリ取得）用の定数。
-//
-// このラウンドは「配布元の SHA-256 照合のみ」。ADR 0018 の署名検証は
-// updater / 自動取得ラウンドで同時導入する（本 install は署名検証を行わない）。
-// -------------------------------------------------------------------
-// 配布 ZIP のトップレベル・エントリはこの集合の部分集合でなければならない。
-// （build-release.sh が同梱するもの＝無関係／悪意ある ZIP を弾くためのガード）
-const ACQUIRE_ALLOWED_TOP = ['src', 'vendor', 'database', 'public_html', 'composer.json', 'phinx.php', '.env.example', 'var'];
-// アップロード上限（.zip のみ受け付ける）。共有ホスティングの実効値
-// （upload_max_filesize / post_max_size）がこれより小さいこともある。
-const ACQUIRE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
 // -------------------------------------------------------------------
 // Guard: すでにインストール済みならブロック
@@ -243,124 +231,6 @@ function acquireRequirementChecks(): array
 }
 
 /**
- * ZIP エントリ名が展開先 ROOT の外へ書き込もうとしていないか（zip-slip）を判定する。
- * 絶対パス・ドライブレター・`..` セグメントを含むものはすべて「脱出」とみなす（厳格）。
- */
-function acquireEntryEscapesRoot(string $entry): bool
-{
-    $norm = str_replace('\\', '/', $entry);
-
-    if ($norm === '' || $norm === '/') {
-        return false;
-    }
-
-    // 絶対パス（/foo）または Windows ドライブレター（C:\）は拒否。
-    if ($norm[0] === '/' || preg_match('#^[A-Za-z]:#', $norm) === 1) {
-        return true;
-    }
-
-    foreach (explode('/', $norm) as $seg) {
-        if ($seg === '..') {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
- * ZIP のトップレベル・エントリ名（第 1 セグメント）を返す。
- */
-function acquireTopSegment(string $entry): string
-{
-    $norm = ltrim(str_replace('\\', '/', $entry), '/');
-    $slash = strpos($norm, '/');
-
-    return $slash === false ? $norm : substr($norm, 0, $slash);
-}
-
-/**
- * ZIP を厳格に検証してから ROOT へ展開する。
- *
- * ガード:
- *  - すべてのエントリについて zip-slip（`..` / 絶対パス）を拒否。
- *  - トップレベル・エントリが ACQUIRE_ALLOWED_TOP の部分集合でなければ拒否。
- *  - 検証を全通過してから初めて extractTo() する（部分展開を避ける）。
- */
-function extractPayloadZip(string $zipPath, string $root): void
-{
-    if (!class_exists('ZipArchive')) {
-        throw new RuntimeException('zip 拡張（ZipArchive）が有効ではありません。');
-    }
-
-    $zip = new ZipArchive();
-
-    if ($zip->open($zipPath) !== true) {
-        throw new RuntimeException('アップロードされた ZIP を開けませんでした。ファイルが壊れていないか確認してください。');
-    }
-
-    try {
-        if ($zip->numFiles === 0) {
-            throw new RuntimeException('ZIP が空です。公式配布元の ZIP をアップロードしてください。');
-        }
-
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $entry = $zip->getNameIndex($i);
-
-            if ($entry === false) {
-                throw new RuntimeException('ZIP のエントリを読み取れませんでした。');
-            }
-
-            if (acquireEntryEscapesRoot($entry)) {
-                throw new RuntimeException('ZIP に不正なパス（zip-slip の疑い）が含まれています。展開を中止しました。');
-            }
-
-            $top = acquireTopSegment($entry);
-
-            if ($top !== '' && !in_array($top, ACQUIRE_ALLOWED_TOP, true)) {
-                throw new RuntimeException('想定外のエントリ「' . $top . '」が ZIP に含まれています。NeNe Invoice の配布 ZIP をアップロードしてください。');
-            }
-        }
-
-        if ($zip->extractTo($root) !== true) {
-            throw new RuntimeException('ZIP の展開に失敗しました。書き込み権限とディスク容量を確認してください。');
-        }
-    } finally {
-        $zip->close();
-    }
-}
-
-/**
- * SHA-256 を照合してから ZIP を展開する（Feature B の中核・単体テスト可能）。
- * ハッシュ不一致・書式不正・空欄はいずれも拒否（展開しない）。
- */
-function verifyAndExtractPayload(string $zipPath, string $expectedHash, string $root): void
-{
-    $expected = strtolower(trim($expectedHash));
-
-    if ($expected === '') {
-        throw new RuntimeException('公式配布元のリリースページに記載された SHA-256 を入力してください。');
-    }
-
-    if (preg_match('/^[0-9a-f]{64}$/', $expected) !== 1) {
-        throw new RuntimeException('SHA-256 の形式が正しくありません（64 桁の 16 進数を入力してください）。');
-    }
-
-    $actual = hash_file('sha256', $zipPath);
-
-    if ($actual === false) {
-        throw new RuntimeException('アップロードされたファイルのハッシュを計算できませんでした。');
-    }
-
-    // タイミング攻撃対策として hash_equals を使う（照合は展開の前に必ず行う）。
-    if (!hash_equals($expected, strtolower($actual))) {
-        throw new RuntimeException('SHA-256 が一致しません。公式配布元からダウンロードした ZIP と、そのページに記載のハッシュを確認してください。');
-    }
-
-    extractPayloadZip($zipPath, $root);
-}
-
-/**
  * Web アップロード（multipart POST）を検証し、一時ファイル経由で展開する。
  * 一時 ZIP は成功・失敗いずれの場合も必ず削除する。
  */
@@ -387,8 +257,8 @@ function handleAcquireUpload(): void
         throw new RuntimeException('アップロードされたファイルが空です。');
     }
 
-    if ($size > ACQUIRE_MAX_UPLOAD_BYTES) {
-        throw new RuntimeException('ファイルサイズが上限（' . (int) (ACQUIRE_MAX_UPLOAD_BYTES / 1024 / 1024) . 'MB）を超えています。');
+    if ($size > PayloadAcquisition::MAX_UPLOAD_BYTES) {
+        throw new RuntimeException('ファイルサイズが上限（' . (int) (PayloadAcquisition::MAX_UPLOAD_BYTES / 1024 / 1024) . 'MB）を超えています。');
     }
 
     $origName = (string) ($_FILES['payload']['name'] ?? '');
@@ -411,7 +281,7 @@ function handleAcquireUpload(): void
 
     try {
         // SHA-256 照合 → zip-slip / トップレベル検証 → 展開（すべて展開前に検証）。
-        verifyAndExtractPayload($dest, (string) ($_POST['expected_sha256'] ?? ''), ROOT);
+        PayloadAcquisition::verifyAndExtract($dest, (string) ($_POST['expected_sha256'] ?? ''), ROOT);
     } finally {
         // 一致・不一致・例外いずれでも一時 ZIP を削除する。
         @unlink($dest);
@@ -465,6 +335,10 @@ $isMultiInstall = $installedMode !== 'single';
 
 if (!$payloadPresent) {
     // ================= Feature B: アプリ取得（アップロード）フロー =================
+    // vendor 不在＝Composer autoloader も無いため、取得ロジックを持つ依存ゼロの
+    // クラスを直接 require する（toolkit には依存できない）。
+    require_once ROOT . '/src/Install/PayloadAcquisition.php';
+
     $view      = 'acquire';
     $checks    = acquireRequirementChecks();
     $reqErrors = array_values(array_filter($checks, static fn (array $c): bool => !$c['ok']));
