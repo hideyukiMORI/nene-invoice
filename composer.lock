@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "473af19aa809b2f1a67d8971d7ed44c3",
+    "content-hash": "0f02859207e8ca0d22f49e49ecc62044",
     "packages": [
         {
             "name": "cakephp/chronos",
@@ -394,16 +394,16 @@
         },
         {
             "name": "hideyukimori/nene2",
-            "version": "v1.6.0",
+            "version": "v1.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hideyukiMORI/NENE2.git",
-                "reference": "6472bcbddb2dcd81e17cca082802f70652e17e8f"
+                "reference": "01e05992aa585412c4d1b74010e9deeb158b2c54"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hideyukiMORI/NENE2/zipball/6472bcbddb2dcd81e17cca082802f70652e17e8f",
-                "reference": "6472bcbddb2dcd81e17cca082802f70652e17e8f",
+                "url": "https://api.github.com/repos/hideyukiMORI/NENE2/zipball/01e05992aa585412c4d1b74010e9deeb158b2c54",
+                "reference": "01e05992aa585412c4d1b74010e9deeb158b2c54",
                 "shasum": ""
             },
             "require": {
@@ -441,9 +441,9 @@
             "description": "PHP micro-framework: JSON APIs first, minimal server HTML, easy React/SPA integration, structure friendly to AI tooling.",
             "support": {
                 "issues": "https://github.com/hideyukiMORI/NENE2/issues",
-                "source": "https://github.com/hideyukiMORI/NENE2/tree/v1.6.0"
+                "source": "https://github.com/hideyukiMORI/NENE2/tree/v1.7.0"
             },
-            "time": "2026-07-04T10:36:09+00:00"
+            "time": "2026-07-05T11:45:02+00:00"
         },
         {
             "name": "league/container",
@@ -2421,16 +2421,16 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.38.1",
+            "version": "v1.38.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "14c5439eec4ccff081ac14eca2dc57feb2a66d92"
+                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/14c5439eec4ccff081ac14eca2dc57feb2a66d92",
-                "reference": "14c5439eec4ccff081ac14eca2dc57feb2a66d92",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
+                "reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6",
                 "shasum": ""
             },
             "require": {
@@ -2482,7 +2482,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.1"
+                "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.38.2"
             },
             "funding": [
                 {
@@ -2502,7 +2502,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-05-26T12:51:13+00:00"
+            "time": "2026-05-27T06:59:30+00:00"
         },
         {
             "name": "symfony/polyfill-php80",

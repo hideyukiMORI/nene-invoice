@@ -8,6 +8,7 @@
     <env name="APP_ENV" value="test" force="true"/>
     <env name="DB_ADAPTER" value="sqlite" force="true"/>
     <env name="DB_NAME" value=":memory:" force="true"/>
+    <env name="NENE2_ALLOW_DEV_SECRET" value="1" force="true"/>
   </php>
   <testsuites>
     <testsuite name="NeneInvoice">

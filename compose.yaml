@@ -40,6 +40,8 @@ services:
       TENANT_RESOLUTION: ${TENANT_RESOLUTION:-single}
       # local 限定の開発用シークレット。production では必ず上書きすること。
       NENE2_LOCAL_JWT_SECRET: ${NENE2_LOCAL_JWT_SECRET:-local-dev-secret-change-me-0123456789abcdef}
+      # 開発用シークレットへの opt-in（既定は空＝prod と同じ fail-closed を維持）。
+      NENE2_ALLOW_DEV_SECRET: ${NENE2_ALLOW_DEV_SECRET:-}
       # 0 にすると dev ダミーデータ投入を無効化（本番相当の確認用）。
       INVOICE_SEED_DEV: ${INVOICE_SEED_DEV:-1}
     ports:
