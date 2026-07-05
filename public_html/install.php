@@ -17,6 +17,7 @@ declare(strict_types=1);
  * テーマ）に準拠。React プロトタイプを自己完結 PHP + バニラ JS に移植している。
  */
 
+use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Install\DatabaseSchemaApplier;
 use Nene2\Install\EnvironmentWriter;
 use Nene2\Install\ProvisioningProbe;
@@ -24,6 +25,12 @@ use Nene2\Install\ReInstallationGuard;
 use Nene2\Install\ServerRequirementChecker;
 use Nene2\Install\ServerRequirements;
 use Nene2\Install\TenantConfigurationValidator;
+use NeneInvoice\Http\RuntimeContainerFactory;
+use NeneInvoice\Install\InstallApplication;
+use NeneInvoice\Install\InstallConfig;
+use NeneInvoice\Install\PdoInstallProvisioningRepository;
+use NeneInvoice\Organization\CreateOrganizationUseCaseInterface;
+use NeneInvoice\Organization\PdoOrganizationRepository;
 use Phinx\Config\Config;
 
 define('ROOT', dirname(__DIR__));
@@ -673,45 +680,45 @@ if (!$payloadPresent) {
                         // 分岐の権威は書き込み済み .env の TENANT_RESOLUTION。
                         $isSingle = (string) ($env['TENANT_RESOLUTION'] ?? 'single') === 'single';
 
-                        $dsn = sprintf(
-                            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                            $env['DB_HOST'] ?? 'localhost',
-                            $env['DB_PORT'] ?? '3306',
-                            $env['DB_NAME'] ?? '',
-                        );
-                        $pdo = new PDO($dsn, $env['DB_USER'] ?? '', $env['DB_PASSWORD'] ?? '', [
-                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        ]);
+                        // 生 SQL をやめ、テスト済みユースケースへ委譲する（S3-2 #579）。
+                        // container を boot し、書き込み済み .env の DB 設定で組織/管理者を
+                        // 作成する。single は CreateOrganizationUseCase の org+admin 原子生成
+                        // （監査つき）を再利用し company_settings をシード、multi は
+                        // superadmin（organization_id=NULL）を作成する。
+                        $container = (new RuntimeContainerFactory(ROOT))->create();
 
-                        $now  = date('Y-m-d H:i:s');
-                        $hash = password_hash($adminPassword, PASSWORD_BCRYPT);
+                        $createOrganization = $container->get(CreateOrganizationUseCaseInterface::class);
+                        $queryExecutor      = $container->get(DatabaseQueryExecutorInterface::class);
 
-                        if ($isSingle) {
-                            // 単一組織: 組織 + company_settings + admin（organization_id 紐付け）。
-                            $orgSlug = preg_replace('/[^a-z0-9\-]/', '-', strtolower($companyName)) ?: 'default';
-                            $pdo->prepare('INSERT INTO organizations (name, slug, plan, is_active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)')
-                                ->execute([$companyName, $orgSlug, 'free', $now, $now]);
-                            $orgId = (int) $pdo->lastInsertId();
-
-                            $pdo->prepare('INSERT INTO company_settings (organization_id, legal_name, created_at, updated_at) VALUES (?, ?, ?, ?)')
-                                ->execute([$orgId, $companyName, $now, $now]);
-
-                            $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                                ->execute([$adminEmail, $hash, 'admin', $orgId, 'active', $now, $now]);
-                        } else {
-                            // 複数組織: superadmin（organization_id=NULL / クロステナント）。
-                            // 組織・company_settings は作らない（superadmin が API 経由で追加。
-                            // 組織管理 UI は未提供 = #546 の注意喚起どおり上級者向け運用）。
-                            $pdo->prepare('INSERT INTO users (email, password_hash, role, organization_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                                ->execute([$adminEmail, $hash, 'superadmin', null, 'active', $now, $now]);
+                        if (
+                            !$createOrganization instanceof CreateOrganizationUseCaseInterface
+                            || !$queryExecutor instanceof DatabaseQueryExecutorInterface
+                        ) {
+                            throw new RuntimeException('アプリケーションコンテナの構成が正しくありません。');
                         }
+
+                        $orgSlug = $isSingle
+                            ? (preg_replace('/[^a-z0-9\-]/', '-', strtolower($companyName)) ?: 'default')
+                            : '';
+
+                        (new InstallApplication(
+                            $createOrganization,
+                            new PdoOrganizationRepository($queryExecutor),
+                            new PdoInstallProvisioningRepository($queryExecutor),
+                        ))->install(new InstallConfig(
+                            isSingle: $isSingle,
+                            organizationName: $companyName,
+                            organizationSlug: $orgSlug,
+                            adminEmail: $adminEmail,
+                            adminPassword: $adminPassword,
+                        ));
 
                         $reinstallGuard->markInstalled(date('c'));
 
                         $success = true;
                     } catch (PDOException $e) {
                         $errors[] = 'データベースエラー: ' . $e->getMessage();
-                    } catch (RuntimeException $e) {
+                    } catch (\Throwable $e) {
                         $errors[] = $e->getMessage();
                     }
                 }
