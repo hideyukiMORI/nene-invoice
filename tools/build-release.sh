@@ -1,79 +1,114 @@
 #!/usr/bin/env bash
-# NeNe Invoice — Tier A リリース ZIP ビルドスクリプト
+# NeNe Invoice — Tier A リリース ZIP ビルドスクリプト（#576 で堅牢化）
+#
 # 使い方: bash tools/build-release.sh [version]
 # 例:     bash tools/build-release.sh 1.0.0
-# 出力:   dist/nene-invoice-<version>.zip
+# 出力:   dist/nene-invoice-<version>.zip ＋ dist/nene-invoice-<version>.zip.sha256
+#
+# 設計（nene-records の build-release.sh に倣う・#576 / _work/reports/2026-07-05/）:
+# - 作業ツリーの vendor は一切触らない。配布物は staging で Packagist の
+#   hideyukimori/nene2 ^1.6 を解決した実体 vendor を組む（path repo / symlink を
+#   持ち込まない）。symlink が 1 本でも残ったら fail。
+# - 同梱は allowlist 方式（dev 専用物・秘密・巨大物の混入を構造的に防ぐ）。
+# - 出荷物は WordPress 式にトップレベル展開。SHA-256 サイドカーを併せて出力。
 
 set -euo pipefail
 
 VERSION="${1:-dev}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
-WORK="$DIST/build"
+STAGE="$DIST/build/stage"
 ZIP_NAME="nene-invoice-${VERSION}.zip"
+NENE2_CONSTRAINT="^1.6"
 
-echo "=== NeNe Invoice release build: $VERSION ==="
+echo "=== NeNe Invoice Tier A release build: $VERSION ==="
 
-# ----------------------------------------
-# 1. クリーンアップ
-# ----------------------------------------
-rm -rf "$WORK"
-mkdir -p "$WORK"
+rm -rf "$DIST/build"
+mkdir -p "$STAGE"
 
 # ----------------------------------------
-# 2. フロントエンド ビルド
+# 1. フロントエンド ビルド（Vite → public_html/admin へ出力）
 # ----------------------------------------
-echo "→ フロントエンド ビルド..."
-cd "$ROOT/frontend"
-npm ci --silent
-npm run build
-cd "$ROOT"
+echo "→ frontend build..."
+(cd "$ROOT/frontend" && npm ci --silent && npm run build)
 
 # ----------------------------------------
-# 3. Composer（本番依存のみ）
+# 2. アプリ本体（allowlist コピー）
 # ----------------------------------------
-echo "→ composer install --no-dev..."
-composer install --no-dev --optimize-autoloader --quiet
+echo "→ copying application files (allowlist)..."
+cp -r "$ROOT/src" "$STAGE/src"
+cp -r "$ROOT/database" "$STAGE/database"
+# public_html には built SPA（admin/）・install.php・installer.js・index.php・
+# openapi.php が含まれる。フロントビルド後にコピーすること。
+cp -r "$ROOT/public_html" "$STAGE/public_html"
+# resources/fonts の IPAex TTF（ipaexg.ttf / ipaexm.ttf）は mPDF が PDF 描画時に
+# FS 読みする。欠けると請求書/見積 PDF が 500 になる（#550）。
+cp -r "$ROOT/resources" "$STAGE/resources"
+cp "$ROOT/.env.example" "$STAGE/.env.example"
+cp "$ROOT/phinx.php" "$STAGE/phinx.php"
+cp "$ROOT/composer.json" "$STAGE/composer.json"
+cp "$ROOT/README.md" "$STAGE/README.md"
+
+# var/（空・書き込み先）
+mkdir -p "$STAGE/var"
+touch "$STAGE/var/.gitkeep"
 
 # ----------------------------------------
-# 4. ファイルコピー
+# 3. Packagist ^1.6 の本番 vendor（path repo / symlink を持ち込まない）
 # ----------------------------------------
-echo "→ ファイルをコピー中..."
+echo "→ composer: resolve hideyukimori/nene2 ${NENE2_CONSTRAINT} from Packagist..."
+php -r '
+$path = $argv[1];
+$json = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+$json["require"]["hideyukimori/nene2"] = $argv[2];
+unset($json["repositories"]);
+file_put_contents($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n");
+' "$STAGE/composer.json" "$NENE2_CONSTRAINT"
+(cd "$STAGE" && composer update --no-dev --no-interaction --prefer-dist --no-scripts --optimize-autoloader --quiet)
 
-# PHP ソースと設定
-cp -r "$ROOT/src"                 "$WORK/src"
-cp -r "$ROOT/vendor"              "$WORK/vendor"
-cp -r "$ROOT/database"            "$WORK/database"
-cp -r "$ROOT/public_html"         "$WORK/public_html"
-# resources/fonts holds the bundled IPAex fonts that MpdfFactory loads at PDF
-# render time (resources/fonts/ipaexg.ttf). Without this the installed app throws
-# "Cannot find TTF TrueType font file" and every invoice/quote PDF 500s (#550).
-cp -r "$ROOT/resources"           "$WORK/resources"
-cp    "$ROOT/.env.example"        "$WORK/.env.example"
-cp    "$ROOT/phinx.php"           "$WORK/phinx.php"
-cp    "$ROOT/composer.json"       "$WORK/composer.json"
-
-# var/ ディレクトリ（空、書き込み可能にするため）
-mkdir -p "$WORK/var"
-touch "$WORK/var/.gitkeep"
+NENE2_RESOLVED="$(cd "$STAGE" && composer show hideyukimori/nene2 2>/dev/null | awk '/^versions/ {print $NF}')"
+echo "  nene2 resolved: ${NENE2_RESOLVED}"
 
 # ----------------------------------------
-# 5. ZIP 作成
+# 4. 出荷前検査 — symlink ゼロ・nene2 Install ツールキット実体
 # ----------------------------------------
-echo "→ ZIP 作成: dist/${ZIP_NAME}..."
+if [ "$(find "$STAGE" -type l | wc -l)" -ne 0 ]; then
+    echo "✗ 配布物に symlink が混入しています:" >&2
+    find "$STAGE" -type l >&2
+    exit 1
+fi
+
+if [ ! -f "$STAGE/vendor/hideyukimori/nene2/src/Install/PayloadInstaller.php" ]; then
+    echo "✗ vendor/hideyukimori/nene2 が実体として解決されていません。" >&2
+    exit 1
+fi
+
+# ----------------------------------------
+# 5. ZIP（内容物をトップレベルに = WordPress 式）＋ SHA-256 サイドカー
+# ----------------------------------------
+echo "→ zip: dist/${ZIP_NAME}..."
 mkdir -p "$DIST"
-cd "$WORK"
-zip -r "$DIST/$ZIP_NAME" . -x "*.DS_Store" -x "__MACOSX/*" -x "*/node_modules/*" -q
-cd "$ROOT"
+rm -f "$DIST/$ZIP_NAME" "$DIST/$ZIP_NAME.sha256"
+(cd "$STAGE" && zip -qr "$DIST/$ZIP_NAME" . -x "*.DS_Store" -x "__MACOSX/*" -x "*/node_modules/*")
+
+echo "→ sha256 サイドカー生成..."
+(cd "$DIST" && sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256")
 
 # ----------------------------------------
-# 6. composer を dev 依存含めて元に戻す
+# 6. サイズ実測レポート
 # ----------------------------------------
-echo "→ composer install (dev 依存を復元)..."
-composer install --quiet
+RAW_SIZE="$(du -sh "$STAGE" | cut -f1)"
+ZIP_SIZE="$(du -sh "$DIST/$ZIP_NAME" | cut -f1)"
+FONT_SIZE="$(du -ch "$STAGE/resources/fonts/"*.ttf 2>/dev/null | tail -1 | cut -f1)"
+SHA256="$(cut -d' ' -f1 "$DIST/$ZIP_NAME.sha256")"
 
-rm -rf "$WORK"
+rm -rf "$DIST/build"
 
 echo ""
 echo "✓ ビルド完了: dist/${ZIP_NAME}"
-echo "  サイズ: $(du -sh "$DIST/$ZIP_NAME" | cut -f1)"
+echo "  nene2:        ${NENE2_RESOLVED}"
+echo "  raw:          ${RAW_SIZE}"
+echo "  zip:          ${ZIP_SIZE}"
+echo "  内フォント:   ${FONT_SIZE}（IPAex TTF・軽量化は #548）"
+echo "  sha256:       ${SHA256}"
+echo "  sidecar:      dist/${ZIP_NAME}.sha256"
