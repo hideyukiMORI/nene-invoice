@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Auth;
 
+use Nene2\Http\ClockInterface;
+
 /**
  * Server-side session revocation (ADR 0014).
  *
@@ -17,6 +19,7 @@ final readonly class LogoutUseCase implements LogoutUseCaseInterface
 {
     public function __construct(
         private RefreshTokenRepositoryInterface $refreshTokens,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -32,6 +35,6 @@ final readonly class LogoutUseCase implements LogoutUseCaseInterface
             return;
         }
 
-        $this->refreshTokens->revokeFamily($record->familyId, date('Y-m-d H:i:s'));
+        $this->refreshTokens->revokeFamily($record->familyId, $this->clock->now()->format('Y-m-d H:i:s'));
     }
 }

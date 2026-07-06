@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Tests\Auth;
 
 use Nene2\Auth\LocalBearerTokenVerifier;
+use Nene2\Http\UtcClock;
 use NeneInvoice\Auth\InvalidRefreshTokenException;
 use NeneInvoice\Auth\RefreshSessionUseCase;
 use NeneInvoice\Auth\RefreshToken;
@@ -26,9 +27,9 @@ final class RefreshSessionUseCaseTest extends TestCase
         $users = new InMemoryUserRepository();
         $userId = $users->save($this->user(organizationId: 5));
         $refreshTokens = new InMemoryRefreshTokenRepository();
-        $issuer = new RefreshTokenIssuer($refreshTokens);
+        $issuer = new RefreshTokenIssuer($refreshTokens, new UtcClock());
         $verifier = new LocalBearerTokenVerifier(self::SECRET);
-        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, $verifier);
+        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, $verifier, new UtcClock());
 
         $issued = $issuer->issue($userId, 5);
 
@@ -50,8 +51,9 @@ final class RefreshSessionUseCaseTest extends TestCase
         $useCase = new RefreshSessionUseCase(
             $refreshTokens,
             new InMemoryUserRepository(),
-            new RefreshTokenIssuer($refreshTokens),
+            new RefreshTokenIssuer($refreshTokens, new UtcClock()),
             new LocalBearerTokenVerifier(self::SECRET),
+            new UtcClock(),
         );
 
         $this->expectException(InvalidRefreshTokenException::class);
@@ -63,8 +65,8 @@ final class RefreshSessionUseCaseTest extends TestCase
         $users = new InMemoryUserRepository();
         $userId = $users->save($this->user(organizationId: 1));
         $refreshTokens = new InMemoryRefreshTokenRepository();
-        $issuer = new RefreshTokenIssuer($refreshTokens);
-        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET));
+        $issuer = new RefreshTokenIssuer($refreshTokens, new UtcClock());
+        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET), new UtcClock());
 
         $issued = $issuer->issue($userId, 1);
         $rotated = $useCase->execute($issued->rawToken); // spend the first token
@@ -97,7 +99,7 @@ final class RefreshSessionUseCaseTest extends TestCase
             issuedAt: '2020-01-01 00:00:00',
             expiresAt: '2020-01-08 00:00:00',
         ));
-        $useCase = new RefreshSessionUseCase($refreshTokens, $users, new RefreshTokenIssuer($refreshTokens), new LocalBearerTokenVerifier(self::SECRET));
+        $useCase = new RefreshSessionUseCase($refreshTokens, $users, new RefreshTokenIssuer($refreshTokens, new UtcClock()), new LocalBearerTokenVerifier(self::SECRET), new UtcClock());
 
         $this->expectException(InvalidRefreshTokenException::class);
         $useCase->execute($raw);
@@ -108,9 +110,9 @@ final class RefreshSessionUseCaseTest extends TestCase
         $users = new InMemoryUserRepository();
         $userId = $users->save($this->user(organizationId: 1, status: 'disabled'));
         $refreshTokens = new InMemoryRefreshTokenRepository();
-        $issuer = new RefreshTokenIssuer($refreshTokens);
+        $issuer = new RefreshTokenIssuer($refreshTokens, new UtcClock());
         $issued = $issuer->issue($userId, 1);
-        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET));
+        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET), new UtcClock());
 
         $this->expectException(InvalidRefreshTokenException::class);
         $useCase->execute($issued->rawToken);
@@ -122,9 +124,9 @@ final class RefreshSessionUseCaseTest extends TestCase
         // User now lives in org 9, but the token was minted for org 1.
         $userId = $users->save($this->user(organizationId: 9));
         $refreshTokens = new InMemoryRefreshTokenRepository();
-        $issuer = new RefreshTokenIssuer($refreshTokens);
+        $issuer = new RefreshTokenIssuer($refreshTokens, new UtcClock());
         $issued = $issuer->issue($userId, 1);
-        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET));
+        $useCase = new RefreshSessionUseCase($refreshTokens, $users, $issuer, new LocalBearerTokenVerifier(self::SECRET), new UtcClock());
 
         $this->expectException(InvalidRefreshTokenException::class);
         $useCase->execute($issued->rawToken);

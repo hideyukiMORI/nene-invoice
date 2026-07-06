@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Auth;
 
+use Nene2\Http\ClockInterface;
+
 /**
  * Mints and persists a new refresh token for a principal (ADR 0014).
  *
@@ -21,6 +23,7 @@ final readonly class RefreshTokenIssuer
 
     public function __construct(
         private RefreshTokenRepositoryInterface $repository,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -30,7 +33,7 @@ final readonly class RefreshTokenIssuer
      */
     public function issue(int $userId, ?int $organizationId, ?string $familyId = null): IssuedRefreshToken
     {
-        $now = time();
+        $now = $this->clock->now()->getTimestamp();
         $expiresAtTs = $now + self::TOKEN_TTL_SECONDS;
 
         $raw = RefreshTokenSecret::generateRaw();

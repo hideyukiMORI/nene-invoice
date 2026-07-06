@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use Nene2\Auth\TokenIssuerInterface;
+use Nene2\Http\ClockInterface;
 use NeneInvoice\User\UserRepositoryInterface;
 
 /**
@@ -27,6 +28,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
         private TokenIssuerInterface $tokenIssuer,
         private LoginThrottleInterface $throttle,
         private RefreshTokenIssuer $refreshTokenIssuer,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -37,7 +39,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
         // Brute-force throttle: once an IP exceeds the failure ceiling within the
         // window, reject further attempts until the window rolls off (429).
         if ($ip !== null) {
-            $since = date('Y-m-d H:i:s', time() - self::THROTTLE_WINDOW_SECONDS);
+            $since = date('Y-m-d H:i:s', $this->clock->now()->getTimestamp() - self::THROTTLE_WINDOW_SECONDS);
             if ($this->throttle->countFailuresSince($ip, $since) >= self::THROTTLE_MAX_FAILURES) {
                 throw new TooManyLoginAttemptsException(self::THROTTLE_WINDOW_SECONDS);
             }
@@ -60,7 +62,7 @@ final readonly class LoginUseCase implements LoginUseCaseInterface
             $this->throttle->clearFailures($ip);
         }
 
-        $now = time();
+        $now = $this->clock->now()->getTimestamp();
 
         $token = $this->tokenIssuer->issue([
             'sub' => $user->id,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use Nene2\Auth\TokenIssuerInterface;
+use Nene2\Http\ClockInterface;
 use NeneInvoice\User\UserRepositoryInterface;
 
 /**
@@ -25,12 +26,13 @@ final readonly class RefreshSessionUseCase implements RefreshSessionUseCaseInter
         private UserRepositoryInterface $users,
         private RefreshTokenIssuer $issuer,
         private TokenIssuerInterface $tokenIssuer,
+        private ClockInterface $clock,
     ) {
     }
 
     public function execute(string $rawToken): RefreshedSession
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         $record = $this->refreshTokens->findByHash(RefreshTokenSecret::hash($rawToken));
 
         if ($record === null) {
@@ -68,7 +70,7 @@ final readonly class RefreshSessionUseCase implements RefreshSessionUseCaseInter
         $this->refreshTokens->markUsed($record->id ?? 0, $now);
         $rotated = $this->issuer->issue($user->id, $user->organizationId, $record->familyId);
 
-        $issuedAt = time();
+        $issuedAt = $this->clock->now()->getTimestamp();
         $accessToken = $this->tokenIssuer->issue([
             'sub' => $user->id,
             'role' => $user->role->value,
