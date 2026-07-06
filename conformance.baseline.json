@@ -1,12 +1,6 @@
 {
     "version": 1,
-    "allow": [
-        {
-            "rule": "D1",
-            "file": "src/Auth/AuthServiceProvider.php",
-            "reason": "False positive: this literal (DEFAULT_DEV_SECRET) is the guarded dev-only fallback passed INTO Nene2\\Auth\\GuardedJwtSecretResolver::fromConfig(), which fails closed unless NENE2_ALLOW_DEV_SECRET=1. This is the sanctioned fleet fail-close pattern (2026-07-05 JWT migration), not an unguarded default secret. The D1 rule matches the literal shape only and does not inspect GuardedJwtSecretResolver usage. Tracked upstream for a guarded-usage exemption."
-        }
-    ],
+    "allow": [],
     "ignore": [
         {
             "rule": "D4",
