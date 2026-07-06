@@ -47,7 +47,7 @@ final class CreateRecurringInvoiceUseCaseTest extends TestCase
             fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
     }

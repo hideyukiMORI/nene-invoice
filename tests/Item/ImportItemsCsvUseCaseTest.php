@@ -35,7 +35,7 @@ final class ImportItemsCsvUseCaseTest extends TestCase
             $this->repo,
             new ImmediateTransactionManager(),
             fn () => $this->repo,
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
     }

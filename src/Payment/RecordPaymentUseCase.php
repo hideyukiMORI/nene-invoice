@@ -6,11 +6,12 @@ namespace NeneInvoice\Payment;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
@@ -32,7 +33,6 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
     /**
      * @param Closure(DatabaseQueryExecutorInterface): PaymentRepositoryInterface $paymentsFactory
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -41,7 +41,7 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
         private DatabaseTransactionManagerInterface $tx,
         private Closure $paymentsFactory,
         private Closure $invoicesFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -167,15 +167,15 @@ final readonly class RecordPaymentUseCase implements RecordPaymentUseCaseInterfa
                 throw new LogicException('Payment disappeared immediately after recording.');
             }
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'payment.recorded',
-                'invoice',
-                $invoiceId,
-                $before,
-                InvoiceResponse::toArray($updatedInvoice),
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'payment.recorded',
+                entityType: 'invoice',
+                entityId: $invoiceId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $before,
+                after: InvoiceResponse::toArray($updatedInvoice),
+            ));
 
             return $payment;
         });

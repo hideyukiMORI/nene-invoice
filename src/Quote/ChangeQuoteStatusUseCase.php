@@ -6,24 +6,24 @@ namespace NeneInvoice\Quote;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class ChangeQuoteStatusUseCase implements ChangeQuoteStatusUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): QuoteRepositoryInterface $quotesFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private QuoteRepositoryInterface $quotes,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $quotesFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -85,15 +85,15 @@ final readonly class ChangeQuoteStatusUseCase implements ChangeQuoteStatusUseCas
                 throw new LogicException('Quote disappeared immediately after status change.');
             }
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'quote.status_changed',
-                'quote',
-                $id,
-                QuoteResponse::toArray($quote),
-                QuoteResponse::toArray($updated),
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'quote.status_changed',
+                entityType: 'quote',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: QuoteResponse::toArray($quote),
+                after: QuoteResponse::toArray($updated),
+            ));
 
             return $updated;
         });

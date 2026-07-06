@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace NeneInvoice\ServiceToken;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Auth\TokenIssuerInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
-use NeneInvoice\Audit\AuditRecorderInterface;
 
 /**
  * Issues a NeNe Clear service token (ADR 0009): mints a stateless HMAC JWT and
@@ -28,14 +29,13 @@ final readonly class IssueServiceTokenUseCase implements IssueServiceTokenUseCas
 
     /**
      * @param Closure(DatabaseQueryExecutorInterface): ServiceTokenRepositoryInterface $tokensFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private TokenIssuerInterface $issuer,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $tokensFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -77,15 +77,15 @@ final readonly class IssueServiceTokenUseCase implements IssueServiceTokenUseCas
 
             // Audit (ADR 0008): issuing a machine credential is security-relevant.
             // `after` carries only non-secret metadata — never the token or its jti.
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'service_token.issued',
-                'service_token',
-                $newId,
-                null,
-                ['label' => $token->label, 'subject' => $token->subject, 'scopes' => $token->scopes, 'expires_at' => $token->expiresAt],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'service_token.issued',
+                entityType: 'service_token',
+                entityId: $newId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: ['label' => $token->label, 'subject' => $token->subject, 'scopes' => $token->scopes, 'expires_at' => $token->expiresAt],
+            ));
 
             return $newId;
         });

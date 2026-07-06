@@ -73,7 +73,7 @@ final class InstallApplicationIntegrationTest extends TestCase
         $createOrganization = new CreateOrganizationUseCase(
             new PdoDatabaseTransactionManager($this->factory),
             static fn ($exec) => new PdoOrganizationRepository($exec),
-            static fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             static fn ($exec) => new PdoInitialAdminRepository($exec),
         );
 

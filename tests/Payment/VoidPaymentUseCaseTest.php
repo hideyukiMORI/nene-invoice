@@ -36,8 +36,8 @@ final class VoidPaymentUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->payments = new InMemoryPaymentRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
-        $this->record = new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => $this->audit, new FixedClock(), $this->holder);
-        $this->void = new VoidPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => $this->audit, $this->holder);
+        $this->record = new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, $this->audit, new FixedClock(), $this->holder);
+        $this->void = new VoidPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, $this->audit, $this->holder);
 
         $this->invoiceId = $this->invoices->save(new Invoice(
             organizationId: 1,

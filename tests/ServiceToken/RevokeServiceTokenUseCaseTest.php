@@ -58,7 +58,7 @@ final class RevokeServiceTokenUseCaseTest extends TestCase
         $this->useCase = new RevokeServiceTokenUseCase(
             new ImmediateTransactionManager($executor),
             static fn (DatabaseQueryExecutorInterface $exec): ServiceTokenRepositoryInterface => new PdoServiceTokenRepository($exec, $orgHolder),
-            static fn (DatabaseQueryExecutorInterface $exec) => $audit,
+            $audit,
             new FixedClock('2026-06-09T12:00:00Z'),
             $orgHolder,
         );

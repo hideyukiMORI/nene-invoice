@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace NeneInvoice\Audit;
 
 /**
- * Append-only persistence for the audit trail.
+ * Read side of the audit trail (ADR 0008 / ADR 0014).
  *
- * Reads are scoped to the organization held in the request-scoped org holder
- * (ADR 0006). {@see append()} keeps the organization on the {@see AuditLog}
- * itself: writes also run on holder-less paths (e.g. superadmin organization
- * provisioning), so the write side must not depend on the holder.
+ * Persistence is the framework's append-only `Nene2\Audit\PdoAuditEventRepository`;
+ * this contract owns the two read concerns the framework contract intentionally
+ * leaves to the product: organization scoping (tenant isolation, ADR 0006) and
+ * actor-email resolution. Reads are always constrained to the organization held
+ * in the request-scoped org holder. There is no write method here — mutating use
+ * cases record `Nene2\Audit\AuditEvent` directly through the framework recorder.
  */
 interface AuditLogRepositoryInterface
 {
-    public function append(AuditLog $log): int;
-
     /** @return list<AuditLog> */
     public function findAll(AuditLogFilter $filter, int $limit, int $offset): array;
 

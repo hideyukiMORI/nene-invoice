@@ -6,24 +6,24 @@ namespace NeneInvoice\Company;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateCompanySettingsUseCase implements UpdateCompanySettingsUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): CompanySettingsRepositoryInterface $repositoryFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private CompanySettingsRepositoryInterface $repository,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $repositoryFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -72,15 +72,15 @@ final readonly class UpdateCompanySettingsUseCase implements UpdateCompanySettin
                 throw new LogicException('Company settings disappeared immediately after save.');
             }
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                $existing === null ? 'company_settings.created' : 'company_settings.updated',
-                'company_settings',
-                $organizationId,
-                $existing !== null ? CompanySettingsResponse::toArray($existing) : null,
-                CompanySettingsResponse::toArray($saved),
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: $existing === null ? 'company_settings.created' : 'company_settings.updated',
+                entityType: 'company_settings',
+                entityId: $organizationId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $existing !== null ? CompanySettingsResponse::toArray($existing) : null,
+                after: CompanySettingsResponse::toArray($saved),
+            ));
 
             return $saved;
         });

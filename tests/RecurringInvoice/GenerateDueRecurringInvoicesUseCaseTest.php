@@ -57,7 +57,7 @@ final class GenerateDueRecurringInvoicesUseCaseTest extends TestCase
             fn () => $this->recurring,
             fn () => $this->invoices,
             fn () => $this->lineItems,
-            fn () => $this->audit,
+            $this->audit,
             new FixedClock(),
             $this->holder,
         );

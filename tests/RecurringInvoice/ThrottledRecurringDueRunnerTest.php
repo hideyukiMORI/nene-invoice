@@ -68,7 +68,7 @@ final class ThrottledRecurringDueRunnerTest extends TestCase
             fn () => $this->recurring,
             fn () => $this->invoices,
             fn () => $this->lineItems,
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             new FixedClock(),
             $this->holder,
         );

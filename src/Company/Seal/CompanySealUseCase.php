@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace NeneInvoice\Company\Seal;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 
 final readonly class CompanySealUseCase implements CompanySealUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): CompanySealRepositoryInterface $repositoryFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface          $auditFactory
      * @param RequestScopedHolder<int>                                                 $orgId
      */
     public function __construct(
         private CompanySealRepositoryInterface $repository,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $repositoryFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -41,15 +41,15 @@ final readonly class CompanySealUseCase implements CompanySealUseCaseInterface
 
             // The base64 bytes are never written to the audit trail (large and
             // sensitive); only the presence transition is recorded.
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'company_settings.seal_updated',
-                'company_settings',
-                $organizationId,
-                ['has_seal' => $existed],
-                ['has_seal' => true],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'company_settings.seal_updated',
+                entityType: 'company_settings',
+                entityId: $organizationId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: ['has_seal' => $existed],
+                after: ['has_seal' => true],
+            ));
         });
     }
 
@@ -61,15 +61,15 @@ final readonly class CompanySealUseCase implements CompanySealUseCaseInterface
         $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $organizationId, $existed): void {
             ($this->repositoryFactory)($exec)->delete();
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'company_settings.seal_deleted',
-                'company_settings',
-                $organizationId,
-                ['has_seal' => $existed],
-                ['has_seal' => false],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'company_settings.seal_deleted',
+                entityType: 'company_settings',
+                entityId: $organizationId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: ['has_seal' => $existed],
+                after: ['has_seal' => false],
+            ));
         });
     }
 }

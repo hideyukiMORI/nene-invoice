@@ -50,7 +50,7 @@ final class RecordServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new RecordServicePaymentHandler(
-            new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => new RecordingAuditRecorder(), new FixedClock(), $holder),
+            new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, new RecordingAuditRecorder(), new FixedClock(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );

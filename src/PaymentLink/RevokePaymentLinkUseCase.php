@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace NeneInvoice\PaymentLink;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 
 /**
  * Revokes an active payment link so it can no longer be paid (ADR 0012 §3).
@@ -20,13 +21,12 @@ final readonly class RevokePaymentLinkUseCase implements RevokePaymentLinkUseCas
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): PaymentLinkRepositoryInterface $linksFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $linksFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -50,15 +50,15 @@ final readonly class RevokePaymentLinkUseCase implements RevokePaymentLinkUseCas
                 return RevokeOutcome::AlreadyInactive;
             }
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'payment_link.revoked',
-                'payment_link',
-                $paymentLinkId,
-                ['status' => PaymentLinkStatus::Active->value],
-                ['status' => PaymentLinkStatus::Revoked->value],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'payment_link.revoked',
+                entityType: 'payment_link',
+                entityId: $paymentLinkId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: ['status' => PaymentLinkStatus::Active->value],
+                after: ['status' => PaymentLinkStatus::Revoked->value],
+            ));
 
             return RevokeOutcome::Revoked;
         });

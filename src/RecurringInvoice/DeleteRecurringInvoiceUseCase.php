@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace NeneInvoice\RecurringInvoice;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
 
@@ -20,7 +21,6 @@ final readonly class DeleteRecurringInvoiceUseCase
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): RecurringInvoiceRepositoryInterface $recurringFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId
      */
     public function __construct(
@@ -28,7 +28,7 @@ final readonly class DeleteRecurringInvoiceUseCase
         private LineItemRepositoryInterface $lineItems,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $recurringFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -50,7 +50,15 @@ final readonly class DeleteRecurringInvoiceUseCase
 
         $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $organizationId, $id, $before): void {
             ($this->recurringFactory)($exec)->delete($id);
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'recurring_invoice.deleted', 'recurring_invoice', $id, $before, null);
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'recurring_invoice.deleted',
+                entityType: 'recurring_invoice',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $before,
+                after: null,
+            ));
         });
     }
 }

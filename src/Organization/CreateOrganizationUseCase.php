@@ -6,22 +6,22 @@ namespace NeneInvoice\Organization;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\User\UserResponse;
 
 final readonly class CreateOrganizationUseCase implements CreateOrganizationUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface $organizationsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param Closure(DatabaseQueryExecutorInterface): InitialAdminRepositoryInterface $initialAdminFactory
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $organizationsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private Closure $initialAdminFactory,
     ) {
     }
@@ -46,7 +46,7 @@ final readonly class CreateOrganizationUseCase implements CreateOrganizationUseC
 
         return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $input, $adminEmail, $adminPassword): Organization {
             $organizations = ($this->organizationsFactory)($exec);
-            $audit         = ($this->auditFactory)($exec);
+            $audit         = $this->auditFactory->forExecutor($exec);
 
             $id = $organizations->save(new Organization(
                 name: $input->name,
@@ -61,7 +61,15 @@ final readonly class CreateOrganizationUseCase implements CreateOrganizationUseC
                 throw new LogicException('Organization disappeared immediately after creation.');
             }
 
-            $audit->record($actorUserId, $id, 'organization.created', 'organization', $id, null, OrganizationResponse::toArray($created));
+            $audit->record(new AuditEvent(
+                action: 'organization.created',
+                entityType: 'organization',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $id,
+                before: null,
+                after: OrganizationResponse::toArray($created),
+            ));
 
             if ($adminEmail !== null && $adminPassword !== null) {
                 // The org id comes from the insert above, so the admin can only
@@ -69,7 +77,15 @@ final readonly class CreateOrganizationUseCase implements CreateOrganizationUseC
                 $passwordHash = password_hash($adminPassword, PASSWORD_DEFAULT);
                 $admin = ($this->initialAdminFactory)($exec)->createInitialAdmin($id, $adminEmail, $passwordHash);
 
-                $audit->record($actorUserId, $id, 'user.created', 'user', $admin->id, null, UserResponse::toArray($admin));
+                $audit->record(new AuditEvent(
+                    action: 'user.created',
+                    entityType: 'user',
+                    entityId: $admin->id,
+                    actorId: $actorUserId,
+                    organizationId: $id,
+                    before: null,
+                    after: UserResponse::toArray($admin),
+                ));
             }
 
             return $created;

@@ -54,7 +54,7 @@ final class IssueInvoiceUseCaseTest extends TestCase
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new ImmediateTransactionManager(),
             fn () => $this->invoices,
-            fn () => $this->audit,
+            $this->audit,
             $this->clock,
             $this->holder,
         );

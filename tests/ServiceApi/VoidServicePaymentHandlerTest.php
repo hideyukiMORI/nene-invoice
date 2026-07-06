@@ -58,7 +58,7 @@ final class VoidServicePaymentHandlerTest extends TestCase
         ));
 
         $this->handler = new VoidServicePaymentHandler(
-            new VoidPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => new RecordingAuditRecorder(), $holder),
+            new VoidPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, new RecordingAuditRecorder(), $holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
         );

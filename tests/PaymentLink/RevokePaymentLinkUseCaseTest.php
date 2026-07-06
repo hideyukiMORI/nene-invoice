@@ -29,7 +29,7 @@ final class RevokePaymentLinkUseCaseTest extends TestCase
         $holder->set(1);
         $this->links   = new InMemoryPaymentLinkRepository(1);
         $this->audit   = new RecordingAuditRecorder();
-        $this->useCase = new RevokePaymentLinkUseCase(new ImmediateTransactionManager(), fn () => $this->links, fn () => $this->audit, new FixedClock(), $holder);
+        $this->useCase = new RevokePaymentLinkUseCase(new ImmediateTransactionManager(), fn () => $this->links, $this->audit, new FixedClock(), $holder);
     }
 
     private function saveLink(int $organizationId, PaymentLinkStatus $status): int

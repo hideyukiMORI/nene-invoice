@@ -51,7 +51,7 @@ final class ChargePaymentLinkUseCaseTest extends TestCase
             new ImmediateTransactionManager(),
             fn () => $this->payments,
             fn () => $this->invoices,
-            fn () => $audit,
+            $audit,
             new FixedClock(),
             $this->holder,
         );

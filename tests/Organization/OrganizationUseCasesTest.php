@@ -39,7 +39,7 @@ final class OrganizationUseCasesTest extends TestCase
         return new CreateOrganizationUseCase(
             new ImmediateTransactionManager(),
             fn () => $this->repo,
-            fn () => $this->audit,
+            $this->audit,
             fn () => $this->admins,
         );
     }
@@ -137,7 +137,7 @@ final class OrganizationUseCasesTest extends TestCase
         $id = $this->createUseCase()->execute(1, new CreateOrganizationInput('A', 'a'))->id;
         self::assertNotNull($id);
 
-        $delete = new DeleteOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
+        $delete = new DeleteOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, $this->audit);
         $delete->execute(1, $id);
         self::assertSame(0, $this->repo->count());
         self::assertSame('organization.deleted', $this->audit->records[1]['action']);
@@ -149,7 +149,7 @@ final class OrganizationUseCasesTest extends TestCase
 
     private function updateUseCase(): UpdateOrganizationUseCase
     {
-        return new UpdateOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, fn () => $this->audit);
+        return new UpdateOrganizationUseCase($this->repo, new ImmediateTransactionManager(), fn () => $this->repo, $this->audit);
     }
 
     public function test_update_changes_fields_suspends_and_audits_before_after(): void

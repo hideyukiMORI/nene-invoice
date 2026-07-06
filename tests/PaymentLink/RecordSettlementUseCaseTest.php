@@ -46,7 +46,7 @@ final class RecordSettlementUseCaseTest extends TestCase
             new ImmediateTransactionManager(),
             fn () => $this->payments,
             fn () => $this->invoices,
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             new FixedClock(),
             $this->holder,
         );

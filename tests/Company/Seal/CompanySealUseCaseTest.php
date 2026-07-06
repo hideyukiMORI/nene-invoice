@@ -6,7 +6,6 @@ namespace NeneInvoice\Tests\Company\Seal;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Company\Seal\CompanySealRepositoryInterface;
 use NeneInvoice\Company\Seal\CompanySealUseCase;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
@@ -36,7 +35,7 @@ final class CompanySealUseCaseTest extends TestCase
             $repo,
             new ImmediateTransactionManager(),
             static fn (DatabaseQueryExecutorInterface $exec): CompanySealRepositoryInterface => $repo,
-            static fn (DatabaseQueryExecutorInterface $exec): AuditRecorderInterface => $audit,
+            $audit,
             $this->holder,
         );
     }

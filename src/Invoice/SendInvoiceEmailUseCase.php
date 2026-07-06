@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettings;
@@ -104,14 +105,14 @@ final readonly class SendInvoiceEmailUseCase implements SendInvoiceEmailUseCaseI
         // Audit (ADR 0008): record the send as an auditable event. `after` is the
         // sanitized snapshot of the invoice content that was sent (proof of what
         // went out); `before` is null because no entity state changed.
-        $this->audit->record(
-            $actorUserId,
-            $organizationId,
-            'invoice.sent',
-            'invoice',
-            $invoiceId,
-            null,
-            InvoiceResponse::toArray($invoice, $lines),
-        );
+        $this->audit->record(new AuditEvent(
+            action: 'invoice.sent',
+            entityType: 'invoice',
+            entityId: $invoiceId,
+            actorId: $actorUserId,
+            organizationId: $organizationId,
+            before: null,
+            after: InvoiceResponse::toArray($invoice, $lines),
+        ));
     }
 }

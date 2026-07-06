@@ -6,10 +6,11 @@ namespace NeneInvoice\Template;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
@@ -19,14 +20,13 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
     /**
      * @param Closure(DatabaseQueryExecutorInterface): TemplateRepositoryInterface $templatesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $templatesFactory,
         private Closure $lineItemsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -90,7 +90,15 @@ final readonly class UpdateTemplateUseCase implements UpdateTemplateUseCaseInter
             $result = new TemplateWithLines($updated, $lineItems->findByParent(LineItemParent::Template, $id));
 
             // Audit inside the transaction (Issue #352).
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'template.updated', 'template', $id, $before, TemplateResponse::toArray($result->template, $result->lines));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'template.updated',
+                entityType: 'template',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $before,
+                after: TemplateResponse::toArray($result->template, $result->lines),
+            ));
 
             return $result;
         });

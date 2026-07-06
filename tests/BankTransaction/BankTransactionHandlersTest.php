@@ -218,7 +218,7 @@ final class BankTransactionHandlersTest extends TestCase
             new ImmediateTransactionManager(),
             fn () => $this->payments,
             fn () => $this->invoices,
-            fn () => $this->audit,
+            $this->audit,
             new FixedClock(),
             $this->holder,
         );

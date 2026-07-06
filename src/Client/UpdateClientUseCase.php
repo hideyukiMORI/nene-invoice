@@ -6,24 +6,24 @@ namespace NeneInvoice\Client;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class UpdateClientUseCase implements UpdateClientUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): ClientRepositoryInterface $clientsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private ClientRepositoryInterface $clients,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $clientsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -74,7 +74,15 @@ final readonly class UpdateClientUseCase implements UpdateClientUseCaseInterface
                 throw new LogicException('Client disappeared immediately after update.');
             }
 
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'client.updated', 'client', $id, ClientResponse::toArray($existing), ClientResponse::toArray($updated));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'client.updated',
+                entityType: 'client',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: ClientResponse::toArray($existing),
+                after: ClientResponse::toArray($updated),
+            ));
 
             return $updated;
         });
