@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Item;
 
-use NeneInvoice\Support\Csv;
+use Nene2\Export\CsvWriter;
 
 /**
  * The items import/export template (ADR 0011, `items/v1`). The header is the
@@ -27,8 +27,8 @@ final class ItemImportTemplate
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
 
-        fwrite($handle, "\xEF\xBB\xBF");
-        Csv::putRow($handle, self::HEADER);
+        // writeAll on an empty row set still emits the BOM + header (ADR 0015).
+        (new CsvWriter($handle, self::HEADER))->writeAll([]);
 
         rewind($handle);
         $csv = stream_get_contents($handle);

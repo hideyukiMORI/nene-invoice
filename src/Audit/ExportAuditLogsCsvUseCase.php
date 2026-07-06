@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Audit;
 
-use NeneInvoice\Support\Csv;
+use Nene2\Export\CsvWriter;
 use NeneInvoice\Support\Jst;
 
 /**
- * Assembles CSV bytes for the audit trail (filtered, newest first). UTF-8 BOM is
- * prepended so Excel opens the file without encoding issues. before/after are
+ * Assembles CSV bytes for the audit trail (filtered, newest first). {@see CsvWriter}
+ * defaults add the Excel-safe UTF-8 BOM and quote per RFC 4180. before/after are
  * emitted as JSON so the full snapshot is preserved for compliance.
  */
 final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseCaseInterface
@@ -29,10 +29,7 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
 
-        // UTF-8 BOM for Excel compatibility
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        Csv::putRow($handle, [
+        $writer = new CsvWriter($handle, [
             '日時',
             'アクション',
             '対象種別',
@@ -43,8 +40,10 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
             '変更後',
         ]);
 
+        $data = [];
+
         foreach ($rows as $log) {
-            Csv::putRow($handle, [
+            $data[] = [
                 $log->createdAt !== null ? Jst::dateTime($log->createdAt) : '',
                 $log->action,
                 $log->entityType,
@@ -53,8 +52,11 @@ final readonly class ExportAuditLogsCsvUseCase implements ExportAuditLogsCsvUseC
                 $log->actorEmail,
                 self::encode($log->before),
                 self::encode($log->after),
-            ]);
+            ];
         }
+
+        // writeAll emits the BOM + header even when there are no data rows.
+        $writer->writeAll($data);
 
         rewind($handle);
         $csv = stream_get_contents($handle);
