@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Client;
 
-use NeneInvoice\Support\Csv;
+use Nene2\Export\CsvWriter;
 
 /**
  * Assembles CSV bytes for the clients matching the given admin filter (so the
- * export mirrors the list). UTF-8 BOM is prepended so Excel opens the file
- * without encoding issues; cells are written via {@see Csv} to neutralize
- * spreadsheet formula injection (client names / addresses are user input).
+ * export mirrors the list). Cells are written via {@see CsvWriter}, whose
+ * defaults prepend a UTF-8 BOM (Excel-safe), neutralize spreadsheet formula
+ * injection (client names / addresses are user input), and quote per RFC 4180.
  */
 final readonly class ExportClientsCsvUseCase implements ExportClientsCsvUseCaseInterface
 {
@@ -25,10 +25,7 @@ final readonly class ExportClientsCsvUseCase implements ExportClientsCsvUseCaseI
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
 
-        // UTF-8 BOM for Excel compatibility
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        Csv::putRow($handle, [
+        $writer = new CsvWriter($handle, [
             '取引先名',
             'カナ',
             '担当者',
@@ -37,16 +34,21 @@ final readonly class ExportClientsCsvUseCase implements ExportClientsCsvUseCaseI
             '登録番号',
         ]);
 
+        $data = [];
+
         foreach ($rows as $client) {
-            Csv::putRow($handle, [
+            $data[] = [
                 $client->name,
                 $client->nameKana ?? '',
                 $client->contactName ?? '',
                 $client->email ?? '',
                 $client->billingAddress ?? '',
                 $client->registrationNumber ?? '',
-            ]);
+            ];
         }
+
+        // writeAll emits the BOM + header even when there are no data rows.
+        $writer->writeAll($data);
 
         rewind($handle);
         $csv = stream_get_contents($handle);

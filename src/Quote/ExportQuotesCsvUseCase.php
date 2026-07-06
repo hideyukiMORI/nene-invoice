@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Quote;
 
-use NeneInvoice\Support\Csv;
+use Nene2\Export\CsvWriter;
 use NeneInvoice\Support\Jst;
 
 /**
  * Assembles CSV bytes for the quotes matching the given admin filter (so the
- * export mirrors the list). UTF-8 BOM is prepended so Excel opens the file
- * without encoding issues.
+ * export mirrors the list). {@see CsvWriter} defaults add the Excel-safe UTF-8
+ * BOM, neutralize formula injection, and quote per RFC 4180.
  */
 final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInterface
 {
@@ -33,10 +33,7 @@ final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInt
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
 
-        // UTF-8 BOM for Excel compatibility
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        Csv::putRow($handle, [
+        $writer = new CsvWriter($handle, [
             '見積番号',
             '発行日',
             '有効期限',
@@ -47,8 +44,10 @@ final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInt
             'ステータス',
         ]);
 
+        $data = [];
+
         foreach ($rows as $row) {
-            Csv::putRow($handle, [
+            $data[] = [
                 $row['quote_number'],
                 $row['issued_at'] !== null && $row['issued_at'] !== '' ? Jst::date($row['issued_at']) : '',
                 $row['valid_until'],
@@ -57,8 +56,11 @@ final readonly class ExportQuotesCsvUseCase implements ExportQuotesCsvUseCaseInt
                 $row['tax_cents'],
                 $row['total_cents'],
                 self::STATUS_LABELS[$row['status']] ?? $row['status'],
-            ]);
+            ];
         }
+
+        // writeAll emits the BOM + header even when there are no data rows.
+        $writer->writeAll($data);
 
         rewind($handle);
         $csv = stream_get_contents($handle);

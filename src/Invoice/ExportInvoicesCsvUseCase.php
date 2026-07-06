@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
-use NeneInvoice\Support\Csv;
+use Nene2\Export\CsvWriter;
 use NeneInvoice\Support\Jst;
 
 /**
- * Assembles CSV bytes for all issued invoices in the organization.
- * UTF-8 BOM is prepended so Excel opens the file without encoding issues.
+ * Assembles CSV bytes for all issued invoices in the organization. {@see CsvWriter}
+ * defaults add the Excel-safe UTF-8 BOM, neutralize formula injection, and quote
+ * per RFC 4180.
  */
 final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCaseInterface
 {
@@ -30,10 +31,7 @@ final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCas
         $handle = fopen('php://temp', 'r+');
         assert($handle !== false);
 
-        // UTF-8 BOM for Excel compatibility
-        fwrite($handle, "\xEF\xBB\xBF");
-
-        Csv::putRow($handle, [
+        $writer = new CsvWriter($handle, [
             '請求書番号',
             '発行日',
             '支払期限',
@@ -45,8 +43,10 @@ final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCas
             '適格請求書',
         ]);
 
+        $data = [];
+
         foreach ($rows as $row) {
-            Csv::putRow($handle, [
+            $data[] = [
                 $row['invoice_number'],
                 $row['issued_at'] !== null ? Jst::date($row['issued_at']) : '',
                 $row['due_at'],
@@ -56,8 +56,11 @@ final readonly class ExportInvoicesCsvUseCase implements ExportInvoicesCsvUseCas
                 $row['total_cents'],
                 self::STATUS_LABELS[$row['status']] ?? $row['status'],
                 $row['is_qualified_invoice'] ? 'はい' : 'いいえ',
-            ]);
+            ];
         }
+
+        // writeAll emits the BOM + header even when there are no data rows.
+        $writer->writeAll($data);
 
         rewind($handle);
         $csv = stream_get_contents($handle);
