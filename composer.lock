@@ -394,16 +394,16 @@
         },
         {
             "name": "hideyukimori/nene2",
-            "version": "v1.8.0",
+            "version": "v1.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/hideyukiMORI/NENE2.git",
-                "reference": "5a9390c9ece409c7cb7fe4893e4e62a781cb4d78"
+                "reference": "77b6f912e550e13f793601868a81c652d14ddf29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hideyukiMORI/NENE2/zipball/5a9390c9ece409c7cb7fe4893e4e62a781cb4d78",
-                "reference": "5a9390c9ece409c7cb7fe4893e4e62a781cb4d78",
+                "url": "https://api.github.com/repos/hideyukiMORI/NENE2/zipball/77b6f912e550e13f793601868a81c652d14ddf29",
+                "reference": "77b6f912e550e13f793601868a81c652d14ddf29",
                 "shasum": ""
             },
             "require": {
@@ -441,9 +441,9 @@
             "description": "PHP micro-framework: JSON APIs first, minimal server HTML, easy React/SPA integration, structure friendly to AI tooling.",
             "support": {
                 "issues": "https://github.com/hideyukiMORI/NENE2/issues",
-                "source": "https://github.com/hideyukiMORI/NENE2/tree/v1.8.0"
+                "source": "https://github.com/hideyukiMORI/NENE2/tree/v1.8.1"
             },
-            "time": "2026-07-06T12:05:00+00:00"
+            "time": "2026-07-06T18:16:54+00:00"
         },
         {
             "name": "league/container",
