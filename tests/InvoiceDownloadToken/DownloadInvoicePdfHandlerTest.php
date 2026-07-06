@@ -16,6 +16,7 @@ use NeneInvoice\InvoiceDownloadToken\DownloadInvoicePdfHandler;
 use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadToken;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Pdf\MpdfFactory;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\InMemoryClientRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySealRepository;
 use NeneInvoice\Tests\Support\InMemoryCompanySettingsRepository;
@@ -66,6 +67,7 @@ final class DownloadInvoicePdfHandlerTest extends TestCase
             $this->psr17,
             new ProblemDetailsResponseFactory($this->psr17, $this->psr17, 'https://nene-invoice.dev/problems/'),
             $holder,
+            new FixedClock(),
         );
     }
 

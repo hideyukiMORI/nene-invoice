@@ -65,6 +65,7 @@ final readonly class InvoiceDownloadTokenServiceProvider implements ServiceProvi
                     self::resolve($c, Psr17Factory::class),
                     self::resolve($c, ProblemDetailsResponseFactory::class),
                     self::orgHolder($c),
+                    self::resolve($c, ClockInterface::class),
                 ),
             )
             ->set(

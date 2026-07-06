@@ -15,6 +15,7 @@ use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -175,7 +176,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Refresh token repository service is invalid.');
                     }
 
-                    return new RefreshTokenIssuer($repository);
+                    return new RefreshTokenIssuer($repository, self::clock($container));
                 },
             )
             ->set(
@@ -202,7 +203,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Refresh token issuer service is invalid.');
                     }
 
-                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query), $refreshTokenIssuer);
+                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query), $refreshTokenIssuer, self::clock($container));
                 },
             )
             ->set(
@@ -229,7 +230,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Token issuer service is invalid.');
                     }
 
-                    return new RefreshSessionUseCase($repository, $users, $issuer, $tokenIssuer);
+                    return new RefreshSessionUseCase($repository, $users, $issuer, $tokenIssuer, self::clock($container));
                 },
             )
             ->set(
@@ -241,7 +242,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Refresh token repository service is invalid.');
                     }
 
-                    return new LogoutUseCase($repository);
+                    return new LogoutUseCase($repository, self::clock($container));
                 },
             )
             ->set(
@@ -371,6 +372,17 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                     return new AuthRouteRegistrar($loginHandler, $getCurrentUserHandler, $refreshHandler, $logoutHandler);
                 },
             );
+    }
+
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
     }
 
     /** @return RequestScopedHolder<int> */

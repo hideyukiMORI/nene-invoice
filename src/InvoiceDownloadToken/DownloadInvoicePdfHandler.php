@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace NeneInvoice\InvoiceDownloadToken;
 
-use DateTimeImmutable;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
 use Nene2\Routing\Router;
@@ -38,6 +38,7 @@ final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterfac
         private Psr17Factory $psr17,
         private ProblemDetailsResponseFactory $problemDetails,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -49,7 +50,7 @@ final readonly class DownloadInvoicePdfHandler implements RequestHandlerInterfac
 
         $record = $this->tokens->findByHash($tokenHash);
 
-        $now = (new DateTimeImmutable())->format('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         if ($record === null || $record->isExpired($now)) {
             return $this->problemDetails->create($request, 'invoice-not-found', 'Not Found', 404, 'Download link not found or expired.');
