@@ -71,7 +71,7 @@ final class CreateOrganizationAtomicityTest extends TestCase
         return new CreateOrganizationUseCase(
             new PdoDatabaseTransactionManager($this->factory),
             fn ($exec) => new PdoOrganizationRepository($exec),
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             fn ($exec) => new PdoInitialAdminRepository($exec),
         );
     }

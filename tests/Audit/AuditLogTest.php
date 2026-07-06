@@ -4,19 +4,33 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Audit;
 
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditPayloadMode;
+use Nene2\Audit\AuditRecorder;
+use Nene2\Audit\AuditRecorderInterface;
+use Nene2\Audit\AuditTableConfig;
+use Nene2\Audit\PdoAuditEventRepository;
 use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\UtcClock;
 use NeneInvoice\Audit\AuditLogFilter;
-use NeneInvoice\Audit\AuditRecorder;
 use NeneInvoice\Audit\PdoAuditLogRepository;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * End-to-end coverage of the framework audit module (`Nene2\Audit`, ADR 0014)
+ * wired onto Invoice's existing `audit_logs` table via {@see AuditTableConfig}:
+ * events are written by the framework recorder/repository and read back through
+ * the product's thin {@see PdoAuditLogRepository} (org scoping + actor-email
+ * join). Proves the config maps onto Invoice's physical columns and that reads
+ * preserve the previous JSON shape, ordering, and integer id types.
+ */
 final class AuditLogTest extends TestCase
 {
     private PdoAuditLogRepository $repository;
+    private AuditRecorderInterface $recorder;
     private \PDO $pdo;
     /** @var RequestScopedHolder<int> */
     private RequestScopedHolder $holder;
@@ -41,7 +55,7 @@ final class AuditLogTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        // findAll LEFT JOINs users to resolve the actor email.
+        // findAll resolves the actor email from the users table.
         $usersSchema = file_get_contents(dirname(__DIR__, 2) . '/database/schema/users.sql');
         self::assertIsString($usersSchema);
         $pdo->exec($usersSchema);
@@ -49,7 +63,30 @@ final class AuditLogTest extends TestCase
         $this->pdo = $pdo;
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repository = new PdoAuditLogRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+
+        $executor = new PdoDatabaseQueryExecutor($factory, $pdo);
+        $events = new PdoAuditEventRepository($executor, self::tableConfig());
+        $this->recorder = new AuditRecorder($events, new UtcClock());
+        $this->repository = new PdoAuditLogRepository($events, $executor, $this->holder);
+    }
+
+    private static function tableConfig(): AuditTableConfig
+    {
+        return new AuditTableConfig(
+            table: 'audit_logs',
+            mode: AuditPayloadMode::BeforeAfter,
+            actionColumn: 'action',
+            entityTypeColumn: 'entity_type',
+            entityIdColumn: 'entity_id',
+            actorColumn: 'actor_user_id',
+            organizationColumn: 'organization_id',
+            occurredAtColumn: 'created_at',
+            metadataColumn: null,
+            beforeColumn: 'before_json',
+            afterColumn: 'after_json',
+            payloadColumn: null,
+            idIsAutoIncrement: true,
+        );
     }
 
     private function insertUser(int $id, string $email): void
@@ -64,9 +101,15 @@ final class AuditLogTest extends TestCase
 
     public function test_recorder_persists_before_and_after_snapshots(): void
     {
-        $recorder = new AuditRecorder($this->repository, new UtcClock());
-
-        $recorder->record(7, 1, 'client.updated', 'client', 42, ['name' => '前'], ['name' => '後']);
+        $this->recorder->record(new AuditEvent(
+            action: 'client.updated',
+            entityType: 'client',
+            entityId: 42,
+            actorId: 7,
+            organizationId: 1,
+            before: ['name' => '前'],
+            after: ['name' => '後'],
+        ));
 
         $logs = $this->repository->findAll(new AuditLogFilter(), 10, 0);
         self::assertCount(1, $logs);
@@ -77,14 +120,42 @@ final class AuditLogTest extends TestCase
         self::assertSame(['name' => '後'], $logs[0]->after);
     }
 
+    public function test_event_is_written_to_the_products_physical_columns(): void
+    {
+        $this->recorder->record(new AuditEvent(
+            action: 'invoice.issued',
+            entityType: 'invoice',
+            entityId: 5,
+            actorId: 7,
+            organizationId: 1,
+            before: null,
+            after: ['status' => 'issued'],
+        ));
+
+        $stmt = $this->pdo->query(
+            'SELECT action, entity_type, entity_id, actor_user_id, organization_id, before_json, after_json, created_at FROM audit_logs',
+        );
+        self::assertNotFalse($stmt);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        self::assertIsArray($row);
+        self::assertSame('invoice.issued', $row['action']);
+        self::assertSame('invoice', $row['entity_type']);
+        self::assertSame(5, (int) $row['entity_id']);
+        self::assertSame(7, (int) $row['actor_user_id']);
+        self::assertSame(1, (int) $row['organization_id']);
+        self::assertNull($row['before_json']);
+        self::assertSame('{"status":"issued"}', $row['after_json']);
+        self::assertNotSame('', (string) $row['created_at']);
+    }
+
     public function test_resolves_actor_email_and_falls_back_to_null(): void
     {
         $this->insertUser(7, 'operator@example.com');
 
-        $recorder = new AuditRecorder($this->repository, new UtcClock());
-        $recorder->record(7, 1, 'invoice.issued', 'invoice', 5, null, ['status' => 'issued']);
+        $this->recorder->record(new AuditEvent(action: 'invoice.issued', entityType: 'invoice', entityId: 5, actorId: 7, organizationId: 1, before: null, after: ['status' => 'issued']));
         // Actor 99 has no users row → email stays null (caller shows #id).
-        $recorder->record(99, 1, 'invoice.created', 'invoice', 6, null, ['status' => 'draft']);
+        $this->recorder->record(new AuditEvent(action: 'invoice.created', entityType: 'invoice', entityId: 6, actorId: 99, organizationId: 1, before: null, after: ['status' => 'draft']));
 
         $logs = $this->repository->findAll(new AuditLogFilter(), 10, 0);
         // Newest first: actor 99 (no email), then actor 7 (resolved).
@@ -94,12 +165,9 @@ final class AuditLogTest extends TestCase
 
     public function test_logs_are_scoped_and_counted_per_organization(): void
     {
-        // append keeps the organization on the log itself, so it is recorded
-        // with an explicit org regardless of the read-side holder.
-        $recorder = new AuditRecorder($this->repository, new UtcClock());
-        $recorder->record(1, 1, 'client.created', 'client', 1, null, ['name' => 'A']);
-        $recorder->record(1, 1, 'client.deleted', 'client', 1, ['name' => 'A'], null);
-        $recorder->record(1, 2, 'client.created', 'client', 9, null, ['name' => 'B']);
+        $this->recorder->record(new AuditEvent(action: 'client.created', entityType: 'client', entityId: 1, actorId: 1, organizationId: 1, before: null, after: ['name' => 'A']));
+        $this->recorder->record(new AuditEvent(action: 'client.deleted', entityType: 'client', entityId: 1, actorId: 1, organizationId: 1, before: ['name' => 'A'], after: null));
+        $this->recorder->record(new AuditEvent(action: 'client.created', entityType: 'client', entityId: 9, actorId: 1, organizationId: 2, before: null, after: ['name' => 'B']));
 
         $this->holder->set(1);
         self::assertSame(2, $this->repository->count(new AuditLogFilter()));
@@ -114,10 +182,9 @@ final class AuditLogTest extends TestCase
 
     public function test_filters_by_entity_type_action_actor_and_date_range(): void
     {
-        $recorder = new AuditRecorder($this->repository, new UtcClock());
-        $recorder->record(5, 1, 'invoice.created', 'invoice', 1, null, ['status' => 'draft']);
-        $recorder->record(6, 1, 'invoice.issued', 'invoice', 1, null, ['status' => 'issued']);
-        $recorder->record(5, 1, 'client.created', 'client', 2, null, ['name' => 'A']);
+        $this->recorder->record(new AuditEvent(action: 'invoice.created', entityType: 'invoice', entityId: 1, actorId: 5, organizationId: 1, before: null, after: ['status' => 'draft']));
+        $this->recorder->record(new AuditEvent(action: 'invoice.issued', entityType: 'invoice', entityId: 1, actorId: 6, organizationId: 1, before: null, after: ['status' => 'issued']));
+        $this->recorder->record(new AuditEvent(action: 'client.created', entityType: 'client', entityId: 2, actorId: 5, organizationId: 1, before: null, after: ['name' => 'A']));
 
         self::assertSame(2, $this->repository->count(new AuditLogFilter(entityType: 'invoice')));
         self::assertSame(1, $this->repository->count(new AuditLogFilter(action: 'invoice.issued')));

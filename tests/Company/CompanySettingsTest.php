@@ -60,7 +60,7 @@ final class CompanySettingsTest extends TestCase
 
     public function test_update_upserts_and_get_returns_settings(): void
     {
-        $update = new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, fn () => $this->audit, $this->holder);
+        $update = new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, $this->audit, $this->holder);
 
         $created = $update->execute(5, new UpdateCompanySettingsInput(
             legalName: '株式会社あやね',
@@ -81,7 +81,7 @@ final class CompanySettingsTest extends TestCase
     public function test_update_rejects_malformed_registration_number(): void
     {
         $this->expectException(InvalidRegistrationNumberException::class);
-        (new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, fn () => $this->audit, $this->holder))->execute(5, new UpdateCompanySettingsInput(
+        (new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, $this->audit, $this->holder))->execute(5, new UpdateCompanySettingsInput(
             legalName: 'X',
             registrationNumber: 'bad',
         ));
@@ -89,7 +89,7 @@ final class CompanySettingsTest extends TestCase
 
     public function test_settings_are_scoped_per_organization(): void
     {
-        $update = new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, fn () => $this->audit, $this->holder);
+        $update = new UpdateCompanySettingsUseCase($this->repository, new ImmediateTransactionManager(), fn () => $this->repository, $this->audit, $this->holder);
         $this->holder->set(1);
         $update->execute(5, new UpdateCompanySettingsInput(legalName: 'Org One'));
         $this->holder->set(2);

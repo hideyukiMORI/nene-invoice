@@ -30,7 +30,7 @@ final class ChangeQuoteStatusUseCaseTest extends TestCase
         $this->holder->set(1);
         $this->quotes = new InMemoryQuoteRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new ChangeQuoteStatusUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->quotes, fn () => $this->audit, new FixedClock(), $this->holder);
+        $this->useCase = new ChangeQuoteStatusUseCase($this->quotes, new ImmediateTransactionManager(), fn () => $this->quotes, $this->audit, new FixedClock(), $this->holder);
     }
 
     private function draft(): int

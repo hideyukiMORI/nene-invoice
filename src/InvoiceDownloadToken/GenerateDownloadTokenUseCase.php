@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace NeneInvoice\InvoiceDownloadToken;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 
@@ -25,14 +26,13 @@ final readonly class GenerateDownloadTokenUseCase implements GenerateDownloadTok
 
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceDownloadTokenRepositoryInterface $tokensFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $tokensFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -75,15 +75,15 @@ final readonly class GenerateDownloadTokenUseCase implements GenerateDownloadTok
             // Audit (ADR 0008): issuing a public download link is an auditable event.
             // `after` carries only the non-secret expiry — the raw token and its hash
             // are never written to the audit trail.
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'invoice.download_token_issued',
-                'invoice',
-                $invoiceId,
-                null,
-                ['expires_at' => $expiresAt],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'invoice.download_token_issued',
+                entityType: 'invoice',
+                entityId: $invoiceId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: ['expires_at' => $expiresAt],
+            ));
 
             return null;
         });

@@ -39,7 +39,7 @@ final class UpdateCompanySettingsHandlerTest extends TestCase
             $this->repository,
             new ImmediateTransactionManager(),
             fn () => $this->repository,
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             $holder,
         );
         $this->handler = new UpdateCompanySettingsHandler($useCase, new JsonResponseFactory($this->psr17, $this->psr17));

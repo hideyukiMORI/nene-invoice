@@ -6,11 +6,12 @@ namespace NeneInvoice\Invoice;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
 use NeneInvoice\DocumentSequence\DocumentType;
@@ -28,7 +29,6 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -38,7 +38,7 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
         private DocumentNumberGenerator $numbers,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $invoicesFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -134,7 +134,15 @@ final readonly class IssueInvoiceUseCase implements IssueInvoiceUseCaseInterface
                 throw new LogicException('Invoice disappeared immediately after issue.');
             }
 
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'invoice.issued', 'invoice', $id, InvoiceResponse::toArray($invoice, $lines), InvoiceResponse::toArray($issued, $lines));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'invoice.issued',
+                entityType: 'invoice',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: InvoiceResponse::toArray($invoice, $lines),
+                after: InvoiceResponse::toArray($issued, $lines),
+            ));
 
             return $issued;
         });

@@ -62,7 +62,7 @@ final class IssueServiceTokenUseCaseTest extends TestCase
             $this->issuer,
             new ImmediateTransactionManager($executor),
             static fn (DatabaseQueryExecutorInterface $exec): ServiceTokenRepositoryInterface => new PdoServiceTokenRepository($exec, $orgHolder),
-            static fn (DatabaseQueryExecutorInterface $exec) => $audit,
+            $audit,
             new FixedClock('2026-06-09T00:00:00Z'),
             $orgHolder,
         );

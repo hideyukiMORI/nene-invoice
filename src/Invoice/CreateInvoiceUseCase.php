@@ -6,10 +6,11 @@ namespace NeneInvoice\Invoice;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
@@ -34,7 +35,6 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
     /**
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -43,7 +43,7 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
         private Closure $lineItemsFactory,
         private ClientRepositoryInterface $clients,
         private TaxCalculator $taxCalculator,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -123,7 +123,15 @@ final readonly class CreateInvoiceUseCase implements CreateInvoiceUseCaseInterfa
             $result = new InvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId));
 
             // Audit inside the transaction (Issue #352).
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'invoice.created', 'invoice', $result->invoice->id, null, InvoiceResponse::toArray($result->invoice, $result->lines));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'invoice.created',
+                entityType: 'invoice',
+                entityId: $result->invoice->id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: InvoiceResponse::toArray($result->invoice, $result->lines),
+            ));
 
             return $result;
         });

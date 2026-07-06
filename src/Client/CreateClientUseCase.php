@@ -6,23 +6,23 @@ namespace NeneInvoice\Client;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Compliance\RegistrationNumber;
 
 final readonly class CreateClientUseCase implements CreateClientUseCaseInterface
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): ClientRepositoryInterface $clientsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $clientsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -61,7 +61,15 @@ final readonly class CreateClientUseCase implements CreateClientUseCaseInterface
                 throw new LogicException('Client disappeared immediately after creation.');
             }
 
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'client.created', 'client', $id, null, ClientResponse::toArray($created));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'client.created',
+                entityType: 'client',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: ClientResponse::toArray($created),
+            ));
 
             return $created;
         });

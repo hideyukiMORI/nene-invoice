@@ -105,7 +105,7 @@ final class TemplateWriteUseCasesTest extends TestCase
 
     private function create(): CreateTemplateUseCase
     {
-        return new CreateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, fn () => $this->audit, $this->holder);
+        return new CreateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, $this->audit, $this->holder);
     }
 
     private function get(): GetTemplateByIdUseCase
@@ -115,11 +115,11 @@ final class TemplateWriteUseCasesTest extends TestCase
 
     private function update(): UpdateTemplateUseCase
     {
-        return new UpdateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, fn () => $this->audit, $this->holder);
+        return new UpdateTemplateUseCase(new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, $this->audit, $this->holder);
     }
 
     private function delete(): DeleteTemplateUseCase
     {
-        return new DeleteTemplateUseCase($this->templates, $this->lines, new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, fn () => $this->audit, $this->holder);
+        return new DeleteTemplateUseCase($this->templates, $this->lines, new ImmediateTransactionManager(), fn () => $this->templates, fn () => $this->lines, $this->audit, $this->holder);
     }
 }

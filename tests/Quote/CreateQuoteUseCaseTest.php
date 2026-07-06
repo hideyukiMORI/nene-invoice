@@ -60,7 +60,7 @@ final class CreateQuoteUseCaseTest extends TestCase
             $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
-            fn () => $this->audit,
+            $this->audit,
             $this->clock,
             $this->holder,
         );

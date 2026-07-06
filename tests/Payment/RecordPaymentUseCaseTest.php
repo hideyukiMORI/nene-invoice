@@ -35,7 +35,7 @@ final class RecordPaymentUseCaseTest extends TestCase
         $this->payments = new InMemoryPaymentRepository($this->holder);
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->audit = new RecordingAuditRecorder();
-        $this->useCase = new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, fn () => $this->audit, new FixedClock(), $this->holder);
+        $this->useCase = new RecordPaymentUseCase($this->payments, $this->invoices, new ImmediateTransactionManager(), fn () => $this->payments, fn () => $this->invoices, $this->audit, new FixedClock(), $this->holder);
     }
 
     private function issuedInvoice(int $totalCents = 2200): int

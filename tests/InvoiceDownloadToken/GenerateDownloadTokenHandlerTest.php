@@ -46,7 +46,7 @@ final class GenerateDownloadTokenHandlerTest extends TestCase
         ));
 
         $this->handler = new GenerateDownloadTokenHandler(
-            new GenerateDownloadTokenUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $tokens, fn () => new RecordingAuditRecorder(), new FixedClock(), $this->holder),
+            new GenerateDownloadTokenUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $tokens, new RecordingAuditRecorder(), new FixedClock(), $this->holder),
             new JsonResponseFactory($this->psr17, $this->psr17),
         );
     }

@@ -6,11 +6,12 @@ namespace NeneInvoice\RecurringInvoice;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
@@ -44,7 +45,6 @@ final readonly class GenerateDueRecurringInvoicesUseCase
      * @param Closure(DatabaseQueryExecutorInterface): RecurringInvoiceRepositoryInterface $recurringFactory
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -56,7 +56,7 @@ final readonly class GenerateDueRecurringInvoicesUseCase
         private Closure $recurringFactory,
         private Closure $invoicesFactory,
         private Closure $lineItemsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -144,15 +144,15 @@ final readonly class GenerateDueRecurringInvoicesUseCase
                     throw new LogicException('Invoice disappeared immediately after recurring generation.');
                 }
 
-                ($this->auditFactory)($exec)->record(
-                    $actorUserId,
-                    $organizationId,
-                    'invoice.created',
-                    'invoice',
-                    $invoiceId,
-                    null,
-                    InvoiceResponse::toArray($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId)),
-                );
+                $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                    action: 'invoice.created',
+                    entityType: 'invoice',
+                    entityId: $invoiceId,
+                    actorId: $actorUserId,
+                    organizationId: $organizationId,
+                    before: null,
+                    after: InvoiceResponse::toArray($saved, $lineItems->findByParent(LineItemParent::Invoice, $invoiceId)),
+                ));
 
                 // Advance the schedule anchored on its own next_run_on (no drift
                 // toward the run date) and stamp the last run.

@@ -36,7 +36,7 @@ final class GenerateDownloadTokenUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->tokens   = new InMemoryInvoiceDownloadTokenRepository();
         $this->audit    = new RecordingAuditRecorder();
-        $this->useCase  = new GenerateDownloadTokenUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $this->tokens, fn () => $this->audit, new FixedClock(), $this->holder);
+        $this->useCase  = new GenerateDownloadTokenUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $this->tokens, $this->audit, new FixedClock(), $this->holder);
     }
 
     public function test_generates_token_for_invoice_in_org(): void

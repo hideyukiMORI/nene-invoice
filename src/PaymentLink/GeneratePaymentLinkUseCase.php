@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace NeneInvoice\PaymentLink;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\SecureTokenHelper;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
 
@@ -32,14 +33,13 @@ final readonly class GeneratePaymentLinkUseCase implements GeneratePaymentLinkUs
 
     /**
      * @param Closure(DatabaseQueryExecutorInterface): PaymentLinkRepositoryInterface $linksFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private InvoiceRepositoryInterface $invoices,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $linksFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -93,15 +93,15 @@ final readonly class GeneratePaymentLinkUseCase implements GeneratePaymentLinkUs
             // Audit (ADR 0008): issuing a public payment link is auditable. `after`
             // carries only non-secret metadata — the raw token and its hash are
             // never written to the audit trail.
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'payment_link.issued',
-                'payment_link',
-                $linkId,
-                null,
-                ['invoice_id' => $invoiceId, 'gateway' => self::DEFAULT_GATEWAY, 'expires_at' => $expiresAt],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'payment_link.issued',
+                entityType: 'payment_link',
+                entityId: $linkId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: ['invoice_id' => $invoiceId, 'gateway' => self::DEFAULT_GATEWAY, 'expires_at' => $expiresAt],
+            ));
 
             return $linkId;
         });

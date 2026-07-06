@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceRepositoryInterface;
@@ -27,7 +28,6 @@ final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
     /**
      * @param Closure(DatabaseQueryExecutorInterface): PaymentRepositoryInterface $paymentsFactory
      * @param Closure(DatabaseQueryExecutorInterface): InvoiceRepositoryInterface $invoicesFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -36,7 +36,7 @@ final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
         private DatabaseTransactionManagerInterface $tx,
         private Closure $paymentsFactory,
         private Closure $invoicesFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -117,7 +117,15 @@ final readonly class VoidPaymentUseCase implements VoidPaymentUseCaseInterface
             $after['voided_payment_id'] = $paymentId;
             $after['void_reason'] = $reason;
 
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'payment.voided', 'invoice', $invoiceId, $before, $after);
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'payment.voided',
+                entityType: 'invoice',
+                entityId: $invoiceId,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $before,
+                after: $after,
+            ));
 
             $voided = $payments->findById($paymentId) ?? $payment;
 

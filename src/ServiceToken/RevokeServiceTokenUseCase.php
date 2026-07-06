@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace NeneInvoice\ServiceToken;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 
 /**
  * Revokes a service token by id (org-scoped). Sets `revoked_at` so the
@@ -20,13 +21,12 @@ final readonly class RevokeServiceTokenUseCase implements RevokeServiceTokenUseC
 {
     /**
      * @param Closure(DatabaseQueryExecutorInterface): ServiceTokenRepositoryInterface $tokensFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
         private DatabaseTransactionManagerInterface $tx,
         private Closure $tokensFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -41,15 +41,15 @@ final readonly class RevokeServiceTokenUseCase implements RevokeServiceTokenUseC
             // Throws ServiceTokenNotFoundException for an unknown / foreign id.
             ($this->tokensFactory)($exec)->revoke($id, $revokedAt);
 
-            ($this->auditFactory)($exec)->record(
-                $actorUserId,
-                $organizationId,
-                'service_token.revoked',
-                'service_token',
-                $id,
-                null,
-                ['revoked_at' => $revokedAt],
-            );
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'service_token.revoked',
+                entityType: 'service_token',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: ['revoked_at' => $revokedAt],
+            ));
 
             return null;
         });

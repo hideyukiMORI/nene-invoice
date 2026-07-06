@@ -74,7 +74,7 @@ final class GenerateQuotePdfUseCaseTest extends TestCase
             $this->companySettings,
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             new FixedClock(),
             $this->holder,
         );

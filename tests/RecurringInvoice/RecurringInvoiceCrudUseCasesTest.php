@@ -54,7 +54,7 @@ final class RecurringInvoiceCrudUseCasesTest extends TestCase
             fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
     }
@@ -155,7 +155,7 @@ final class RecurringInvoiceCrudUseCasesTest extends TestCase
             $this->lineItems,
             new ImmediateTransactionManager(),
             fn () => $this->recurring,
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
 
@@ -173,7 +173,7 @@ final class RecurringInvoiceCrudUseCasesTest extends TestCase
             $this->lineItems,
             new ImmediateTransactionManager(),
             fn () => $this->recurring,
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
 
@@ -191,7 +191,7 @@ final class RecurringInvoiceCrudUseCasesTest extends TestCase
             fn () => $this->lineItems,
             $this->clients,
             new TaxCalculator(),
-            fn () => $this->audit,
+            $this->audit,
             $this->holder,
         );
     }

@@ -58,7 +58,7 @@ final class QuoteQueryUseCasesTest extends TestCase
             new InMemoryCompanySettingsRepository($this->holder),
             new DocumentNumberGenerator(new InMemoryDocumentSequenceRepository()),
             new TaxCalculator(),
-            fn () => new RecordingAuditRecorder(),
+            new RecordingAuditRecorder(),
             new FixedClock(),
             $this->holder,
         );

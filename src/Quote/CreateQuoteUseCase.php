@@ -6,11 +6,12 @@ namespace NeneInvoice\Quote;
 
 use Closure;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\Company\CompanySettingsRepositoryInterface;
 use NeneInvoice\DocumentSequence\DocumentNumberGenerator;
@@ -39,7 +40,6 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
     /**
      * @param Closure(DatabaseQueryExecutorInterface): QuoteRepositoryInterface $quotesFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId resolved organization for this request
      */
     public function __construct(
@@ -50,7 +50,7 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
         private CompanySettingsRepositoryInterface $companySettings,
         private DocumentNumberGenerator $numbers,
         private TaxCalculator $taxCalculator,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private ClockInterface $clock,
         private RequestScopedHolder $orgId,
     ) {
@@ -146,7 +146,15 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
 
             // Audit inside the transaction: the record commits or rolls back with
             // the quote, so an unaudited creation cannot occur (Issue #352).
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'quote.created', 'quote', $result->quote->id, null, QuoteResponse::toArray($result->quote, $result->lines));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'quote.created',
+                entityType: 'quote',
+                entityId: $result->quote->id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: null,
+                after: QuoteResponse::toArray($result->quote, $result->lines),
+            ));
 
             return $result;
         });

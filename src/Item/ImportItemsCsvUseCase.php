@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace NeneInvoice\Item;
 
 use Closure;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Support\CsvImport;
 use NeneInvoice\Support\CsvImportResult;
 
@@ -29,14 +30,13 @@ final readonly class ImportItemsCsvUseCase implements ImportItemsCsvUseCaseInter
 
     /**
      * @param Closure(DatabaseQueryExecutorInterface): ItemRepositoryInterface $itemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId
      */
     public function __construct(
         private ItemRepositoryInterface $items,
         private DatabaseTransactionManagerInterface $tx,
         private Closure $itemsFactory,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -160,19 +160,35 @@ final readonly class ImportItemsCsvUseCase implements ImportItemsCsvUseCaseInter
 
         $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use ($actorUserId, $organizationId, $ops): void {
             $items = ($this->itemsFactory)($exec);
-            $audit = ($this->auditFactory)($exec);
+            $audit = $this->auditFactory->forExecutor($exec);
 
             foreach ($ops as $op) {
                 if ($op['mode'] === 'update' && $op['existing'] !== null) {
                     $items->update($op['item']);
                     $after = $items->findById((int) $op['existing']->id);
-                    $audit->record($actorUserId, $organizationId, 'item.updated', 'item', $op['existing']->id, ItemResponse::toArray($op['existing']), $after !== null ? ItemResponse::toArray($after) : null);
+                    $audit->record(new AuditEvent(
+                        action: 'item.updated',
+                        entityType: 'item',
+                        entityId: $op['existing']->id,
+                        actorId: $actorUserId,
+                        organizationId: $organizationId,
+                        before: ItemResponse::toArray($op['existing']),
+                        after: $after !== null ? ItemResponse::toArray($after) : null,
+                    ));
                     continue;
                 }
 
                 $id    = $items->save($op['item']);
                 $after = $items->findById($id);
-                $audit->record($actorUserId, $organizationId, 'item.created', 'item', $id, null, $after !== null ? ItemResponse::toArray($after) : null);
+                $audit->record(new AuditEvent(
+                    action: 'item.created',
+                    entityType: 'item',
+                    entityId: $id,
+                    actorId: $actorUserId,
+                    organizationId: $organizationId,
+                    before: null,
+                    after: $after !== null ? ItemResponse::toArray($after) : null,
+                ));
             }
         });
     }

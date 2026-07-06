@@ -37,7 +37,7 @@ final class GeneratePaymentLinkUseCaseTest extends TestCase
         $this->invoices = new InMemoryInvoiceRepository($this->holder);
         $this->links    = new InMemoryPaymentLinkRepository(1);
         $this->audit    = new RecordingAuditRecorder();
-        $this->useCase  = new GeneratePaymentLinkUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $this->links, fn () => $this->audit, new FixedClock(), $this->holder);
+        $this->useCase  = new GeneratePaymentLinkUseCase($this->invoices, new ImmediateTransactionManager(), fn () => $this->links, $this->audit, new FixedClock(), $this->holder);
     }
 
     private function newInvoice(int $organizationId = 1): int

@@ -7,10 +7,11 @@ namespace NeneInvoice\RecurringInvoice;
 use Closure;
 use DateTimeImmutable;
 use LogicException;
+use Nene2\Audit\AuditEvent;
+use Nene2\Audit\AuditRecorderFactoryInterface;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\Http\RequestScopedHolder;
-use NeneInvoice\Audit\AuditRecorderInterface;
 use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
@@ -30,7 +31,6 @@ final readonly class UpdateRecurringInvoiceUseCase
     /**
      * @param Closure(DatabaseQueryExecutorInterface): RecurringInvoiceRepositoryInterface $recurringFactory
      * @param Closure(DatabaseQueryExecutorInterface): LineItemRepositoryInterface $lineItemsFactory
-     * @param Closure(DatabaseQueryExecutorInterface): AuditRecorderInterface $auditFactory
      * @param RequestScopedHolder<int> $orgId
      */
     public function __construct(
@@ -41,7 +41,7 @@ final readonly class UpdateRecurringInvoiceUseCase
         private Closure $lineItemsFactory,
         private ClientRepositoryInterface $clients,
         private TaxCalculator $taxCalculator,
-        private Closure $auditFactory,
+        private AuditRecorderFactoryInterface $auditFactory,
         private RequestScopedHolder $orgId,
     ) {
     }
@@ -140,7 +140,15 @@ final readonly class UpdateRecurringInvoiceUseCase
 
             $result = new RecurringInvoiceWithLines($saved, $lineItems->findByParent(LineItemParent::RecurringInvoice, $id));
 
-            ($this->auditFactory)($exec)->record($actorUserId, $organizationId, 'recurring_invoice.updated', 'recurring_invoice', $id, $before, RecurringInvoiceResponse::toArray($result->schedule, $result->lines));
+            $this->auditFactory->forExecutor($exec)->record(new AuditEvent(
+                action: 'recurring_invoice.updated',
+                entityType: 'recurring_invoice',
+                entityId: $id,
+                actorId: $actorUserId,
+                organizationId: $organizationId,
+                before: $before,
+                after: RecurringInvoiceResponse::toArray($result->schedule, $result->lines),
+            ));
 
             return $result;
         });
