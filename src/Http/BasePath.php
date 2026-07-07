@@ -25,7 +25,7 @@ final class BasePath
     public const REQUEST_ATTRIBUTE = 'app.base_path';
 
     /** API path prefixes that must reach the router, never the SPA shell. */
-    private const API_PREFIXES = ['/auth', '/admin', '/api', '/health', '/machine', '/examples'];
+    private const API_PREFIXES = ['/auth', '/admin', '/api', '/health', '/machine', '/examples', '/demo'];
 
     /**
      * @param array<string, mixed> $serverParams PSR-7 server params (or `$_SERVER`)
