@@ -29,6 +29,10 @@ final class HealthEndpointTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
 
+        // Default cache policy (#601): API responses without an explicit
+        // Cache-Control carry `no-store` through the wrapped pipeline.
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+
         $payload = json_decode((string) $response->getBody(), true);
         self::assertIsArray($payload);
         self::assertSame('ok', $payload['status'] ?? null);
@@ -38,5 +42,22 @@ final class HealthEndpointTest extends TestCase
         $checks = $payload['checks'];
         self::assertIsArray($checks);
         self::assertSame('ok', $checks['database'] ?? null);
+    }
+
+    public function test_unauthenticated_api_error_response_carries_no_store(): void
+    {
+        // The `X-Authorization` mirror path (#596) bypasses RFC 9111's
+        // Authorization-based shared-cache protection, so even error
+        // responses on authenticated routes must say `no-store` (#601).
+        $container = (new RuntimeContainerFactory(dirname(__DIR__, 2)))->create();
+
+        $application = $container->get(RequestHandlerInterface::class);
+        self::assertInstanceOf(RequestHandlerInterface::class, $application);
+
+        $request = (new Psr17Factory())->createServerRequest('GET', '/admin/me');
+        $response = $application->handle($request);
+
+        self::assertSame(401, $response->getStatusCode());
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
     }
 }

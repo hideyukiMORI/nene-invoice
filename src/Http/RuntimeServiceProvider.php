@@ -23,6 +23,7 @@ use Nene2\Http\RequestScopedHolder;
 use Nene2\Http\ResponseEmitter;
 use Nene2\Http\RuntimeApplicationFactory;
 use Nene2\Http\UtcClock;
+use Nene2\Middleware\MiddlewareDispatcher;
 use Nene2\Routing\Router;
 use NeneInvoice\ApplicationServiceProvider;
 use NeneInvoice\Audit\AuditServiceProvider;
@@ -309,7 +310,12 @@ final readonly class RuntimeServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Runtime application factory service is invalid.');
                     }
 
-                    return $factory->create();
+                    // Wrap the NENE2 pipeline from the outside (alongside the
+                    // framework's security headers) so every API response —
+                    // including error responses — defaults to
+                    // `Cache-Control: no-store` unless a handler set the
+                    // header explicitly (#601).
+                    return new MiddlewareDispatcher([new CacheControlMiddleware()], $factory->create());
                 },
             )
             ->set(ResponseEmitter::class, static fn (ContainerInterface $container): ResponseEmitter => new ResponseEmitter());
