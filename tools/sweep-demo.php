@@ -47,6 +47,22 @@ $overflow = array_slice($allDemo, $maxOrgs);
 
 $targets = array_values(array_unique(array_merge($expired, $overflow)));
 
+// RECURRING_INLINE の実行スタンプ（FileRecurringRunThrottle・var/recurring-runs/org-{id}.txt）は
+// ファイルなので DB 掃除では消えず、demo org の回転数だけ無限蓄積する。organizations に
+// 存在しない org の残骸だけ自己修復で消す（実在 org — 本番含む — のスタンプには触れない）。
+// 掃除対象ゼロの回でも走らせる（過去の取りこぼし回収のため、早期 return より前に置く）。
+$existsStmt = $pdo->prepare('SELECT 1 FROM organizations WHERE id = ?');
+foreach (glob($root . '/var/recurring-runs/org-*.txt') ?: [] as $marker) {
+    if (preg_match('/org-(\d+)\.txt$/', $marker, $m) !== 1) {
+        continue;
+    }
+    $existsStmt->execute([(int) $m[1]]);
+    if ($existsStmt->fetchColumn() === false) {
+        @unlink($marker);
+        echo "残骸スタンプ掃除: " . basename($marker) . PHP_EOL;
+    }
+}
+
 if ($targets === []) {
     echo "掃除対象なし（demo org・TTL {$ttlHours}h・上限 {$maxOrgs}）。" . PHP_EOL;
 
@@ -88,6 +104,9 @@ foreach ($targets as $orgId) {
     } catch (OrganizationNotFoundException) {
         // すでに消えている（並行実行など）— 無視。
     }
+
+    // 実行スタンプは org と一緒に片付ける（上の自己修復パスの当日分）。
+    @unlink($root . '/var/recurring-runs/org-' . $orgId . '.txt');
 }
 
 echo "{$swept} 件の demo org を掃除しました（TTL {$ttlHours}h・上限 {$maxOrgs}）。" . PHP_EOL;
