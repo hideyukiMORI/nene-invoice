@@ -45,7 +45,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoQuoteRepository($query, self::orgHolder($c));
+                    return new PdoQuoteRepository($query, self::orgHolder($c), self::resolve($c, ClockInterface::class));
                 },
             )
             ->set(TaxCalculator::class, static fn (ContainerInterface $c): TaxCalculator => new TaxCalculator())
@@ -56,8 +56,8 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
 
                     return new CreateQuoteUseCase(
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         self::resolve($c, ClientRepositoryInterface::class),
                         self::resolve($c, CompanySettingsRepositoryInterface::class),
                         self::resolve($c, DocumentNumberGenerator::class),
@@ -76,7 +76,7 @@ final readonly class QuoteServiceProvider implements ServiceProviderInterface
                     return new ChangeQuoteStatusUseCase(
                         self::quotes($c),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): QuoteRepositoryInterface => new PdoQuoteRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         AuditServiceProvider::recorderFactory($c),
                         self::resolve($c, ClockInterface::class),
                         $orgHolder,

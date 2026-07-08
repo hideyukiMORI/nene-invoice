@@ -10,6 +10,7 @@ use NeneInvoice\Item\Item;
 use NeneInvoice\Item\ItemListFilter;
 use NeneInvoice\Item\ItemSort;
 use NeneInvoice\Item\PdoItemRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +54,7 @@ final class ItemRepositoryDialectTest extends TestCase
         $organizationId = random_int(1_000_000, 9_999_999);
         $orgHolder = new RequestScopedHolder();
         $orgHolder->set($organizationId);
-        $repo = new PdoItemRepository($db, $orgHolder);
+        $repo = new PdoItemRepository($db, $orgHolder, new FixedClock());
 
         try {
             // INSERT writes the inline boolean literal (is_deleted = FALSE).

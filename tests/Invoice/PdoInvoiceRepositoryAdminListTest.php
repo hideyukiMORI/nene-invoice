@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceSort;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Invoice\PdoInvoiceRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -49,7 +50,7 @@ final class PdoInvoiceRepositoryAdminListTest extends TestCase
         $this->pdo    = $pdo;
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repo = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repo = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     private function client(int $id, string $name): void

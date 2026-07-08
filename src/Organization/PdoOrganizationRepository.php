@@ -6,6 +6,7 @@ namespace NeneInvoice\Organization;
 
 use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoOrganizationRepository implements OrganizationRepositoryInterface
 {
@@ -13,6 +14,7 @@ final readonly class PdoOrganizationRepository implements OrganizationRepository
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -76,7 +78,7 @@ final readonly class PdoOrganizationRepository implements OrganizationRepository
 
     public function save(Organization $organization): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         try {
             $this->query->execute(
@@ -109,7 +111,7 @@ final readonly class PdoOrganizationRepository implements OrganizationRepository
             throw new OrganizationNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE organizations SET name = ?, slug = ?, external_id = ?, custom_domain = ?, plan = ?, is_active = ?, updated_at = ? WHERE id = ?',

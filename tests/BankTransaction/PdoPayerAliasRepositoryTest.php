@@ -11,6 +11,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\BankTransaction\PayerAlias;
 use NeneInvoice\BankTransaction\PayerAliasNotFoundException;
 use NeneInvoice\BankTransaction\PdoPayerAliasRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoPayerAliasRepositoryTest extends TestCase
@@ -44,6 +45,7 @@ final class PdoPayerAliasRepositoryTest extends TestCase
         $this->repository = new PdoPayerAliasRepository(
             new PdoDatabaseQueryExecutor($factory, $pdo),
             $this->holder,
+            new FixedClock(),
         );
     }
 

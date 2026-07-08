@@ -9,6 +9,7 @@ use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\Seal\PdoCompanySealRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoCompanySealRepositoryTest extends TestCase
@@ -39,7 +40,7 @@ final class PdoCompanySealRepositoryTest extends TestCase
 
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repo = new PdoCompanySealRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repo = new PdoCompanySealRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     public function test_find_returns_null_and_exists_false_when_unset(): void

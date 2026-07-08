@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Quote;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Support\SqlLike;
 
@@ -18,6 +19,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -179,7 +181,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
 
     public function save(Quote $quote): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
@@ -210,7 +212,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
             throw new QuoteNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE quotes SET client_id = ?, status = ?, issued_at = ?, valid_until = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
@@ -242,7 +244,7 @@ final readonly class PdoQuoteRepository implements QuoteRepositoryInterface
 
         $this->query->execute(
             'UPDATE quotes SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
-            [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

@@ -10,6 +10,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -28,11 +29,11 @@ final readonly class BankTransactionServiceProvider implements ServiceProviderIn
         $builder
             ->set(
                 BankTransactionRepositoryInterface::class,
-                static fn (ContainerInterface $c): BankTransactionRepositoryInterface => new PdoBankTransactionRepository(self::query($c), self::orgHolder($c)),
+                static fn (ContainerInterface $c): BankTransactionRepositoryInterface => new PdoBankTransactionRepository(self::query($c), self::orgHolder($c), self::resolve($c, ClockInterface::class)),
             )
             ->set(
                 PayerAliasRepositoryInterface::class,
-                static fn (ContainerInterface $c): PayerAliasRepositoryInterface => new PdoPayerAliasRepository(self::query($c), self::orgHolder($c)),
+                static fn (ContainerInterface $c): PayerAliasRepositoryInterface => new PdoPayerAliasRepository(self::query($c), self::orgHolder($c), self::resolve($c, ClockInterface::class)),
             )
             ->set(
                 MatchCandidateRepositoryInterface::class,
@@ -45,7 +46,7 @@ final readonly class BankTransactionServiceProvider implements ServiceProviderIn
 
                     return new ImportBankTransactionsUseCase(
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): BankTransactionRepositoryInterface => new PdoBankTransactionRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): BankTransactionRepositoryInterface => new PdoBankTransactionRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                     );
                 },
             )

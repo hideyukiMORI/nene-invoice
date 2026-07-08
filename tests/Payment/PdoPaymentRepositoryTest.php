@@ -10,6 +10,7 @@ use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Payment\Payment;
 use NeneInvoice\Payment\PdoPaymentRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoPaymentRepositoryTest extends TestCase
@@ -44,7 +45,7 @@ final class PdoPaymentRepositoryTest extends TestCase
         $this->pdo   = $pdo;
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoPaymentRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoPaymentRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     /** Inserts an invoice row directly (the payment repo cannot create invoices). */

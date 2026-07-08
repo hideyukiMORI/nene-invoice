@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoRefreshTokenRepository implements RefreshTokenRepositoryInterface
 {
@@ -12,6 +13,7 @@ final readonly class PdoRefreshTokenRepository implements RefreshTokenRepository
 
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -40,7 +42,7 @@ final readonly class PdoRefreshTokenRepository implements RefreshTokenRepository
                 $token->expiresAt,
                 $token->usedAt,
                 $token->revokedAt,
-                date('Y-m-d H:i:s'),
+                $this->clock->now()->format('Y-m-d H:i:s'),
             ],
         );
 

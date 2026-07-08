@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\BankTransaction;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoPayerAliasRepository implements PayerAliasRepositoryInterface
@@ -17,13 +18,14 @@ final readonly class PdoPayerAliasRepository implements PayerAliasRepositoryInte
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
     public function upsert(PayerAlias $alias): int
     {
         $existing = $this->findByNormalizedName($alias->normalizedName);
-        $now      = date('Y-m-d H:i:s');
+        $now      = $this->clock->now()->format('Y-m-d H:i:s');
 
         if ($existing !== null && $existing->id !== null) {
             $this->query->execute(

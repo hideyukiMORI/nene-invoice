@@ -10,6 +10,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -37,7 +38,7 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoTemplateRepository($query, self::orgHolder($c));
+                    return new PdoTemplateRepository($query, self::orgHolder($c), self::resolve($c, ClockInterface::class));
                 },
             )
             ->set(ListTemplatesUseCaseInterface::class, static fn (ContainerInterface $c): ListTemplatesUseCase => new ListTemplatesUseCase(self::repository($c)))
@@ -47,8 +48,8 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
 
                 return new CreateTemplateUseCase(
                     self::resolve($c, DatabaseTransactionManagerInterface::class),
-                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
-                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                     AuditServiceProvider::recorderFactory($c),
                     $orgHolder,
                 );
@@ -58,8 +59,8 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
 
                 return new UpdateTemplateUseCase(
                     self::resolve($c, DatabaseTransactionManagerInterface::class),
-                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
-                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                     AuditServiceProvider::recorderFactory($c),
                     $orgHolder,
                 );
@@ -71,8 +72,8 @@ final readonly class TemplateServiceProvider implements ServiceProviderInterface
                     self::repository($c),
                     self::lineItems($c),
                     self::resolve($c, DatabaseTransactionManagerInterface::class),
-                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder),
-                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                    static fn (DatabaseQueryExecutorInterface $exec): TemplateRepositoryInterface => new PdoTemplateRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                    static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                     AuditServiceProvider::recorderFactory($c),
                     $orgHolder,
                 );

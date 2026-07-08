@@ -11,6 +11,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use NeneInvoice\Audit\AuditServiceProvider;
 use Psr\Container\ContainerInterface;
@@ -33,14 +34,14 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoOrganizationRepository($query);
+                    return new PdoOrganizationRepository($query, self::clock($container));
                 },
             )
             ->set(ListOrganizationsUseCaseInterface::class, static fn (ContainerInterface $c): ListOrganizationsUseCase => new ListOrganizationsUseCase(self::repository($c)))
             ->set(GetOrganizationByIdUseCaseInterface::class, static fn (ContainerInterface $c): GetOrganizationByIdUseCase => new GetOrganizationByIdUseCase(self::repository($c)))
-            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c), self::initialAdminFactory()))
-            ->set(UpdateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): UpdateOrganizationUseCase => new UpdateOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
-            ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory(), AuditServiceProvider::recorderFactory($c)))
+            ->set(CreateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): CreateOrganizationUseCase => new CreateOrganizationUseCase(self::tx($c), self::organizationsFactory($c), AuditServiceProvider::recorderFactory($c), self::initialAdminFactory($c)))
+            ->set(UpdateOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): UpdateOrganizationUseCase => new UpdateOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory($c), AuditServiceProvider::recorderFactory($c)))
+            ->set(DeleteOrganizationUseCaseInterface::class, static fn (ContainerInterface $c): DeleteOrganizationUseCase => new DeleteOrganizationUseCase(self::repository($c), self::tx($c), self::organizationsFactory($c), AuditServiceProvider::recorderFactory($c)))
             ->set(
                 ListOrganizationsHandler::class,
                 static fn (ContainerInterface $c): ListOrganizationsHandler => new ListOrganizationsHandler(
@@ -130,15 +131,19 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
     }
 
     /** @return Closure(DatabaseQueryExecutorInterface): OrganizationRepositoryInterface */
-    private static function organizationsFactory(): Closure
+    private static function organizationsFactory(ContainerInterface $c): Closure
     {
-        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => new PdoOrganizationRepository($exec);
+        $clock = self::clock($c);
+
+        return static fn (DatabaseQueryExecutorInterface $exec): OrganizationRepositoryInterface => new PdoOrganizationRepository($exec, $clock);
     }
 
     /** @return Closure(DatabaseQueryExecutorInterface): InitialAdminRepositoryInterface */
-    private static function initialAdminFactory(): Closure
+    private static function initialAdminFactory(ContainerInterface $c): Closure
     {
-        return static fn (DatabaseQueryExecutorInterface $exec): InitialAdminRepositoryInterface => new PdoInitialAdminRepository($exec);
+        $clock = self::clock($c);
+
+        return static fn (DatabaseQueryExecutorInterface $exec): InitialAdminRepositoryInterface => new PdoInitialAdminRepository($exec, $clock);
     }
 
     private static function listUseCase(ContainerInterface $c): ListOrganizationsUseCase
@@ -216,5 +221,16 @@ final readonly class OrganizationServiceProvider implements ServiceProviderInter
         }
 
         return $p;
+    }
+
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
     }
 }

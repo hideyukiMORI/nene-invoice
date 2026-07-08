@@ -14,6 +14,7 @@ use NeneInvoice\Company\InvalidRegistrationNumberException;
 use NeneInvoice\Company\PdoCompanySettingsRepository;
 use NeneInvoice\Company\UpdateCompanySettingsInput;
 use NeneInvoice\Company\UpdateCompanySettingsUseCase;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\ImmediateTransactionManager;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
@@ -49,7 +50,7 @@ final class CompanySettingsTest extends TestCase
 
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repository = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repository = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     public function test_get_throws_when_not_configured(): void

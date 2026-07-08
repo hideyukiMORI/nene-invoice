@@ -8,6 +8,7 @@ use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneInvoice\Auth\PdoRefreshTokenRepository;
 use NeneInvoice\Auth\RefreshToken;
 use NeneInvoice\Auth\RefreshTokenSecret;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -47,7 +48,7 @@ final class RefreshTokenRepositoryDialectTest extends TestCase
 
         $userId = random_int(1_000_000, 9_999_999);
         $familyId = RefreshTokenSecret::generateFamilyId();
-        $repo = new PdoRefreshTokenRepository($db);
+        $repo = new PdoRefreshTokenRepository($db, new FixedClock());
 
         try {
             $rawA = RefreshTokenSecret::generateRaw();

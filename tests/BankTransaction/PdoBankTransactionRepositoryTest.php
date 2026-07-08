@@ -13,6 +13,7 @@ use NeneInvoice\BankTransaction\BankTransactionDirection;
 use NeneInvoice\BankTransaction\BankTransactionNotFoundException;
 use NeneInvoice\BankTransaction\BankTransactionStatus;
 use NeneInvoice\BankTransaction\PdoBankTransactionRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoBankTransactionRepositoryTest extends TestCase
@@ -46,6 +47,7 @@ final class PdoBankTransactionRepositoryTest extends TestCase
         $this->repository = new PdoBankTransactionRepository(
             new PdoDatabaseQueryExecutor($factory, $pdo),
             $this->holder,
+            new FixedClock(),
         );
     }
 

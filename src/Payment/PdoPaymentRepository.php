@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Payment;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
@@ -17,12 +18,13 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
     public function save(Payment $payment): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
@@ -70,7 +72,7 @@ final readonly class PdoPaymentRepository implements PaymentRepositoryInterface
     {
         $this->query->execute(
             'UPDATE payments SET is_deleted = TRUE, deleted_at = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
-            [date('Y-m-d H:i:s'), date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Item;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Support\SqlLike;
 
@@ -18,6 +19,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -118,7 +120,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
 
     public function save(Item $item): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder, never from
         // the entity — a write always lands in the caller's resolved org.
@@ -144,7 +146,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
             throw new ItemNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE items SET description = ?, default_unit_price_cents = ?, default_tax_rate_bps = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
@@ -171,7 +173,7 @@ final readonly class PdoItemRepository implements ItemRepositoryInterface
 
         $this->query->execute(
             'UPDATE items SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
-            [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

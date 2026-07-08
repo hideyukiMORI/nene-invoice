@@ -8,6 +8,7 @@ use LogicException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -32,7 +33,7 @@ final readonly class LineItemServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoLineItemRepository($query, self::orgHolder($c));
+                    return new PdoLineItemRepository($query, self::orgHolder($c), self::resolve($c, ClockInterface::class));
                 },
             )
             ->set(

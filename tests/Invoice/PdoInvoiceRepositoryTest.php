@@ -13,6 +13,7 @@ use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceNotFoundException;
 use NeneInvoice\Invoice\InvoiceStatus;
 use NeneInvoice\Invoice\PdoInvoiceRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoInvoiceRepositoryTest extends TestCase
@@ -43,7 +44,7 @@ final class PdoInvoiceRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoInvoiceRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     public function test_saves_draft_without_number_then_reads_back(): void

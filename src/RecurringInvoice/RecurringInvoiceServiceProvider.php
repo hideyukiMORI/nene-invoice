@@ -42,7 +42,7 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoRecurringInvoiceRepository($query, self::orgHolder($c));
+                    return new PdoRecurringInvoiceRepository($query, self::orgHolder($c), self::resolve($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -52,8 +52,8 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
 
                     return new CreateRecurringInvoiceUseCase(
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         self::resolve($c, ClientRepositoryInterface::class),
                         self::resolve($c, TaxCalculator::class),
                         AuditServiceProvider::recorderFactory($c),
@@ -70,8 +70,8 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
                         self::recurring($c),
                         self::resolve($c, LineItemRepositoryInterface::class),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         self::resolve($c, ClientRepositoryInterface::class),
                         self::resolve($c, TaxCalculator::class),
                         AuditServiceProvider::recorderFactory($c),
@@ -88,7 +88,7 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
                         self::recurring($c),
                         self::resolve($c, LineItemRepositoryInterface::class),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         AuditServiceProvider::recorderFactory($c),
                         $orgHolder,
                     );
@@ -119,9 +119,9 @@ final readonly class RecurringInvoiceServiceProvider implements ServiceProviderI
                         self::resolve($c, ClientRepositoryInterface::class),
                         self::resolve($c, TaxCalculator::class),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): RecurringInvoiceRepositoryInterface => new PdoRecurringInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): LineItemRepositoryInterface => new PdoLineItemRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         AuditServiceProvider::recorderFactory($c),
                         self::resolve($c, ClockInterface::class),
                         $orgHolder,

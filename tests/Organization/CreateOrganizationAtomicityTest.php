@@ -12,6 +12,7 @@ use NeneInvoice\Organization\CreateOrganizationInput;
 use NeneInvoice\Organization\CreateOrganizationUseCase;
 use NeneInvoice\Organization\PdoInitialAdminRepository;
 use NeneInvoice\Organization\PdoOrganizationRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use NeneInvoice\User\UserEmailConflictException;
 use PHPUnit\Framework\TestCase;
@@ -70,9 +71,9 @@ final class CreateOrganizationAtomicityTest extends TestCase
     {
         return new CreateOrganizationUseCase(
             new PdoDatabaseTransactionManager($this->factory),
-            fn ($exec) => new PdoOrganizationRepository($exec),
+            fn ($exec) => new PdoOrganizationRepository($exec, new FixedClock()),
             new RecordingAuditRecorder(),
-            fn ($exec) => new PdoInitialAdminRepository($exec),
+            fn ($exec) => new PdoInitialAdminRepository($exec, new FixedClock()),
         );
     }
 

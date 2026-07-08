@@ -9,6 +9,7 @@ use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneInvoice\Auth\Role;
 use NeneInvoice\Install\PdoInstallProvisioningRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\User\UserEmailConflictException;
 use PHPUnit\Framework\TestCase;
 
@@ -46,7 +47,7 @@ final class PdoInstallProvisioningRepositoryTest extends TestCase
         }
 
         $this->executor = new PdoDatabaseQueryExecutor($factory, $pdo);
-        $this->repository = new PdoInstallProvisioningRepository($this->executor);
+        $this->repository = new PdoInstallProvisioningRepository($this->executor, new FixedClock());
     }
 
     public function test_creates_cross_tenant_superadmin_with_null_org(): void

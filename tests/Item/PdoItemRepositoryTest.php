@@ -13,6 +13,7 @@ use NeneInvoice\Item\ItemListFilter;
 use NeneInvoice\Item\ItemNotFoundException;
 use NeneInvoice\Item\ItemSort;
 use NeneInvoice\Item\PdoItemRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoItemRepositoryTest extends TestCase
@@ -43,7 +44,7 @@ final class PdoItemRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoItemRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoItemRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     public function test_save_then_find_round_trips(): void

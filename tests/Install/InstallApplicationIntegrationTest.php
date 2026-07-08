@@ -14,6 +14,7 @@ use NeneInvoice\Install\PdoInstallProvisioningRepository;
 use NeneInvoice\Organization\CreateOrganizationUseCase;
 use NeneInvoice\Organization\PdoInitialAdminRepository;
 use NeneInvoice\Organization\PdoOrganizationRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\Tests\Support\RecordingAuditRecorder;
 use PHPUnit\Framework\TestCase;
 
@@ -72,15 +73,15 @@ final class InstallApplicationIntegrationTest extends TestCase
     {
         $createOrganization = new CreateOrganizationUseCase(
             new PdoDatabaseTransactionManager($this->factory),
-            static fn ($exec) => new PdoOrganizationRepository($exec),
+            static fn ($exec) => new PdoOrganizationRepository($exec, new FixedClock()),
             new RecordingAuditRecorder(),
-            static fn ($exec) => new PdoInitialAdminRepository($exec),
+            static fn ($exec) => new PdoInitialAdminRepository($exec, new FixedClock()),
         );
 
         return new InstallApplication(
             $createOrganization,
-            new PdoOrganizationRepository($this->executor),
-            new PdoInstallProvisioningRepository($this->executor),
+            new PdoOrganizationRepository($this->executor, new FixedClock()),
+            new PdoInstallProvisioningRepository($this->executor, new FixedClock()),
         );
     }
 

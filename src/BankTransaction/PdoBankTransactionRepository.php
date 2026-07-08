@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\BankTransaction;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoBankTransactionRepository implements BankTransactionRepositoryInterface
@@ -17,12 +18,13 @@ final readonly class PdoBankTransactionRepository implements BankTransactionRepo
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
     public function save(BankTransaction $transaction): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
@@ -130,7 +132,7 @@ final readonly class PdoBankTransactionRepository implements BankTransactionRepo
             throw new BankTransactionNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE bank_transactions SET value_date = ?, direction = ?, amount_cents = ?, payer_name = ?, description = ?, bank_reference = ?, status = ?, matched_invoice_id = ?, matched_payment_id = ?, updated_at = ?

@@ -8,6 +8,7 @@ use Nene2\Config\DatabaseConfig;
 use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneInvoice\Auth\PdoLoginThrottle;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoLoginThrottleTest extends TestCase
@@ -34,7 +35,7 @@ final class PdoLoginThrottleTest extends TestCase
         self::assertIsString($schema);
         $pdo->exec($schema);
 
-        $this->throttle = new PdoLoginThrottle(new PdoDatabaseQueryExecutor($factory, $pdo));
+        $this->throttle = new PdoLoginThrottle(new PdoDatabaseQueryExecutor($factory, $pdo), new FixedClock());
     }
 
     public function test_counts_only_failures_at_or_after_the_cutoff(): void
