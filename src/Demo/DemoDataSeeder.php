@@ -21,7 +21,11 @@ use Nene2\Http\ClockInterface;
  * shape as {@see \NeneInvoice\Organization\PdoInitialAdminRepository}.
  *
  * All dates are relative to today (T) so the data always looks "current": a few
- * invoices issued this month, one or two overdue, some paid this month. Amounts,
+ * invoices issued this month, one or two overdue, some paid this month. Dates of
+ * *historical* events (issue dates, payments, bank transactions) are clamped to
+ * today at the inserters — day-of-month anchors like "the 15th" must never
+ * produce a future receipt when the demo is opened early in the month. Due
+ * dates are deliberately NOT clamped (a future due date is normal). Amounts,
  * withholding, and registration numbers follow the seed specification
  * (`handoff-invoice-demo-seed-2026-07-07.md`). Each template carries exactly one
  * payer-name-mismatch reconciliation case (`payer_aliases` + `bank_transactions`).
@@ -98,6 +102,22 @@ final class DemoDataSeeder
     private function year(): int
     {
         return (int) $this->today->format('Y');
+    }
+
+    /**
+     * Clamps a historical event date (issue / payment / bank transaction) to
+     * today. Day-of-month anchors ("the 15th", "end of this month") land in the
+     * future when the demo is opened early in the month, and a future-dated
+     * receipt is exactly the kind of wart the target audience (accountants)
+     * notices first. `Y-m-d` strings compare correctly as strings.
+     */
+    private function noLaterThanToday(?string $date): ?string
+    {
+        if ($date === null) {
+            return null;
+        }
+
+        return min($date, $this->today->format('Y-m-d'));
     }
 
     // ------------------------------------------------------------- inserters
@@ -186,7 +206,7 @@ final class DemoDataSeeder
             'INSERT INTO quotes
                 (organization_id, client_id, quote_number, status, issued_at, valid_until, subtotal_cents, tax_cents, total_cents, notes, is_deleted, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
-            [$this->orgId, $clientId, $number, $status, $issuedAt, $validUntil, $sub, $tax, $total, $notes, $this->now, $this->now],
+            [$this->orgId, $clientId, $number, $status, $this->noLaterThanToday($issuedAt), $validUntil, $sub, $tax, $total, $notes, $this->now, $this->now],
         );
         $this->insertLines('quote', $id, $lines);
 
@@ -212,7 +232,7 @@ final class DemoDataSeeder
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
             [
                 $this->orgId, $clientId, $quoteId, $number, $status, $isQualified ? 1 : 0,
-                $issuedAt, $dueAt, $sub, $tax, $total, $notes, $this->now, $this->now,
+                $this->noLaterThanToday($issuedAt), $dueAt, $sub, $tax, $total, $notes, $this->now, $this->now,
             ],
         );
         $this->insertLines('invoice', $id, $lines);
@@ -226,7 +246,7 @@ final class DemoDataSeeder
             'INSERT INTO payments
                 (organization_id, invoice_id, amount_cents, paid_at, method, note, is_deleted, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
-            [$this->orgId, $invoiceId, $amountCents, $paidAt, $method, $note, $this->now, $this->now],
+            [$this->orgId, $invoiceId, $amountCents, (string) $this->noLaterThanToday($paidAt), $method, $note, $this->now, $this->now],
         );
     }
 
@@ -253,7 +273,7 @@ final class DemoDataSeeder
                 (organization_id, value_date, direction, amount_cents, payer_name, description, bank_reference, status, matched_invoice_id, matched_payment_id, imported_at, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                $this->orgId, $valueDate, 'credit', $amountCents, $payerName, $description, null,
+                $this->orgId, (string) $this->noLaterThanToday($valueDate), 'credit', $amountCents, $payerName, $description, null,
                 $status, $matchedInvoiceId, $matchedPaymentId, $this->now, $this->now, $this->now,
             ],
         );
