@@ -38,6 +38,10 @@ final readonly class OrgResolverMiddleware implements MiddlewareInterface
         '/api/',
         '/invoices/download/',
         '/admin/organizations',
+        // Disposable-demo provisioning (`GET /demo/{template}`) is org-less: it
+        // *creates* a new tenant, so there is no slug in the URL to resolve. Gated
+        // by DEMO_MODE in the handler. Kept out of path-tenancy resolution here.
+        '/demo/',
         // Self-service identity: `/admin/me` returns the caller's own record from
         // token claims (user lookup is by id, not org-scoped), so it needs no org
         // context. Bypassing lets a cross-tenant superadmin (organization_id NULL)

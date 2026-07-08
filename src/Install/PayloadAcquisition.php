@@ -45,6 +45,7 @@ final class PayloadAcquisition
         '.env.example',
         'README.md',
         'var',
+        'tools',
     ];
 
     /** Upload ceiling; a host's effective limit (upload_max_filesize) may be smaller. */

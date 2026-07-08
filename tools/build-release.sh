@@ -19,7 +19,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
 STAGE="$DIST/build/stage"
 ZIP_NAME="nene-invoice-${VERSION}.zip"
-NENE2_CONSTRAINT="^1.6"
+# demo ブランチ（feat/demo-disposable-org）は GuardedJwtSecretResolver 等を含む
+# nene2 ^1.8.2 系を要求する（composer.json の require と一致させる）。旧値 ^1.6 は
+# 当該クラスを含まず、fail-close JWT が壊れるため是正（#576 追補）。
+NENE2_CONSTRAINT="^1.8.2"
 
 echo "=== NeNe Invoice Tier A release build: $VERSION ==="
 
@@ -46,6 +49,12 @@ cp -r "$ROOT/public_html" "$STAGE/public_html"
 cp -r "$ROOT/resources" "$STAGE/resources"
 cp "$ROOT/.env.example" "$STAGE/.env.example"
 cp "$ROOT/phinx.php" "$STAGE/phinx.php"
+# 本番 cron ツール（vendor/autoload.php をプロジェクト直下から require する）。
+# sweep-demo.php = 使い捨てデモ org の掃除、run-recurring.php = 定期請求の実行。
+# dev/ビルド専用ツール（build-release.sh / seed-dev.php 等）は同梱しない。
+mkdir -p "$STAGE/tools"
+cp "$ROOT/tools/sweep-demo.php" "$STAGE/tools/sweep-demo.php"
+cp "$ROOT/tools/run-recurring.php" "$STAGE/tools/run-recurring.php"
 cp "$ROOT/composer.json" "$STAGE/composer.json"
 cp "$ROOT/README.md" "$STAGE/README.md"
 
