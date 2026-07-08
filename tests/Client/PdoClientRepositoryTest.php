@@ -13,6 +13,7 @@ use NeneInvoice\Client\ClientListFilter;
 use NeneInvoice\Client\ClientNotFoundException;
 use NeneInvoice\Client\ClientSort;
 use NeneInvoice\Client\PdoClientRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoClientRepositoryTest extends TestCase
@@ -43,7 +44,7 @@ final class PdoClientRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoClientRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoClientRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     public function test_saves_and_reads_back_a_client(): void

@@ -6,6 +6,7 @@ namespace NeneInvoice\Organization;
 
 use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use NeneInvoice\Auth\Role;
 use NeneInvoice\User\User;
 use NeneInvoice\User\UserEmailConflictException;
@@ -20,12 +21,13 @@ final readonly class PdoInitialAdminRepository implements InitialAdminRepository
 {
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
     public function createInitialAdmin(int $organizationId, string $email, string $passwordHash): User
     {
-        $now  = date('Y-m-d H:i:s');
+        $now  = $this->clock->now()->format('Y-m-d H:i:s');
         $role = Role::Admin;
 
         try {

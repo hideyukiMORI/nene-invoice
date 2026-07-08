@@ -12,6 +12,7 @@ use NeneInvoice\RecurringInvoice\PdoRecurringInvoiceRepository;
 use NeneInvoice\RecurringInvoice\RecurringFrequency;
 use NeneInvoice\RecurringInvoice\RecurringInvoice;
 use NeneInvoice\RecurringInvoice\RecurringInvoiceNotFoundException;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoRecurringInvoiceRepositoryTest extends TestCase
@@ -45,6 +46,7 @@ final class PdoRecurringInvoiceRepositoryTest extends TestCase
         $this->repository = new PdoRecurringInvoiceRepository(
             new PdoDatabaseQueryExecutor($factory, $pdo),
             $this->holder,
+            new FixedClock(),
         );
     }
 

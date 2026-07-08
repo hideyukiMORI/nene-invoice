@@ -13,6 +13,7 @@ use NeneInvoice\Quote\Quote;
 use NeneInvoice\Quote\QuoteListFilter;
 use NeneInvoice\Quote\QuoteSort;
 use NeneInvoice\Quote\QuoteStatus;
+use NeneInvoice\Tests\Support\FixedClock;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -49,7 +50,7 @@ final class PdoQuoteRepositoryAdminListTest extends TestCase
         $this->pdo    = $pdo;
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repo = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repo = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     private function client(int $id, string $name): void

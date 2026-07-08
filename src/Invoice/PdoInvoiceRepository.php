@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Support\SqlLike;
 
@@ -18,6 +19,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -338,7 +340,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
 
     public function save(Invoice $invoice): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
@@ -371,7 +373,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
             throw new InvoiceNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE invoices SET client_id = ?, quote_id = ?, invoice_number = ?, status = ?, is_qualified_invoice = ?, issued_at = ?, due_at = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, notes = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
@@ -406,7 +408,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
 
         $this->query->execute(
             'UPDATE invoices SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
-            [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

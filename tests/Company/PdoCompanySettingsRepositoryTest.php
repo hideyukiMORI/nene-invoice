@@ -10,6 +10,7 @@ use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\Company\PdoCompanySettingsRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -45,7 +46,7 @@ final class PdoCompanySettingsRepositoryTest extends TestCase
 
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repo = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repo = new PdoCompanySettingsRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     public function test_find_returns_null_when_not_set(): void

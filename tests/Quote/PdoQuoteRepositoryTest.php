@@ -14,6 +14,7 @@ use NeneInvoice\Quote\QuoteListFilter;
 use NeneInvoice\Quote\QuoteNotFoundException;
 use NeneInvoice\Quote\QuoteSort;
 use NeneInvoice\Quote\QuoteStatus;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoQuoteRepositoryTest extends TestCase
@@ -46,7 +47,7 @@ final class PdoQuoteRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoQuoteRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     private function draft(int $org, int $client, string $number): Quote

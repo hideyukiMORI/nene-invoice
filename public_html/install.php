@@ -18,6 +18,7 @@ declare(strict_types=1);
  */
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\UtcClock;
 use Nene2\Install\DatabaseSchemaApplier;
 use Nene2\Install\EnvironmentWriter;
 use Nene2\Install\ProvisioningProbe;
@@ -577,8 +578,8 @@ if (!$payloadPresent) {
 
                         (new InstallApplication(
                             $createOrganization,
-                            new PdoOrganizationRepository($queryExecutor),
-                            new PdoInstallProvisioningRepository($queryExecutor),
+                            new PdoOrganizationRepository($queryExecutor, new UtcClock()),
+                            new PdoInstallProvisioningRepository($queryExecutor, new UtcClock()),
                         ))->install(new InstallConfig(
                             isSingle: $isSingle,
                             organizationName: $companyName,

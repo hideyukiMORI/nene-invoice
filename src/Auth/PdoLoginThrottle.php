@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace NeneInvoice\Auth;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 
 final readonly class PdoLoginThrottle implements LoginThrottleInterface
 {
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -27,7 +29,7 @@ final readonly class PdoLoginThrottle implements LoginThrottleInterface
     {
         $this->query->execute(
             'INSERT INTO login_attempts (ip_address, created_at) VALUES (?, ?)',
-            [$ipAddress, date('Y-m-d H:i:s')],
+            [$ipAddress, $this->clock->now()->format('Y-m-d H:i:s')],
         );
     }
 

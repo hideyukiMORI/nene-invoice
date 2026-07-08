@@ -87,7 +87,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoUserRepository($query, self::orgHolder($container));
+                    return new PdoUserRepository($query, self::orgHolder($container), self::clock($container));
                 },
             )
             ->set(
@@ -164,7 +164,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoRefreshTokenRepository($query);
+                    return new PdoRefreshTokenRepository($query, self::clock($container));
                 },
             )
             ->set(
@@ -203,7 +203,7 @@ final readonly class AuthServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Refresh token issuer service is invalid.');
                     }
 
-                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query), $refreshTokenIssuer, self::clock($container));
+                    return new LoginUseCase($users, $tokenIssuer, new PdoLoginThrottle($query, self::clock($container)), $refreshTokenIssuer, self::clock($container));
                 },
             )
             ->set(

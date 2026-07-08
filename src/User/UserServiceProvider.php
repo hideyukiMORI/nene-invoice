@@ -11,6 +11,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -133,8 +134,9 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
     private static function usersFactory(ContainerInterface $c): Closure
     {
         $orgHolder = self::orgHolder($c);
+        $clock     = self::clock($c);
 
-        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => new PdoUserRepository($exec, $orgHolder);
+        return static fn (DatabaseQueryExecutorInterface $exec): UserRepositoryInterface => new PdoUserRepository($exec, $orgHolder, $clock);
     }
 
     /** @return RequestScopedHolder<int> */
@@ -224,5 +226,16 @@ final readonly class UserServiceProvider implements ServiceProviderInterface
         }
 
         return $p;
+    }
+
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
     }
 }

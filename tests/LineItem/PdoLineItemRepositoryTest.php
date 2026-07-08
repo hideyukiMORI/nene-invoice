@@ -11,6 +11,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\PdoLineItemRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +46,7 @@ final class PdoLineItemRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoLineItemRepository(new PdoDatabaseQueryExecutor($factory, $this->pdo), $this->orgId);
+        $this->repository = new PdoLineItemRepository(new PdoDatabaseQueryExecutor($factory, $this->pdo), $this->orgId, new FixedClock());
     }
 
     public function test_replace_then_find_returns_lines_in_sort_order(): void

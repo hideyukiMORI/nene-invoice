@@ -6,6 +6,7 @@ namespace NeneInvoice\User;
 
 use Nene2\Database\DatabaseConstraintException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Auth\Role;
 
@@ -19,6 +20,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -75,7 +77,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
 
     public function save(User $user): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         try {
             // The organization is forced from the request-scoped holder.
@@ -105,7 +107,7 @@ final readonly class PdoUserRepository implements UserRepositoryInterface
             throw new UserNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // Scoped to the holder org: a user in another organization cannot be updated.
         $affected = $this->query->execute(

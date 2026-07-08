@@ -38,7 +38,7 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoPaymentRepository($query, self::orgHolder($c));
+                    return new PdoPaymentRepository($query, self::orgHolder($c), self::resolve($c, ClockInterface::class));
                 },
             )
             ->set(
@@ -50,8 +50,8 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                         self::resolve($c, PaymentRepositoryInterface::class),
                         self::resolve($c, InvoiceRepositoryInterface::class),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         AuditServiceProvider::recorderFactory($c),
                         self::resolve($c, ClockInterface::class),
                         $orgHolder,
@@ -74,8 +74,8 @@ final readonly class PaymentServiceProvider implements ServiceProviderInterface
                         self::resolve($c, PaymentRepositoryInterface::class),
                         self::resolve($c, InvoiceRepositoryInterface::class),
                         self::resolve($c, DatabaseTransactionManagerInterface::class),
-                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder),
-                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): PaymentRepositoryInterface => new PdoPaymentRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
+                        static fn (DatabaseQueryExecutorInterface $exec): InvoiceRepositoryInterface => new PdoInvoiceRepository($exec, $orgHolder, self::resolve($c, ClockInterface::class)),
                         AuditServiceProvider::recorderFactory($c),
                         $orgHolder,
                     );

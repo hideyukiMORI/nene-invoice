@@ -11,6 +11,7 @@ use NeneInvoice\Organization\Organization;
 use NeneInvoice\Organization\OrganizationNotFoundException;
 use NeneInvoice\Organization\OrganizationSlugConflictException;
 use NeneInvoice\Organization\PdoOrganizationRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoOrganizationRepositoryTest extends TestCase
@@ -39,6 +40,7 @@ final class PdoOrganizationRepositoryTest extends TestCase
 
         $this->repository = new PdoOrganizationRepository(
             new PdoDatabaseQueryExecutor($factory, $pdo),
+            new FixedClock(),
         );
     }
 

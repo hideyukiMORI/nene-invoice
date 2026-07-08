@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Company;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoCompanySettingsRepository implements CompanySettingsRepositoryInterface
@@ -17,6 +18,7 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -32,7 +34,7 @@ final readonly class PdoCompanySettingsRepository implements CompanySettingsRepo
 
     public function save(CompanySettings $settings): void
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
         // The organization is forced from the request-scoped holder.
         $organizationId = $this->orgId->get();
         $exists = $this->find() !== null;

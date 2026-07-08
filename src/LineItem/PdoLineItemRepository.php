@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\LineItem;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoLineItemRepository implements LineItemRepositoryInterface
@@ -17,6 +18,7 @@ final readonly class PdoLineItemRepository implements LineItemRepositoryInterfac
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -36,7 +38,7 @@ final readonly class PdoLineItemRepository implements LineItemRepositoryInterfac
     {
         $this->deleteForParent($parentType, $parentId);
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         foreach ($lines as $line) {
             $this->query->execute(

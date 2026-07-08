@@ -12,6 +12,7 @@ use NeneInvoice\Client\Client;
 use NeneInvoice\Client\ClientListFilter;
 use NeneInvoice\Client\ClientSort;
 use NeneInvoice\Client\PdoClientRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 /** Real-DB coverage for the admin client list query (search + sort). */
@@ -43,7 +44,7 @@ final class PdoClientRepositoryAdminListTest extends TestCase
 
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repo = new PdoClientRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder);
+        $this->repo = new PdoClientRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->holder, new FixedClock());
     }
 
     private function client(string $name, ?string $contact, ?string $email, ?string $reg): void

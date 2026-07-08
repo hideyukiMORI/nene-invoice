@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Client;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Support\SqlLike;
 
@@ -18,6 +19,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -115,7 +117,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
 
     public function save(Client $client): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder, never from
         // the entity — a write always lands in the caller's resolved org.
@@ -144,7 +146,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
             throw new ClientNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE clients SET name = ?, name_kana = ?, contact_name = ?, email = ?, billing_address = ?, registration_number = ?, updated_at = ? WHERE id = ? AND organization_id = ? AND is_deleted = FALSE',
@@ -174,7 +176,7 @@ final readonly class PdoClientRepository implements ClientRepositoryInterface
 
         $this->query->execute(
             'UPDATE clients SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
-            [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

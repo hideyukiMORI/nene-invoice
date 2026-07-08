@@ -9,6 +9,7 @@ use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use NeneInvoice\Auth\Role;
 use NeneInvoice\Organization\PdoInitialAdminRepository;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\User\UserEmailConflictException;
 use PHPUnit\Framework\TestCase;
 
@@ -45,7 +46,7 @@ final class PdoInitialAdminRepositoryTest extends TestCase
         $pdo->exec($schema);
 
         $this->executor = new PdoDatabaseQueryExecutor($factory, $pdo);
-        $this->repository = new PdoInitialAdminRepository($this->executor);
+        $this->repository = new PdoInitialAdminRepository($this->executor, new FixedClock());
     }
 
     public function test_creates_admin_bound_to_the_given_organization(): void

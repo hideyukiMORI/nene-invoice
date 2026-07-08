@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\RecurringInvoice;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoRecurringInvoiceRepository implements RecurringInvoiceRepositoryInterface
@@ -17,12 +18,13 @@ final readonly class PdoRecurringInvoiceRepository implements RecurringInvoiceRe
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
     public function save(RecurringInvoice $schedule): int
     {
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         // The organization is forced from the request-scoped holder.
         $this->query->execute(
@@ -100,7 +102,7 @@ final readonly class PdoRecurringInvoiceRepository implements RecurringInvoiceRe
             throw new RecurringInvoiceNotFoundException(0);
         }
 
-        $now = date('Y-m-d H:i:s');
+        $now = $this->clock->now()->format('Y-m-d H:i:s');
 
         $affected = $this->query->execute(
             'UPDATE recurring_invoices SET client_id = ?, name = ?, frequency = ?, subtotal_cents = ?, tax_cents = ?, total_cents = ?, next_run_on = ?, last_run_on = ?, is_active = ?, notes = ?, updated_at = ?
@@ -135,7 +137,7 @@ final readonly class PdoRecurringInvoiceRepository implements RecurringInvoiceRe
 
         $this->query->execute(
             'UPDATE recurring_invoices SET is_deleted = TRUE, deleted_at = ? WHERE id = ? AND organization_id = ?',
-            [date('Y-m-d H:i:s'), $id, $this->orgId->get()],
+            [$this->clock->now()->format('Y-m-d H:i:s'), $id, $this->orgId->get()],
         );
     }
 

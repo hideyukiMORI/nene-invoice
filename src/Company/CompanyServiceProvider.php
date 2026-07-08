@@ -11,6 +11,7 @@ use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\JsonResponseFactory;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\ApplicationServiceProvider;
@@ -42,7 +43,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoCompanySettingsRepository($query, self::orgHolder($c));
+                    return new PdoCompanySettingsRepository($query, self::orgHolder($c), self::clock($c));
                 },
             )
             ->set(GetCompanySettingsUseCaseInterface::class, static fn (ContainerInterface $c): GetCompanySettingsUseCase => new GetCompanySettingsUseCase(self::repository($c), self::orgHolder($c)))
@@ -70,7 +71,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Database query executor service is invalid.');
                     }
 
-                    return new PdoCompanySealRepository($query, self::orgHolder($c));
+                    return new PdoCompanySealRepository($query, self::orgHolder($c), self::clock($c));
                 },
             )
             ->set(
@@ -81,7 +82,7 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
                     return new CompanySealUseCase(
                         self::sealRepository($c),
                         self::tx($c),
-                        static fn (DatabaseQueryExecutorInterface $exec): CompanySealRepositoryInterface => new PdoCompanySealRepository($exec, $orgHolder),
+                        static fn (DatabaseQueryExecutorInterface $exec): CompanySealRepositoryInterface => new PdoCompanySealRepository($exec, $orgHolder, self::clock($c)),
                         AuditServiceProvider::recorderFactory($c),
                         $orgHolder,
                     );
@@ -155,8 +156,9 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
     private static function repositoryFactory(ContainerInterface $c): Closure
     {
         $orgHolder = self::orgHolder($c);
+        $clock     = self::clock($c);
 
-        return static fn (DatabaseQueryExecutorInterface $exec): CompanySettingsRepositoryInterface => new PdoCompanySettingsRepository($exec, $orgHolder);
+        return static fn (DatabaseQueryExecutorInterface $exec): CompanySettingsRepositoryInterface => new PdoCompanySettingsRepository($exec, $orgHolder, $clock);
     }
 
     private static function getUseCase(ContainerInterface $c): GetCompanySettingsUseCase
@@ -235,5 +237,16 @@ final readonly class CompanyServiceProvider implements ServiceProviderInterface
         }
 
         return $holder;
+    }
+
+    private static function clock(ContainerInterface $c): ClockInterface
+    {
+        $clock = $c->get(ClockInterface::class);
+
+        if (!$clock instanceof ClockInterface) {
+            throw new LogicException('Clock service is invalid.');
+        }
+
+        return $clock;
     }
 }

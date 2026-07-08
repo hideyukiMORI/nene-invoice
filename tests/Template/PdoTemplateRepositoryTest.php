@@ -11,6 +11,7 @@ use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Template\PdoTemplateRepository;
 use NeneInvoice\Template\Template;
 use NeneInvoice\Template\TemplateNotFoundException;
+use NeneInvoice\Tests\Support\FixedClock;
 use PHPUnit\Framework\TestCase;
 
 final class PdoTemplateRepositoryTest extends TestCase
@@ -41,7 +42,7 @@ final class PdoTemplateRepositoryTest extends TestCase
 
         $this->orgId = new RequestScopedHolder();
         $this->orgId->set(1);
-        $this->repository = new PdoTemplateRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId);
+        $this->repository = new PdoTemplateRepository(new PdoDatabaseQueryExecutor($factory, $pdo), $this->orgId, new FixedClock());
     }
 
     public function test_save_then_find_round_trips(): void

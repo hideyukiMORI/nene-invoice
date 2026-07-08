@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Company\Seal;
 
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
 
 final readonly class PdoCompanySealRepository implements CompanySealRepositoryInterface
@@ -15,6 +16,7 @@ final readonly class PdoCompanySealRepository implements CompanySealRepositoryIn
     public function __construct(
         private DatabaseQueryExecutorInterface $query,
         private RequestScopedHolder $orgId,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -37,7 +39,7 @@ final readonly class PdoCompanySealRepository implements CompanySealRepositoryIn
 
     public function save(string $imageBase64): void
     {
-        $now            = date('Y-m-d H:i:s');
+        $now            = $this->clock->now()->format('Y-m-d H:i:s');
         $organizationId = $this->orgId->get();
 
         if ($this->exists()) {

@@ -9,6 +9,7 @@ use Nene2\Database\PdoConnectionFactory;
 use Nene2\Database\PdoDatabaseQueryExecutor;
 use Nene2\Http\RequestScopedHolder;
 use NeneInvoice\Auth\Role;
+use NeneInvoice\Tests\Support\FixedClock;
 use NeneInvoice\User\PdoUserRepository;
 use NeneInvoice\User\User;
 use NeneInvoice\User\UserEmailConflictException;
@@ -45,7 +46,7 @@ final class PdoUserRepositoryTest extends TestCase
         $this->executor = new PdoDatabaseQueryExecutor($factory, $pdo);
         $this->holder = new RequestScopedHolder();
         $this->holder->set(1);
-        $this->repository = new PdoUserRepository($this->executor, $this->holder);
+        $this->repository = new PdoUserRepository($this->executor, $this->holder, new FixedClock());
     }
 
     public function test_finds_user_by_email_and_id_after_save(): void
