@@ -149,10 +149,22 @@ async function shouldRetryAfterRefresh(
 
 type Json = Record<string, unknown>
 
+/**
+ * Attaches the Bearer token to both `Authorization` and `X-Authorization`.
+ * Some shared-hosting front proxies (Tier A; observed on HETEML) strip the
+ * standard `Authorization` header before it reaches PHP, so the backend falls
+ * back to the mirror when the standard header is missing.
+ */
+function attachBearer(headers: Record<string, string>): void {
+  if (authToken === null) return
+  headers['Authorization'] = `Bearer ${authToken}`
+  headers['X-Authorization'] = `Bearer ${authToken}`
+}
+
 async function request<T>(method: string, path: string, body?: Json, isRetry = false): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+  attachBearer(headers)
 
   let response: Response
   try {
@@ -195,7 +207,7 @@ function safeJsonParse(text: string): unknown {
 /** Fetches a binary resource and returns it as a Blob. Sends the Bearer token. */
 async function requestBlob(path: string, isRetry = false): Promise<Blob> {
   const headers: Record<string, string> = {}
-  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+  attachBearer(headers)
 
   let response: Response
   try {
@@ -223,7 +235,7 @@ async function requestBlob(path: string, isRetry = false): Promise<Blob> {
  */
 async function postCsv<T>(path: string, csv: string, isRetry = false): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
-  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+  attachBearer(headers)
 
   let response: Response
   try {
@@ -256,7 +268,7 @@ async function postCsv<T>(path: string, csv: string, isRetry = false): Promise<T
  */
 async function postBytes<T>(path: string, body: Blob, isRetry = false): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
-  if (authToken !== null) headers['Authorization'] = `Bearer ${authToken}`
+  attachBearer(headers)
 
   let response: Response
   try {
