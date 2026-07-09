@@ -4,109 +4,92 @@
  * 使い捨てデモ org の掃除スクリプト（税理士リード向けデモ／`DEMO_MODE`）。
  * 使い方: php tools/sweep-demo.php   （cron 例: 毎時 0 分）
  *
- * - slug prefix `demo-` の org を対象に、作成から DEMO_TTL_HOURS（既定 3）を過ぎたものを削除。
- * - さらに容量上限 DEMO_MAX_ORGS（既定 200）を超える分は、古いものから削除（暴走・DoS 保険）。
- * - org 本体の削除は監査つきの DeleteOrganizationUseCase 経由。子テーブルは使い捨てデータなので
- *   best-effort で organization_id / 親経由に一括 DELETE（"消えていい" のが強み＝掃除は雑でよい）。
+ * TTL（DEMO_TTL_HOURS・既定 3）と容量上限（DEMO_MAX_ORGS・既定 200）の判定は
+ * NENE2 の `Nene2\Demo\DisposableDemoSweeper` に委譲する（#610 consumer 化）。
+ * 破棄（子テーブル・org 本体・recurring 実行スタンプ）は invoice の
+ * {@see \NeneInvoice\Demo\DemoOrgReaper}。このスクリプトは demo org の一覧を
+ * SELECT して渡すだけ — `slug LIKE '{prefix}%'` の絞り込みが本番 org を守る唯一の
+ * 境界なので、絶対に広げないこと。
  *
- * 本番 org（`demo-` 以外の slug）には一切触れない。
+ * 本番 org（demo prefix 以外の slug）には一切触れない。
  */
 
 declare(strict_types=1);
 
 use Nene2\Config\AppConfig;
-use Nene2\Database\DatabaseConnectionFactoryInterface;
+use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Demo\DemoOrgRecord;
+use Nene2\Demo\DisposableDemoSweeper;
+use Nene2\Demo\DisposableOrgReaperInterface;
+use Nene2\Http\ClockInterface;
 use NeneInvoice\Http\RuntimeContainerFactory;
-use NeneInvoice\Organization\DeleteOrganizationUseCaseInterface;
-use NeneInvoice\Organization\OrganizationNotFoundException;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 $root = dirname(__DIR__);
 $container = (new RuntimeContainerFactory($root))->create();
-$container->get(AppConfig::class);
 
-$connectionFactory = $container->get(DatabaseConnectionFactoryInterface::class);
-assert($connectionFactory instanceof DatabaseConnectionFactoryInterface);
-$pdo = $connectionFactory->create();
+$config = $container->get(AppConfig::class);
+assert($config instanceof AppConfig);
+$demo = $config->demo;
 
-$ttlEnv   = getenv('DEMO_TTL_HOURS');
-$maxEnv   = getenv('DEMO_MAX_ORGS');
-$ttlHours = is_string($ttlEnv) && $ttlEnv !== '' ? (int) $ttlEnv : 3;
-$maxOrgs  = is_string($maxEnv) && $maxEnv !== '' ? (int) $maxEnv : 200;
-$cutoff   = date('Y-m-d H:i:s', time() - ($ttlHours * 3600));
+$query = $container->get(DatabaseQueryExecutorInterface::class);
+assert($query instanceof DatabaseQueryExecutorInterface);
 
-// 1) TTL 超過。SELECT は fetchAll で完全に読み切る（カーソルを開いたまま削除しないため）。
-$expiredStmt = $pdo->prepare("SELECT id FROM organizations WHERE slug LIKE 'demo-%' AND created_at < ? ORDER BY id ASC");
-$expiredStmt->execute([$cutoff]);
-$expired = array_map('intval', $expiredStmt->fetchAll(PDO::FETCH_COLUMN));
-
-// 2) 容量上限。新しい方から $maxOrgs 件を残し、あふれた古い分を対象に加える。
-$allDemo  = array_map('intval', $pdo->query("SELECT id FROM organizations WHERE slug LIKE 'demo-%' ORDER BY created_at DESC, id DESC")->fetchAll(PDO::FETCH_COLUMN));
-$overflow = array_slice($allDemo, $maxOrgs);
-
-$targets = array_values(array_unique(array_merge($expired, $overflow)));
+$clock = $container->get(ClockInterface::class);
+assert($clock instanceof ClockInterface);
 
 // RECURRING_INLINE の実行スタンプ（FileRecurringRunThrottle・var/recurring-runs/org-{id}.txt）は
 // ファイルなので DB 掃除では消えず、demo org の回転数だけ無限蓄積する。organizations に
 // 存在しない org の残骸だけ自己修復で消す（実在 org — 本番含む — のスタンプには触れない）。
-// 掃除対象ゼロの回でも走らせる（過去の取りこぼし回収のため、早期 return より前に置く）。
-$existsStmt = $pdo->prepare('SELECT 1 FROM organizations WHERE id = ?');
+// per-org のスタンプ削除は DemoOrgReaper がやる。ここは過去の取りこぼし回収なので
+// 掃除対象ゼロの回でも走らせる。
 foreach (glob($root . '/var/recurring-runs/org-*.txt') ?: [] as $marker) {
     if (preg_match('/org-(\d+)\.txt$/', $marker, $m) !== 1) {
         continue;
     }
-    $existsStmt->execute([(int) $m[1]]);
-    if ($existsStmt->fetchColumn() === false) {
+    if ($query->fetchOne('SELECT 1 AS x FROM organizations WHERE id = ?', [(int) $m[1]]) === null) {
         @unlink($marker);
-        echo "残骸スタンプ掃除: " . basename($marker) . PHP_EOL;
+        echo '残骸スタンプ掃除: ' . basename($marker) . PHP_EOL;
     }
 }
 
-if ($targets === []) {
-    echo "掃除対象なし（demo org・TTL {$ttlHours}h・上限 {$maxOrgs}）。" . PHP_EOL;
+// デモ throttle の窓ファイル（FileRateLimitStorage・var/rate-limits/*.json）も IP の数だけ
+// 溜まる。窓はどれだけ長くても数時間なので、丸2日触られていないファイルは安全に消せる。
+$staleBefore = $clock->now()->getTimestamp() - (2 * 86400);
+foreach (glob($root . '/var/rate-limits/*.json') ?: [] as $window) {
+    $mtime = @filemtime($window);
+    if ($mtime !== false && $mtime < $staleBefore) {
+        @unlink($window);
+    }
+}
+
+$rows = $query->fetchAll(
+    'SELECT id, created_at FROM organizations WHERE slug LIKE ?',
+    [$demo->slugPrefix . '%'],
+);
+
+$records = array_map(
+    static fn (array $row): DemoOrgRecord => new DemoOrgRecord(
+        (int) $row['id'],
+        new DateTimeImmutable((string) $row['created_at'], new DateTimeZone('UTC')),
+    ),
+    $rows,
+);
+
+if ($records === []) {
+    echo "掃除対象なし（demo org・TTL {$demo->ttlHours}h・上限 {$demo->maxOrgs}）。" . PHP_EOL;
 
     return;
 }
 
-$delete = $container->get(DeleteOrganizationUseCaseInterface::class);
-assert($delete instanceof DeleteOrganizationUseCaseInterface);
+$reaper = $container->get(DisposableOrgReaperInterface::class);
+assert($reaper instanceof DisposableOrgReaperInterface);
 
-// organization_id を直接持つ子テーブル（line_items は親経由なので別処理）。
-$childTables = [
-    'clients', 'items', 'quotes', 'invoices', 'payments', 'bank_transactions',
-    'payer_aliases', 'recurring_invoices', 'company_settings', 'document_sequences',
-    'users', 'refresh_tokens', 'login_attempts', 'service_tokens',
-    'payment_links', 'invoice_download_tokens', 'templates', 'company_seal_images',
-];
+$report = (new DisposableDemoSweeper($demo, $reaper, $clock))->sweep($records);
 
-$swept = 0;
-foreach ($targets as $orgId) {
-    // line_items は organization_id を持たない（parent 経由）。親削除前に片付ける。
-    foreach (['invoice', 'quote', 'recurring_invoice'] as $parentType) {
-        $pdo->prepare(
-            "DELETE FROM line_items WHERE parent_type = ? AND parent_id IN
-                (SELECT id FROM {$parentType}s WHERE organization_id = ?)",
-        )->execute([$parentType, $orgId]);
-    }
-    foreach ($childTables as $table) {
-        try {
-            $pdo->prepare("DELETE FROM {$table} WHERE organization_id = ?")->execute([$orgId]);
-        } catch (\PDOException) {
-            // テーブルが無い環境（軽量構成）でも掃除は続行する。
-        }
-    }
-
-    try {
-        $delete->execute(null, $orgId);
-        $swept++;
-        echo "掃除: org {$orgId}" . PHP_EOL;
-    } catch (OrganizationNotFoundException) {
-        // すでに消えている（並行実行など）— 無視。
-    }
-
-    // 実行スタンプは org と一緒に片付ける（上の自己修復パスの当日分）。
-    @unlink($root . '/var/recurring-runs/org-' . $orgId . '.txt');
+foreach ($report->reapedOrgIds as $orgId) {
+    echo "掃除: org {$orgId}" . PHP_EOL;
 }
 
-echo "{$swept} 件の demo org を掃除しました（TTL {$ttlHours}h・上限 {$maxOrgs}）。" . PHP_EOL;
+echo count($report->reapedOrgIds) . " 件の demo org を掃除しました（TTL {$demo->ttlHours}h・上限 {$demo->maxOrgs}）。" . PHP_EOL;
