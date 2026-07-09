@@ -1,6 +1,6 @@
 # Current Work
 
-Last updated: 2026-07-05 (ドキュメント整合パス #572 — README / CLAUDE.md の状況表を本ファイルへ同期。**コード状況の変化なし**。直近の実態: S2＝install.php の toolkit consumer 化 #562 **✅ 完了・PR #569 merged**（NENE2 v1.6.0 release 済・`^1.6` 依存へ）・型B マルチテナント Phase 1(#552)/Phase 2 完了 #556/#558/#560＋掃除 #563・**#505 自動消込 増分⑧まで merged**（消込ワークベンチ UI 含む・残 ⑥ write-off/#543 のみ）・定期請求 実行ルート #526 完了・Clear↔Invoice ライブ化・MFA 設計 #524/#525)
+Last updated: 2026-07-09 (`Nene2\Demo` consumer 化 #610・#608 根治 — 下記 Active 参照。以下は 07-05 時点: ドキュメント整合パス #572 — README / CLAUDE.md の状況表を本ファイルへ同期。**コード状況の変化なし**。直近の実態: S2＝install.php の toolkit consumer 化 #562 **✅ 完了・PR #569 merged**（NENE2 v1.6.0 release 済・`^1.6` 依存へ）・型B マルチテナント Phase 1(#552)/Phase 2 完了 #556/#558/#560＋掃除 #563・**#505 自動消込 増分⑧まで merged**（消込ワークベンチ UI 含む・残 ⑥ write-off/#543 のみ）・定期請求 実行ルート #526 完了・Clear↔Invoice ライブ化・MFA 設計 #524/#525)
 
 ## Recently merged
 
@@ -63,6 +63,10 @@ Last updated: 2026-07-05 (ドキュメント整合パス #572 — README / CLAUD
 - **Issue #117 / PR #118** — フロント: ConfirmDialog primitive + 取引先の削除 ✅ merged
 - **Issue #119 / PR #120** — フロント: 取引先の編集（/clients/:id/edit）✅ merged
 - **Issue #121** — フロント: 請求書の発行を確認ダイアログ化 ✅ merged
+
+## Active（2026-07-09 セッション）
+
+- **NENE2 `Nene2\Demo` モジュール consumer 化（#610・#608 根治）— this branch `refactor/610-demo-module-consumer`** — nene2 `^1.8.2`→`^1.9`。自前デモの orchestration（旧 `StartDemoHandler`）と sweep 判定（`tools/sweep-demo.php` の TTL/上限）を framework へ委譲し、invoice は4具象のみ実装: `DemoOrgProvisioner`（既存 CreateOrganization 再利用・admin id 確定をここに閉じる）／`DemoOrgReaper`（子テーブル＋line_items 親経由＋recurring スタンプ）／`DemoSessionSeater`（`ni_refresh`/`ni_csrf` slug スコープ cookie・one-shot 仕様＝invoice 製品仕様）／`FileRateLimitStorage`（`var/rate-limits/`・共有ホスティングでプロセス跨ぎに効く fixed window）。**#608 根治 = 作成前ガード**: per-IP throttle 10回/h→429+Retry-After・org 数上限→503 `demo-capacity-exceeded`（用語レジストリ登録済み）。`DEMO_*` は NENE2 ConfigLoader の厳格パース（`getenv` 直読み廃止・`.env.example` 文書化）。実機回帰: 302/cookie/refresh 200・シード・429・503・sweep（あふれ＋TTL＋子テーブル残ゼロ）すべて green。
 
 ## Active（2026-07-01〜04 セッション）
 

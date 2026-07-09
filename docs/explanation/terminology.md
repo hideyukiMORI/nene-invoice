@@ -159,7 +159,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `role-not-assignable` | Role cannot be assigned via user management, e.g. superadmin (422) |
 | `cannot-delete-self` | A user cannot delete their own account (409) |
 | `invalid-credentials` | Login failed — wrong email or password |
-| `too-many-requests` | Too many failed login attempts from the source IP (429; login throttling) |
+| `too-many-requests` | Request rate from the source IP exceeded (429; login throttling, demo-start throttling) |
 | `invalid-refresh-token` | Refresh cookie missing/expired/invalid or principal ineligible — silent re-auth fails closed (401; ADR 0014) |
 | `csrf-token-invalid` | Double-submit CSRF check failed on a cookie-authenticated endpoint (403; ADR 0014) |
 | `unauthorized` | Missing or invalid bearer token (framework `BearerTokenMiddleware`) |
@@ -178,6 +178,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `payment-link-not-found` | Payment-link id not found in the caller's org (404; operator API) |
 | `bank-transaction-not-found` | Bank transaction id not found in the caller's org (404; #505) |
 | `invalid-webhook-token` | PAY.JP webhook `X-Payjp-Webhook-Token` missing or incorrect (401; public webhook) |
+| `demo-capacity-exceeded` | Disposable-demo organization ceiling reached — demo start refused before provisioning (503; NENE2 `Nene2\Demo`, #608) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace NeneInvoice\Demo;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use Nene2\Database\DatabaseQueryExecutorInterface;
+use Nene2\Demo\DemoDataSeederInterface;
+use Nene2\Demo\DemoTemplateKeyInterface;
 use Nene2\Http\ClockInterface;
 
 /**
@@ -30,7 +33,7 @@ use Nene2\Http\ClockInterface;
  * (`handoff-invoice-demo-seed-2026-07-07.md`). Each template carries exactly one
  * payer-name-mismatch reconciliation case (`payer_aliases` + `bank_transactions`).
  */
-final class DemoDataSeeder
+final class DemoDataSeeder implements DemoDataSeederInterface
 {
     private int $orgId;
     private string $now;
@@ -42,8 +45,12 @@ final class DemoDataSeeder
     ) {
     }
 
-    public function seed(int $orgId, DemoTemplate $template): void
+    public function seed(int $orgId, DemoTemplateKeyInterface $template): void
     {
+        if (!$template instanceof DemoTemplate) {
+            throw new InvalidArgumentException('Seeder received a template key that is not a NeneInvoice DemoTemplate.');
+        }
+
         $this->orgId = $orgId;
         $nowDt = $this->clock->now();
         $this->now = $nowDt->format('Y-m-d H:i:s');
