@@ -2,12 +2,33 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 [![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php)](https://www.php.net/)
+[![Backend CI](https://github.com/hideyukiMORI/nene-invoice/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/hideyukiMORI/nene-invoice/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/hideyukiMORI/nene-invoice/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/hideyukiMORI/nene-invoice/actions/workflows/frontend-ci.yml)
 
 **Quote, invoice, and payment tracking for Japan SMB — self-hosted on your stack.**
 
 NeNe Invoice is an open-source billing platform built on [NENE2](https://github.com/hideyukiMORI/NENE2). Create quotes, issue **qualified invoice** (適格請求書) PDFs, track payments, and run everything on shared hosting or Docker — without a monthly SaaS fee.
 
-> **Example operator:** an office manager on shared hosting issues invoice-compliant PDFs from admin UI instead of Excel + manual PDF — see [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md#primary-persona).
+**Primary audience:** Japanese B2B SMBs that quote before invoicing (wholesalers, contractors, agencies) and the tax-advisory offices that support them.
+**Example operator:** an office manager on shared hosting issues invoice-compliant PDFs from admin UI instead of Excel + manual PDF — see [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md#primary-persona).
+
+> **Separate product** — billing logic lives here and only here; it is never embedded in a sibling product. Boundaries are binding:
+>
+> | Sibling | Boundary |
+> | --- | --- |
+> | NeNe Records / Corpus / Concierge | Optional HTTP link only — no shared DB, no embedded billing ([ADR 0002](./docs/adr/0002-separate-from-sibling-products.md)) |
+> | NeNe Clear | Downstream consumer (reconciliation / dunning) via `/api/*` service tokens — Invoice is the billing SSOT ([ADR 0009](./docs/adr/0009-accept-nene-clear-upstream-contract.md)) |
+> | NeNe Suite | Managed-cloud delivery — federation via `organizations.external_id` ([ADR 0016](./docs/adr/0016-conform-to-suite-federation-contract.md)) |
+
+## Live demo
+
+Try it now — no sign-up. Each link provisions a **brand-new disposable organization** seeded with industry data and drops you straight into its dashboard. Demo organizations are deleted automatically after a few hours; hit the link again for a fresh one.
+
+| Industry template | URL |
+| --- | --- |
+| 建設・工務店 (construction) | <https://invoice.ayane.co.jp/demo/kensetsu> |
+| ビルメンテ・清掃 (building maintenance, recurring billing) | <https://invoice.ayane.co.jp/demo/bldmainte> |
+| 制作・コンサル (production / consulting, withholding tax) | <https://invoice.ayane.co.jp/demo/seisaku> |
 
 ## Goals
 
@@ -19,9 +40,17 @@ NeNe Invoice is an open-source billing platform built on [NENE2](https://github.
 - **AI-readable** — OpenAPI contract, MCP for ops, explicit Clean Architecture
 - **Bilingual, not multilingual** — Japanese + English admin UI for operators (incl. non-Japanese running businesses in Japan); other locales are a deliberate non-goal ([ADR 0005](./docs/adr/0005-bilingual-ja-en-scope.md))
 
-## Quick Start
+## Non-goals
 
-**Status:** Phases 0–3 shipped — multi-tenant billing API, React admin UI, qualified-invoice PDF, payments, audit logging, bilingual (ja/en) UI with a language switcher, and list search / filter / sort are all in place, plus the Tier A shared-hosting install path and two security-assessment rounds. Phase 4 (sibling-product integration) is in progress: CSV export, service-token management, optional hosted card payments (PAY.JP — pay links, webhook, gateway settings; [ADR 0013](./docs/adr/0013-launch-payment-gateway-payjp.md)), and silent re-authentication via an httpOnly refresh cookie ([ADR 0014](./docs/adr/0014-auth-session-persistence-refresh-cookie.md)) have landed. **Recurring billing** (定期請求 — schedule → auto-draft generation, `/recurring`) is running end-to-end including its execution route (#526), and **bank-transfer auto-reconciliation** (`/bank-reconciliation`, #505 — CSV import → payer-alias matching → confirm-to-record) is in (only fee write-off / over-payment split remains, tax-advisor gated). **Type-B multi-tenancy** (superadmin org provisioning + a consultant SPA served under `/{slug}/`) and the **NENE2 install-toolkit consumer** refactor (#562, now on NENE2 `^1.6`) have landed. A contract-verified upstream link to **NeNe Clear** (reconciliation / dunning) is live; **MFA (standalone TOTP)** is designed ([`docs/design/mfa-totp.md`](./docs/design/mfa-totp.md), conforming to Suite ADR 0025). Managed-cloud delivery is provided by **NeNe Suite** (free-trial / VPS-migration / paid-guarantee). See [`docs/handover/2026-07-03-typeb-phase2-complete-and-cleanup.md`](./docs/handover/2026-07-03-typeb-phase2-complete-and-cleanup.md).
+- Not full accounting / general ledger
+- Not payroll or expense reimbursement
+- Not inventory or POS
+- Not a WordPress plugin
+- Not embedded inside NeNe Records
+
+Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/product-vision.md#non-goals)
+
+## Quick Start
 
 ### Option A — Docker (recommended, fastest)
 
@@ -38,7 +67,7 @@ docker compose up -d --build
 curl http://localhost:8510/health        # {"status":"ok","checks":{"database":"ok"}}
 ```
 
-The admin SPA is baked into the image. After editing frontend code run `docker compose build app`, or use the host Vite dev server (Option B) for HMR. Ports are fixed to the `85**` range in `compose.yaml`; override via `NENE_INVOICE_*` in `.env`.
+The admin SPA is baked into the image. After editing frontend code run `docker compose build app`, or use the host Vite dev server (Option B) for HMR.
 
 ### Option B — Host (PHP + Node on your machine)
 
@@ -49,7 +78,7 @@ composer install
 composer check                          # PHPUnit + PHPStan 8 + php-cs-fixer
 php tools/seed-dev.php                   # dev users + sample data (admin@example.com / password123)
 
-# Backend API (front controller as router; local ports fixed to the 85** range)
+# Backend API (front controller as router)
 php -S localhost:8510 -t public_html public_html/index.php
 curl http://localhost:8510/health       # {"status":"ok","checks":{"database":"ok"}}
 
@@ -59,7 +88,21 @@ cd frontend && npm install && npm run dev
 
 > SQLite dev needs an absolute `DB_NAME` path in `.env` (the built-in server's cwd is the docroot). For mail, run host Mailpit: `docker compose up -d mailpit`.
 
-Shared-hosting / production install uses the web installer (`public_html/install.php`) and a release ZIP — see [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md).
+### Option C — Shared hosting (Tier A production)
+
+Download a release ZIP, upload it, and run the web installer (`public_html/install.php`) — no CLI or root required. Full walkthrough: [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md).
+
+## Local ports
+
+NeNe Invoice owns the **`85**` port lane**; sibling products use their own lanes so several apps can run locally side by side (full policy: [`CLAUDE.md`](./CLAUDE.md)). Override via `NENE_INVOICE_*` in `.env`.
+
+| Service | Port |
+| --- | --- |
+| API + admin UI (Docker app or PHP dev server) | 8510 |
+| Vite dev server (frontend HMR) | 5185 |
+| MySQL (Docker) | 3585 |
+| phpMyAdmin (Docker) | 8581 |
+| Mailpit — SMTP / Web UI | 1585 / 8585 |
 
 ## Architecture
 
@@ -72,7 +115,7 @@ NeNe Clear ──HTTP /api/*─────────────┘  │   (r
 ```
 
 Managed-cloud delivery is orchestrated by **NeNe Suite** (federation IdP + installer); Invoice's
-path into it is the `organizations.external_id` federation link (#492) and the federation epic.
+path into it is the `organizations.external_id` federation link and the federation epic.
 
 - **Backend**: PHP 8.4, NENE2, Handler → UseCase → Repository (org-scoped, ADR 0006)
 - **Money**: integer cents everywhere — no floats; tax rounded once per rate (ADR 0004)
@@ -80,7 +123,7 @@ path into it is the `organizations.external_id` federation link (#492) and the f
 - **Audit**: every mutating operation recorded with before/after snapshots (ADR 0008)
 - **Deploy**: Tier A (shared-hosting installer + release ZIP) shipped; Tier B (Docker) per ADR 0003
 
-## Current Status
+## Status
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -89,19 +132,20 @@ path into it is the `organizations.external_id` federation link (#492) and the f
 | 2 | Admin UI (React) + qualified-invoice PDF + dashboard + audit log + ja/en | ✅ |
 | 3 | Tier A shared hosting — installer, release ZIP, operator guide | ✅ |
 | Sec | Security assessment rounds 1–2 (findings fixed) | ✅ |
-| 4 | Ecosystem integration — CSV export ✅, service tokens ✅, PAY.JP ✅, refresh-cookie auth ✅, **recurring billing** (`/recurring`, execution route #526) ✅, **bank-transfer auto-reconciliation** (`/bank-reconciliation`, #505) ✅ (only fee write-off / over-payment split #543 gated), **type-B multi-tenancy** (superadmin provisioning + per-slug consultant SPA) ✅, **NENE2 install-toolkit consumer** (#562, NENE2 ^1.6) ✅, live **NeNe Clear** link ✅, **MFA design** ✅ (impl pending) | 🔄 In progress |
+| 4 | Ecosystem integration — financial cluster, payment gateway, managed cloud | 🔄 In progress |
 
-See [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
+Key shipped features (Phase 4 highlights):
 
-## Non-goals
+- **Recurring billing** (`/recurring`) — schedules generate draft invoices automatically, via cron (Tier B) or inline on admin requests (Tier A)
+- **Bank-transfer auto-reconciliation** (`/bank-reconciliation`) — CSV import → payer-alias matching → confirm-to-record
+- **Type-B multi-tenancy** — superadmin org provisioning + per-client SPA served under `/{slug}/`
+- **Hosted card payments** (PAY.JP, SAQ-A) and silent re-authentication via httpOnly refresh cookie
+- **Live NeNe Clear link** (contract-verified) and the public **disposable-org demo** (`/demo/{template}`)
+- CSV export, service-token management, list search / filter / sort, ja/en language switcher
 
-- Not full accounting / general ledger
-- Not payroll or expense reimbursement
-- Not inventory or POS
-- Not a WordPress plugin
-- Not embedded inside NeNe Records
+In progress / designed: MFA (TOTP), fee write-off & over-payment split (tax-advisor gated), bulk issuing, industry template refinements. Details and sequencing: [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
 
-Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/product-vision.md#non-goals)
+> **Sync rule:** any PR that updates `docs/todo/current.md` also updates this Status section (repo practice since #572).
 
 ## Documentation
 
@@ -113,6 +157,7 @@ Full list: [`docs/explanation/product-vision.md#non-goals`](./docs/explanation/p
 | **Domain model** | [`docs/explanation/domain-model.md`](./docs/explanation/domain-model.md) |
 | **Glossary** | [`docs/explanation/glossary.md`](./docs/explanation/glossary.md) |
 | **Terminology registry** | [`docs/explanation/terminology.md`](./docs/explanation/terminology.md) |
+| **Operator guide (Tier A, ja)** | [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md) |
 | **Start here (agents)** | [`AGENTS.md`](./AGENTS.md) |
 | **Workflow** | [`docs/workflow.md`](./docs/workflow.md) |
 
