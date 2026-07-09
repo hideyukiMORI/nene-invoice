@@ -9,7 +9,6 @@ use Nene2\Config\AppConfig;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Demo\CountingDemoCapacityGuard;
 use Nene2\Demo\DemoCapacityGuardInterface;
-use Nene2\Demo\DemoRouteRegistrar;
 use Nene2\Demo\DisposableOrgReaperInterface;
 use Nene2\Demo\StartDisposableDemoHandler;
 use Nene2\DependencyInjection\ContainerBuilder;
@@ -33,6 +32,15 @@ use Psr\Container\ContainerInterface;
  */
 final readonly class DemoServiceProvider implements ServiceProviderInterface
 {
+    /**
+     * Demo starts allowed per client network per window (#612). Deliberately
+     * generous: the one-shot cookie design makes legitimate re-clicks normal,
+     * and "one IP" is really one office NAT / carrier NAT — while runaway
+     * abuse stays bounded by the instance-wide org ceiling plus hourly sweep.
+     */
+    public const int THROTTLE_LIMIT = 30;
+    public const int THROTTLE_WINDOW_SECONDS = 3600;
+
     public function register(ContainerBuilder $builder): void
     {
         $builder
@@ -113,6 +121,8 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                         },
                         config: $config->demo,
                         throttleStorage: $storage,
+                        throttleLimit: self::THROTTLE_LIMIT,
+                        throttleWindowSeconds: self::THROTTLE_WINDOW_SECONDS,
                         clock: self::clock($c),
                     );
                 },
@@ -158,15 +168,32 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
+                DemoBrowserErrorPage::class,
+                static function (ContainerInterface $c): DemoBrowserErrorPage {
+                    $psr17 = $c->get(Psr17Factory::class);
+
+                    if (!$psr17 instanceof Psr17Factory) {
+                        throw new LogicException('PSR-17 factory service is invalid.');
+                    }
+
+                    return new DemoBrowserErrorPage($psr17, self::THROTTLE_LIMIT, self::THROTTLE_WINDOW_SECONDS);
+                },
+            )
+            ->set(
                 DemoRouteRegistrar::class,
                 static function (ContainerInterface $c): DemoRouteRegistrar {
                     $handler = $c->get(StartDisposableDemoHandler::class);
+                    $errorPage = $c->get(DemoBrowserErrorPage::class);
 
                     if (!$handler instanceof StartDisposableDemoHandler) {
                         throw new LogicException('Start disposable demo handler service is invalid.');
                     }
 
-                    return new DemoRouteRegistrar($handler);
+                    if (!$errorPage instanceof DemoBrowserErrorPage) {
+                        throw new LogicException('Demo browser error page service is invalid.');
+                    }
+
+                    return new DemoRouteRegistrar($handler, $errorPage);
                 },
             );
     }

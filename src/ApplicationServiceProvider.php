@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace NeneInvoice;
 
 use LogicException;
-use Nene2\Demo\DemoRouteRegistrar;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use NeneInvoice\Audit\AuditRouteRegistrar;
@@ -20,6 +19,7 @@ use NeneInvoice\Company\CompanyRouteRegistrar;
 use NeneInvoice\Company\CompanySettingsNotFoundExceptionHandler;
 use NeneInvoice\Company\InvalidRegistrationNumberExceptionHandler as CompanyInvalidRegistrationNumberExceptionHandler;
 use NeneInvoice\Dashboard\DashboardRouteRegistrar;
+use NeneInvoice\Demo\DemoRouteRegistrar;
 use NeneInvoice\GatewaySettings\GatewaySettingsRouteRegistrar;
 use NeneInvoice\Invoice\InvoiceEmailExceptionHandler;
 use NeneInvoice\Invoice\InvoiceNotFoundExceptionHandler;
