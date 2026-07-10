@@ -61,20 +61,26 @@ describe('useCreateUser', () => {
 })
 
 describe('useUpdateUser', () => {
-  it('patches and returns the updated user', async () => {
+  it('patches with the required role and status and returns the updated user', async () => {
+    let sentBody: unknown
     server.use(
-      http.patch('/admin/users/:id', () => HttpResponse.json({ ...USER_DTO, role: 'admin' })),
+      http.patch('/admin/users/:id', async ({ request }) => {
+        sentBody = await request.json()
+        return HttpResponse.json({ ...USER_DTO, role: 'admin' })
+      }),
     )
 
     const { result } = renderHookWithProviders(() => useUpdateUser())
     act(() => {
-      result.current.mutate({ id: toUserId(7), role: 'admin' })
+      result.current.mutate({ id: toUserId(7), role: 'admin', status: 'active' })
     })
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
     expect(result.current.data?.role).toBe('admin')
+    // The API requires both fields (UpdateUserRequest, #622).
+    expect(sentBody).toMatchObject({ role: 'admin', status: 'active' })
   })
 })
 

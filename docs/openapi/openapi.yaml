@@ -2545,6 +2545,10 @@ components:
           type: string
         role:
           $ref: '#/components/schemas/Role'
+        status:
+          type: string
+          enum: [active, invited]
+      required: [role, status]
     Organization:
       type: object
       properties:
