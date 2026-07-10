@@ -9,6 +9,8 @@ use Nene2\Config\AppConfig;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Demo\CountingDemoCapacityGuard;
 use Nene2\Demo\DemoCapacityGuardInterface;
+use Nene2\Demo\DemoErrorPageRendererInterface;
+use Nene2\Demo\DemoRouteRegistrar;
 use Nene2\Demo\DisposableOrgReaperInterface;
 use Nene2\Demo\StartDisposableDemoHandler;
 use Nene2\DependencyInjection\ContainerBuilder;
@@ -24,11 +26,13 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
 /**
- * Wires the disposable-demo domain as a `Nene2\Demo` consumer (#610): the
- * product concretes (provisioner / seeder / seater / reaper), the creation-time
- * capacity guard that closed #608, and the framework handler + route registrar.
- * All dependencies (org creation/deletion, refresh-token issuance, the shared
- * query executor) are reused from existing providers — no auth code is added.
+ * Wires the disposable-demo domain as a `Nene2\Demo` consumer (#610, fully
+ * framework-shaped again since NENE2 v1.10.0 / #616): the product concretes
+ * (provisioner / seeder / seater / reaper / branded error-page renderer), the
+ * creation-time capacity guard that closed #608, and the framework handler +
+ * route registrar. All dependencies (org creation/deletion, refresh-token
+ * issuance, the shared query executor) are reused from existing providers —
+ * no auth code is added.
  */
 final readonly class DemoServiceProvider implements ServiceProviderInterface
 {
@@ -37,6 +41,9 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
      * generous: the one-shot cookie design makes legitimate re-clicks normal,
      * and "one IP" is really one office NAT / carrier NAT — while runaway
      * abuse stays bounded by the instance-wide org ceiling plus hourly sweep.
+     * NENE2 v1.10.0 adopted 30/h as the framework default, but the values stay
+     * explicit here because the error page's copy renders them — passing the
+     * same constants keeps the guard and the visitor-facing text in lockstep.
      */
     public const int THROTTLE_LIMIT = 30;
     public const int THROTTLE_WINDOW_SECONDS = 3600;
@@ -135,6 +142,7 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                     $seeder = $c->get(DemoDataSeeder::class);
                     $seater = $c->get(DemoSessionSeater::class);
                     $problemDetails = $c->get(ProblemDetailsResponseFactory::class);
+                    $errorPageRenderer = $c->get(DemoErrorPageRendererInterface::class);
 
                     if (!$guard instanceof DemoCapacityGuardInterface) {
                         throw new LogicException('Demo capacity guard service is invalid.');
@@ -156,6 +164,10 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                         throw new LogicException('Problem details response factory service is invalid.');
                     }
 
+                    if (!$errorPageRenderer instanceof DemoErrorPageRendererInterface) {
+                        throw new LogicException('Demo error page renderer service is invalid.');
+                    }
+
                     return new StartDisposableDemoHandler(
                         self::appConfig($c)->demo,
                         $guard,
@@ -164,12 +176,13 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                         $seater,
                         $problemDetails,
                         DemoTemplate::class,
+                        $errorPageRenderer,
                     );
                 },
             )
             ->set(
-                DemoBrowserErrorPage::class,
-                static function (ContainerInterface $c): DemoBrowserErrorPage {
+                DemoErrorPageRendererInterface::class,
+                static function (ContainerInterface $c): DemoErrorPageRendererInterface {
                     $psr17 = $c->get(Psr17Factory::class);
 
                     if (!$psr17 instanceof Psr17Factory) {
@@ -183,17 +196,12 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                 DemoRouteRegistrar::class,
                 static function (ContainerInterface $c): DemoRouteRegistrar {
                     $handler = $c->get(StartDisposableDemoHandler::class);
-                    $errorPage = $c->get(DemoBrowserErrorPage::class);
 
                     if (!$handler instanceof StartDisposableDemoHandler) {
                         throw new LogicException('Start disposable demo handler service is invalid.');
                     }
 
-                    if (!$errorPage instanceof DemoBrowserErrorPage) {
-                        throw new LogicException('Demo browser error page service is invalid.');
-                    }
-
-                    return new DemoRouteRegistrar($handler, $errorPage);
+                    return new DemoRouteRegistrar($handler);
                 },
             );
     }

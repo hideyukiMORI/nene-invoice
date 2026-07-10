@@ -4,31 +4,40 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Demo;
 
+use Nene2\Demo\DemoErrorPageRendererInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Content negotiation for the public demo start route (#612, redesign #614).
+ * NeNe Invoice's branded browser error page for the public demo start route
+ * (#612, redesign #614, framework renderer since NENE2 v1.10.0 / #616).
  *
  * `GET /demo/{template}` is the one route real people open in a browser (the
  * tax-accountant referral link), so its errors must not surface as raw RFC 9457
- * JSON — a non-technical visitor reads that as "the site is broken". When the
- * client prefers `text/html`, the Problem Details error is replaced with a
- * self-contained error card following the redesign reference theme (deep-green
- * business SaaS, `NeNe Invoice (24).zip` demo-error mock): brand header strip,
- * reason callout, and — for 429 — a live countdown that enables the retry
- * button when the window resets. API-shaped clients (no `text/html` in Accept)
- * keep the JSON untouched, as does the success redirect.
+ * JSON — a non-technical visitor reads that as "the site is broken". The
+ * content negotiation itself lives in the framework
+ * ({@see \Nene2\Demo\StartDisposableDemoHandler}, NENE2 ADR 0018): when the
+ * client prefers `text/html`, the handler replaces the Problem Details error
+ * with the page produced by this renderer, and itself enforces the transport
+ * invariants (original status, `Retry-After` copy, `X-Robots-Tag: noindex`).
+ * API-shaped clients and the success redirect stay byte-identical.
+ *
+ * This implementation replaces the framework's unbranded
+ * {@see \Nene2\Demo\MinimalDemoErrorPageRenderer} with a self-contained error
+ * card following the redesign reference theme (deep-green business SaaS,
+ * `NeNe Invoice (24).zip` demo-error mock): brand header strip, reason
+ * callout, and — for 429 — a live countdown that enables the retry button
+ * when the window resets.
  *
  * The page carries its own `Content-Security-Policy` allowing its inline
  * style/script ({@see \Nene2\Middleware\SecurityHeadersMiddleware} only adds
  * the app-wide `default-src 'self'` when the header is absent, which would
- * block both). That is safe here precisely because the page never echoes
- * request input (e.g. the template segment) — all copy is fixed text plus
- * numbers computed server-side.
+ * block both). Unlike the framework default's CSP, `script-src` must be
+ * allowed here because of the countdown script. That is safe precisely
+ * because the renderer contract forbids echoing request input — all copy is
+ * fixed text plus numbers computed server-side.
  */
-final readonly class DemoBrowserErrorPage
+final readonly class DemoBrowserErrorPage implements DemoErrorPageRendererInterface
 {
     private const string SELF_HOST_URL = 'https://github.com/hideyukiMORI/nene-invoice';
 
@@ -45,34 +54,19 @@ final readonly class DemoBrowserErrorPage
     ) {
     }
 
-    public function apply(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function render(int $statusCode, ?int $retryAfterSeconds): ResponseInterface
     {
-        if ($response->getStatusCode() < 400) {
-            return $response;
-        }
-
-        if (!str_contains($request->getHeaderLine('Accept'), 'text/html')) {
-            return $response;
-        }
-
-        $status = $response->getStatusCode();
-        $retryAfter = (int) $response->getHeaderLine('Retry-After');
-
-        $page = $this->responseFactory->createResponse($status)
+        $page = $this->responseFactory->createResponse($statusCode)
             ->withHeader('Content-Type', 'text/html; charset=utf-8')
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader('Content-Security-Policy', self::CSP);
 
-        if ($response->hasHeader('Retry-After')) {
-            $page = $page->withHeader('Retry-After', $response->getHeaderLine('Retry-After'));
-        }
-
-        $page->getBody()->write($this->render($status, $retryAfter));
+        $page->getBody()->write($this->html($statusCode, $retryAfterSeconds ?? 0));
 
         return $page;
     }
 
-    private function render(int $status, int $retryAfter): string
+    private function html(int $status, int $retryAfter): string
     {
         [$title, $lead] = $this->copyFor($status);
 

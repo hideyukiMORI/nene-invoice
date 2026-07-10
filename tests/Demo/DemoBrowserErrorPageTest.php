@@ -4,7 +4,20 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Demo;
 
+use Nene2\Demo\DemoCapacityExceededException;
+use Nene2\Demo\DemoCapacityGuardInterface;
+use Nene2\Demo\DemoConfig;
+use Nene2\Demo\DemoDataSeederInterface;
+use Nene2\Demo\DemoSessionSeaterInterface;
+use Nene2\Demo\DemoTemplateKeyInterface;
+use Nene2\Demo\DemoThrottledException;
+use Nene2\Demo\DisposableOrgProvisionerInterface;
+use Nene2\Demo\ProvisionedDemoOrg;
+use Nene2\Demo\StartDisposableDemoHandler;
+use Nene2\Error\ProblemDetailsResponseFactory;
+use Nene2\Routing\Router;
 use NeneInvoice\Demo\DemoBrowserErrorPage;
+use NeneInvoice\Demo\DemoTemplate;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -15,6 +28,12 @@ use Psr\Http\Message\ServerRequestInterface;
  * errors must render as a designed explanation page (redesign reference theme,
  * #614) with its own CSP — not raw Problem Details JSON — while API-shaped
  * clients and the success redirect stay byte-identical (#612).
+ *
+ * Since NENE2 v1.10.0 (#616) the negotiation lives in the framework's
+ * {@see StartDisposableDemoHandler} and the invoice page is a
+ * {@see \Nene2\Demo\DemoErrorPageRendererInterface} implementation, so this
+ * test locks the outward behavior at both levels: the renderer's page itself
+ * and the negotiated route surface with the renderer wired in.
  */
 final class DemoBrowserErrorPageTest extends TestCase
 {
@@ -27,32 +46,12 @@ final class DemoBrowserErrorPageTest extends TestCase
         $this->page = new DemoBrowserErrorPage($this->psr17, 30, 3600);
     }
 
-    private function request(string $accept): ServerRequestInterface
+    public function test_429_page_renders_limit_countdown_and_disabled_retry(): void
     {
-        $request = $this->psr17->createServerRequest('GET', '/demo/kensetsu');
-
-        return $accept === '' ? $request : $request->withHeader('Accept', $accept);
-    }
-
-    private function problem(int $status): ResponseInterface
-    {
-        $response = $this->psr17->createResponse($status)
-            ->withHeader('Content-Type', 'application/problem+json');
-        $response->getBody()->write('{"type":"problem"}');
-
-        return $response;
-    }
-
-    public function test_browser_429_renders_limit_countdown_and_disabled_retry(): void
-    {
-        $result = $this->page->apply(
-            $this->request('text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'),
-            $this->problem(429)->withHeader('Retry-After', '3519'),
-        );
+        $result = $this->page->render(429, 3519);
 
         self::assertSame(429, $result->getStatusCode());
         self::assertStringStartsWith('text/html', $result->getHeaderLine('Content-Type'));
-        self::assertSame('3519', $result->getHeaderLine('Retry-After'), 'Retry-After must survive negotiation');
         self::assertSame('no-store', $result->getHeaderLine('Cache-Control'));
 
         $body = (string) $result->getBody();
@@ -61,21 +60,21 @@ final class DemoBrowserErrorPageTest extends TestCase
         self::assertStringContainsString('var remain = 3519;', $body, 'countdown script seeds from Retry-After');
         self::assertStringContainsString('id="retry" type="button" disabled', $body, 'retry stays disabled until the window resets');
         self::assertStringContainsString('429 · DEMO_RATE_LIMIT', $body);
+        self::assertStringContainsString('<meta name="robots" content="noindex">', $body);
     }
 
     public function test_html_page_carries_its_own_csp_allowing_inline_assets(): void
     {
-        $result = $this->page->apply($this->request('text/html'), $this->problem(429)->withHeader('Retry-After', '60'));
+        $csp = $this->page->render(429, 60)->getHeaderLine('Content-Security-Policy');
 
-        $csp = $result->getHeaderLine('Content-Security-Policy');
         self::assertStringContainsString("style-src 'unsafe-inline'", $csp);
-        self::assertStringContainsString("script-src 'unsafe-inline'", $csp);
+        self::assertStringContainsString("script-src 'unsafe-inline'", $csp, 'framework default CSP has no script-src — the countdown needs it');
         self::assertStringContainsString("default-src 'none'", $csp, 'app-wide default-src self would block the inline design');
     }
 
-    public function test_browser_503_renders_capacity_page_with_enabled_retry_and_no_countdown(): void
+    public function test_503_page_renders_capacity_copy_with_enabled_retry_and_no_countdown(): void
     {
-        $result = $this->page->apply($this->request('text/html'), $this->problem(503));
+        $result = $this->page->render(503, null);
 
         $body = (string) $result->getBody();
         self::assertSame(503, $result->getStatusCode());
@@ -85,31 +84,151 @@ final class DemoBrowserErrorPageTest extends TestCase
         self::assertStringContainsString('503 · DEMO_CAPACITY', $body);
     }
 
-    public function test_browser_404_renders_unavailable_page_without_echoing_input(): void
+    public function test_404_page_renders_unavailable_copy_without_retry(): void
     {
-        $result = $this->page->apply($this->request('text/html'), $this->problem(404));
+        $result = $this->page->render(404, null);
 
         $body = (string) $result->getBody();
         self::assertSame(404, $result->getStatusCode());
         self::assertStringContainsString('ご利用いただけません', $body);
-        self::assertStringNotContainsString('kensetsu', $body, 'fixed copy only — never echo the template segment');
         self::assertStringNotContainsString('id="retry"', $body, 'reloading a dead link would just 404 again');
         self::assertStringContainsString('404 · DEMO_NOT_FOUND', $body);
     }
 
+    public function test_browser_429_on_the_route_gets_the_page_with_transport_invariants(): void
+    {
+        $handler = $this->handler(throttledForSeconds: 3519);
+        $result = $handler->handle($this->request('text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'));
+
+        self::assertSame(429, $result->getStatusCode());
+        self::assertStringStartsWith('text/html', $result->getHeaderLine('Content-Type'));
+        self::assertSame('3519', $result->getHeaderLine('Retry-After'), 'Retry-After must survive negotiation');
+        self::assertSame('noindex', $result->getHeaderLine('X-Robots-Tag'));
+
+        $body = (string) $result->getBody();
+        self::assertStringContainsString('デモのご利用が集中しています', $body);
+        self::assertStringContainsString('var remain = 3519;', $body, 'countdown seeds from the 429 Retry-After');
+        self::assertStringNotContainsString('kensetsu', $body, 'fixed copy only — never echo the template segment');
+    }
+
+    public function test_browser_503_on_the_route_gets_the_capacity_page(): void
+    {
+        $handler = $this->handler(capacityExceeded: true);
+        $result = $handler->handle($this->request('text/html'));
+
+        self::assertSame(503, $result->getStatusCode());
+        self::assertStringStartsWith('text/html', $result->getHeaderLine('Content-Type'));
+        self::assertStringContainsString('満席', (string) $result->getBody());
+    }
+
+    public function test_browser_404_on_the_route_gets_the_unavailable_page(): void
+    {
+        $handler = $this->handler(throttledForSeconds: 3519);
+        $result = $handler->handle($this->request('text/html', template: 'no-such-template'));
+
+        self::assertSame(404, $result->getStatusCode());
+        self::assertStringStartsWith('text/html', $result->getHeaderLine('Content-Type'));
+        self::assertStringContainsString('ご利用いただけません', (string) $result->getBody());
+        self::assertStringNotContainsString('no-such-template', (string) $result->getBody(), 'never echo the template segment');
+    }
+
     public function test_api_clients_keep_problem_details_untouched(): void
     {
-        $problem = $this->problem(429)->withHeader('Retry-After', '60');
+        $baseline = $this->handler(throttledForSeconds: 60)->handle($this->request(''));
 
-        self::assertSame($problem, $this->page->apply($this->request('application/json'), $problem));
-        self::assertSame($problem, $this->page->apply($this->request('*/*'), $problem));
-        self::assertSame($problem, $this->page->apply($this->request(''), $problem));
+        foreach (['application/json', '*/*', ''] as $accept) {
+            $result = $this->handler(throttledForSeconds: 60)->handle($this->request($accept));
+
+            self::assertSame(429, $result->getStatusCode());
+            self::assertStringStartsWith('application/problem+json', $result->getHeaderLine('Content-Type'));
+            self::assertSame('60', $result->getHeaderLine('Retry-After'));
+            self::assertSame((string) $baseline->getBody(), (string) $result->getBody(), 'API error body must stay byte-identical');
+            self::assertSame($baseline->getHeaders(), $result->getHeaders(), 'API error headers must stay identical');
+        }
     }
 
     public function test_success_redirect_is_untouched_even_for_browsers(): void
     {
         $redirect = $this->psr17->createResponse(302)->withHeader('Location', '/demo-abc/dashboard');
+        $result = $this->handler(redirect: $redirect)->handle($this->request('text/html'));
 
-        self::assertSame($redirect, $this->page->apply($this->request('text/html'), $redirect));
+        self::assertSame($redirect, $result, 'the seater redirect must pass through negotiation unchanged');
+    }
+
+    private function request(string $accept, string $template = 'kensetsu'): ServerRequestInterface
+    {
+        $request = $this->psr17->createServerRequest('GET', '/demo/' . $template)
+            ->withAttribute(Router::PARAMETERS_ATTRIBUTE, [StartDisposableDemoHandler::TEMPLATE_PARAMETER => $template]);
+
+        return $accept === '' ? $request : $request->withHeader('Accept', $accept);
+    }
+
+    /**
+     * The real framework handler with the invoice renderer wired in — guard
+     * outcomes are stubbed so each error path can be forced deterministically.
+     */
+    private function handler(
+        int $throttledForSeconds = 0,
+        bool $capacityExceeded = false,
+        ?ResponseInterface $redirect = null,
+    ): StartDisposableDemoHandler {
+        $psr17 = $this->psr17;
+
+        $guard = new class ($throttledForSeconds, $capacityExceeded) implements DemoCapacityGuardInterface {
+            public function __construct(
+                private readonly int $throttledForSeconds,
+                private readonly bool $capacityExceeded,
+            ) {
+            }
+
+            public function assertHasCapacity(): void
+            {
+                if ($this->capacityExceeded) {
+                    throw new DemoCapacityExceededException('The demo capacity is exhausted.');
+                }
+            }
+
+            public function assertNotThrottled(ServerRequestInterface $request): void
+            {
+                if ($this->throttledForSeconds > 0) {
+                    throw new DemoThrottledException('Too many demo starts.', $this->throttledForSeconds);
+                }
+            }
+        };
+
+        $provisioner = new class () implements DisposableOrgProvisionerInterface {
+            public function provision(string $slug, string $template): ProvisionedDemoOrg
+            {
+                return new ProvisionedDemoOrg(1, $slug, 1);
+            }
+        };
+
+        $seeder = new class () implements DemoDataSeederInterface {
+            public function seed(int $orgId, DemoTemplateKeyInterface $template): void
+            {
+            }
+        };
+
+        $seater = new class ($redirect ?? $psr17->createResponse(302)->withHeader('Location', '/demo-abc/dashboard')) implements DemoSessionSeaterInterface {
+            public function __construct(private readonly ResponseInterface $redirect)
+            {
+            }
+
+            public function seatAndRedirect(ServerRequestInterface $request, ProvisionedDemoOrg $org): ResponseInterface
+            {
+                return $this->redirect;
+            }
+        };
+
+        return new StartDisposableDemoHandler(
+            new DemoConfig(demoMode: true),
+            $guard,
+            $provisioner,
+            $seeder,
+            $seater,
+            new ProblemDetailsResponseFactory($psr17, $psr17),
+            DemoTemplate::class,
+            $this->page,
+        );
     }
 }
