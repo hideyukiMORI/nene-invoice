@@ -30,6 +30,30 @@ Try it now — no sign-up. Each link provisions a **brand-new disposable organiz
 | ビルメンテ・清掃 (building maintenance, recurring billing) | <https://invoice.ayane.co.jp/demo/bldmainte> |
 | 制作・コンサル (production / consulting, withholding tax) | <https://invoice.ayane.co.jp/demo/seisaku> |
 
+### Screenshots
+
+From a disposable demo organization. Japanese UI shown — the admin UI is bilingual (ja/en, one-click switch).
+
+**Dashboard — unpaid and overdue invoices at a glance, with monthly trends and receivables aging.**
+
+![Dashboard with unpaid/overdue summary cards, monthly issuance charts, and receivables aging](./docs/images/demo-01-dashboard.png)
+
+**Invoice list — every invoice tracked by status, from draft to issued, paid, and overdue.**
+
+![Invoice list with status badges, amounts, and due dates](./docs/images/demo-02-invoices.png)
+
+**Invoice detail — qualified invoice (適格請求書) fields, PDF download, and payment recording in one place.**
+
+![Invoice detail with qualified-invoice badge, PDF download, and payment recording](./docs/images/demo-03-invoice-detail.png)
+
+**Quote detail — an approved quote converts to an invoice in one click, registration number included.**
+
+![Quote detail with convert-to-invoice button and issuer registration number](./docs/images/demo-04-quote.png)
+
+**Recurring billing — schedules generate draft invoices automatically every month.**
+
+![Recurring billing list with monthly schedules and next run dates](./docs/images/demo-05-recurring.png)
+
 ## Goals
 
 - **Japan invoice compliance** — registration number, tax rates, qualified invoice PDF fields
