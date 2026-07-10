@@ -49,6 +49,21 @@ final class PathTenancyRoutingTest extends TestCase
 
             return $response;
         });
+
+        // Public token routes, registered exactly as the app registers them
+        // (InvoiceDownloadTokenRouteRegistrar / PaymentLinkRouteRegistrar).
+        $this->router->get('/invoices/download/{token}', function (): ResponseInterface {
+            $response = $this->psr17->createResponse(200);
+            $response->getBody()->write('pdf-handler-reached');
+
+            return $response;
+        });
+        $this->router->get('/pay/{token}', function (): ResponseInterface {
+            $response = $this->psr17->createResponse(200);
+            $response->getBody()->write('pay-handler-reached');
+
+            return $response;
+        });
     }
 
     private function dispatch(string $path): ResponseInterface
@@ -104,5 +119,30 @@ final class PathTenancyRoutingTest extends TestCase
 
         self::assertSame(404, $response->getStatusCode());
         self::assertStringContainsString('organization-not-found', (string) $response->getBody());
+    }
+
+    /**
+     * Public PDF share link (#620): the slug-less `/invoices/download/{token}`
+     * URL that "リンクをコピー" hands to customers must bypass org resolution
+     * (the handler resolves the org from the token record) and reach the route.
+     */
+    public function test_public_pdf_download_link_bypasses_org_resolution(): void
+    {
+        $response = $this->dispatch('/invoices/download/tok_abc123');
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('pdf-handler-reached', (string) $response->getBody());
+    }
+
+    /**
+     * Public hosted-payment page (#620): the slug-less `/pay/{token}` URL must
+     * not be mistaken for a `pay` tenant slug in path mode.
+     */
+    public function test_public_pay_link_bypasses_org_resolution(): void
+    {
+        $response = $this->dispatch('/pay/tok_abc123');
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('pay-handler-reached', (string) $response->getBody());
     }
 }

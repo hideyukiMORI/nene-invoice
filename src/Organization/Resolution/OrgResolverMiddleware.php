@@ -37,6 +37,10 @@ final readonly class OrgResolverMiddleware implements MiddlewareInterface
         '/auth/',
         '/api/',
         '/invoices/download/',
+        // Public hosted-payment routes (`/pay/{token}`, `/pay/{token}/charge`)
+        // are token-authenticated and resolve their organization from the
+        // payment-link record itself, so there is no slug in the URL (#620).
+        '/pay/',
         '/admin/organizations',
         // Disposable-demo provisioning (`GET /demo/{template}`) is org-less: it
         // *creates* a new tenant, so there is no slug in the URL to resolve. Gated

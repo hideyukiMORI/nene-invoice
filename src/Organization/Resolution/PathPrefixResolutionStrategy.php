@@ -25,6 +25,9 @@ final readonly class PathPrefixResolutionStrategy implements PathScopedResolutio
         '/auth/',
         '/api/',
         '/invoices/download/',
+        // Public hosted-payment routes carry no slug; the handler resolves the
+        // organization from the payment-link token (#620).
+        '/pay/',
         '/admin/organizations',
     ];
 

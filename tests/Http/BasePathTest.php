@@ -69,6 +69,15 @@ final class BasePathTest extends TestCase
         yield 'root is spa' => ['/', false];
         yield 'dashboard is spa' => ['/dashboard', false];
         yield 'admin-ish but not boundary' => ['/administration', false];
+        // Public share/payment links must reach the router, never the SPA shell (#620).
+        yield 'public pdf download' => ['/invoices/download/tok_abc123', true];
+        yield 'public pay page' => ['/pay/tok_abc123', true];
+        // ...but the SPA's own /invoices screens keep getting the shell (#620).
+        yield 'invoices list is spa' => ['/invoices', false];
+        yield 'invoice create is spa' => ['/invoices/new', false];
+        yield 'invoice detail is spa' => ['/invoices/818', false];
+        yield 'invoices-ish but not boundary' => ['/invoicesdownload', false];
+        yield 'pay-ish but not boundary' => ['/payments', false];
     }
 
     #[DataProvider('apiPaths')]
