@@ -2094,6 +2094,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationFailed'
+        '502':
+          $ref: '#/components/responses/EmailDeliveryFailed'
   /admin/invoices/{id}/payments:
     parameters:
       - $ref: '#/components/parameters/IdPathParam'
@@ -2409,6 +2411,12 @@ components:
             $ref: '#/components/schemas/ProblemDetails'
     ValidationFailed:
       description: Request body or field validation error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    EmailDeliveryFailed:
+      description: The mail transport (SMTP) failed; the email was not delivered.
       content:
         application/problem+json:
           schema:

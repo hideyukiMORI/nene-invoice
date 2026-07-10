@@ -179,6 +179,7 @@ Base URL: `https://nene-invoice.dev/problems/`. Slug is **kebab-case**.
 | `bank-transaction-not-found` | Bank transaction id not found in the caller's org (404; #505) |
 | `invalid-webhook-token` | PAY.JP webhook `X-Payjp-Webhook-Token` missing or incorrect (401; public webhook) |
 | `demo-capacity-exceeded` | Disposable-demo organization ceiling reached — demo start refused before provisioning (503; NENE2 `Nene2\Demo`, #608) |
+| `email-delivery-failed` | Mail transport (SMTP) failed while sending an email — the request was valid, the upstream hop failed (502; #621) |
 
 Add new slugs here before using them. Validation `errors[].field` uses
 snake_case paths (e.g. `body.registration_number`); `errors[].code` is
