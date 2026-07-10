@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Mailer;
 
+use LogicException;
 use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
+use Nene2\Error\ProblemDetailsResponseFactory;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -30,6 +32,19 @@ final readonly class MailerServiceProvider implements ServiceProviderInterface
                 $encryption = (string) (getenv('MAIL_ENCRYPTION') ?: '');
 
                 return new SmtpMailer($host, $port, $fromAddr, $fromName, $username, $password, $encryption);
+            },
+        );
+
+        $builder->set(
+            MailerExceptionHandler::class,
+            static function (ContainerInterface $c): MailerExceptionHandler {
+                $problemDetails = $c->get(ProblemDetailsResponseFactory::class);
+
+                if (!$problemDetails instanceof ProblemDetailsResponseFactory) {
+                    throw new LogicException('ProblemDetailsResponseFactory service is invalid.');
+                }
+
+                return new MailerExceptionHandler($problemDetails);
             },
         );
     }

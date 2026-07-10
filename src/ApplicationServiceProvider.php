@@ -30,6 +30,7 @@ use NeneInvoice\InvoiceDownloadToken\InvoiceDownloadTokenRouteRegistrar;
 use NeneInvoice\Item\ItemNotFoundExceptionHandler;
 use NeneInvoice\Item\ItemRouteRegistrar;
 use NeneInvoice\LineItem\LineItemRouteRegistrar;
+use NeneInvoice\Mailer\MailerExceptionHandler;
 use NeneInvoice\Organization\OrganizationNotFoundExceptionHandler;
 use NeneInvoice\Organization\OrganizationRouteRegistrar;
 use NeneInvoice\Organization\OrganizationSlugConflictExceptionHandler;
@@ -222,6 +223,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                     $invoiceValidation = $container->get(InvoiceValidationExceptionHandler::class);
                     $qualifiedIncomplete = $container->get(QualifiedInvoiceIncompleteExceptionHandler::class);
                     $invoiceEmail = $container->get(InvoiceEmailExceptionHandler::class);
+                    $mailerFailure = $container->get(MailerExceptionHandler::class);
                     $paymentValidation = $container->get(PaymentValidationExceptionHandler::class);
                     $paymentExceeds = $container->get(PaymentExceedsOutstandingExceptionHandler::class);
                     $paymentNotFound = $container->get(PaymentNotFoundExceptionHandler::class);
@@ -313,6 +315,10 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Invoice email exception handler service is invalid.');
                     }
 
+                    if (!$mailerFailure instanceof MailerExceptionHandler) {
+                        throw new LogicException('Mailer exception handler service is invalid.');
+                    }
+
                     if (!$paymentValidation instanceof PaymentValidationExceptionHandler) {
                         throw new LogicException('Payment validation exception handler service is invalid.');
                     }
@@ -337,7 +343,7 @@ final readonly class ApplicationServiceProvider implements ServiceProviderInterf
                         throw new LogicException('Service token not-found exception handler service is invalid.');
                     }
 
-                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $recurringInvoiceNotFound, $recurringInvoiceValidation, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $paymentValidation, $paymentExceeds, $paymentNotFound, $bankTransactionNotFound, $bankTransactionValidation, $serviceTokenNotFound];
+                    return [$orgNotFound, $orgSlugConflict, $userNotFound, $userEmailConflict, $roleNotAssignable, $cannotDeleteSelf, $clientNotFound, $invalidRegNumber, $itemNotFound, $templateNotFound, $companySettingsNotFound, $companyInvalidRegNumber, $quoteNotFound, $quoteValidation, $quoteInvalidTransition, $recurringInvoiceNotFound, $recurringInvoiceValidation, $invoiceNotFound, $invoiceValidation, $qualifiedIncomplete, $invoiceEmail, $mailerFailure, $paymentValidation, $paymentExceeds, $paymentNotFound, $bankTransactionNotFound, $bankTransactionValidation, $serviceTokenNotFound];
                 },
             );
     }
