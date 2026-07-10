@@ -220,7 +220,11 @@ export interface paths {
         delete: operations["deleteOrganization"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update organization
+         * @description Partial update (superadmin). Only the provided fields change; is_active suspends (false) or reactivates (true) the tenant. slug and external_id are immutable here.
+         */
+        patch: operations["updateOrganization"];
         trace?: never;
     };
     "/admin/users": {
@@ -1323,7 +1327,9 @@ export interface components {
             /** Format: email */
             email?: string;
             password?: string;
-            role?: components["schemas"]["Role"];
+            role: components["schemas"]["Role"];
+            /** @enum {string} */
+            status: "active" | "invited";
         };
         Organization: {
             id: number;
@@ -1353,6 +1359,14 @@ export interface components {
              * @description Plaintext password for the tenant's initial admin (hashed server-side). Requires admin_email.
              */
             admin_password?: string;
+        };
+        /** @description Partial update of a tenant (superadmin only). Every field is optional; at least one must be present (else 422). is_active suspends (false) or reactivates (true) the tenant. slug and external_id are immutable here. */
+        UpdateOrganizationRequest: {
+            name?: string;
+            /** @description Billing plan slug. */
+            plan?: string;
+            /** @description false suspends the tenant (its users are locked out); true reactivates it. */
+            is_active?: boolean;
         };
         DownloadTokenResponse: {
             /** @description Public PDF download URL (relative path, no auth required). */
@@ -2022,6 +2036,15 @@ export interface components {
                 "application/problem+json": components["schemas"]["ProblemDetails"];
             };
         };
+        /** @description The mail transport (SMTP) failed; the email was not delivered. */
+        EmailDeliveryFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
         /** @description Registration number is not `T` followed by 13 digits. */
         InvalidRegistrationNumber: {
             headers: {
@@ -2424,6 +2447,42 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["InsufficientCapability"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    updateOrganization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Resource identifier. */
+                id: components["parameters"]["IdPathParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "is_active": false
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOrganizationRequest"];
+            };
+        };
+        responses: {
+            /** @description Organization updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Organization"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["InsufficientCapability"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     listUsers: {
@@ -4295,6 +4354,7 @@ export interface operations {
             403: components["responses"]["InsufficientCapability"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["ValidationFailed"];
+            502: components["responses"]["EmailDeliveryFailed"];
         };
     };
     listPayments: {

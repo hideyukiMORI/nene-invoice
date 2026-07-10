@@ -32,10 +32,10 @@ export function useUpdateUser(): UseMutationResult<User, AppError, UpdateUserInp
 
   return useMutation<User, AppError, UpdateUserInput>({
     mutationFn: async (input) => {
-      const body: Record<string, unknown> = {}
+      // role and status are required by the API (UpdateUserRequest, #622).
+      const body: Record<string, unknown> = { role: input.role, status: input.status }
       if (input.email !== undefined) body['email'] = input.email
       if (input.password !== undefined && input.password !== '') body['password'] = input.password
-      if (input.role !== undefined) body['role'] = input.role
       const dto = await apiClient.patch<UserDto>(`/admin/users/${String(input.id)}`, body)
       return toUser(dto)
     },

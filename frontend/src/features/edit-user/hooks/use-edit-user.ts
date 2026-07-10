@@ -58,12 +58,18 @@ export function useEditUser(userId: UserId): EditUserState {
   }
 
   const submit = form.handleSubmit((values) => {
+    if (user === undefined) {
+      return
+    }
     update.mutate(
       {
         id: userId,
         email: values.email,
         password: values.password !== '' ? values.password : undefined,
         role: values.role,
+        // The API requires status; the edit screen has no status control, so
+        // resend the current value unchanged (#622).
+        status: user.status,
       },
       {
         onSuccess: () => {

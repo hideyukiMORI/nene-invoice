@@ -27,9 +27,12 @@ export interface CreateUserInput {
   role: UserRole
 }
 
+// PATCH /admin/users/{id} requires role and status (UpdateUserRequest); the
+// edit form resends the user's current status so it stays unchanged (#622).
 export interface UpdateUserInput {
   id: UserId
   email?: string
   password?: string
-  role?: UserRole
+  role: UserRole
+  status: UserStatus
 }
