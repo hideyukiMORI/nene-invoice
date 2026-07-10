@@ -24,8 +24,16 @@ final class BasePath
     /** Request attribute under which the front controller stores the detected base. */
     public const REQUEST_ATTRIBUTE = 'app.base_path';
 
-    /** API path prefixes that must reach the router, never the SPA shell. */
-    private const API_PREFIXES = ['/auth', '/admin', '/api', '/health', '/machine', '/examples', '/demo'];
+    /**
+     * API path prefixes that must reach the router, never the SPA shell.
+     *
+     * `/invoices/download` (public PDF share link) and `/pay` (hosted card
+     * payment page) are public GET routes handled by the router (#620). The
+     * download prefix is deliberately deep: bare `/invoices` would swallow the
+     * SPA screens `/invoices`, `/invoices/new`, `/invoices/:id`
+     * (frontend/src/app/router.tsx).
+     */
+    private const API_PREFIXES = ['/auth', '/admin', '/api', '/health', '/machine', '/examples', '/demo', '/invoices/download', '/pay'];
 
     /**
      * @param array<string, mixed> $serverParams PSR-7 server params (or `$_SERVER`)
