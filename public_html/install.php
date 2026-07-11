@@ -532,8 +532,8 @@ if (!$payloadPresent) {
                 if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
                     $fieldErrors['email'] = '有効なメールアドレスを入力してください。';
                 }
-                if (strlen($adminPassword) < 8) {
-                    $fieldErrors['pw'] = 'パスワードは 8 文字以上にしてください。';
+                if (strlen($adminPassword) < 12) {
+                    $fieldErrors['pw'] = 'パスワードは 12 文字以上にしてください。';
                 }
             }
 
@@ -1187,14 +1187,14 @@ code{font-family:var(--font-num)}
           </div>
 
           <div class="field">
-            <label class="label" for="admin_password">管理者パスワード<span class="opt">（8 文字以上）</span><span class="req">*</span>
-              <span class="tip" tabindex="0">?<span class="tip-body">8 文字以上。パスワードは安全にハッシュ化して保存され、元の文字列は保持されません。<b>DB 接続パスワードとは別物</b>です。</span></span>
+            <label class="label" for="admin_password">管理者パスワード<span class="opt">（12 文字以上）</span><span class="req">*</span>
+              <span class="tip" tabindex="0">?<span class="tip-body">12 文字以上。パスワードは安全にハッシュ化して保存され、元の文字列は保持されません。<b>DB 接続パスワードとは別物</b>です。</span></span>
             </label>
             <div class="pw-wrap">
-              <input id="admin_password" name="admin_password" class="input<?= isset($fieldErrors['pw']) ? ' is-error' : '' ?>" type="password" placeholder="8 文字以上" required minlength="8">
+              <input id="admin_password" name="admin_password" class="input<?= isset($fieldErrors['pw']) ? ' is-error' : '' ?>" type="password" placeholder="12 文字以上" required minlength="12">
               <button type="button" class="pw-eye" data-pw="admin_password" tabindex="-1" aria-label="パスワード表示切替"><?= ico('eye') ?></button>
             </div>
-            <?php if (isset($fieldErrors['pw'])): ?><p class="err-text"><?= ico('warn') ?><?= h($fieldErrors['pw']) ?></p><?php else: ?><p class="hint">8 文字以上。<b>ハッシュ化して安全に保管</b>されます（元の文字列は保存されません）。</p><?php endif; ?>
+            <?php if (isset($fieldErrors['pw'])): ?><p class="err-text"><?= ico('warn') ?><?= h($fieldErrors['pw']) ?></p><?php else: ?><p class="hint">12 文字以上。<b>ハッシュ化して安全に保管</b>されます（元の文字列は保存されません）。</p><?php endif; ?>
           </div>
 
           <div class="btn-row">
