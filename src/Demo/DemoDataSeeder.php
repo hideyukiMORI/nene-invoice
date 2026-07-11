@@ -406,6 +406,10 @@ final class DemoDataSeeder implements DemoDataSeederInterface
             $this->insertClient('株式会社世田谷ハウジング', 'セタガヤハウジング', '世田谷', 'setagaya@housing.example', '東京都世田谷区太子堂1-1-1', null),
         ];
 
+        // 見積（見積→請求の動線）
+        $this->insertQuote($clients[7], $this->quoteNumber(1), 'accepted', $this->dayPrevMonth(15), $this->endThisMonth(), '定期清掃契約（年間）', [['定期清掃契約（年間）', 1, 396000, 1000]]);
+        $this->insertQuote($clients[3], $this->quoteNumber(2), 'sent', $this->dayThisMonth(3), $this->endNextMonth(), '消防設備点検・貯水槽清掃 一式', [['消防設備点検', 1, 90000, 1000], ['貯水槽清掃', 1, 60000, 1000]]);
+
         // recurring_invoices（毎月定額・次回=翌月01）
         $recurring = [
             [0, '日常清掃', 80000], [1, '定期清掃＋設備点検', 60000], [2, '日常清掃', 50000], [3, '定期清掃', 40000],
@@ -450,6 +454,7 @@ final class DemoDataSeeder implements DemoDataSeederInterface
         $this->insertBankTransaction($this->dayThisMonth(5), 66000, 'シンジユクセンタ-ビル', '振込入金（要消込）', 'unmatched', $c2Invoice);
 
         $this->upsertSequence('invoice', $this->year(), $seq);
+        $this->upsertSequence('quote', $this->year(), 2);
     }
 
     private function seedSeisaku(): void
@@ -475,6 +480,10 @@ final class DemoDataSeeder implements DemoDataSeederInterface
         $c3 = $this->insertClient('株式会社北斗製作所', 'ホクトセイサクショ', '総務', 'soumu@hokuto.example', '東京都大田区蒲田1-1-1', 'T2223334445556');
         $c4 = $this->insertClient('一般社団法人みらい教育協会', 'ミライキョウイクキョウカイ', '事務局', 'jimu@mirai-edu.example', '東京都文京区本郷3-3-3', null);
         $c5 = $this->insertClient('株式会社エヌ・ワークス', 'エヌワークス', '代表', 'ceo@n-works.example', '東京都中野区中野4-4-4', null);
+
+        // 見積（見積→請求の動線）
+        $this->insertQuote($c2, $this->quoteNumber(1), 'accepted', $this->dayPrevMonth(15), $this->endThisMonth(), 'コーポレートサイト リニューアル一式', [['ディレクション費', 1, 200000, 1000], ['制作費', 1, 800000, 1000]]);
+        $this->insertQuote($c4, $this->quoteNumber(2), 'sent', $this->dayThisMonth(3), $this->endNextMonth(), '採用動画 撮影・編集一式', [['撮影費', 1, 300000, 1000], ['追加修正費', 1, 50000, 1000]]);
 
         // 源泉徴収あり：各請求は [報酬 @10%] ＋ [源泉徴収 マイナス行 @0%]。合計＝請求額（＝振込額）。
         // 番号は draft を除いて発番。[clientId, status, issued, due, 摘要, 報酬, 源泉, paidAmount|null]
@@ -514,5 +523,6 @@ final class DemoDataSeeder implements DemoDataSeederInterface
         $this->insertBankTransaction($this->dayThisMonth(3), 349265, 'ブル-ムテツク(ド', '振込入金（遅延・要消込）', 'unmatched', $inv5);
 
         $this->upsertSequence('invoice', $this->year(), $seq);
+        $this->upsertSequence('quote', $this->year(), 2);
     }
 }
