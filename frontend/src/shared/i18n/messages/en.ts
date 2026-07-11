@@ -527,8 +527,10 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.detail.emailSentBody': 'The invoice was sent to {{client}}.',
   'admin.invoices.detail.emailSentBodyNoClient': 'The invoice was sent.',
   'admin.invoices.detail.emailErrorTitle': "Couldn't send the email",
-  'admin.invoices.detail.emailErrorBody':
+  'admin.invoices.detail.emailErrorBodyClientMissing':
     "The client's email address may be missing or malformed. Please check the address and try again.",
+  'admin.invoices.detail.emailErrorBodyDeliveryFailed':
+    'We couldn\'t reach the mail server, so the email wasn\'t sent. Try "Resend" again in a moment; if it keeps failing, contact your system administrator.',
   'admin.invoices.detail.emailRetry': 'Resend',
   'admin.invoices.detail.emailCheckClient': 'Check client',
   'admin.invoices.detail.generateLink': 'Generate client link',

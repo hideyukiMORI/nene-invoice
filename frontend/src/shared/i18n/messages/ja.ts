@@ -536,8 +536,10 @@ export const jaMessages = {
   'admin.invoices.detail.emailSentBody': '{{client}} 宛に請求書を送付しました。',
   'admin.invoices.detail.emailSentBodyNoClient': '請求書を送付しました。',
   'admin.invoices.detail.emailErrorTitle': 'メールを送信できませんでした',
-  'admin.invoices.detail.emailErrorBody':
+  'admin.invoices.detail.emailErrorBodyClientMissing':
     '取引先のメールアドレスが未登録、または形式に誤りがある可能性があります。アドレスをご確認のうえ、再度お試しください。',
+  'admin.invoices.detail.emailErrorBodyDeliveryFailed':
+    'メールサーバーに接続できず、送信に失敗しました。しばらくしてから「再送信する」をお試しください。解消しない場合はシステム管理者にご連絡ください。',
   'admin.invoices.detail.emailRetry': '再送信する',
   'admin.invoices.detail.emailCheckClient': '取引先を確認',
   'admin.invoices.detail.generateLink': 'クライアント向けリンクを生成',

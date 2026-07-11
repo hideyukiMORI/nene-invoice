@@ -115,6 +115,15 @@ function InvoiceDocument({
   const outstanding = invoice.outstanding_cents
   const showOutstanding = outstanding !== null && outstanding > 0
 
+  // 422 `client-email-missing` (src/Invoice/InvoiceEmailException) is the
+  // client's data problem; anything else — most commonly 502
+  // `email-delivery-failed` (mail transport/SMTP failure, #621) — is not, so
+  // it gets its own copy instead of the client-address message (#650).
+  const emailErrorBodyKey =
+    sendEmail.error?.slug === 'client-email-missing'
+      ? 'admin.invoices.detail.emailErrorBodyClientMissing'
+      : 'admin.invoices.detail.emailErrorBodyDeliveryFailed'
+
   return (
     <Stack gap="md">
       <Link to="/invoices" className="nav-back">
@@ -189,7 +198,7 @@ function InvoiceDocument({
         <div className="ar-banner">
           <ActionError
             title={t('admin.invoices.detail.emailErrorTitle')}
-            description={t('admin.invoices.detail.emailErrorBody')}
+            description={t(emailErrorBodyKey)}
             actions={[
               {
                 label: t('admin.invoices.detail.emailRetry'),
