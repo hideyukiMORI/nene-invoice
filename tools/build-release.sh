@@ -7,8 +7,9 @@
 #
 # 設計（nene-records の build-release.sh に倣う・#576 / _work/reports/2026-07-05/）:
 # - 作業ツリーの vendor は一切触らない。配布物は staging で Packagist の
-#   hideyukimori/nene2 ^1.6 を解決した実体 vendor を組む（path repo / symlink を
-#   持ち込まない）。symlink が 1 本でも残ったら fail。
+#   hideyukimori/nene2（制約は composer.json の require から読む・#629）を解決した
+#   実体 vendor を組む（path repo / symlink を持ち込まない）。symlink が 1 本でも
+#   残ったら fail。
 # - 同梱は allowlist 方式（dev 専用物・秘密・巨大物の混入を構造的に防ぐ）。
 # - 出荷物は WordPress 式にトップレベル展開。SHA-256 サイドカーを併せて出力。
 
@@ -19,10 +20,19 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
 STAGE="$DIST/build/stage"
 ZIP_NAME="nene-invoice-${VERSION}.zip"
-# demo ブランチ（feat/demo-disposable-org）は GuardedJwtSecretResolver 等を含む
-# nene2 ^1.8.2 系を要求する（composer.json の require と一致させる）。旧値 ^1.6 は
-# 当該クラスを含まず、fail-close JWT が壊れるため是正（#576 追補）。
-NENE2_CONSTRAINT="^1.8.2"
+# NENE2 の解決制約は composer.json の require から読む（#629）。ハードコードは
+# ^1.6（fail-close JWT 破壊）→ ^1.8.2（v1.10 系のブランドエラーページ欠落）と
+# 2 度 composer.json とドリフトした前科があるため禁止 — repo とリリース ZIP が
+# 常に同じ制約で NENE2 を解決することを構造的に保証する。
+NENE2_CONSTRAINT="$(php -r '
+$json = json_decode((string) file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR);
+echo $json["require"]["hideyukimori/nene2"] ?? "";
+' "$ROOT/composer.json")"
+
+if [ -z "$NENE2_CONSTRAINT" ]; then
+    echo "✗ composer.json の require に hideyukimori/nene2 がありません。" >&2
+    exit 1
+fi
 
 echo "=== NeNe Invoice Tier A release build: $VERSION ==="
 
@@ -63,7 +73,7 @@ mkdir -p "$STAGE/var"
 touch "$STAGE/var/.gitkeep"
 
 # ----------------------------------------
-# 3. Packagist ^1.6 の本番 vendor（path repo / symlink を持ち込まない）
+# 3. Packagist の本番 vendor（制約は composer.json 由来・path repo / symlink を持ち込まない）
 # ----------------------------------------
 echo "→ composer: resolve hideyukimori/nene2 ${NENE2_CONSTRAINT} from Packagist..."
 php -r '
