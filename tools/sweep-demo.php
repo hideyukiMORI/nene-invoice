@@ -22,10 +22,17 @@ use Nene2\Demo\DemoOrgRecord;
 use Nene2\Demo\DisposableDemoSweeper;
 use Nene2\Demo\DisposableOrgReaperInterface;
 use Nene2\Http\ClockInterface;
+use NeneInvoice\Demo\DemoServiceProvider;
 use NeneInvoice\Http\RuntimeContainerFactory;
 use NeneInvoice\Support\SqlLike;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+
+// cron / CLI 専用。Web 経由（誤配置・誤ルーティング）で叩かれる経路を閉じる（#640・他3製品と同形）。
+if (PHP_SAPI !== 'cli') {
+    fwrite(STDERR, 'This script must be run from the command line.' . PHP_EOL);
+    exit(1);
+}
 
 $root = dirname(__DIR__);
 $container = (new RuntimeContainerFactory($root))->create();
@@ -56,8 +63,8 @@ foreach (glob($root . '/var/recurring-runs/org-*.txt') ?: [] as $marker) {
 }
 
 // デモ throttle の窓ファイル（FileRateLimitStorage・var/rate-limits/*.json）も IP の数だけ
-// 溜まる。窓はどれだけ長くても数時間なので、丸2日触られていないファイルは安全に消せる。
-$staleBefore = $clock->now()->getTimestamp() - (2 * 86400);
+// 溜まる。窓が完全に失効したもの（window×2 より古い）は安全に消せる（他3製品と同閾値・#640）。
+$staleBefore = $clock->now()->getTimestamp() - (DemoServiceProvider::THROTTLE_WINDOW_SECONDS * 2);
 foreach (glob($root . '/var/rate-limits/*.json') ?: [] as $window) {
     $mtime = @filemtime($window);
     if ($mtime !== false && $mtime < $staleBefore) {
