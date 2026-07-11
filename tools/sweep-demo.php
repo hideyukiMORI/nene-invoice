@@ -23,6 +23,7 @@ use Nene2\Demo\DisposableDemoSweeper;
 use Nene2\Demo\DisposableOrgReaperInterface;
 use Nene2\Http\ClockInterface;
 use NeneInvoice\Http\RuntimeContainerFactory;
+use NeneInvoice\Support\SqlLike;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -64,9 +65,11 @@ foreach (glob($root . '/var/rate-limits/*.json') ?: [] as $window) {
     }
 }
 
+// ESCAPE 明示＋prefix のワイルドカードエスケープ（clear #277 還流・#636）。
+// エスケープ文字は invoice 業務クエリと同じ SqlLike の '!'（#396）。
 $rows = $query->fetchAll(
-    'SELECT id, created_at FROM organizations WHERE slug LIKE ?',
-    [$demo->slugPrefix . '%'],
+    "SELECT id, created_at FROM organizations WHERE slug LIKE ? ESCAPE '!'",
+    [SqlLike::escape($demo->slugPrefix) . '%'],
 );
 
 $records = array_map(
