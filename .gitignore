@@ -13,6 +13,7 @@
 !/public_html/admin/.htaccess
 /storage/
 /build/
-/dist/
+/dist/*
+!/dist/README.md
 /frontend/node_modules/
 /frontend/apps/*/dist/
