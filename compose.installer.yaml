@@ -9,7 +9,7 @@
 #   3) docker compose -p nene-installer -f compose.installer.yaml up -d --build
 #   4) ブラウザで http://localhost:8595/install.php
 #        DB: host=mysql / port=3306 / name=nene_invoice / user=nene_invoice / pass=nene_invoice
-#        管理者: 任意のメール・8文字以上のパスワード・会社名
+#        管理者: 任意のメール・12文字以上のパスワード・会社名
 #   5) 完了後 http://localhost:8595/ でログイン
 #   後始末:
 #     docker compose -p nene-installer -f compose.installer.yaml down -v

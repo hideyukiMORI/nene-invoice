@@ -8,10 +8,13 @@ declare(strict_types=1);
  * 使い方:
  *   1. このファイルにブラウザでアクセス: https://your-domain.example/install.php
  *   2. 画面の指示に従い DB 接続情報・管理者アカウントを入力
- *   3. インストール完了後は install.php を削除またはリネームしてください
+ *   3. インストール完了時に install.php は自動的に自己削除されます
+ *      （FS 権限等で残った場合のみ、手動で削除またはリネームしてください）
  *
  * セキュリティ: インストール完了後に .installed ファイルが生成されます。
  * 既存の .installed が存在する場合はこのスクリプトを拒否します。
+ * 完了時はこのファイル自体を @unlink(__FILE__) で自己削除します（#644・
+ * deal/vault と同形。marker ＋ DB probe の再設置ガードは残る）。
  *
  * 画面デザインは ClaudeDesign 提供のセットアップウィザード（deep-green SaaS
  * テーマ）に準拠。React プロトタイプを自己完結 PHP + バニラ JS に移植している。
@@ -321,6 +324,7 @@ $step        = (int) ($_GET['step'] ?? 0);   // 0=要件チェック(landing) / 
 $errors      = [];                            // バナー用
 $fieldErrors = [];                            // フィールド単位（管理者ステップ）
 $success     = false;
+$selfDeleted = false;                         // 完了時の install.php 自己削除（#644）
 
 // Feature B: アプリ本体（vendor/）が展開されていなければ、要件チェックで
 // ハードに失敗させる代わりに「アプリの取得（アップロード）」ビューを先に出す。
@@ -591,6 +595,12 @@ if (!$payloadPresent) {
                         $reinstallGuard->markInstalled(date('c'));
 
                         $success = true;
+
+                        // 自己削除（#644・deal/vault と同形）: 完了した設置に
+                        // インストーラを残さない。失敗（FS 権限等）した場合は
+                        // 完了画面で従来どおり手動削除を案内する。再設置は
+                        // marker（var/.installed）＋ DB probe が引き続き拒否する。
+                        $selfDeleted = @unlink(__FILE__);
                     } catch (PDOException $e) {
                         $errors[] = 'データベースエラー: ' . $e->getMessage();
                     } catch (\Throwable $e) {
@@ -1208,19 +1218,34 @@ code{font-family:var(--font-num)}
         <div class="done-title">インストール完了</div>
         <div class="done-sub">NeNe Invoice のセットアップが完了しました。管理画面にログインして、最初の請求書を作成しましょう。</div>
 
+        <?php if ($selfDeleted): ?>
+        <div class="sec-warn">
+          <span class="sw-ico"><?= ico('trash') ?></span>
+          <div>
+            <div class="sw-t">install.php は自動的に削除されました</div>
+            <div class="sw-d">このページを離れると再表示できません。もしファイルが残っている場合は、FTP またはファイルマネージャから<b>手動で削除</b>してください。</div>
+          </div>
+        </div>
+        <?php else: ?>
         <div class="sec-warn">
           <span class="sw-ico"><?= ico('trash') ?></span>
           <div>
             <div class="sw-t">セキュリティ: 必ず install.php を削除してください</div>
-            <div class="sw-d">放置すると第三者に再セットアップされる恐れがあります。FTP またはファイルマネージャから <code>install.php</code> を<b>削除（またはリネーム）</b>してください。</div>
+            <div class="sw-d">自動削除に失敗しました（ファイル権限をご確認ください）。放置すると第三者に再セットアップされる恐れがあります。FTP またはファイルマネージャから <code>install.php</code> を<b>削除（またはリネーム）</b>してください。</div>
           </div>
         </div>
+        <?php endif; ?>
 
         <div class="next-h">次のステップ</div>
         <ol class="next-list">
+          <?php if (!$selfDeleted): ?>
           <li><span class="nl-n">1</span><div><b><code>install.php</code> を削除する</b><div class="nl-d">最優先。サーバーからこのファイルを消します。</div></div></li>
           <li><span class="nl-n">2</span><div><b>管理画面にログイン</b><div class="nl-d">先ほど設定した管理者メール・パスワードで。</div></div></li>
           <li><span class="nl-n">3</span><div><b>会社情報・登録番号・銀行口座を設定</b><div class="nl-d">最初の見積書・請求書を作成できます。</div></div></li>
+          <?php else: ?>
+          <li><span class="nl-n">1</span><div><b>管理画面にログイン</b><div class="nl-d">先ほど設定した管理者メール・パスワードで。</div></div></li>
+          <li><span class="nl-n">2</span><div><b>会社情報・登録番号・銀行口座を設定</b><div class="nl-d">最初の見積書・請求書を作成できます。</div></div></li>
+          <?php endif; ?>
         </ol>
 
         <a class="btn btn-primary btn-block btn-lg" href="./"><?= ico('login') ?>管理画面にログイン</a>

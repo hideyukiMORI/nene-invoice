@@ -25,7 +25,10 @@ rm -f "$DEST/.env" "$DEST/var/.installed"
 
 # 共有ホスティング相当: Apache(www-data) が .env と var/.installed を書けるよう、
 # ルートと var/ を書き込み可能にする（install.php の要件チェックが見るのはここ）。
-chmod 777 "$DEST" "$DEST/var"
+# public_html も書き込み可能にする — 共有ホスティングでは PHP がファイル所有者
+# として走り、完了時の install.php 自己削除（#644・@unlink(__FILE__)）ができる。
+# bind mount ではディレクトリ権限が無いと unlink できず、実態と乖離するため。
+chmod 777 "$DEST" "$DEST/var" "$DEST/public_html"
 
 if [ ! -f "$DEST/public_html/admin/index.html" ]; then
   echo "⚠ public_html/admin/index.html が無い。先に 'npm run build --prefix frontend' を実行してください。" >&2
