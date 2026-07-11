@@ -17,7 +17,6 @@ use Nene2\DependencyInjection\ContainerBuilder;
 use Nene2\DependencyInjection\ServiceProviderInterface;
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\ClockInterface;
-use Nene2\Middleware\RateLimitStorageInterface;
 use NeneInvoice\Auth\RefreshTokenIssuer;
 use NeneInvoice\Http\RuntimeServiceProvider;
 use NeneInvoice\Organization\CreateOrganizationUseCaseInterface;
@@ -101,22 +100,20 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                 },
             )
             ->set(
-                RateLimitStorageInterface::class,
-                static fn (ContainerInterface $c): RateLimitStorageInterface => new FileRateLimitStorage(
-                    self::projectRoot($c) . '/var',
-                    self::clock($c),
-                ),
-            )
-            ->set(
                 DemoCapacityGuardInterface::class,
                 static function (ContainerInterface $c): DemoCapacityGuardInterface {
                     $config = self::appConfig($c);
                     $query = self::query($c);
-                    $storage = $c->get(RateLimitStorageInterface::class);
 
-                    if (!$storage instanceof RateLimitStorageInterface) {
-                        throw new LogicException('Rate limit storage service is invalid.');
-                    }
+                    // demo 専用の throttle ストレージは guard 内で inline 生成する
+                    // （deal/vault/clear と同形・#638）。グローバルな
+                    // RateLimitStorageInterface::class をこの demo 用 File 実装で
+                    // 束縛すると、将来 login throttle 等の別ミドルウェアが同 ID を
+                    // 解決したときに var/rate-limits/ を巻き添えにするため。
+                    $storage = new FileRateLimitStorage(
+                        self::projectRoot($c) . '/var',
+                        self::clock($c),
+                    );
 
                     return new CountingDemoCapacityGuard(
                         demoOrgCount: static function () use ($query, $config): int {
