@@ -22,6 +22,7 @@ use NeneInvoice\Auth\RefreshTokenIssuer;
 use NeneInvoice\Http\RuntimeServiceProvider;
 use NeneInvoice\Organization\CreateOrganizationUseCaseInterface;
 use NeneInvoice\Organization\DeleteOrganizationUseCaseInterface;
+use NeneInvoice\Support\SqlLike;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Container\ContainerInterface;
 
@@ -119,9 +120,11 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
 
                     return new CountingDemoCapacityGuard(
                         demoOrgCount: static function () use ($query, $config): int {
+                            // ESCAPE 明示＋prefix のワイルドカードエスケープ（clear #277 還流・#636）。
+                            // エスケープ文字は invoice 業務クエリと同じ SqlLike の '!'（#396）。
                             $row = $query->fetchOne(
-                                'SELECT COUNT(*) AS cnt FROM organizations WHERE slug LIKE ?',
-                                [$config->demo->slugPrefix . '%'],
+                                "SELECT COUNT(*) AS cnt FROM organizations WHERE slug LIKE ? ESCAPE '!'",
+                                [SqlLike::escape($config->demo->slugPrefix) . '%'],
                             );
 
                             return $row !== null ? (int) $row['cnt'] : 0;
