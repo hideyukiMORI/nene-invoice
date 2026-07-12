@@ -49,4 +49,34 @@ final class QuotePdfGeneratorTest extends TestCase
         self::assertStringContainsString('Sun-ExtA', $pdf);
         self::assertStringNotContainsString('DejaVu', $pdf);
     }
+
+    public function test_renders_a_valid_pdf_with_a_base64_logo(): void
+    {
+        // 1x1 transparent PNG stored in company_settings.logo_url (Issue #510).
+        $logo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $quote = new Quote(
+            organizationId: 1,
+            clientId: 1,
+            quoteNumber: 'EST-2026-002',
+            status: QuoteStatus::Sent,
+            subtotalCents: 450000,
+            taxCents: 45000,
+            totalCents: 495000,
+            issuedAt: '2026-05-01',
+            validUntil: '2026-06-30',
+        );
+        $lines = [
+            new LineItem(LineItemParent::Quote, 1, '保守費用（月額）', 3, 50000, 1000),
+        ];
+        $data = new QuotePdfData(
+            new QuoteWithLines($quote, $lines),
+            new CompanySettings(organizationId: 1, legalName: '株式会社ネネ商会', logoUrl: $logo),
+            new Client(organizationId: 1, name: '株式会社サンプル製作所'),
+        );
+
+        $pdf = (new QuotePdfGenerator(new TaxCalculator(), new MpdfFactory()))->generate($data);
+
+        self::assertStringStartsWith('%PDF', $pdf);
+    }
 }

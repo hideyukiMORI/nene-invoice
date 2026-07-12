@@ -8,6 +8,7 @@ use Mpdf\MpdfException;
 use NeneInvoice\LineItem\TaxBreakdownLine;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Pdf\MpdfFactory;
+use NeneInvoice\Pdf\PdfLogo;
 use NeneInvoice\Pdf\PdfStyle;
 use NeneInvoice\Support\Jst;
 use RuntimeException;
@@ -41,6 +42,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 
         $html = $this->buildHtml(
             styleBlock: $style->stylesheet(),
+            logoHtml: PdfLogo::html($company->logoUrl),
             sealHtml: self::sealHtml($data->sealImageBase64),
             invoiceNumber: $invoice->invoiceNumber ?? '（下書き）',
             issuedAt: $invoice->issuedAt ? Jst::date($invoice->issuedAt) : '—',
@@ -76,6 +78,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
      */
     private function buildHtml(
         string $styleBlock,
+        string $logoHtml,
         string $sealHtml,
         string $invoiceNumber,
         string $issuedAt,
@@ -170,6 +173,7 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
     <td width="5%"></td>
     <td class="seller">
       <table>
+        {$logoHtml}
         <tr><td colspan="2"><strong>{$esc($companyName)}</strong></td></tr>
         <tr><td colspan="2" style="font-size:8pt;">{$esc($companyAddress)}</td></tr>
         {$registrationRow}

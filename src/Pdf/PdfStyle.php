@@ -118,6 +118,8 @@ h1 { font-family: {$headingFamily}; font-size: 22pt; text-align: center; margin:
 .seller { width: 40%; vertical-align: top; font-size: 9pt; }
 .seller table { width: 100%; border-collapse: collapse; }
 .seller td { padding: {$sellerPad}; }
+.logo-cell { padding-bottom: 1.5mm; }
+.company-logo { max-width: 45mm; max-height: 16mm; }
 .seal-cell { text-align: right; padding-top: 1mm; }
 .seal { width: 20mm; height: 20mm; }
 .greeting { margin-bottom: {$greetingMb}; }
