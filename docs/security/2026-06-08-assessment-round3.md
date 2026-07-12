@@ -71,7 +71,7 @@
 | 権限昇格 | superadmin は API で割当不可、他組織へのユーザー作成不可。 |
 | 暗号 | bcrypt、CSPRNG トークン、SHA-256 ハッシュ保存、`hash_equals`。 |
 | 公開 DL トークン | 256bit・ハッシュ保存・期限・org スコープ・ファイル名サニタイズ。 |
-| PDF 生成 | 全ユーザー入力エスケープ。`logo_url` は描画せず **SSRF/HTML インジェクションなし**。 |
+| PDF 生成 | 全ユーザー入力エスケープ。`logo_url` は **base64 の `data:` 画像 URI のみ埋め込み**（`PdfLogo`・Issue #510）。http/https・ローカルパス・その他スキームは描画しない＝**サーバ側フェッチなし → SSRF なし**、src は属性エスケープ済で **HTML インジェクションなし**。 |
 | CSV エクスポート | 数式インジェクション無害化済み。 |
 | メール送信 | PHPMailer API 経由でヘッダインジェクション対策済み。 |
 | 危険シンク | `eval`/`exec`/`system`/`unserialize`/動的 `include` **なし**。 |
