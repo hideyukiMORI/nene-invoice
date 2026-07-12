@@ -179,6 +179,70 @@ final class SendInvoiceEmailUseCaseTest extends TestCase
         $this->useCase->execute(7, $invoiceId);
     }
 
+    public function test_preview_returns_recipient_subject_and_body_without_sending(): void
+    {
+        $this->companySettings->save(new CompanySettings(
+            organizationId: 1,
+            legalName: 'テスト商会',
+        ));
+        $clientId  = $this->clients->save(new Client(
+            organizationId: 1,
+            name: '株式会社サンプル',
+            email: 'buyer@example.com',
+        ));
+        $invoiceId = $this->issuedInvoice($clientId);
+
+        $preview = $this->useCase->preview($invoiceId);
+
+        self::assertSame('buyer@example.com', $preview->recipient);
+        self::assertStringContainsString('INV-2026-001', $preview->subject);
+        self::assertStringContainsString('テスト商会', $preview->subject);
+        self::assertStringContainsString('株式会社サンプル', $preview->bodyHtml);
+        self::assertStringContainsString('INV-2026-001', $preview->bodyHtml);
+
+        // Preview must not send a message nor record an audit event.
+        self::assertCount(0, $this->mailer->sent);
+        self::assertCount(0, $this->audit->records);
+    }
+
+    public function test_preview_throws_not_found_for_unknown_invoice(): void
+    {
+        $this->expectException(InvoiceNotFoundException::class);
+        $this->useCase->preview(999);
+    }
+
+    public function test_preview_throws_when_invoice_is_draft(): void
+    {
+        $clientId  = $this->clients->save(new Client(
+            organizationId: 1,
+            name: 'Buyer',
+            email: 'buyer@example.com',
+        ));
+        $invoiceId = $this->invoices->save(new Invoice(
+            organizationId: 1,
+            clientId: $clientId,
+            status: InvoiceStatus::Draft,
+            subtotalCents: 1000,
+            taxCents: 100,
+            totalCents: 1100,
+        ));
+
+        $this->expectException(InvoiceEmailException::class);
+        $this->useCase->preview($invoiceId);
+    }
+
+    public function test_preview_throws_when_client_has_no_email(): void
+    {
+        $clientId  = $this->clients->save(new Client(
+            organizationId: 1,
+            name: 'No Email Corp',
+        ));
+        $invoiceId = $this->issuedInvoice($clientId);
+
+        $this->expectException(InvoiceEmailException::class);
+        $this->useCase->preview($invoiceId);
+    }
+
     public function test_uses_company_name_from_settings(): void
     {
         $this->companySettings->save(new CompanySettings(

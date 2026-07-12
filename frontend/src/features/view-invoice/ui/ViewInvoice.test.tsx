@@ -66,3 +66,52 @@ describe('ViewInvoice — send-email failure banner (#650)', () => {
     expect(alert).not.toHaveTextContent("We couldn't reach the mail server")
   })
 })
+
+describe('ViewInvoice — demo email preview (#626)', () => {
+  it('opens the preview modal (recipient / subject / body + "not sent" notice) on a preview response', async () => {
+    server.use(
+      http.get('/admin/invoices/:id', () => HttpResponse.json(buildInvoiceWithLinesDto())),
+      http.get('/admin/clients/:id', () => HttpResponse.json(buildClientDto())),
+      http.post('/admin/invoices/:id/send-email', () =>
+        HttpResponse.json({
+          preview: true,
+          recipient: 'buyer@example.com',
+          subject: '請求書 INV-2026-001 — テスト商会',
+          body_html: '<p>株式会社サンプル 様</p><p>添付の PDF をご確認ください。</p>',
+        }),
+      ),
+    )
+
+    const user = userEvent.setup()
+    const { findByRole } = renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
+
+    await user.click(await findByRole('button', { name: 'Send by email' }))
+
+    const dialog = await findByRole('dialog')
+    expect(dialog).toHaveTextContent('Email preview')
+    // The "no email was actually sent" demo notice must be shown.
+    expect(dialog).toHaveTextContent('No email was actually sent')
+    expect(dialog).toHaveTextContent('buyer@example.com')
+    expect(dialog).toHaveTextContent('請求書 INV-2026-001 — テスト商会')
+    expect(dialog).toHaveTextContent('株式会社サンプル 様')
+  })
+
+  it('shows the success toast (not the modal) on a 204 real send', async () => {
+    server.use(
+      http.get('/admin/invoices/:id', () => HttpResponse.json(buildInvoiceWithLinesDto())),
+      http.get('/admin/clients/:id', () => HttpResponse.json(buildClientDto())),
+      http.post('/admin/invoices/:id/send-email', () => new HttpResponse(null, { status: 204 })),
+    )
+
+    const user = userEvent.setup()
+    const { findByRole, findByText, queryByRole } = renderWithProviders(
+      <ViewInvoice invoiceId={toInvoiceId(1)} />,
+    )
+
+    await user.click(await findByRole('button', { name: 'Send by email' }))
+
+    // Success toast (role="status") appears; no preview dialog is opened.
+    expect(await findByText('Email sent')).toBeInTheDocument()
+    expect(queryByRole('dialog')).not.toBeInTheDocument()
+  })
+})

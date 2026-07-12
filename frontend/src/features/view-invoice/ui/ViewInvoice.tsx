@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toClientId, useClient } from '@/entities/client'
 import { useCompanySettings } from '@/entities/company-settings'
@@ -8,6 +9,7 @@ import {
   type CreateInvoiceInput,
   type InvoiceId,
   type InvoiceWithLines,
+  type SendInvoiceEmailPreview,
 } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { formatCalendarDate, formatJstDate } from '@/shared/lib/format-date'
@@ -26,6 +28,7 @@ import {
 } from '@/shared/ui'
 import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
 import { useViewInvoice } from '../hooks/use-view-invoice'
+import { EmailPreviewModal } from './EmailPreviewModal'
 
 export interface ViewInvoiceProps {
   invoiceId: InvoiceId
@@ -73,6 +76,8 @@ function InvoiceDocument({
   const isIssued = invoice.status !== 'draft'
   const pdf = useDownloadInvoicePdf(invoiceId, invoice.invoice_number)
   const sendEmail = useSendInvoiceEmail()
+  // Set when a demo org's send returns a preview instead of delivering (#626).
+  const [emailPreview, setEmailPreview] = useState<SendInvoiceEmailPreview | null>(null)
   const link = useGenerateDownloadLink(invoiceId, isIssued)
   const client = useClient(toClientId(invoice.client_id))
   const company = useCompanySettings()
@@ -93,10 +98,16 @@ function InvoiceDocument({
     void navigate('/invoices/new', { state: { duplicate: snapshot } })
   }
 
-  // 型3 success toast on send; reused by the 型2 "resend" recovery action.
+  // On send: a demo org returns a preview (no real delivery) → open the preview
+  // modal (#626); a real org returns null (204) → 型3 success toast. Reused by
+  // the 型2 "resend" recovery action.
   const sendInvoiceEmail = () => {
     sendEmail.mutate(invoiceId, {
-      onSuccess: () => {
+      onSuccess: (result) => {
+        if (result?.preview === true) {
+          setEmailPreview(result)
+          return
+        }
         showToast({
           tone: 'ok',
           title: t('admin.invoices.detail.emailSentTitle'),
@@ -326,6 +337,15 @@ function InvoiceDocument({
           </div>
         </div>
       </div>
+
+      {emailPreview !== null && (
+        <EmailPreviewModal
+          preview={emailPreview}
+          onClose={() => {
+            setEmailPreview(null)
+          }}
+        />
+      )}
     </Stack>
   )
 }

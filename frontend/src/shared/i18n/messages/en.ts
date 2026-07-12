@@ -533,6 +533,12 @@ export const enMessages: MessageCatalog = {
     'We couldn\'t reach the mail server, so the email wasn\'t sent. Try "Resend" again in a moment; if it keeps failing, contact your system administrator.',
   'admin.invoices.detail.emailRetry': 'Resend',
   'admin.invoices.detail.emailCheckClient': 'Check client',
+  'admin.invoices.detail.emailPreviewTitle': 'Email preview',
+  'admin.invoices.detail.emailPreviewNotice':
+    'This is a demo environment. No email was actually sent — below is a preview of what would be sent in production.',
+  'admin.invoices.detail.emailPreviewRecipient': 'To',
+  'admin.invoices.detail.emailPreviewSubject': 'Subject',
+  'admin.invoices.detail.emailPreviewBody': 'Body',
   'admin.invoices.detail.generateLink': 'Generate client link',
   'admin.invoices.detail.generatingLink': 'Generating link…',
   'admin.invoices.detail.generateLinkError': 'Could not generate link.',

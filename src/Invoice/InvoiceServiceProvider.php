@@ -6,6 +6,7 @@ namespace NeneInvoice\Invoice;
 
 use LogicException;
 use Nene2\Audit\AuditRecorderInterface;
+use Nene2\Config\AppConfig;
 use Nene2\Database\DatabaseQueryExecutorInterface;
 use Nene2\Database\DatabaseTransactionManagerInterface;
 use Nene2\DependencyInjection\ContainerBuilder;
@@ -219,10 +220,20 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
             )
             ->set(
                 SendInvoiceEmailHandler::class,
-                static fn (ContainerInterface $c): SendInvoiceEmailHandler => new SendInvoiceEmailHandler(
-                    self::resolve($c, SendInvoiceEmailUseCaseInterface::class),
-                    self::resolve($c, Psr17Factory::class),
-                ),
+                static function (ContainerInterface $c): SendInvoiceEmailHandler {
+                    // Demo orgs (slug prefixed by demo.slugPrefix) never send for
+                    // real — their `.example` clients bounce (#626). Detection is
+                    // gated on demoMode so a plain install always sends: the empty
+                    // prefix disables interception (safe default, breaks nothing).
+                    $demo = self::appConfig($c)->demo;
+                    $demoSlugPrefix = $demo->demoMode ? $demo->slugPrefix : '';
+
+                    return new SendInvoiceEmailHandler(
+                        self::resolve($c, SendInvoiceEmailUseCaseInterface::class),
+                        self::json($c),
+                        $demoSlugPrefix,
+                    );
+                },
             )
             ->set(
                 InvoiceEmailExceptionHandler::class,
@@ -273,6 +284,11 @@ final readonly class InvoiceServiceProvider implements ServiceProviderInterface
     private static function problemDetails(ContainerInterface $c): ProblemDetailsResponseFactory
     {
         return self::resolve($c, ProblemDetailsResponseFactory::class);
+    }
+
+    private static function appConfig(ContainerInterface $c): AppConfig
+    {
+        return self::resolve($c, AppConfig::class);
     }
 
     /** @return RequestScopedHolder<int> */
