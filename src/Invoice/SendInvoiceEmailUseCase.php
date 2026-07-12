@@ -53,11 +53,8 @@ final readonly class SendInvoiceEmailUseCase implements SendInvoiceEmailUseCaseI
 
         $prepared = $this->prepare($invoiceId);
 
-        $company = $this->companySettings->find()
-            ?? new CompanySettings(organizationId: $organizationId, legalName: $this->fromName);
-
         $withLines = new InvoiceWithLines($prepared->invoice, $prepared->lines, 0);
-        $pdfData   = new Pdf\InvoicePdfData($withLines, $company, $prepared->client);
+        $pdfData   = new Pdf\InvoicePdfData($withLines, $prepared->company, $prepared->client);
         $pdfBytes  = $this->pdfGenerator->generate($pdfData);
 
         $this->mailer->send(new MailMessage(
@@ -161,6 +158,7 @@ final readonly class SendInvoiceEmailUseCase implements SendInvoiceEmailUseCaseI
             invoice: $invoice,
             lines: $lines,
             client: $client,
+            company: $company,
             invoiceNumber: $invoiceNumber,
             subject: "請求書 {$invoiceNumber} — {$companyName}",
             bodyHtml: $bodyHtml,

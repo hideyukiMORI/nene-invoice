@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Invoice;
 
 use NeneInvoice\Client\Client;
+use NeneInvoice\Company\CompanySettings;
 use NeneInvoice\LineItem\LineItem;
 
 /**
@@ -24,6 +25,7 @@ final readonly class PreparedInvoiceEmail
         public Invoice $invoice,
         public array $lines,
         public Client $client,
+        public CompanySettings $company,
         public string $invoiceNumber,
         public string $subject,
         public string $bodyHtml,
