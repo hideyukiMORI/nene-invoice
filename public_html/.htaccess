@@ -28,7 +28,15 @@ RewriteRule ^ index.php [QSA,L]
     # CSP tuned to the built SPA: external module script only (script-src 'self',
     # no inline script), but a few dynamic inline style attributes need
     # 'unsafe-inline' for styles. frame-ancestors 'self' blocks clickjacking.
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+    #
+    # The `expr=` guard makes this default yield when the response already carries
+    # a CSP set by PHP. Only the disposable-demo shell does that (env-gated
+    # cookieless analytics, #658): there SpaShell emits a CSP widened for the
+    # analytics origin, and this line must not clobber it into two intersecting
+    # CSPs. Every other response (static assets, JSON API, and the SPA shell on
+    # non-demo installs, none of which set a CSP) is unchanged — the expr is true
+    # and the default CSP below is applied exactly as before.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'" "expr=-z resp('Content-Security-Policy')"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-Content-Type-Options "nosniff"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"

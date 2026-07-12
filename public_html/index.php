@@ -90,7 +90,14 @@ $method = $request->getMethod();
 $response = null;
 
 if (($method === 'GET' || $method === 'HEAD') && !BasePath::isApiPath($spaPlan->spaPath)) {
-    $shell = new SpaShell($projectRoot . '/public_html/admin/index.html', $psr17Factory, $psr17Factory);
+    // Demo-only, env-gated cookieless analytics (#658): the disposable-demo host
+    // sets DEMO_ANALYTICS_ENDPOINT in its .env; every other install leaves it
+    // unset so no beacon and no analytics CSP are ever emitted. The origin
+    // literal lives only in that .env — never in .env.example or the built SPA.
+    $analyticsEndpointRaw = $_ENV['DEMO_ANALYTICS_ENDPOINT'] ?? getenv('DEMO_ANALYTICS_ENDPOINT');
+    $analyticsEndpoint = is_string($analyticsEndpointRaw) && $analyticsEndpointRaw !== '' ? $analyticsEndpointRaw : null;
+
+    $shell = new SpaShell($projectRoot . '/public_html/admin/index.html', $psr17Factory, $psr17Factory, $analyticsEndpoint);
     $response = $shell->serve($spaPlan->assetBase, $spaPlan->appBase);
 }
 
