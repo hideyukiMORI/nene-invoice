@@ -80,12 +80,36 @@ export function useGenerateDownloadToken(): UseMutationResult<
   })
 }
 
-/** POST /admin/invoices/{id}/send-email — sends the invoice PDF to the client. */
-export function useSendInvoiceEmail(): UseMutationResult<number, AppError, number> {
-  return useMutation<number, AppError, number>({
+/**
+ * Preview returned instead of a real send for demo organizations (#626): the
+ * API answers 200 with the message it would have sent (never delivering it,
+ * because demo clients use undeliverable `.example` addresses).
+ */
+export interface SendInvoiceEmailPreview {
+  preview: true
+  recipient: string
+  subject: string
+  body_html: string
+}
+
+/**
+ * POST /admin/invoices/{id}/send-email — sends the invoice PDF to the client.
+ *
+ * Non-demo orgs deliver for real and answer 204 (resolves to `null` here).
+ * Demo orgs do not send and answer 200 with a {@link SendInvoiceEmailPreview}
+ * so the UI can show what would have gone out (#626).
+ */
+export function useSendInvoiceEmail(): UseMutationResult<
+  SendInvoiceEmailPreview | null,
+  AppError,
+  number
+> {
+  return useMutation<SendInvoiceEmailPreview | null, AppError, number>({
     mutationFn: async (id) => {
-      await apiClient.post(`/admin/invoices/${String(id)}/send-email`)
-      return id
+      const result = await apiClient.post<SendInvoiceEmailPreview | undefined>(
+        `/admin/invoices/${String(id)}/send-email`,
+      )
+      return result ?? null
     },
   })
 }

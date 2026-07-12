@@ -22,6 +22,6 @@ export {
   useGenerateDownloadToken,
   useSendInvoiceEmail,
 } from './mutations'
-export type { DownloadTokenResult } from './mutations'
+export type { DownloadTokenResult, SendInvoiceEmailPreview } from './mutations'
 export { useDownloadInvoicePdf } from './download'
 export { useExportInvoicesCsv, useExportPaymentsCsv } from './export'

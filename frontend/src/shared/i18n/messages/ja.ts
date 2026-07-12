@@ -542,6 +542,12 @@ export const jaMessages = {
     'メールサーバーに接続できず、送信に失敗しました。しばらくしてから「再送信する」をお試しください。解消しない場合はシステム管理者にご連絡ください。',
   'admin.invoices.detail.emailRetry': '再送信する',
   'admin.invoices.detail.emailCheckClient': '取引先を確認',
+  'admin.invoices.detail.emailPreviewTitle': 'メール送信のプレビュー',
+  'admin.invoices.detail.emailPreviewNotice':
+    'これはデモ環境です。実際にはメールを送信していません。以下は、本番環境で送信される内容のプレビューです。',
+  'admin.invoices.detail.emailPreviewRecipient': '宛先',
+  'admin.invoices.detail.emailPreviewSubject': '件名',
+  'admin.invoices.detail.emailPreviewBody': '本文',
   'admin.invoices.detail.generateLink': 'クライアント向けリンクを生成',
   'admin.invoices.detail.generatingLink': 'リンクを生成中…',
   'admin.invoices.detail.generateLinkError': 'リンクの生成に失敗しました。',

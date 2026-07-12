@@ -2080,12 +2080,25 @@ paths:
         Generates the invoice PDF and sends it to the client's email address.
         Requires the invoice to be in issued, partially_paid, or paid status
         and the client to have an email address. Requires ManageBilling capability.
+
+
+        Demo organizations (slug prefixed by the configured demo slug prefix) do
+        not send: their seeded clients use fictitious `.example` addresses that
+        cannot be delivered. Instead the endpoint returns 200 with a preview of
+        the message that would have been sent, for display in the UI (#626).
       operationId: sendInvoiceEmail
       security:
         - bearerAuth: []
       responses:
+        '200':
+          description: >
+            Demo organization — email not sent; preview of the message returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendInvoiceEmailPreview'
         '204':
-          description: Email sent
+          description: Email sent (non-demo organization)
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -3574,6 +3587,25 @@ components:
           description: Whether to issue as a qualified invoice (適格請求書).
         due_at:
           type: [string, 'null']
+    SendInvoiceEmailPreview:
+      type: object
+      description: >
+        Preview of the email a demo organization would have sent (#626). Returned
+        with status 200 instead of actually delivering the message.
+      properties:
+        preview:
+          type: boolean
+          description: Always true; marks the response as a non-sent demo preview.
+        recipient:
+          type: string
+          description: Client email address the message would have been sent to.
+        subject:
+          type: string
+          description: Subject line of the message.
+        body_html:
+          type: string
+          description: HTML body of the message (server-generated, escaped).
+      required: [preview, recipient, subject, body_html]
     Payment:
       type: object
       properties:
