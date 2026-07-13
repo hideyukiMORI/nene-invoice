@@ -78,7 +78,7 @@ export function BankImportPanel() {
         },
         onError: () => {
           showToast({
-            tone: 'danger',
+            tone: 'err',
             title: t('admin.bankReconciliation.import.errorTitle'),
             description: t('admin.bankReconciliation.import.errorBody'),
           })

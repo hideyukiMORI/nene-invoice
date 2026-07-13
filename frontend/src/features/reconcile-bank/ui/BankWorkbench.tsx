@@ -45,7 +45,7 @@ export function BankWorkbench() {
         showToast({ tone: 'ok', title: t('admin.bankReconciliation.ignore.done') })
       },
       onError: () => {
-        showToast({ tone: 'danger', title: t('admin.bankReconciliation.ignore.error') })
+        showToast({ tone: 'err', title: t('admin.bankReconciliation.ignore.error') })
       },
     })
   }
@@ -237,7 +237,7 @@ function SuggestionsDialog({
           })
         },
         onError: () => {
-          showToast({ tone: 'danger', title: t('admin.bankReconciliation.confirm.error') })
+          showToast({ tone: 'err', title: t('admin.bankReconciliation.confirm.error') })
         },
       },
     )

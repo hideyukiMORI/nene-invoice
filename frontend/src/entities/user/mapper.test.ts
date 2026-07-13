@@ -23,7 +23,11 @@ describe('toUser', () => {
   })
 
   it('defaults status to active when missing', () => {
-    const user = toUser({ ...dto, status: undefined })
+    // Delete the optional key entirely (rather than set it to `undefined`) to
+    // satisfy exactOptionalPropertyTypes while exercising the same "absent" case.
+    const missingStatus = { ...dto }
+    delete missingStatus.status
+    const user = toUser(missingStatus)
     expect(user.status).toBe('active')
   })
 

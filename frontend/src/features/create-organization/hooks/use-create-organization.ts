@@ -63,9 +63,13 @@ export function useCreateOrganization(): UseCreateOrganization {
       {
         name: values.name,
         slug: values.slug,
-        plan: values.plan === '' ? undefined : values.plan,
-        adminEmail: values.createAdmin ? values.adminEmail : undefined,
-        adminPassword: values.createAdmin ? values.adminPassword : undefined,
+        // Optional keys are omitted (rather than set to `undefined`) to satisfy
+        // exactOptionalPropertyTypes; mutations.ts already treats "absent" and
+        // "undefined" identically via `!== undefined` checks.
+        ...(values.plan !== '' ? { plan: values.plan } : {}),
+        ...(values.createAdmin
+          ? { adminEmail: values.adminEmail, adminPassword: values.adminPassword }
+          : {}),
       },
       {
         onSuccess: () => {
