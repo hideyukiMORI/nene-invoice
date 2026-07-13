@@ -38,6 +38,7 @@ describe('toRecordPaymentResult', () => {
         organization_id: 1,
         client_id: 5,
         status: 'partially_paid',
+        is_overdue: false,
         is_qualified_invoice: true,
         subtotal_cents: 106000,
         tax_cents: 10480,

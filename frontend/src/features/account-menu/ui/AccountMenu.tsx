@@ -10,7 +10,9 @@ export function AccountMenu() {
   const { t, locale, setLocale } = useTranslation()
   const { email, role, onSignOut } = useAccountMenu()
 
-  const initial = email !== null && email.length > 0 ? email[0].toUpperCase() : '—'
+  // charAt (rather than indexed access) sidesteps noUncheckedIndexedAccess:
+  // the length guard already ensures a char is present.
+  const initial = email !== null && email.length > 0 ? email.charAt(0).toUpperCase() : '—'
 
   return (
     <div className="side-foot">

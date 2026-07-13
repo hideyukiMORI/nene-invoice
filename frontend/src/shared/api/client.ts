@@ -171,7 +171,10 @@ async function request<T>(method: string, path: string, body?: Json, isRetry = f
     response = await fetch(apiUrl(path), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // body is omitted (rather than passed as explicit `undefined`) to satisfy
+      // exactOptionalPropertyTypes against RequestInit; a fetch call without a
+      // body key behaves identically to one with `body: undefined`.
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     })
   } catch {
     throw AppError.transport('Network request failed')

@@ -68,9 +68,13 @@ describe('useViewQuote', () => {
       expect(result.current.kind).toBe('ready')
     })
 
-    if (result.current.kind === 'ready') {
+    // Capture into a local const so the narrowing survives inside the
+    // `act()` closure (TS can't otherwise prove `result.current.kind` still
+    // holds by the time the callback runs).
+    const state = result.current
+    if (state.kind === 'ready') {
       act(() => {
-        result.current.changeStatus('sent')
+        state.changeStatus('sent')
       })
     }
 

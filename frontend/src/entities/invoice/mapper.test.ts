@@ -25,7 +25,12 @@ describe('toInvoice', () => {
   })
 
   it('normalises missing optional fields to null', () => {
-    const invoice = toInvoice({ ...dto, invoice_number: undefined, issued_at: undefined })
+    // Delete the optional keys entirely (rather than set them to `undefined`)
+    // to satisfy exactOptionalPropertyTypes while exercising the same "absent" case.
+    const missingOptional = { ...dto }
+    delete missingOptional.invoice_number
+    delete missingOptional.issued_at
+    const invoice = toInvoice(missingOptional)
     expect(invoice.invoice_number).toBeNull()
     expect(invoice.issued_at).toBeNull()
   })

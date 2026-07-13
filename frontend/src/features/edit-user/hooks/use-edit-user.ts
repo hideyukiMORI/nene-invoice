@@ -65,7 +65,11 @@ export function useEditUser(userId: UserId): EditUserState {
       {
         id: userId,
         email: values.email,
-        password: values.password !== '' ? values.password : undefined,
+        // The optional `password` key is omitted (rather than set to
+        // `undefined`) to satisfy exactOptionalPropertyTypes; mutations.ts
+        // already treats "absent" and "undefined" identically via a
+        // `!== undefined` check.
+        ...(values.password !== '' ? { password: values.password } : {}),
         role: values.role,
         // The API requires status; the edit screen has no status control, so
         // resend the current value unchanged (#622).

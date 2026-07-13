@@ -93,7 +93,10 @@ export function ViewDashboard() {
           label={t('admin.dashboard.receivedThisMonth')}
           value={formatYen(state.receivedThisMonthCents)}
           foot={momText}
-          footClass={momDir}
+          // footClass is omitted (rather than passed as explicit `undefined`)
+          // to satisfy exactOptionalPropertyTypes; StatCard already treats
+          // "absent" and "undefined" identically via a falsy check.
+          {...(momDir !== undefined ? { footClass: momDir } : {})}
         />
         <StatCard
           label={t('admin.dashboard.outstanding')}
