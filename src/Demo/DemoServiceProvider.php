@@ -84,7 +84,12 @@ final readonly class DemoServiceProvider implements ServiceProviderInterface
                         throw new LogicException('PSR-17 factory service is invalid.');
                     }
 
-                    return new DemoSessionSeater($refreshTokenIssuer, $psr17);
+                    // Entry log lines go to var/demo-entry.log, SSH-visible on the
+                    // Tier A target, instead of error_log's HETEML-panel-only sink
+                    // (#661). Same var/ path resolution as FileRateLimitStorage below.
+                    $logSink = new FileDemoEntryLogSink(self::projectRoot($c) . '/var');
+
+                    return new DemoSessionSeater($refreshTokenIssuer, $psr17, $logSink(...));
                 },
             )
             ->set(

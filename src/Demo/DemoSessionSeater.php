@@ -30,14 +30,20 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 final readonly class DemoSessionSeater implements DemoSessionSeaterInterface
 {
-    /** @var \Closure(string): void Where entry log lines go; defaults to `error_log`. */
+    /**
+     * @var \Closure(string): void Where entry log lines go. `DemoServiceProvider`
+     *      wires this to {@see FileDemoEntryLogSink} (`var/demo-entry.log`, #661);
+     *      defaults to `error_log` only when not wired (e.g. tests).
+     */
     private \Closure $logSink;
 
     /**
      * @param (\Closure(string): void)|null $logSink Sink for the demo-entry
-     *        attribution line (#658). Defaults to PHP's `error_log`, matching the
-     *        product's existing convention; overridable in tests so the recorded
-     *        line can be asserted without depending on the global `error_log` ini.
+     *        attribution line (#658). Production wiring passes the `var/`
+     *        file sink (#661); this parameter defaults to PHP's `error_log`
+     *        as a fallback and so tests can inject an in-memory sink to
+     *        assert the recorded line without depending on the global
+     *        `error_log` ini.
      */
     public function __construct(
         private RefreshTokenIssuer $refreshTokenIssuer,
