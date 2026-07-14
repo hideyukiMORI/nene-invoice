@@ -1,2 +1,3 @@
 /* Active theme pointer. To restyle the entire app, change ONLY this import. */
+/* [nene2-exemplar:active-theme-pointer] — fleet frontend-standards TH-02 exemplar (check:exemplars). */
 @import './themes/default.css';
