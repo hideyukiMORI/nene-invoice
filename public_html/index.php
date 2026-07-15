@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Nene2\Config\AppConfig;
 use Nene2\Http\ResponseEmitter;
-use NeneInvoice\Http\AuthorizationHeaderFallback;
 use NeneInvoice\Http\BasePath;
 use NeneInvoice\Http\RuntimeContainerFactory;
 use NeneInvoice\Http\SpaBasePlan;
@@ -47,10 +46,6 @@ $serverRequestCreator = new ServerRequestCreator(
 );
 
 $request = $serverRequestCreator->fromGlobals();
-
-// Tier A: some shared-hosting front proxies strip the standard Authorization
-// header before it reaches PHP; adopt the SPA's X-Authorization mirror instead.
-$request = AuthorizationHeaderFallback::apply($request);
 
 // --- Location-independent install (ADR 0015) ---------------------------------
 // Detect the URL base the app is installed under (document root / subdomain /
