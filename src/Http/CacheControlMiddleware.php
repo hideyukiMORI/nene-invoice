@@ -17,9 +17,10 @@ use Psr\Http\Server\RequestHandlerInterface;
  * RFC 9111 §3.5 forbids shared caches from storing responses to requests that
  * carry an `Authorization` header, but on Tier A shared hosting the SPA
  * delivers the Bearer token via the `X-Authorization` mirror
- * ({@see AuthorizationHeaderFallback}, #596), which intermediaries do not
- * recognize — that safety net does not apply on this path, so the application
- * must opt out of caching explicitly.
+ * ({@see \Nene2\Middleware\AuthorizationHeaderFallbackMiddleware}, NENE2 #1558 /
+ * ADR 0019; originally #596), which intermediaries do not recognize — that
+ * safety net does not apply on this path, so the application must opt out of
+ * caching explicitly.
  *
  * An explicit `Cache-Control` set by a handler (e.g. the demo 302's
  * `no-store`, or a future conditional-GET/ETag response) is left untouched.
