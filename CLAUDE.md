@@ -40,6 +40,7 @@ Ops / MCP         ──→         │
 4. 実装 → 品質チェック → commit。
 5. PR 作成：`Closes #N` + セルフレビューチェックリスト名を本文に記載。
 6. CI green → merge → ローカル `main` sync。
+7. 作業した日は日報を **`docs/daily-reports/YYYY-MM-DD.md`** に残す（1日1ファイル・追記）。置き場はリポごとの慣習が正で、**invoice は `docs/daily-reports/`**（施主裁定 2026-07-16。フリートで統一しない — 例: vault は `docs/journal/`・英文）。
 
 **コミット形式:**
 ```
