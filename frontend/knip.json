@@ -2,7 +2,6 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "e2e/**/*.ts"],
   "entry": ["e2e/**/*.spec.ts"],
-  "ignore": ["src/shared/api/schema.gen.ts"],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true,
   "exclude": ["exports", "types"]
