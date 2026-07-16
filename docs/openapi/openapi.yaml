@@ -3595,6 +3595,7 @@ components:
       properties:
         preview:
           type: boolean
+          const: true
           description: Always true; marks the response as a non-sent demo preview.
         recipient:
           type: string

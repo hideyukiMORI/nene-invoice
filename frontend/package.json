@@ -20,9 +20,10 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "codegen": "openapi-typescript ../docs/openapi/openapi.yaml -o src/shared/api/schema.gen.ts",
+    "codegen:check": "node scripts/check-codegen.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
-    "check": "npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook"
+    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.9",
@@ -61,7 +62,7 @@
     "jsdom": "^27.2.0",
     "knip": "^5.70.2",
     "msw": "^2.12.3",
-    "openapi-typescript": "^7.13.0",
+    "openapi-typescript": "7.13.0",
     "prettier": "^3.6.2",
     "storybook": "^9.1.5",
     "tailwindcss": "^4.1.17",

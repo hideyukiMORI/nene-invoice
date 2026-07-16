@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query'
 import { apiClient } from '@/shared/api/client'
 import type { AppError } from '@/shared/api/errors'
-import type { InvoiceWithLinesDto } from './api-types'
+import type { InvoiceWithLinesDto, SendInvoiceEmailPreviewDto } from './api-types'
 import { toInvoiceWithLines } from './mapper'
 import type { CreateInvoiceInput, InvoiceWithLines, IssueInvoiceInput } from './model'
 import { invoiceKeys } from './query-keys'
@@ -85,12 +85,7 @@ export function useGenerateDownloadToken(): UseMutationResult<
  * API answers 200 with the message it would have sent (never delivering it,
  * because demo clients use undeliverable `.example` addresses).
  */
-export interface SendInvoiceEmailPreview {
-  preview: true
-  recipient: string
-  subject: string
-  body_html: string
-}
+export type SendInvoiceEmailPreview = SendInvoiceEmailPreviewDto
 
 /**
  * POST /admin/invoices/{id}/send-email — sends the invoice PDF to the client.

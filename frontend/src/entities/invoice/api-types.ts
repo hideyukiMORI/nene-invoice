@@ -4,6 +4,7 @@ import type { components } from '@/shared/api/schema.gen'
 export type InvoiceDto = components['schemas']['Invoice']
 export type LineItemDto = components['schemas']['LineItem']
 export type InvoiceWithLinesDto = components['schemas']['InvoiceWithLines']
+export type SendInvoiceEmailPreviewDto = components['schemas']['SendInvoiceEmailPreview']
 
 /**
  * List envelope. The OpenAPI `InvoiceList` is the generic page envelope, so the
