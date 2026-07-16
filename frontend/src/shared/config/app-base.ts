@@ -40,3 +40,33 @@ export const apiBasePath: string = deriveApiBasePath(readMetaBase())
 
 /** Mount point for the SPA router ('/' at the document root). */
 export const routerBasename: string = deriveRouterBasename(apiBasePath)
+
+/**
+ * Install base **without** any tenant slug. The shell injects it as the asset
+ * `<base href="<installBase>/admin/">` — its comment: "this is the install base
+ * only — never the org slug" — so it lets us tell a path-scoped slug apart from
+ * a plain subdirectory install.
+ */
+export function deriveInstallBase(baseHref: string | null): string {
+  if (typeof baseHref !== 'string') {
+    return ''
+  }
+
+  return baseHref.replace(/\/admin\/?$/, '').replace(/\/+$/, '')
+}
+
+function readBaseHref(): string | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  return document.querySelector('base')?.getAttribute('href') ?? null
+}
+
+/**
+ * True under path-scoped multi-tenancy (`/<installBase>/<slug>/`): the API base
+ * (install base **plus** slug) extends past the asset base (install base only).
+ * Silent re-authentication is gated off in this mode until the #38 cookie-`Path`
+ * fix — see `shared/api/client.ts` and ADR 0008.
+ */
+export const isPathTenancy: boolean = apiBasePath !== deriveInstallBase(readBaseHref())

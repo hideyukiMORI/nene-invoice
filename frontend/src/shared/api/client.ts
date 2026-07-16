@@ -1,27 +1,60 @@
-import { apiBasePath } from '@/shared/config/app-base'
+import {
+  createNene2Transport,
+  isNene2ClientError,
+  type TokenStore,
+} from '@hideyukimori/nene2-client'
+import { apiBasePath, isPathTenancy } from '@/shared/config/app-base'
 import { AppError } from './errors'
 
-/** Prefixes an absolute API path with the install base (ADR 0015); no-op at root. */
-function apiUrl(path: string): string {
-  return apiBasePath + path
-}
-
 /**
- * The only module that calls `fetch`. Transport only — no domain logic.
+ * The only module that talks to the API. Transport plumbing (fetch, the
+ * `X-Authorization` mirror, 401 handling, single-flight silent-refresh, one
+ * replay) is delegated to the fleet-standard `@hideyukimori/nene2-client`
+ * transport (ADR 0008 seam). This module owns only the invoice-specific bits:
+ * the in-memory token posture, the refresh mechanics (endpoint + CSRF cookie),
+ * the promotion gate, and mapping the transport's errors to {@link AppError}.
  *
- * The bearer token lives in memory (see frontend-standards: in-memory by default;
- * localStorage/cookie session needs an ADR). The auth flow sets it via
- * `setAuthToken`; it is lost on reload (fail-closed → re-login).
+ * The exported surface (`apiClient`, `setAuthToken`, `hasAuthToken`,
+ * `wasSessionExpired`, `subscribeAuthChange`, `refreshSession`, `revokeSession`)
+ * is unchanged, so the ~40 call sites and `entities/auth` do not change.
  */
+
+// ── In-memory session token ─────────────────────────────────────────────────
+// The bearer token lives in memory on purpose (frontend-standards: in-memory by
+// default; a localStorage/sessionStorage session would widen the XSS surface and
+// needs its own ADR). It is lost on reload (fail-closed → re-login); ADR 0014
+// silently restores it from the httpOnly refresh cookie. So the token store is
+// an in-memory adapter, NOT `createSessionTokenStore` (which persists to
+// sessionStorage).
 let authToken: string | null = null
 let sessionExpired = false
 const authListeners = new Set<() => void>()
 
-export function setAuthToken(token: string | null): void {
-  authToken = token
-  // A fresh sign-in clears any "session expired" notice on the login screen.
-  if (token !== null) sessionExpired = false
+function notify(): void {
   for (const listener of authListeners) listener()
+}
+
+/** In-memory {@link TokenStore} the transport consults on every request. */
+const tokenStore: TokenStore & { setToken(token: string): void } = {
+  getToken: () => authToken,
+  clearToken: () => {
+    authToken = null
+    notify()
+  },
+  setToken: (token: string) => {
+    authToken = token
+    // A fresh token (sign-in or silent refresh) clears any "session expired" notice.
+    sessionExpired = false
+    notify()
+  },
+}
+
+export function setAuthToken(token: string | null): void {
+  if (token === null) {
+    tokenStore.clearToken()
+  } else {
+    tokenStore.setToken(token)
+  }
 }
 
 export function hasAuthToken(): boolean {
@@ -45,19 +78,7 @@ export function subscribeAuthChange(listener: () => void): () => void {
   }
 }
 
-/**
- * A 401 means the session expired or the token is invalid. Clear it so the
- * fail-closed auth shell shows the login screen, and flag the expiry so the
- * login form can say why. No-op when not signed in (e.g. a failed login attempt,
- * where the 401 is a credentials error to surface on the form instead).
- */
-function handleUnauthorized(status: number): void {
-  if (status === 401 && authToken !== null) {
-    sessionExpired = true
-    setAuthToken(null)
-  }
-}
-
+// ── CSRF (double-submit cookie) ─────────────────────────────────────────────
 const CSRF_COOKIE = 'ni_csrf'
 const CSRF_HEADER = 'X-CSRF-Token'
 
@@ -70,135 +91,6 @@ function readCookie(name: string): string | null {
   return null
 }
 
-/**
- * Silent re-authentication (ADR 0014). Exchanges the httpOnly refresh cookie for
- * a fresh in-memory access token, echoing the readable CSRF cookie in the
- * required header. De-duplicated: concurrent callers (the app-start probe and
- * any number of 401 retries) share one in-flight request. Resolves true when a
- * token was seated, false on any failure — the caller decides whether to fail
- * closed.
- */
-let refreshInFlight: Promise<boolean> | null = null
-
-function refreshAccessToken(): Promise<boolean> {
-  if (refreshInFlight !== null) return refreshInFlight
-
-  refreshInFlight = (async (): Promise<boolean> => {
-    const csrf = readCookie(CSRF_COOKIE)
-    const headers: Record<string, string> = { Accept: 'application/json' }
-    if (csrf !== null) headers[CSRF_HEADER] = csrf
-
-    try {
-      const response = await fetch(apiUrl('/auth/refresh'), { method: 'POST', headers })
-      if (!response.ok) return false
-      const token = (safeJsonParse(await response.text()) as { token?: unknown } | null)?.token
-      if (typeof token !== 'string') return false
-      setAuthToken(token)
-      return true
-    } catch {
-      return false
-    } finally {
-      refreshInFlight = null
-    }
-  })()
-
-  return refreshInFlight
-}
-
-/**
- * Attempt to restore a session on app start: after a full reload the in-memory
- * token is gone, but the refresh cookie may still be valid. Resolves true when
- * the session was restored (the auth shell then reveals the app instead of the
- * login screen).
- */
-export function refreshSession(): Promise<boolean> {
-  return refreshAccessToken()
-}
-
-/**
- * Server-side logout (ADR 0014): revokes the refresh-token family and clears the
- * cookies. Best-effort — a network failure still lets the caller clear the local
- * in-memory token.
- */
-export async function revokeSession(): Promise<void> {
-  const csrf = readCookie(CSRF_COOKIE)
-  const headers: Record<string, string> = {}
-  if (csrf !== null) headers[CSRF_HEADER] = csrf
-
-  try {
-    await fetch(apiUrl('/auth/logout'), { method: 'POST', headers })
-  } catch {
-    // best-effort; the caller clears the in-memory token regardless
-  }
-}
-
-/**
- * On a 401 for a signed-in caller, try one silent refresh and report whether the
- * original request should be retried. Skips the auth endpoints (no recursion)
- * and the not-signed-in case (a failed login stays a credentials error).
- */
-async function shouldRetryAfterRefresh(
-  status: number,
-  path: string,
-  isRetry: boolean,
-): Promise<boolean> {
-  if (status !== 401 || isRetry || authToken === null) return false
-  if (path === '/auth/refresh' || path === '/auth/logout') return false
-  return refreshAccessToken()
-}
-
-type Json = Record<string, unknown>
-
-/**
- * Attaches the Bearer token to both `Authorization` and `X-Authorization`.
- * Some shared-hosting front proxies (Tier A; observed on HETEML) strip the
- * standard `Authorization` header before it reaches PHP, so the backend falls
- * back to the mirror when the standard header is missing.
- */
-function attachBearer(headers: Record<string, string>): void {
-  if (authToken === null) return
-  headers['Authorization'] = `Bearer ${authToken}`
-  headers['X-Authorization'] = `Bearer ${authToken}`
-}
-
-async function request<T>(method: string, path: string, body?: Json, isRetry = false): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
-  attachBearer(headers)
-
-  let response: Response
-  try {
-    response = await fetch(apiUrl(path), {
-      method,
-      headers,
-      // body is omitted (rather than passed as explicit `undefined`) to satisfy
-      // exactOptionalPropertyTypes against RequestInit; a fetch call without a
-      // body key behaves identically to one with `body: undefined`.
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    })
-  } catch {
-    throw AppError.transport('Network request failed')
-  }
-
-  if (response.status === 204) {
-    return undefined as T
-  }
-
-  const text = await response.text()
-  const parsed: unknown = text === '' ? null : safeJsonParse(text)
-
-  if (!response.ok) {
-    // Access token may have expired mid-session — try one silent refresh + replay.
-    if (await shouldRetryAfterRefresh(response.status, path, isRetry)) {
-      return request<T>(method, path, body, true)
-    }
-    handleUnauthorized(response.status)
-    throw AppError.fromProblem(response.status, parsed)
-  }
-
-  return parsed as T
-}
-
 function safeJsonParse(text: string): unknown {
   try {
     return JSON.parse(text)
@@ -207,100 +99,117 @@ function safeJsonParse(text: string): unknown {
   }
 }
 
-/** Fetches a binary resource and returns it as a Blob. Sends the Bearer token. */
-async function requestBlob(path: string, isRetry = false): Promise<Blob> {
+/**
+ * Silent re-authentication mechanics (ADR 0008 `recoverAuth`): read the CSRF
+ * cookie, exchange the httpOnly refresh cookie for a fresh access token, seat it.
+ * The transport owns the orchestration (single-flight, one replay, no-recursion);
+ * this owns only the invoice contract.
+ *
+ * The refresh POST uses a **bare** `fetch` — it must NOT go through the transport,
+ * or it would await its own recovery.
+ */
+async function recoverAuth(): Promise<boolean> {
+  const csrf = readCookie(CSRF_COOKIE)
+  const headers: Record<string, string> = { Accept: 'application/json' }
+  if (csrf !== null) headers[CSRF_HEADER] = csrf
+
+  try {
+    const response = await fetch(apiBasePath + '/auth/refresh', { method: 'POST', headers })
+    if (!response.ok) return false
+    const token = (safeJsonParse(await response.text()) as { token?: unknown } | null)?.token
+    if (typeof token !== 'string') return false
+    tokenStore.setToken(token)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const transport = createNene2Transport({
+  baseUrl: apiBasePath,
+  tokenStore,
+  // Resolve `fetch` at call time rather than binding it once at module load: the
+  // test setup patches `globalThis.fetch` via msw's `server.listen()` in a
+  // `beforeAll`, which runs after this module is first imported (fleet pattern).
+  fetch: (input, init) => globalThis.fetch(input, init),
+  // A 401 on a signed-in request clears the token (transport default) and lands
+  // the user on the fail-closed login screen; keep the "why" flag for the form.
+  // The transport does not clear/fire for a token-less 401 (a failed login).
+  onUnauthorized: () => {
+    sessionExpired = true
+    notify()
+  },
+  // Promotion gate (ADR 0008 / issue #38): silent refresh only where it is safe.
+  // Under path-scoped tenancy the rotated `ni_refresh` is reissued at a
+  // slug-stripped `Path` (#38), so a second refresh re-presents a consumed token
+  // → server-side reuse defense revokes the family (hard logout). Single/host
+  // mode has no slug, so refresh is safe there today — pass `recoverAuth`. Path
+  // mode omits it (fail-closed one-shot) until #38 lands server-side.
+  ...(isPathTenancy ? {} : { recoverAuth }),
+})
+
+/**
+ * Attempt to restore a session on app start: after a full reload the in-memory
+ * token is gone, but the refresh cookie may still be valid. Routes through
+ * `transport.recover()` (never `recoverAuth` directly) so the boot probe and any
+ * early 401-retry share one in-flight refresh — concurrent refreshes would trip
+ * the rotation reuse defense. Resolves false in path mode (no `recoverAuth`).
+ */
+export function refreshSession(): Promise<boolean> {
+  return transport.recover()
+}
+
+/**
+ * Server-side logout (ADR 0014): revokes the refresh-token family and clears the
+ * cookies. Best-effort bare fetch — a network failure still lets the caller clear
+ * the local in-memory token.
+ */
+export async function revokeSession(): Promise<void> {
+  const csrf = readCookie(CSRF_COOKIE)
   const headers: Record<string, string> = {}
-  attachBearer(headers)
+  if (csrf !== null) headers[CSRF_HEADER] = csrf
 
-  let response: Response
   try {
-    response = await fetch(apiUrl(path), { method: 'GET', headers })
+    await fetch(apiBasePath + '/auth/logout', { method: 'POST', headers })
   } catch {
-    throw AppError.transport('Network request failed')
+    // best-effort; the caller clears the in-memory token regardless
   }
-
-  if (!response.ok) {
-    if (await shouldRetryAfterRefresh(response.status, path, isRetry)) {
-      return requestBlob(path, true)
-    }
-    handleUnauthorized(response.status)
-    const text = await response.text()
-    throw AppError.fromProblem(response.status, text === '' ? null : safeJsonParse(text))
-  }
-
-  return response.blob()
 }
+
+type Json = Record<string, unknown>
 
 /**
- * POSTs a raw CSV body and returns the parsed JSON report. Both 200 (accepted)
- * and 422 (rejected — the report carries the format/row errors) resolve with the
- * body; only auth / transport / 5xx throw. Used by template-only CSV import.
+ * Maps the transport's `Nene2ClientError` (or any thrown value) to the invoice
+ * {@link AppError} the call sites already handle (`.slug` / `.status`), so error
+ * display is unchanged by the migration.
  */
-async function postCsv<T>(path: string, csv: string, isRetry = false): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
-  attachBearer(headers)
-
-  let response: Response
-  try {
-    response = await fetch(apiUrl(path), { method: 'POST', headers, body: csv })
-  } catch {
-    throw AppError.transport('Network request failed')
+function toAppError(error: unknown): never {
+  if (isNene2ClientError(error)) {
+    throw error.status > 0
+      ? AppError.fromProblem(error.status, error.problem)
+      : AppError.transport(error.message)
   }
-
-  const text = await response.text()
-  const parsed: unknown = text === '' ? null : safeJsonParse(text)
-
-  if (response.status === 200 || response.status === 422) {
-    return parsed as T
-  }
-
-  if (await shouldRetryAfterRefresh(response.status, path, isRetry)) {
-    return postCsv<T>(path, csv, true)
-  }
-  handleUnauthorized(response.status)
-  throw AppError.fromProblem(response.status, parsed)
+  throw AppError.transport(error instanceof Error ? error.message : 'Request failed')
 }
 
-/**
- * POSTs the RAW bytes of a file (a Blob / File body) with `Content-Type: text/csv`,
- * unchanged. Unlike `postCsv` (which sends a decoded string), this never touches
- * the encoding — required for Japanese bank CSVs that are Shift_JIS, which
- * `File.text()` would corrupt by decoding as UTF-8. Both 200 (accepted) and 422
- * (rejected — the report carries the format/row errors) resolve with the body;
- * only auth / transport / 5xx throw.
- */
-async function postBytes<T>(path: string, body: Blob, isRetry = false): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'text/csv' }
-  attachBearer(headers)
-
-  let response: Response
-  try {
-    response = await fetch(apiUrl(path), { method: 'POST', headers, body })
-  } catch {
-    throw AppError.transport('Network request failed')
-  }
-
-  const text = await response.text()
-  const parsed: unknown = text === '' ? null : safeJsonParse(text)
-
-  if (response.status === 200 || response.status === 422) {
-    return parsed as T
-  }
-
-  if (await shouldRetryAfterRefresh(response.status, path, isRetry)) {
-    return postBytes<T>(path, body, true)
-  }
-  handleUnauthorized(response.status)
-  throw AppError.fromProblem(response.status, parsed)
+function wrap<T>(promise: Promise<T>): Promise<T> {
+  return promise.catch(toAppError)
 }
+
+// 422 carries the CSV/bank-import rejection report as its body; hand it back
+// rather than throw (mirrors the previous 200-or-422 branch).
+const CSV_REPORT_STATUSES = { alsoOkStatuses: [422] } as const
 
 export const apiClient = {
-  get: <T>(path: string): Promise<T> => request<T>('GET', path),
-  postCsv: <T>(path: string, csv: string): Promise<T> => postCsv<T>(path, csv),
-  postBytes: <T>(path: string, body: Blob): Promise<T> => postBytes<T>(path, body),
-  post: <T>(path: string, body?: Json): Promise<T> => request<T>('POST', path, body),
-  put: <T>(path: string, body?: Json): Promise<T> => request<T>('PUT', path, body),
-  patch: <T>(path: string, body?: Json): Promise<T> => request<T>('PATCH', path, body),
-  delete: <T>(path: string): Promise<T> => request<T>('DELETE', path),
-  getBlob: (path: string): Promise<Blob> => requestBlob(path),
+  get: <T>(path: string): Promise<T> => wrap(transport.get<T>(path)),
+  post: <T>(path: string, body?: Json): Promise<T> => wrap(transport.post<T>(path, body)),
+  put: <T>(path: string, body?: Json): Promise<T> => wrap(transport.put<T>(path, body)),
+  patch: <T>(path: string, body?: Json): Promise<T> => wrap(transport.patch<T>(path, body)),
+  delete: <T>(path: string): Promise<T> => wrap(transport.delete<T>(path)),
+  postCsv: <T>(path: string, csv: string): Promise<T> =>
+    wrap(transport.postCsv<T>(path, csv, CSV_REPORT_STATUSES)),
+  postBytes: <T>(path: string, body: Blob): Promise<T> =>
+    wrap(transport.postBytes<T>(path, body, CSV_REPORT_STATUSES)),
+  getBlob: (path: string): Promise<Blob> =>
+    wrap(transport.getBlob(path).then((download) => download.blob)),
 } as const
