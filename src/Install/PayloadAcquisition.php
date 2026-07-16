@@ -44,6 +44,7 @@ final class PayloadAcquisition
         'phinx.php',
         '.env.example',
         'README.md',
+        'VERSION',
         'var',
         'tools',
     ];

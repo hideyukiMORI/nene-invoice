@@ -15,8 +15,10 @@
 
 set -euo pipefail
 
-VERSION="${1:-dev}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Version: explicit arg wins, else the repo-root VERSION file (single source —
+# #425 / records #586), else "dev".
+VERSION="${1:-$(cat "$ROOT/VERSION" 2>/dev/null || echo dev)}"
 DIST="$ROOT/dist"
 STAGE="$DIST/build/stage"
 ZIP_NAME="nene-invoice-${VERSION}.zip"
@@ -66,6 +68,7 @@ mkdir -p "$STAGE/tools"
 cp "$ROOT/tools/sweep-demo.php" "$STAGE/tools/sweep-demo.php"
 cp "$ROOT/tools/run-recurring.php" "$STAGE/tools/run-recurring.php"
 cp "$ROOT/composer.json" "$STAGE/composer.json"
+cp "$ROOT/VERSION" "$STAGE/VERSION"
 cp "$ROOT/README.md" "$STAGE/README.md"
 
 # var/（空・書き込み先）
