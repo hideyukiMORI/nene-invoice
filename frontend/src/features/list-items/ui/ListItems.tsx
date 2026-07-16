@@ -25,7 +25,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListItems } from '../hooks/use-list-items'
+import { useListItems } from '../model/use-list-items'
 
 const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? null : value.trim())
 

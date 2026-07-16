@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Button, Field, FormLayout, FormRow, InlineAlert, Input, Stack, Text } from '@/shared/ui'
-import { useCreateClient } from '../hooks/use-create-client'
+import { useCreateClient } from '../model/use-create-client'
 
 /** Create-client form. On success navigates to the client list. */
 export function CreateClientForm() {

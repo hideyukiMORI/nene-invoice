@@ -24,7 +24,7 @@ import {
 import {
   useEditRecurringInvoice,
   type EditRecurringInvoiceReady,
-} from '../hooks/use-edit-recurring-invoice'
+} from '../model/use-edit-recurring-invoice'
 
 const TAX_RATES = [1000, 800] as const
 

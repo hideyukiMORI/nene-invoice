@@ -12,7 +12,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListTemplates } from '../hooks/use-list-templates'
+import { useListTemplates } from '../model/use-list-templates'
 
 /** Template (雛形) list screen with per-row edit / delete. */
 export function ListTemplates() {

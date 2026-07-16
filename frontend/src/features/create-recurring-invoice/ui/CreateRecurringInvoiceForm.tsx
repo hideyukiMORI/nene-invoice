@@ -19,7 +19,7 @@ import {
   Text,
   Textarea,
 } from '@/shared/ui'
-import { useCreateRecurringInvoice } from '../hooks/use-create-recurring-invoice'
+import { useCreateRecurringInvoice } from '../model/use-create-recurring-invoice'
 
 const TAX_RATES = [1000, 800] as const
 

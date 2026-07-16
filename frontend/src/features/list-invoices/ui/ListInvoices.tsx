@@ -29,7 +29,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListInvoices } from '../hooks/use-list-invoices'
+import { useListInvoices } from '../model/use-list-invoices'
 
 const toNullableInt = (value: string): number | null => {
   const n = Number.parseInt(value, 10)

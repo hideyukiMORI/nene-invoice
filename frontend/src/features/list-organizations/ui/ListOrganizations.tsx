@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListOrganizations } from '../hooks/use-list-organizations'
+import { useListOrganizations } from '../model/use-list-organizations'
 
 /** Superadmin organization (tenant) list with per-row delete (confirmed). */
 export function ListOrganizations() {

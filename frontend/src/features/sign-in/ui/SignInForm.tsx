@@ -1,7 +1,7 @@
 import { useSessionExpired } from '@/entities/auth'
 import { Button, Field, InlineAlert, Input, Stack } from '@/shared/ui'
 import { useTranslation } from '@/shared/i18n'
-import { useSignIn } from '../hooks/use-sign-in'
+import { useSignIn } from '../model/use-sign-in'
 
 /** Login form (right panel of the split-screen). On success the auth store
  *  flips and the app shell reveals itself. */

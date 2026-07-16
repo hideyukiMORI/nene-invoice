@@ -15,7 +15,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListRecurringInvoices } from '../hooks/use-list-recurring-invoices'
+import { useListRecurringInvoices } from '../model/use-list-recurring-invoices'
 
 /** Recurring-invoice (継続請求) list screen with an active badge and per-row delete. */
 export function ListRecurringInvoices() {

@@ -24,7 +24,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListAuditLogs } from '../hooks/use-list-audit-logs'
+import { useListAuditLogs } from '../model/use-list-audit-logs'
 
 function trimmedOrNull(value: string): string | null {
   const trimmed = value.trim()

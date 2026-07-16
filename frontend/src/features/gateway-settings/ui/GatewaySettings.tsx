@@ -10,7 +10,7 @@ import {
   type InlineAlertTone,
 } from '@/shared/ui'
 import type { GatewayConnectivityDetail } from '@/entities/gateway-settings'
-import { useGatewaySettingsView } from '../hooks/use-gateway-settings'
+import { useGatewaySettingsView } from '../model/use-gateway-settings'
 
 const DETAIL_TONE: Record<GatewayConnectivityDetail, InlineAlertTone> = {
   connected: 'success',

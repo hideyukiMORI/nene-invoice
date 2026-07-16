@@ -24,7 +24,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListClients } from '../hooks/use-list-clients'
+import { useListClients } from '../model/use-list-clients'
 
 const trimmedOrNull = (value: string): string | null => (value.trim() === '' ? null : value.trim())
 

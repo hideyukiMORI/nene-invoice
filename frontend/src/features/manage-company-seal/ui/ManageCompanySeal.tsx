@@ -1,7 +1,7 @@
 import { useRef, type ChangeEvent } from 'react'
 import { useTranslation } from '@/shared/i18n'
 import { Button, InlineAlert, LoadingState, Stack, Text } from '@/shared/ui'
-import { useManageCompanySeal } from '../hooks/use-manage-company-seal'
+import { useManageCompanySeal } from '../model/use-manage-company-seal'
 
 /** Company seal (社印) upload widget — preview, replace, remove (Issue #448). */
 export function ManageCompanySeal() {

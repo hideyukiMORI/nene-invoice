@@ -13,7 +13,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useEditItem } from '../hooks/use-edit-item'
+import { useEditItem } from '../model/use-edit-item'
 
 const TAX_RATES = [1000, 800] as const
 

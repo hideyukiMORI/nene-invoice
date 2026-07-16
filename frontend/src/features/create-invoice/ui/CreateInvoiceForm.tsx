@@ -18,7 +18,7 @@ import {
   Text,
   Textarea,
 } from '@/shared/ui'
-import { useCreateInvoice } from '../hooks/use-create-invoice'
+import { useCreateInvoice } from '../model/use-create-invoice'
 
 const TAX_RATES = [1000, 800] as const
 

@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useEditClient } from '../hooks/use-edit-client'
+import { useEditClient } from '../model/use-edit-client'
 
 export interface EditClientProps {
   clientId: ClientId

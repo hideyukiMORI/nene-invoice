@@ -16,7 +16,7 @@ import {
   Text,
   Textarea,
 } from '@/shared/ui'
-import { useTemplateForm, type TemplateFormValues } from '../hooks/use-template-form'
+import { useTemplateForm, type TemplateFormValues } from '../model/use-template-form'
 
 const TAX_RATES = [1000, 800] as const
 
