@@ -175,6 +175,7 @@ In progress / designed: MFA (TOTP), fee write-off & over-payment split (tax-advi
 
 | Topic | Document |
 | --- | --- |
+| **Changelog** | [`CHANGELOG.md`](./CHANGELOG.md) |
 | **Compliance (binding)** | [`docs/explanation/accounting-compliance.md`](./docs/explanation/accounting-compliance.md) |
 | **Product vision** | [`docs/explanation/product-vision.md`](./docs/explanation/product-vision.md) |
 | **Requirements** | [`docs/explanation/requirements.md`](./docs/explanation/requirements.md) |
