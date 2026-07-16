@@ -19,7 +19,7 @@ import {
   LoadingState,
   Stack,
 } from '@/shared/ui'
-import { useViewQuote, type ViewQuoteState } from '../hooks/use-view-quote'
+import { useViewQuote, type ViewQuoteState } from '../model/use-view-quote'
 
 export interface ViewQuoteProps {
   quoteId: QuoteId

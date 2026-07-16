@@ -15,7 +15,7 @@ import {
 import {
   useEditCompanySettings,
   type EditCompanySettingsFormValues,
-} from '../hooks/use-edit-company-settings'
+} from '../model/use-edit-company-settings'
 
 /** Curated closing/pay days (design 03); 末日 is the empty option. */
 const DAY_OPTIONS = [25, 20, 15, 10, 5]

@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useEditUser } from '../hooks/use-edit-user'
+import { useEditUser } from '../model/use-edit-user'
 
 export interface EditUserProps {
   userId: UserId

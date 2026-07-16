@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { InvoiceId } from '@/entities/invoice'
 import { useTranslation } from '@/shared/i18n'
 import { Button, ConfirmDialog, InlineAlert, Stack } from '@/shared/ui'
-import { useIssueInvoice } from '../hooks/use-issue-invoice'
+import { useIssueInvoice } from '../model/use-issue-invoice'
 
 export interface IssueInvoiceProps {
   invoiceId: InvoiceId

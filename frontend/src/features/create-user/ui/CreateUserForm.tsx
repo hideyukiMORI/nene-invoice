@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Button, Field, FormLayout, InlineAlert, Input, Select, Stack, Text } from '@/shared/ui'
-import { useCreateUser } from '../hooks/use-create-user'
+import { useCreateUser } from '../model/use-create-user'
 
 /** Create-user form. On success navigates to the user list. */
 export function CreateUserForm() {

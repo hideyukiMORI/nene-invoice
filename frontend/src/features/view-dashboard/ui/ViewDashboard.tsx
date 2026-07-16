@@ -7,7 +7,7 @@ import { cn } from '@/shared/lib/cn'
 import { formatCalendarDate } from '@/shared/lib/format-date'
 import { formatYen } from '@/shared/lib/format-money'
 import { Badge, EmptyState, ErrorState, LinkButton, LoadingState, Stack } from '@/shared/ui'
-import { useViewDashboard } from '../hooks/use-view-dashboard'
+import { useViewDashboard } from '../model/use-view-dashboard'
 
 /** Admin dashboard: page head + summary stat cards + recent unpaid + AR aging. */
 export function ViewDashboard() {

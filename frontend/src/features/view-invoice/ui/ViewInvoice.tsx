@@ -26,8 +26,8 @@ import {
   Text,
   useToast,
 } from '@/shared/ui'
-import { useGenerateDownloadLink } from '../hooks/use-generate-download-link'
-import { useViewInvoice } from '../hooks/use-view-invoice'
+import { useGenerateDownloadLink } from '../model/use-generate-download-link'
+import { useViewInvoice } from '../model/use-view-invoice'
 import { EmailPreviewModal } from './EmailPreviewModal'
 
 export interface ViewInvoiceProps {

@@ -22,8 +22,8 @@ import {
   Text,
   useToast,
 } from '@/shared/ui'
-import { useIssueServiceToken } from '../hooks/use-issue-service-token'
-import { useListServiceTokens } from '../hooks/use-list-service-tokens'
+import { useIssueServiceToken } from '../model/use-issue-service-token'
+import { useListServiceTokens } from '../model/use-list-service-tokens'
 
 const ALL_SCOPES: ServiceScope[] = ['read:invoices', 'write:payments']
 

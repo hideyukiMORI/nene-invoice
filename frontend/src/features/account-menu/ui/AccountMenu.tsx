@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { LOCALES, useTranslation } from '@/shared/i18n'
 import { openShortcutsOverlay } from '@/shared/keyboard'
 import { cn } from '@/shared/lib/cn'
-import { useAccountMenu } from '../hooks/use-account-menu'
+import { useAccountMenu } from '../model/use-account-menu'
 
 /** Sidebar footer (design 04 `.side-foot`): user identity + keyboard-shortcut
  *  launcher + language segment + sign-out, themed for the deep-green chrome. */

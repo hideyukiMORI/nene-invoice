@@ -20,7 +20,7 @@ import {
   Text,
   Textarea,
 } from '@/shared/ui'
-import { useCreateQuote } from '../hooks/use-create-quote'
+import { useCreateQuote } from '../model/use-create-quote'
 
 const TAX_RATES = [1000, 800] as const
 

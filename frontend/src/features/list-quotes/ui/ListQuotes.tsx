@@ -29,7 +29,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListQuotes } from '../hooks/use-list-quotes'
+import { useListQuotes } from '../model/use-list-quotes'
 
 const toNullableInt = (value: string): number | null => {
   const n = Number.parseInt(value, 10)

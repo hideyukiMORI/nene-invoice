@@ -14,7 +14,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { PAYMENT_METHODS, useManagePayments } from '../hooks/use-manage-payments'
+import { PAYMENT_METHODS, useManagePayments } from '../model/use-manage-payments'
 
 export interface ManagePaymentsProps {
   invoiceId: InvoiceId

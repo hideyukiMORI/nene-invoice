@@ -25,7 +25,7 @@ import {
   Text,
   useToast,
 } from '@/shared/ui'
-import { useBankWorkbench } from '../hooks/use-bank-workbench'
+import { useBankWorkbench } from '../model/use-bank-workbench'
 
 /** Staged bank lines with a status filter, per-row suggestions, confirm and ignore. */
 export function BankWorkbench() {

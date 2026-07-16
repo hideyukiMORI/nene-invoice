@@ -11,7 +11,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useCreateItem } from '../hooks/use-create-item'
+import { useCreateItem } from '../model/use-create-item'
 
 const TAX_RATES = [1000, 800] as const
 

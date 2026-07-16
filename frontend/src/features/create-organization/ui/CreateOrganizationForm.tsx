@@ -1,6 +1,6 @@
 import { useTranslation } from '@/shared/i18n'
 import { Button, Field, FormLayout, InlineAlert, Input, Stack, Text } from '@/shared/ui'
-import { useCreateOrganization } from '../hooks/use-create-organization'
+import { useCreateOrganization } from '../model/use-create-organization'
 
 /** Create-organization (tenant) form. On success navigates to the org list. */
 export function CreateOrganizationForm() {

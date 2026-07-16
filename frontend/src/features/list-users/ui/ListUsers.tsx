@@ -14,7 +14,7 @@ import {
   Stack,
   Text,
 } from '@/shared/ui'
-import { useListUsers } from '../hooks/use-list-users'
+import { useListUsers } from '../model/use-list-users'
 
 const ROLE_TONE: Record<UserRole, BadgeTone> = {
   superadmin: 'brand',

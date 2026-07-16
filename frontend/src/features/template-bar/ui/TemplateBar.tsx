@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toTemplateId, type TemplateWithLines } from '@/entities/template'
 import { useTranslation } from '@/shared/i18n'
 import { Button, Input, Select, Stack } from '@/shared/ui'
-import { useTemplateBar, type TemplateSnapshot } from '../hooks/use-template-bar'
+import { useTemplateBar, type TemplateSnapshot } from '../model/use-template-bar'
 
 export interface TemplateBarProps {
   /** Reads the current form content for "save as template". */
