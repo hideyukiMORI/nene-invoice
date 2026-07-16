@@ -1121,6 +1121,8 @@ export interface paths {
         /**
          * Send invoice by email
          * @description Generates the invoice PDF and sends it to the client's email address. Requires the invoice to be in issued, partially_paid, or paid status and the client to have an email address. Requires ManageBilling capability.
+         *
+         *     Demo organizations (slug prefixed by the configured demo slug prefix) do not send: their seeded clients use fictitious `.example` addresses that cannot be delivered. Instead the endpoint returns 200 with a preview of the message that would have been sent, for display in the UI (#626).
          */
         post: operations["sendInvoiceEmail"];
         delete?: never;
@@ -1892,6 +1894,20 @@ export interface components {
              */
             qualified: boolean;
             due_at?: string | null;
+        };
+        /** @description Preview of the email a demo organization would have sent (#626). Returned with status 200 instead of actually delivering the message. */
+        SendInvoiceEmailPreview: {
+            /**
+             * @description Always true; marks the response as a non-sent demo preview.
+             * @constant
+             */
+            preview: true;
+            /** @description Client email address the message would have been sent to. */
+            recipient: string;
+            /** @description Subject line of the message. */
+            subject: string;
+            /** @description HTML body of the message (server-generated, escaped). */
+            body_html: string;
         };
         Payment: {
             id: number;
@@ -4343,7 +4359,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Email sent */
+            /** @description Demo organization — email not sent; preview of the message returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SendInvoiceEmailPreview"];
+                };
+            };
+            /** @description Email sent (non-demo organization) */
             204: {
                 headers: {
                     [name: string]: unknown;
