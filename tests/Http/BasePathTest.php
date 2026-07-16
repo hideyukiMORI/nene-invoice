@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Tests\Http;
 
 use NeneInvoice\Http\BasePath;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -84,5 +85,24 @@ final class BasePathTest extends TestCase
     public function test_classifies_api_vs_spa(string $path, bool $isApi): void
     {
         self::assertSame($isApi, BasePath::isApiPath($path));
+    }
+
+    public function test_app_base_falls_back_to_install_base_when_no_slug_axis(): void
+    {
+        // No app-base attribute (single/subdomain mode) → the install base (#38).
+        $request = (new Psr17Factory())->createServerRequest('GET', 'https://app.example.com/auth/refresh')
+            ->withAttribute(BasePath::REQUEST_ATTRIBUTE, '/invoice');
+
+        self::assertSame('/invoice', BasePath::appBaseFromRequest($request));
+    }
+
+    public function test_app_base_uses_the_slug_scoped_attribute_when_present(): void
+    {
+        // Path tenancy: OrgResolverMiddleware set the slug-scoped app base (#38).
+        $request = (new Psr17Factory())->createServerRequest('GET', 'https://app.example.com/auth/refresh')
+            ->withAttribute(BasePath::REQUEST_ATTRIBUTE, '/invoice')
+            ->withAttribute(BasePath::APP_BASE_ATTRIBUTE, '/invoice/acme');
+
+        self::assertSame('/invoice/acme', BasePath::appBaseFromRequest($request));
     }
 }

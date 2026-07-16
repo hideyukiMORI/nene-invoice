@@ -47,7 +47,7 @@ final readonly class RefreshHandler implements RequestHandlerInterface
             return $this->failClosed($request);
         }
 
-        $base = BasePath::fromRequest($request);
+        $base = BasePath::appBaseFromRequest($request);
         $csrfToken = RefreshTokenSecret::generateCsrfToken();
 
         return $this->json->create(['token' => $session->accessToken])
@@ -57,7 +57,7 @@ final readonly class RefreshHandler implements RequestHandlerInterface
 
     private function failClosed(ServerRequestInterface $request): ResponseInterface
     {
-        $base = BasePath::fromRequest($request);
+        $base = BasePath::appBaseFromRequest($request);
 
         return $this->problemDetails
             ->create($request, 'invalid-refresh-token', 'Unauthorized', 401, 'The session could not be refreshed.')

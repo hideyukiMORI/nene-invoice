@@ -35,7 +35,7 @@ final readonly class LogoutHandler implements RequestHandlerInterface
         }
 
         $this->useCase->execute(SessionCookies::refreshToken($request));
-        $base = BasePath::fromRequest($request);
+        $base = BasePath::appBaseFromRequest($request);
 
         return $this->json->createEmpty(204)
             ->withAddedHeader('Set-Cookie', SessionCookies::clearRefresh($base))

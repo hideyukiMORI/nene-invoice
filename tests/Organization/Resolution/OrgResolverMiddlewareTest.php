@@ -6,6 +6,7 @@ namespace NeneInvoice\Tests\Organization\Resolution;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Http\BasePath;
 use NeneInvoice\Organization\Organization;
 use NeneInvoice\Organization\Resolution\EnvResolutionStrategy;
 use NeneInvoice\Organization\Resolution\OrgResolverMiddleware;
@@ -153,6 +154,48 @@ final class OrgResolverMiddlewareTest extends TestCase
         self::assertSame('/admin/invoices', $seen->getUri()->getPath());
         self::assertSame($id, $seen->getAttribute('nene2.org.id'));
         self::assertSame('acme', $seen->getAttribute('nene2.org.slug'));
+    }
+
+    public function test_path_strategy_records_slug_scoped_app_base_for_cookies(): void
+    {
+        // #38: cookies must be scoped to the slug-prefixed URL. The middleware
+        // records the app base (install base + slug) before stripping the slug so
+        // Login/Refresh/Logout reissue cookies at `/{base}/{slug}` — otherwise a
+        // rotated refresh cookie lands slug-less and burns the family on reuse.
+        $this->orgs->save(new Organization(name: 'Acme', slug: 'acme', plan: 'free', isActive: true));
+
+        $handler = $this->passthroughHandler();
+        $request = $this->psr17->createServerRequest('GET', 'https://app.example.com/acme/auth/refresh');
+
+        // Root install: no base attribute → app base is just the slug.
+        $this->pathMiddleware()->process($request, $handler);
+        self::assertSame('/acme', $handler->seen?->getAttribute(BasePath::APP_BASE_ATTRIBUTE));
+        self::assertSame('/acme', BasePath::appBaseFromRequest($handler->seen ?? $request));
+
+        // Subdirectory install: the front controller has already stripped the
+        // install base from the path (public_html/index.php) and recorded it as an
+        // attribute, so the middleware sees the base-stripped `/acme/...` path.
+        $subdir = $this->psr17->createServerRequest('GET', 'https://app.example.com/acme/auth/refresh')
+            ->withAttribute(BasePath::REQUEST_ATTRIBUTE, '/invoice');
+        $subHandler = $this->passthroughHandler();
+        $this->pathMiddleware()->process($subdir, $subHandler);
+        self::assertSame('/invoice/acme', $subHandler->seen?->getAttribute(BasePath::APP_BASE_ATTRIBUTE));
+    }
+
+    public function test_env_strategy_leaves_no_app_base_so_cookies_use_install_base(): void
+    {
+        // Non-path modes carry no slug in the URL, so no app base is set and cookie
+        // issuance falls back to the install base — behaviour unchanged (#38).
+        $this->orgs->save(new Organization(name: 'Acme', slug: 'acme', plan: 'free', isActive: true));
+
+        $handler = $this->passthroughHandler();
+        $request = $this->psr17->createServerRequest('GET', 'https://app.example.com/admin/invoices')
+            ->withAttribute(BasePath::REQUEST_ATTRIBUTE, '/invoice');
+
+        $this->middleware('acme', false)->process($request, $handler);
+
+        self::assertNull($handler->seen?->getAttribute(BasePath::APP_BASE_ATTRIBUTE));
+        self::assertSame('/invoice', BasePath::appBaseFromRequest($handler->seen ?? $request));
     }
 
     public function test_env_strategy_leaves_downstream_path_untouched(): void
