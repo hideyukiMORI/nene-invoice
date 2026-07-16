@@ -6,6 +6,7 @@ namespace NeneInvoice\Organization\Resolution;
 
 use Nene2\Error\ProblemDetailsResponseFactory;
 use Nene2\Http\RequestScopedHolder;
+use NeneInvoice\Http\BasePath;
 use NeneInvoice\Organization\OrganizationRepositoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -103,6 +104,16 @@ final readonly class OrgResolverMiddleware implements MiddlewareInterface
         // canonical `/admin/...` path. This is the first middleware, so the
         // rewrite propagates to the whole downstream pipeline.
         if ($this->strategy instanceof PathScopedResolutionStrategyInterface) {
+            // Record the slug-scoped app base for cookie issuance (#38) BEFORE the
+            // slug is stripped from the path, so a rotated refresh cookie is
+            // reissued at the same `/{base}/{slug}` Path the browser sends it to —
+            // otherwise the reissue lands slug-less and the next refresh presents
+            // the rotated-away cookie → reuse defense burns the family.
+            $request = $request->withAttribute(
+                BasePath::APP_BASE_ATTRIBUTE,
+                BasePath::fromRequest($request) . '/' . $org->slug,
+            );
+
             $uri     = $request->getUri();
             $request = $request->withUri($uri->withPath($this->strategy->stripPrefix($uri->getPath())));
         }

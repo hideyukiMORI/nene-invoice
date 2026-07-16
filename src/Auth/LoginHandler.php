@@ -55,7 +55,7 @@ final readonly class LoginHandler implements RequestHandlerInterface
             return $this->problemDetails->create($request, 'invalid-credentials', 'Invalid Credentials', 401, $e->getMessage());
         }
 
-        $base = BasePath::fromRequest($request);
+        $base = BasePath::appBaseFromRequest($request);
 
         return $this->withSessionCookies($this->json->create(['token' => $output->token]), $output->refreshToken, $base);
     }

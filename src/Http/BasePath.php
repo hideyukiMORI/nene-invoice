@@ -25,6 +25,15 @@ final class BasePath
     public const REQUEST_ATTRIBUTE = 'app.base_path';
 
     /**
+     * Request attribute holding the **app base** — the install base plus the
+     * tenant slug (`/invoice/acme`) under path tenancy, set by
+     * {@see \NeneInvoice\Organization\Resolution\OrgResolverMiddleware} before it
+     * strips the slug. It is the URL prefix the browser actually uses, so session
+     * cookies must be scoped to it (#38). Absent outside path mode.
+     */
+    public const APP_BASE_ATTRIBUTE = 'app.app_base';
+
+    /**
      * API path prefixes that must reach the router, never the SPA shell.
      *
      * `/invoices/download` (public PDF share link) and `/pay` (hosted card
@@ -71,6 +80,18 @@ final class BasePath
         $base = $request->getAttribute(self::REQUEST_ATTRIBUTE);
 
         return is_string($base) ? $base : '';
+    }
+
+    /**
+     * The base session cookies must be scoped to: the app base (install base plus
+     * the tenant slug) under path tenancy, else the install base (#38). Falls back
+     * to {@see self::fromRequest()} when no slug axis is present.
+     */
+    public static function appBaseFromRequest(ServerRequestInterface $request): string
+    {
+        $appBase = $request->getAttribute(self::APP_BASE_ATTRIBUTE);
+
+        return is_string($appBase) ? $appBase : self::fromRequest($request);
     }
 
     /** `''` for the document root; otherwise `/segment` (leading slash, no trailing). */
