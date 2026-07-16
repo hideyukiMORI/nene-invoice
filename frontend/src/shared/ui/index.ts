@@ -43,7 +43,7 @@ export {
   type InlineAlertTone,
   type InlineAlertRecover,
 } from './components/InlineAlert'
-export { LineItemsTable, TotalRow } from './components/LineItemsTable'
+export { LineItemsTable } from './components/LineItemsTable'
 export { SortableTh, type SortableThProps } from './components/SortableTh'
 export { ToastProvider } from './toast/ToastProvider'
 export { useToast } from './toast/context'

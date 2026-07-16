@@ -1,6 +1,5 @@
 import { useTranslation } from '@/shared/i18n'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { Text } from '../primitives/Text'
 
 /**
  * Minimal row shape a document line must provide. Kept local so the shared UI
@@ -49,16 +48,6 @@ export function LineItemsTable({ items }: { items: LineItemRow[] }) {
           ))}
         </tbody>
       </table>
-    </div>
-  )
-}
-
-/** Label / value row for the totals summary at the bottom of a document. */
-export function TotalRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <Text variant="muted">{label}</Text>
-      <Text className="num">{value}</Text>
     </div>
   )
 }

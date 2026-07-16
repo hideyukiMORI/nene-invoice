@@ -4,5 +4,8 @@
   "entry": ["e2e/**/*.spec.ts"],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true,
-  "exclude": ["exports", "types"]
+  "ignoreIssues": {
+    "src/shared/api/schema.gen.ts": ["exports", "types"]
+  },
+  "tags": ["-knipignore"]
 }
