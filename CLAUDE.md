@@ -19,7 +19,7 @@ Ops / MCP         ──→         │
 
 ## 現在の開発状況
 
-> **最終更新: 2026-07-05**（`docs/todo/current.md` が正本）
+> **現在地の正本は private に移設**: 運用ログ（`docs/todo`・`docs/daily`・field-trials 相当）は private `nene-origin/internal-docs/invoice/` にある。最新の作業状況・申し送りはそちらを読むこと。公開リポは Diátaxis＋ADR/CHANGELOG のみ。
 
 | フェーズ | 状態 |
 | --- | --- |
@@ -35,12 +35,12 @@ Ops / MCP         ──→         │
 ## ワークフロー
 
 1. **GitHub Issue を作成**（または番号を確認）する。Issue なしに編集しない。
-2. `docs/roadmap.md`, `docs/todo/current.md`, 関連 Issue/PR を確認する。
+2. `docs/roadmap.md`・現在地（private `nene-origin/internal-docs/invoice/todo/current.md`）・関連 Issue/PR を確認する。
 3. `main` から `type/issue-number-summary` ブランチを切る。
 4. 実装 → 品質チェック → commit。
 5. PR 作成：`Closes #N` + セルフレビューチェックリスト名を本文に記載。
 6. CI green → merge → ローカル `main` sync。
-7. 作業した日は日報を **`docs/daily/YYYY-MM-DD.md`** に残す。書式・置き場の正本はフリート規約 **`_work/daily-report-convention.md`**（2026-07-17 確定・全製品リポ `docs/daily/` に統一）。索引と `_work/` との線引きは `docs/daily/README.md`。
+7. 作業した日は日報を private **`nene-origin/internal-docs/invoice/daily/YYYY-MM-DD.md`** に残す（P3 移設済み・公開リポには置かない）。書式・置き場・運用の正本はフリート規約 **`_work/daily-report-convention.md`**（v3・§8 内容セキュリティ／§11）。
 
 **コミット形式:**
 ```
@@ -109,7 +109,7 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 | --- | --- |
 | **会計・税務コンプライアンス（拘束）** | `docs/explanation/accounting-compliance.md` |
 | **用語レジストリ（識別子の正準スペル）** | `docs/explanation/terminology.md` |
-| 現在のタスク | `docs/todo/current.md` |
+| 現在のタスク（private 移設済み） | `nene-origin/internal-docs/invoice/todo/current.md` |
 | ロードマップ | `docs/roadmap.md` |
 | プロダクトビジョン | `docs/explanation/product-vision.md` |
 | ワークフロー | `docs/workflow.md` |
