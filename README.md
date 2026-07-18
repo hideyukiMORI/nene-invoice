@@ -167,9 +167,9 @@ Key shipped features (Phase 4 highlights):
 - **Live NeNe Clear link** (contract-verified) and the public **disposable-org demo** (`/demo/{template}`)
 - CSV export, service-token management, list search / filter / sort, ja/en language switcher
 
-In progress / designed: MFA (TOTP), fee write-off & over-payment split (tax-advisor gated), bulk issuing, industry template refinements. Details and sequencing: [`docs/roadmap.md`](./docs/roadmap.md) and [`docs/todo/current.md`](./docs/todo/current.md).
+In progress / designed: MFA (TOTP), fee write-off & over-payment split (tax-advisor gated), bulk issuing, industry template refinements. Details and sequencing: [`docs/roadmap.md`](./docs/roadmap.md) (live status is tracked in the private operational log).
 
-> **Sync rule:** any PR that updates `docs/todo/current.md` also updates this Status section (repo practice since #572).
+> **Sync rule:** keep this Status section aligned with `docs/roadmap.md` and the private operational log (repo practice since #572).
 
 ## Documentation
 
