@@ -9,13 +9,13 @@ Source policies:
 - `docs/inheritance-from-nene2.md`
 - `docs/explanation/glossary.md`
 - `docs/development/naming-conventions.md`
-- `docs/todo/current.md`
+- private `internal-docs/invoice/todo/current.md` (operational log — moved out of this repo)
 - `docs/roadmap.md`
 
 ## Checklist
 
 - [ ] The source-of-truth policy doc was updated instead of only adding a summary elsewhere.
-- [ ] `docs/roadmap.md` or `docs/todo/current.md` updated when project state changed.
+- [ ] `docs/roadmap.md` or the private `internal-docs/invoice/todo/current.md` updated when project state changed.
 - [ ] Major architecture decisions considered whether an ADR is needed.
 - [ ] NENE2 inheritance changes reflected in `docs/inheritance-from-nene2.md`.
 - [ ] Public source-of-truth docs and OpenAPI text remain English unless policy allows otherwise.
