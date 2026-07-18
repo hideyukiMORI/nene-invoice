@@ -31,7 +31,8 @@ export function useOrganizationList(
  *
  * Every other entity pairs `useXList` with `useX` and both are consumed; this
  * one has no consumer yet because the suspend/update FE for `PATCH
- * /admin/organizations/{id}` (#560) is still open — see docs/todo/current.md
+ * /admin/organizations/{id}` (#560) is still open — see the private
+ * `nene-origin/internal-docs/invoice/todo/current.md`
  * 「残（任意）: 停止/更新の FE 導線」. Kept as the entity-layer half of that
  * pending slice rather than deleted and re-added verbatim.
  *
