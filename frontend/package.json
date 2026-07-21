@@ -24,7 +24,8 @@
     "codegen:check": "node scripts/check-codegen.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
-    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook"
+    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook",
+    "lint:styles": "stylelint 'src/**/*.css'"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.9",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@hideyukimori/nene2-standards": "^2.0.1",
     "@playwright/test": "^1.60.0",
     "@storybook/addon-a11y": "^9.1.5",
     "@storybook/react-vite": "^9.1.5",
@@ -67,6 +69,7 @@
     "openapi-typescript": "7.13.0",
     "prettier": "^3.6.2",
     "storybook": "^9.1.5",
+    "stylelint": "^16.26.1",
     "tailwindcss": "^4.1.17",
     "typescript": "~5.9.0",
     "typescript-eslint": "^8.59.2",
