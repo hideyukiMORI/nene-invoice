@@ -24,8 +24,9 @@
     "codegen:check": "node scripts/check-codegen.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
-    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run format && npm run test && npm run knip && npm run build-storybook",
-    "lint:styles": "stylelint 'src/**/*.css'"
+    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run check:registries && npm run format && npm run test && npm run knip && npm run build-storybook",
+    "lint:styles": "stylelint 'src/**/*.css'",
+    "check:registries": "nene2-check init --check --repo nene-invoice"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "^5.2.9",
@@ -41,7 +42,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
-    "@hideyukimori/nene2-standards": "^2.0.1",
+    "@hideyukimori/nene2-standards": "^2.1.0",
     "@playwright/test": "^1.60.0",
     "@storybook/addon-a11y": "^9.1.5",
     "@storybook/react-vite": "^9.1.5",
