@@ -24,7 +24,7 @@
     "codegen:check": "node scripts/check-codegen.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
-    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run format && npm run test && npm run knip && npm run build-storybook",
+    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run format && npm run test && npm run knip && npm run build-storybook",
     "lint:styles": "stylelint 'src/**/*.css'"
   },
   "dependencies": {
