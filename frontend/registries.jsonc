@@ -388,8 +388,8 @@
         ".upd",
         ".warn",
         ".wide",
-        ".zero"
-      ]
+        ".zero",
+      ],
     },
     {
       "kind": "lint-baseline",
@@ -398,7 +398,7 @@
       "rule": "color-no-hex",
       "file": "src/shared/ui/theme/index.css",
       "frozenCount": 12,
-      "initializedBy": "init --scan"
+      "initializedBy": "init --scan",
     },
     {
       "kind": "lint-baseline",
@@ -407,7 +407,7 @@
       "rule": "declaration-no-important",
       "file": "src/shared/ui/theme/index.css",
       "frozenCount": 3,
-      "initializedBy": "init --scan"
+      "initializedBy": "init --scan",
     },
     {
       "kind": "lint-baseline",
@@ -416,7 +416,7 @@
       "rule": "function-disallowed-list",
       "file": "src/shared/ui/theme/index.css",
       "frozenCount": 1,
-      "initializedBy": "init --scan"
+      "initializedBy": "init --scan",
     },
     {
       "kind": "lint-baseline",
@@ -425,7 +425,7 @@
       "rule": "nene2/layer-base-location",
       "file": "src/shared/ui/theme/index.css",
       "frozenCount": 1,
-      "initializedBy": "init --scan"
+      "initializedBy": "init --scan",
     },
     {
       "kind": "lint-baseline",
@@ -434,7 +434,7 @@
       "rule": "nene2/themes-token-only",
       "file": "src/shared/ui/theme/themes/default.css",
       "frozenCount": 2,
-      "initializedBy": "init --scan"
+      "initializedBy": "init --scan",
     },
     {
       "kind": "lint-baseline",
@@ -443,7 +443,7 @@
       "rule": "selector-max-specificity",
       "file": "src/shared/ui/theme/index.css",
       "frozenCount": 149,
-      "initializedBy": "init --scan"
-    }
-  ]
+      "initializedBy": "init --scan",
+    },
+  ],
 }
