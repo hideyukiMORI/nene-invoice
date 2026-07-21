@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "e2e/**/*.ts"],
+  "entry": ["e2e/**/*.spec.ts"],
+  "ignoreDependencies": ["tailwindcss"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    // schema.gen.ts は openapi-typescript の codegen 生成物（正本は docs/openapi）。
+    // paths/webhooks/$defs 等の定型 export/type が未使用に見えるのは生成物の性質であり
+    // 実コードの負債ではない。完全クローズ open-q1 の hub 裁定（2026-07-21）＝生成物公認差異で
+    // C1「台帳0」の対象外（撤去条件なし・恒久）。
+    "src/shared/api/schema.gen.ts": ["exports", "types"],
+  },
+  "tags": ["-knipignore"],
+}
