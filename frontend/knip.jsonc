@@ -1,7 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "e2e/**/*.ts"],
-  "entry": ["e2e/**/*.spec.ts"],
+  // `tests/**` は frontend/tests（ユニット）、`../tests/e2e/**` はリポ直下の
+  // Playwright spec（判例4 の置き場）。config は frontend/ に残るので、knip からは
+  // 相対で上を見る。
+  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "../tests/e2e/**/*.ts"],
+  "entry": ["../tests/e2e/**/*.spec.ts"],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true,
   "ignoreIssues": {
