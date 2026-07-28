@@ -115,6 +115,11 @@ export const enMessages: MessageCatalog = {
   'admin.shortcuts.footHint': 'Press ? to reopen',
   'admin.shortcuts.footModMac': 'Modifier shown as ⌘ on macOS',
   'admin.shortcuts.footModOther': 'Modifier shown as Ctrl',
+  // Rendered together as a bilingual header (ja headline + en subtitle) in
+  // ShortcutsOverlay / CommandPalette, so the ja value is correct in the en
+  // catalog too. Listed in the parity identicalAllowlist for the same reason.
+  'admin.shortcuts.title': 'キーボードショートカット',
+  'admin.shortcuts.titleEn': 'Keyboard shortcuts',
   'admin.commandPalette.title': 'コマンドパレット',
   'admin.commandPalette.titleEn': 'Command palette',
   'admin.commandPalette.select': 'Select',

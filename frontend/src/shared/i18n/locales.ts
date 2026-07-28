@@ -1,3 +1,4 @@
+import { enMessages } from './messages/en'
 import { jaMessages } from './messages/ja'
 import type { MessageCatalog } from './translate'
 
@@ -23,3 +24,12 @@ export function resolveLocale(input: string | null | undefined): SupportedLocale
 
 /** ja is the authoritative full catalog; en is loaded lazily by the provider. */
 export const jaCatalog: MessageCatalog = jaMessages
+
+/**
+ * Every catalog, keyed by locale — the input to the shared parity check
+ * (`@hideyukimori/nene2-i18n/testing`, see locales.test.ts). ja stays the
+ * authority; the check enforces that en carries the same key set, so the
+ * runtime ja fallback in `translate()` is a safety net rather than a licence
+ * for en to drift behind.
+ */
+export const catalogs: Record<string, MessageCatalog> = { ja: jaMessages, en: enMessages }
