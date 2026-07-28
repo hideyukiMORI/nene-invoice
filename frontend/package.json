@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@hideyukimori/nene2-i18n": "^0.2.0",
     "@hideyukimori/nene2-standards": "^2.1.0",
     "@playwright/test": "^1.60.0",
     "@storybook/addon-a11y": "^9.1.5",
@@ -59,9 +60,9 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "audit-ci": "^7.1.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.8",
+    "audit-ci": "^7.1.0",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
