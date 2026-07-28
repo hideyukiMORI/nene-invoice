@@ -32,8 +32,12 @@ jobs:
       - name: Check (type-check, lint, format, test, knip, build-storybook)
         run: npm run check
 
+      # audit-ci = npm audit + a per-advisory allowlist, so a not-yet-fixable advisory can be
+      # excepted with a written, expiring reason instead of blunting the whole gate. Anything
+      # high/critical that is not listed in frontend/audit-ci.jsonc still fails.
+      # Policy: docs/development/dependency-audit.md
       - name: Audit (fail on high/critical)
-        run: npm audit --audit-level=high
+        run: npm run audit
 
   e2e:
     runs-on: ubuntu-latest

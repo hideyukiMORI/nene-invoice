@@ -26,6 +26,7 @@
     "codegen:check": "node scripts/check-codegen.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
+    "audit": "audit-ci --config audit-ci.jsonc",
     "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run check:registries && npm run format && npm run coverage:check && npm run knip && npm run build-storybook",
     "lint:styles": "stylelint 'src/**/*.css'",
     "check:registries": "nene2-check init --check --repo nene-invoice"
@@ -39,7 +40,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.66.1",
-    "react-router-dom": "^7.9.6",
+    "react-router-dom": "^7.18.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
@@ -56,6 +57,7 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "audit-ci": "^7.1.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^9.39.0",
@@ -83,8 +85,7 @@
   "overrides": {
     "esbuild": "^0.28.1",
     "js-yaml": "^4.3.0",
-    "brace-expansion@1": "1.1.16",
-    "brace-expansion@2": "2.1.2",
-    "brace-expansion@5": "5.0.7"
+    "postcss": "^8.5.24",
+    "brace-expansion@5": "^5.0.8"
   }
 }

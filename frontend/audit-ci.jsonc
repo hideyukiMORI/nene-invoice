@@ -1,0 +1,62 @@
+{
+  // Dependency-vulnerability gate for CI (replaces the bare `npm audit --audit-level=high`,
+  // which has no way to record a reasoned exception).
+  //
+  // The gate stays sharp: anything high/critical that is NOT listed below fails the build.
+  // `allowlist` is per-advisory (GHSA id), never per-severity — we do not lower the level.
+  //
+  // Adding an entry requires, in this file: (1) the advisory id, (2) why it does not apply to
+  // THIS codebase, measured — not assumed, (3) an expiry date, (4) what removes the need for it.
+  // An expired entry is a task, not a renewal: re-check it, do not extend it by reflex.
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "moderate": false,
+  "high": true,
+  "critical": true,
+  "allowlist": [
+    // GHSA-qwww-vcr4-c8h2 — react-router "RSC Mode CSRF Bypass Allows Action Execution Before
+    // 400 Response" (high). Vulnerable range 7.12.0–8.2.0; there is NO fix in the 7.x line
+    // (react-router-dom stops at 7.18.1; the fix is react-router v8 >= 8.2.1, a different
+    // package and a breaking upgrade).
+    //
+    // Why it does not apply here (measured in THIS tree, 2026-07-29): the admin UI is a
+    // **static SPA built by Vite** (`vite.config.ts` → `outDir: ../public_html/admin`,
+    // `base: './'` for Tier A sub-path installs) and served as files by the PHP app shell.
+    // `src/app/router.tsx` is the only router: `createBrowserRouter` with **element-only
+    // routes** — grep for `^\s*(action|loader):` over `src/` returns no route hits (only an
+    // unrelated `action` field on toast props and on the audit-log entity/DTO). All 44
+    // react-router imports come from `react-router-dom`; there is no `@react-router/dev`,
+    // no `react-router/rsc`, no `createStaticHandler`, no `StaticRouterProvider`. The
+    // advisory's attack path (a server executing a route action before returning 400) has no
+    // counterpart in a client-only bundle.
+    //
+    // Expiry: 2026-08-31. Removed by the react-router v8 migration wave (bundled with the
+    // NENE2 RR8 re-evaluation). If that wave slips past the expiry, the entry must be
+    // re-argued in a PR — not silently extended.
+    "GHSA-qwww-vcr4-c8h2",
+
+    // GHSA-mh99-v99m-4gvg — brace-expansion "DoS via unbounded expansion length" (high).
+    // Vulnerable range <=5.0.7; the fix is 5.0.8. We TAKE that fix where it is adoptable
+    // (`"brace-expansion@5": "^5.0.8"` in overrides). It is not adoptable on the 1.x / 2.x
+    // branches: there is no patched 1.x or 2.x release at all, and forcing 5.0.8 into them
+    // breaks the consumers — measured 2026-07-29: brace-expansion 5 exports a *named*
+    // `expand`, while `minimatch@3` does `require('brace-expansion')` and calls the module
+    // itself, so `npm run lint` dies with `TypeError: expand is not a function`. Overriding
+    // `minimatch@3` upward fails the same way (`eslint-plugin-import` / `eslint-plugin-jsx-a11y`
+    // do `_interopRequireDefault(require('minimatch'))` and call it; minimatch >=9 has no
+    // callable default export). Retiring the 1.x/2.x chain therefore needs an eslint-10-era
+    // major upgrade of eslint + its plugins — not something this gate PR can take.
+    //
+    // Why the residual risk is acceptable here (measured 2026-07-29): brace-expansion is
+    // **dev-only** in this tree — `npm ls brace-expansion --omit=dev --all` is empty, so it
+    // is in no shipped bundle and reaches no request path. The remaining vulnerable copies
+    // are 1.1.16 (via `minimatch@3` ← eslint / eslintrc / config-array / plugin-import /
+    // plugin-jsx-a11y) and 2.1.3 (via `glob` and `@redocly/openapi-core`), i.e. lint and
+    // codegen tooling run on our own repo contents. The advisory needs an attacker-supplied
+    // brace pattern; our glob patterns are literals in committed config.
+    //
+    // Expiry: 2026-08-31. Removed by the eslint 10 / plugin major wave (which moves the whole
+    // chain to `minimatch@10` → `brace-expansion@^5`), or by an upstream 1.x/2.x backport if
+    // one appears. Re-check at expiry — do not extend by reflex.
+    "GHSA-mh99-v99m-4gvg",
+  ],
+}
