@@ -21,6 +21,7 @@
     "coverage": "vitest run --coverage",
     "coverage:check": "vitest run --coverage && node tools/coverage-ratchet.mjs",
     "e2e": "NODE_PATH=./node_modules playwright test",
+    "e2e:smoke": "npm run e2e -- --grep @smoke",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "codegen": "openapi-typescript ../docs/openapi/openapi.yaml -o src/shared/api/schema.gen.ts",
