@@ -62,6 +62,12 @@ jobs:
       - name: Install Playwright browser (chromium)
         run: npx playwright install --with-deps chromium
 
+      # @smoke first: the critical path (boot → sign in → shell → SPA nav) runs
+      # in seconds, so a broken bundle or login wiring fails here instead of
+      # after the full suite. Both runs are hermetic (page.route stubs).
+      - name: Run @smoke
+        run: npm run e2e:smoke
+
       - name: Run browser E2E tests
         run: npm run e2e
 
