@@ -6,11 +6,13 @@
 // config file: without a config here, moving the specs out of frontend/ would
 // have silently dropped 24 spec files from the lint gate.
 //
-// It re-exports only the `e2eConfig` array, not the whole frontend config — the
-// typed `tests/**` block there would otherwise match `tests/e2e/**` from this
-// base path and fail parsing (the specs are not in tsconfig.app.json).
+// It re-exports the `e2eConfig` array from its own module — importing the app's
+// eslint.config.js here would (a) let the typed app blocks match `tests/e2e/**`
+// from this base path and fail parsing, and (b) evaluate the shared styling
+// fragment, which resolves the Tailwind entry against the cwd and throws from
+// the repo root.
 //
 // Used by `npm run lint --prefix frontend`, which runs eslint twice:
 //   eslint .                         (app sources; config = frontend/eslint.config.js)
-//   eslint tests/e2e  from the root  (the specs; config = this file)
-export { e2eConfig as default } from './frontend/eslint.config.js'
+//   eslint tests/e2e  from the root  (the specs; config = this file → frontend/eslint.e2e.config.js)
+export { e2eConfig as default } from './frontend/eslint.e2e.config.js'
