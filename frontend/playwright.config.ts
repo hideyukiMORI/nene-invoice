@@ -9,10 +9,14 @@ const PORT = Number(process.env.E2E_PORT ?? 5180)
  * which each spec stubs via `page.route` — no live backend is needed, so the
  * tests are deterministic and focus on UI behaviour (validation, boundaries,
  * navigation). Auth is in-memory and lost on reload, so specs log in and then
- * navigate within the SPA (see e2e/helpers/auth.ts).
+ * navigate within the SPA (see tests/e2e/helpers/auth.ts).
  */
 export default defineConfig({
-  testDir: './e2e',
+  // Specs live at the repo root (`../tests/e2e`) per the fleet convention; the
+  // Playwright config and its node deps stay here in frontend/. Because the
+  // specs sit above frontend/node_modules, the `e2e` npm script sets
+  // NODE_PATH=./node_modules so their `@playwright/test` import resolves.
+  testDir: '../tests/e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
