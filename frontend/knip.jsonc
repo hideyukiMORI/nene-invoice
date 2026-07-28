@@ -4,7 +4,10 @@
   // Playwright spec（判例4 の置き場）。config は frontend/ に残るので、knip からは
   // 相対で上を見る。
   "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "../tests/e2e/**/*.ts"],
-  "entry": ["../tests/e2e/**/*.spec.ts"],
+  // eslint.e2e.config.js は eslint.config.js とリポ直下 eslint.config.js の
+  // 両方から読まれる実設定（knip は既定で eslint.config.js しか config として
+  // 認識しないので明示する）。
+  "entry": ["../tests/e2e/**/*.spec.ts", "eslint.e2e.config.js"],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true,
   "ignoreIssues": {
