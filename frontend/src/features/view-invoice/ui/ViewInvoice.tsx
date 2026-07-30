@@ -300,7 +300,9 @@ function InvoiceDocument({
               <div className="party-label">{t('admin.invoices.detail.payTo')}</div>
               <div className="party-name">
                 {bank.bank_name}
-                {bank.bank_branch !== null ? ` ${bank.bank_branch}支店` : ''}
+                {bank.bank_branch !== null
+                  ? ` ${t('admin.invoices.detail.branchSuffix', { branch: bank.bank_branch })}`
+                  : ''}
               </div>
               {(bank.account_type !== null || bank.account_number !== null) && (
                 <div className="party-line num">

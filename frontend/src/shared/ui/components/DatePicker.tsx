@@ -55,7 +55,7 @@ export function DatePicker({
   placeholder,
   'aria-describedby': ariaDescribedBy,
 }: DatePickerProps) {
-  const { t, locale } = useTranslation()
+  const { t } = useTranslation()
   const selected = parseIso(value)
 
   const [open, setOpen] = useState(false)
@@ -89,10 +89,17 @@ export function DatePicker({
     }
   }
 
-  const dow =
-    locale === 'ja'
-      ? ['日', '月', '火', '水', '木', '金', '土']
-      : ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  // Weekday initials come from the catalog (ja 日〜土 / en S〜S) rather than an
+  // inline locale ternary — same reason every other visible string here does.
+  const dow = [
+    t('common.datePicker.dow.sun'),
+    t('common.datePicker.dow.mon'),
+    t('common.datePicker.dow.tue'),
+    t('common.datePicker.dow.wed'),
+    t('common.datePicker.dow.thu'),
+    t('common.datePicker.dow.fri'),
+    t('common.datePicker.dow.sat'),
+  ]
 
   useEffect(() => {
     if (!open) return
