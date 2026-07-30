@@ -91,7 +91,12 @@ const sharedUiBarrelLedger = [
   'src/shared/ui/toast/ToastProvider.tsx',
 ]
 
-/** style prop のキー制約の既存違反（5 ファイル・10 件）— C3-2 系の小粒 drain 対象。 */
+/**
+ * style prop のキー制約の既存違反（5 ファイル・10 件）— **W3 同乗**（hub 裁定 2026-07-30）。
+ * CSS 変数注入への書き換えなので、意匠再生成と同じファイル群を二度触らない。
+ * （旧記載の「C3-2 系」は C3-2 = テスト専用 drain と確定したため振り直した。a11y 分は
+ * C3-2b #744 で drain 済み。）
+ */
 const stylePropLedger = [
   'src/features/edit-company-settings/ui/EditCompanySettings.tsx',
   'src/features/manage-company-seal/ui/ManageCompanySeal.tsx',
@@ -109,15 +114,6 @@ const unknownClassLedger = [
   'src/pages/layout/AppShell.tsx',
   'src/shared/ui/components/ConfirmDialog.tsx',
   'src/shared/ui/components/FilterBar.tsx',
-]
-
-/** jsx-a11y の既存違反（5 ファイル・7 件）— C3-2 系の小粒 drain 対象。 */
-const a11yLedger = [
-  'src/features/reconcile-bank/ui/BankImportPanel.tsx',
-  'src/shared/keyboard/CommandPalette.tsx',
-  'src/shared/ui/components/ClientCombobox.tsx',
-  'src/shared/ui/components/CsvImportPanel.tsx',
-  'src/shared/ui/components/LineItemSuggestInput.tsx',
 ]
 
 export default tseslint.config(
@@ -198,14 +194,6 @@ export default tseslint.config(
   {
     files: unknownClassLedger,
     rules: { 'better-tailwindcss/no-unknown-classes': 'off' },
-  },
-  {
-    files: a11yLedger,
-    rules: {
-      'jsx-a11y/no-noninteractive-element-interactions': 'off',
-      'jsx-a11y/no-noninteractive-element-to-interactive-role': 'off',
-      'jsx-a11y/no-static-element-interactions': 'off',
-    },
   },
   ...e2eConfig,
   ...storybook.configs['flat/recommended'],

@@ -123,6 +123,28 @@ export function ClientCombobox({
     setText(selected?.name ?? '')
   }
 
+  // Close when focus leaves the whole widget. Attached imperatively rather than
+  // as an onBlur prop: jsx-a11y strict counts focus handlers as interactions, so
+  // a layout <div> must not carry them. The interactive surface is the
+  // role="combobox" input and the role="option" buttons, which are keyboard
+  // reachable on their own. closeRef keeps the listener on the latest state
+  // without re-attaching every render.
+  const closeRef = useRef(close)
+  useEffect(() => {
+    closeRef.current = close
+  })
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (wrap === null) return
+    const onFocusOut = (e: FocusEvent): void => {
+      if (!wrap.contains(e.relatedTarget as Node | null)) closeRef.current()
+    }
+    wrap.addEventListener('focusout', onFocusOut)
+    return () => {
+      wrap.removeEventListener('focusout', onFocusOut)
+    }
+  }, [])
+
   const pick = (client: ClientOption): void => {
     onChange(client.id)
     setText(client.name)
@@ -205,15 +227,7 @@ export function ClientCombobox({
   }
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn('combo', open && 'open')}
-      onBlur={(e) => {
-        if (wrapRef.current !== null && !wrapRef.current.contains(e.relatedTarget)) {
-          close()
-        }
-      }}
-    >
+    <div ref={wrapRef} className={cn('combo', open && 'open')}>
       <input
         type="text"
         id={id}
@@ -240,10 +254,12 @@ export function ClientCombobox({
         onKeyDown={onKeyDown}
       />
 
+      {/* div, not ul: jsx-a11y strict forbids an interactive role on a list
+          element. The listbox/option roles carry the semantics. */}
       {open && (loading || rowCount > 0) && (
-        <ul className="combo-pop" id={id !== undefined ? `${id}-list` : undefined} role="listbox">
+        <div className="combo-pop" id={id !== undefined ? `${id}-list` : undefined} role="listbox">
           {matches.map((c, i) => (
-            <li key={c.id}>
+            <div key={c.id}>
               <button
                 type="button"
                 role="option"
@@ -264,11 +280,11 @@ export function ClientCombobox({
                   </span>
                 )}
               </button>
-            </li>
+            </div>
           ))}
 
           {showCreate && !createMode && (
-            <li>
+            <div>
               <button
                 type="button"
                 className={cn('combo-create', highlight === matches.length && 'hl')}
@@ -283,11 +299,11 @@ export function ClientCombobox({
               >
                 {createLabel !== undefined ? createLabel(text.trim()) : `+ ${text.trim()}`}
               </button>
-            </li>
+            </div>
           )}
 
           {showCreate && createMode && (
-            <li className="combo-createform">
+            <div className="combo-createform">
               <span className="combo-createform-label">
                 {createLabel !== undefined ? createLabel(text.trim()) : `+ ${text.trim()}`}
               </span>
@@ -314,9 +330,9 @@ export function ClientCombobox({
               >
                 {createConfirmLabel ?? '+'}
               </button>
-            </li>
+            </div>
           )}
-        </ul>
+        </div>
       )}
     </div>
   )

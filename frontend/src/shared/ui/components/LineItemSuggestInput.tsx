@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { cn } from '@/shared/lib/cn'
 
 /** Minimal shape the suggest input needs from a line-item suggestion (#315). */
@@ -62,6 +62,22 @@ export function LineItemSuggestInput({
     setOpen(false)
   }
 
+  // Close when focus leaves the whole widget. Attached imperatively rather than
+  // as an onBlur prop: jsx-a11y strict counts focus handlers as interactions, so
+  // a layout <div> must not carry them. The interactive surface is the input and
+  // the role="option" buttons, which are keyboard reachable on their own.
+  useEffect(() => {
+    const wrap = wrapRef.current
+    if (wrap === null) return
+    const onFocusOut = (e: FocusEvent): void => {
+      if (!wrap.contains(e.relatedTarget as Node | null)) setOpen(false)
+    }
+    wrap.addEventListener('focusout', onFocusOut)
+    return () => {
+      wrap.removeEventListener('focusout', onFocusOut)
+    }
+  }, [])
+
   // Capture phase: runs before the grid's native bubble listener, so we can
   // claim Enter when the menu is actionable and otherwise let the grid have it.
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>): void => {
@@ -96,15 +112,7 @@ export function LineItemSuggestInput({
   }
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn('combo', open && 'open')}
-      onBlur={(e) => {
-        if (wrapRef.current !== null && !wrapRef.current.contains(e.relatedTarget)) {
-          setOpen(false)
-        }
-      }}
-    >
+    <div ref={wrapRef} className={cn('combo', open && 'open')}>
       <input
         type="text"
         id={id}
@@ -127,10 +135,12 @@ export function LineItemSuggestInput({
         onKeyDownCapture={onKeyDownCapture}
       />
 
+      {/* div, not ul: jsx-a11y strict forbids an interactive role on a list
+          element. The listbox/option roles carry the semantics. */}
       {open && matches.length > 0 && (
-        <ul className="combo-pop" id={id !== undefined ? `${id}-list` : undefined} role="listbox">
+        <div className="combo-pop" id={id !== undefined ? `${id}-list` : undefined} role="listbox">
           {matches.map((s, i) => (
-            <li key={s.description}>
+            <div key={s.description}>
               <button
                 type="button"
                 role="option"
@@ -147,9 +157,9 @@ export function LineItemSuggestInput({
                 <span className="combo-name">{s.description}</span>
                 {renderMeta !== undefined && <span className="combo-sub">{renderMeta(s)}</span>}
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   )

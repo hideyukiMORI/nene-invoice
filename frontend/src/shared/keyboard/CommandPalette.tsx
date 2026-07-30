@@ -107,7 +107,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const renderRow = (cmd: Command): ReactNode => {
     const i = indexOfId(cmd.id)
     return (
-      <li key={cmd.id}>
+      <div key={cmd.id}>
         <button
           type="button"
           role="option"
@@ -131,7 +131,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             </span>
           </span>
         </button>
-      </li>
+      </div>
     )
   }
 
@@ -152,19 +152,21 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             <span className="kk">{launchKey}</span>
           </span>
         </div>
-        <ul className="cmdp-list" role="listbox" aria-label={t('admin.commandPalette.title')}>
+        {/* div, not ul: jsx-a11y strict forbids putting an interactive role on a
+            list element. The listbox/option/presentation roles carry the semantics. */}
+        <div className="cmdp-list" role="listbox" aria-label={t('admin.commandPalette.title')}>
           {GROUPS.map((group) => (
             <Fragment key={group.labelKey}>
-              <li className="cmdp-grp" role="presentation">
+              <div className="cmdp-grp" role="presentation">
                 {t(group.labelKey)}
-              </li>
+              </div>
               {group.ids.map((id) => {
                 const cmd = COMMANDS[indexOfId(id)]
                 return cmd === undefined ? null : renderRow(cmd)
               })}
             </Fragment>
           ))}
-        </ul>
+        </div>
         <div className="cmdp-foot">
           <span className="hint">
             <span className="mk">↑</span>
