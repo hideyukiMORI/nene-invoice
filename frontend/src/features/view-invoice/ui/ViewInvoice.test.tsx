@@ -1,3 +1,4 @@
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -32,19 +33,17 @@ describe('ViewInvoice — send-email failure banner (#650)', () => {
     )
 
     const user = userEvent.setup()
-    const { findByRole, getByRole } = renderWithProviders(
-      <ViewInvoice invoiceId={toInvoiceId(1)} />,
-    )
+    renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
 
-    await user.click(await findByRole('button', { name: 'Send by email' }))
+    await user.click(await screen.findByRole('button', { name: 'Send by email' }))
 
-    const alert = await findByRole('alert')
+    const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(
       'We couldn\'t reach the mail server, so the email wasn\'t sent. Try "Resend" again in a moment; if it keeps failing, contact your system administrator.',
     )
     // Not the client-address message — that would misdirect the user (#650).
     expect(alert).not.toHaveTextContent("The client's email address")
-    expect(getByRole('button', { name: 'Check client' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Check client' })).toBeInTheDocument()
   })
 
   it('shows the client-address copy for a 422 client-email-missing response', async () => {
@@ -55,11 +54,11 @@ describe('ViewInvoice — send-email failure banner (#650)', () => {
     )
 
     const user = userEvent.setup()
-    const { findByRole } = renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
+    renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
 
-    await user.click(await findByRole('button', { name: 'Send by email' }))
+    await user.click(await screen.findByRole('button', { name: 'Send by email' }))
 
-    const alert = await findByRole('alert')
+    const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(
       "The client's email address may be missing or malformed. Please check the address and try again.",
     )
@@ -83,11 +82,11 @@ describe('ViewInvoice — demo email preview (#626)', () => {
     )
 
     const user = userEvent.setup()
-    const { findByRole } = renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
+    renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
 
-    await user.click(await findByRole('button', { name: 'Send by email' }))
+    await user.click(await screen.findByRole('button', { name: 'Send by email' }))
 
-    const dialog = await findByRole('dialog')
+    const dialog = await screen.findByRole('dialog')
     expect(dialog).toHaveTextContent('Email preview')
     // The "no email was actually sent" demo notice must be shown.
     expect(dialog).toHaveTextContent('No email was actually sent')
@@ -104,14 +103,12 @@ describe('ViewInvoice — demo email preview (#626)', () => {
     )
 
     const user = userEvent.setup()
-    const { findByRole, findByText, queryByRole } = renderWithProviders(
-      <ViewInvoice invoiceId={toInvoiceId(1)} />,
-    )
+    renderWithProviders(<ViewInvoice invoiceId={toInvoiceId(1)} />)
 
-    await user.click(await findByRole('button', { name: 'Send by email' }))
+    await user.click(await screen.findByRole('button', { name: 'Send by email' }))
 
     // Success toast (role="status") appears; no preview dialog is opened.
-    expect(await findByText('Email sent')).toBeInTheDocument()
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    expect(await screen.findByText('Email sent')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

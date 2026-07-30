@@ -43,11 +43,12 @@ describe('useListClients', () => {
     })
 
     await waitFor(() => {
-      const last = seen.at(-1) ?? ''
-      expect(last).toContain('q=')
-      expect(last).toContain('sort=name')
-      expect(last).toContain('order=asc')
+      expect(seen.at(-1) ?? '').toContain('sort=name')
     })
+
+    const last = seen.at(-1) ?? ''
+    expect(last).toContain('q=')
+    expect(last).toContain('order=asc')
   })
 
   it('exposes the empty state when there are no clients', async () => {

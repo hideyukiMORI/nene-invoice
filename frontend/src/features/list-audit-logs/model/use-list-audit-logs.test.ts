@@ -89,13 +89,14 @@ describe('useListAuditLogs', () => {
     })
 
     await waitFor(() => {
-      const last = seen.at(-1) ?? ''
-      expect(last).toContain('entity_type=invoice')
-      expect(last).toContain('action=invoice.issued')
-      expect(last).toContain('actor_user_id=7')
-      expect(last).toContain('created_from=2026-05-01')
-      expect(last).toContain('created_to=2026-05-31')
-      expect(last).toContain('offset=0')
+      expect(seen.at(-1) ?? '').toContain('entity_type=invoice')
     })
+
+    const last = seen.at(-1) ?? ''
+    expect(last).toContain('action=invoice.issued')
+    expect(last).toContain('actor_user_id=7')
+    expect(last).toContain('created_from=2026-05-01')
+    expect(last).toContain('created_to=2026-05-31')
+    expect(last).toContain('offset=0')
   })
 })

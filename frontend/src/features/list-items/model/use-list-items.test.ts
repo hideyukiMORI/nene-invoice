@@ -43,11 +43,12 @@ describe('useListItems', () => {
     })
 
     await waitFor(() => {
-      const last = seen.at(-1) ?? ''
-      expect(last).toContain('q=')
-      expect(last).toContain('sort=unit_price')
-      expect(last).toContain('order=asc')
+      expect(seen.at(-1) ?? '').toContain('sort=unit_price')
     })
+
+    const last = seen.at(-1) ?? ''
+    expect(last).toContain('q=')
+    expect(last).toContain('order=asc')
   })
 
   it('exposes an error state on a 5xx response', async () => {

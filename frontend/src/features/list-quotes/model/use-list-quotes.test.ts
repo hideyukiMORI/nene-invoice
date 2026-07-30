@@ -102,14 +102,15 @@ describe('useListQuotes', () => {
     })
 
     await waitFor(() => {
-      const last = seen.at(-1) ?? ''
-      expect(last).toContain('q=EST-001')
-      expect(last).toContain('status=sent')
-      expect(last).toContain('valid_from=2026-06-01')
-      expect(last).toContain('total_min=1000')
-      expect(last).toContain('sort=total')
-      expect(last).toContain('order=asc')
+      expect(seen.at(-1) ?? '').toContain('sort=total')
     })
+
+    const last = seen.at(-1) ?? ''
+    expect(last).toContain('q=EST-001')
+    expect(last).toContain('status=sent')
+    expect(last).toContain('valid_from=2026-06-01')
+    expect(last).toContain('total_min=1000')
+    expect(last).toContain('order=asc')
   })
 
   it('exposes an error state on a 5xx response', async () => {
