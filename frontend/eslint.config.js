@@ -12,20 +12,20 @@ import tseslint from 'typescript-eslint'
 //
 // 「既存は列挙して off・新規は full 強制」。列挙に無いファイルは初日から落ちる。
 // ここに足すのは移行のためだけで、**drain 計画つきでしか増やさない**（#739）。
-//   no-restricted-syntax（i18n ハードコード）→ C3-3 で drain
+//   no-restricted-syntax（Intl 直呼び・format 経由 MUST）→ C4b（共有 format 供給待ち）
 //   no-restricted-imports（@/shared/ui 集約バレル）→ C3-4（構造是正・判例23）
 // ---------------------------------------------------------------------------
 
-/** i18n ハードコード等 no-restricted-syntax の既存違反（7 ファイル・188 件）— C3-3 で drain。 */
-const restrictedSyntaxLedger = [
-  'src/features/view-dashboard/ui/ViewDashboard.tsx',
-  'src/features/view-invoice/ui/ViewInvoice.tsx',
-  'src/pages/help/help-content.ts',
-  'src/shared/keyboard/shortcuts-data.ts',
-  'src/shared/lib/format-date.ts',
-  'src/shared/lib/format-money.ts',
-  'src/shared/ui/components/DatePicker.tsx',
-]
+/**
+ * no-restricted-syntax の残存（2 ファイル・3 件）— **C4b へ移管**（hub 裁定 2026-07-30）。
+ * `format-date.ts:28,36` の Intl 直呼びと `format-money.ts:6` の `toLocaleString` は、
+ * 自前実装をやめて `@hideyukimori/nene2-i18n/format` へ寄せる話なので、C4b の
+ * 「i18n runtime 供給待ち」の束と同じ。C3-3（#746）の射程からは外した。
+ *
+ * C3-3 で drain 済み（#746）: ViewDashboard / ViewInvoice / DatePicker の計 12 件は
+ * ロケールカタログへ移した。help-content / shortcuts-data の 174 件は下の公認差異へ。
+ */
+const restrictedSyntaxLedger = ['src/shared/lib/format-date.ts', 'src/shared/lib/format-money.ts']
 
 /** `@/shared/ui` 集約バレル import の既存違反（60 ファイル・各1件）— C3-4 の構造是正で消える。 */
 const sharedUiBarrelLedger = [
@@ -172,6 +172,20 @@ export default tseslint.config(
   // --- 判例26 台帳の適用（既存のみ off・新規は full 強制） ---
   {
     files: restrictedSyntaxLedger,
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  // 公認差異（台帳ではない・drain 対象外）: ja/en を併記して持つコンテンツモジュール。
+  // 会議R1⑦が防ぐ「ユーザ知覚文字列が翻訳不能なまま埋まる」状態ではない — 翻訳は
+  // 両方そこに在る。
+  //   - pages/help/help-content.ts … 手順・フロー・FAQ の長文散文。フラットなキーに
+  //     合わないので ja/en ペアで持つ設計（ファイル冒頭に明記）。HelpPage.tsx が
+  //     `locale === 'en' ? b.en : b.ja` で実際に切り替える。
+  //   - shared/keyboard/shortcuts-data.ts … オーバーレイは仕様上 ja主+en副を**同時**に
+  //     描画する。t() は片方しか返せないので、そもそもカタログでは表現できない。
+  // 解除条件: 長文散文をロケールカタログ化する方針が別途決まったとき。
+  // 射程調整（{ja,en} 型リテラルの除外）は凍結明けの標準側判断 — fleet #162 に提案済み。
+  {
+    files: ['src/pages/help/help-content.ts', 'src/shared/keyboard/shortcuts-data.ts'],
     rules: { 'no-restricted-syntax': 'off' },
   },
   // 公認差異（台帳ではない・drain 対象外）: vitest.config.ts が `globals: false` なので

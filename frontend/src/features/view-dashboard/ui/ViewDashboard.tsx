@@ -272,7 +272,8 @@ function IssuanceTrend({ months }: { months: MonthlyBilled[] }) {
   const monthNo = (ym: string): number => Number(ym.slice(5))
   const monthLabel = (ym: string, isNow: boolean): string => {
     const n = monthNo(ym)
-    if (locale === 'ja') return isNow ? `${String(n)}月` : String(n)
+    if (locale === 'ja')
+      return isNow ? t('admin.dashboard.monthWithUnit', { month: String(n) }) : String(n)
     return new Date(`${ym}-01T00:00:00`).toLocaleDateString('en-US', { month: 'short' })
   }
 
@@ -372,16 +373,21 @@ function DailyCumulativeView({
     rows.map((d) => `${r2(x(Math.min(d.day, daysInMonth)))},${r2(y(d.cumulative_cents))}`).join(' ')
 
   // Fine label (one decimal 万) for the highlighted current/landing values.
+  // The locale branch is about the scale (万 vs thousands), not the wording —
+  // the unit itself lives in the catalog.
   const man = (c: number): string =>
     locale === 'ja'
-      ? `${(Math.round(c / 1000) / 10).toString()}万`
-      : `¥${String(Math.round(c / 1000))}k`
+      ? t('admin.dashboard.amountCompact', { value: (Math.round(c / 1000) / 10).toString() })
+      : t('admin.dashboard.amountCompact', { value: String(Math.round(c / 1000)) })
   // Compact label for axis ticks — stays short for large amounts (fits the gutter).
   const manAxis = (c: number): string => {
-    if (locale === 'ja') return `${String(Math.round(c / 10000))}万`
+    if (locale === 'ja')
+      return t('admin.dashboard.amountCompact', { value: String(Math.round(c / 10000)) })
     return c >= 1_000_000
-      ? `¥${(Math.round(c / 100000) / 10).toString()}M`
-      : `¥${String(Math.round(c / 1000))}k`
+      ? t('admin.dashboard.amountCompactLarge', {
+          value: (Math.round(c / 100000) / 10).toString(),
+        })
+      : t('admin.dashboard.amountCompact', { value: String(Math.round(c / 1000)) })
   }
   const todayX = x(todayDay)
   const nowPts = pts(current)

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
 import { DatePicker } from './DatePicker'
@@ -81,5 +81,30 @@ describe('DatePicker', () => {
     fireEvent.click(openButton())
     // Open: interactive again.
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('inert')
+  })
+  it('renders weekday initials from the catalog (en) (#746)', () => {
+    renderWithProviders(<DatePicker value="2026-06-15" onChange={vi.fn()} />)
+    fireEvent.click(openButton())
+    const grid = within(screen.getByRole('dialog', { hidden: true }))
+    // en catalog: S M T W T F S — S and T each appear twice in the strip.
+    expect(grid.getAllByText('S')).toHaveLength(2)
+    expect(grid.getAllByText('T')).toHaveLength(2)
+    expect(grid.getByText('M')).toBeInTheDocument()
+    expect(grid.getByText('W')).toBeInTheDocument()
+    expect(grid.getByText('F')).toBeInTheDocument()
+  })
+
+  it('renders the ja weekday initials when the stored locale is ja (#746)', () => {
+    localStorage.setItem('nene-locale', 'ja')
+    try {
+      renderWithProviders(<DatePicker value="2026-06-15" onChange={vi.fn()} />)
+      fireEvent.click(screen.getByRole('button', { name: 'カレンダーを開く' }))
+      const grid = within(screen.getByRole('dialog', { hidden: true }))
+      for (const d of ['日', '月', '火', '水', '木', '金', '土']) {
+        expect(grid.getByText(d)).toBeInTheDocument()
+      }
+    } finally {
+      localStorage.removeItem('nene-locale')
+    }
   })
 })
