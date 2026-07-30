@@ -29,7 +29,7 @@
     "gen:icons": "node scripts/gen-icons.mjs",
     "knip": "knip",
     "audit": "audit-ci --config audit-ci.jsonc",
-    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run check:registries && npm run format && npm run coverage:check && npm run knip && npm run build-storybook",
+    "check": "npm run codegen:check && npm run type-check && npm run lint && npm run lint:styles && npm run check:registries && npm run format && npm run coverage:check && npm run knip && npm run build && npm run build-storybook",
     "lint:styles": "stylelint 'src/**/*.css'",
     "check:registries": "nene2-check init --check --repo nene-invoice"
   },
