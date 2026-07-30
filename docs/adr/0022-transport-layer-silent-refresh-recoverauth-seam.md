@@ -147,6 +147,30 @@ mode behind a promotion gate**.
 - Register any new identifiers introduced by the eventual path-mode enablement
   in `docs/explanation/terminology.md` in the implementing PR.
 
+## Amendment 1 (2026-07-30) — path-mode silent refresh enabled
+
+The owner GO named in "Remaining before path-mode is switched on in production"
+was given on 2026-07-30. The per-mode promotion gate is **removed**: the
+transport now receives `recoverAuth` in every tenancy mode.
+
+- `frontend/src/shared/api/client.ts` — `...(isPathTenancy ? {} : { recoverAuth })`
+  became an unconditional `recoverAuth`.
+- `frontend/src/shared/config/app-base.ts` — `isPathTenancy` existed only to feed
+  the gate and was deleted with it. `deriveInstallBase` stays (it still explains
+  how a slug is told apart from a subdirectory install).
+
+**Precondition re-verified before flipping, not assumed.** The #38 root fix
+(`#693` / `#694`, merged 2026-07-17) was covered only at the ends — the
+middleware records the slug-scoped app base (`OrgResolverMiddlewareTest`) and the
+builder turns a base into a `Path` (`SessionCookiesTest`) — with nothing on the
+join. `tests/Auth/RefreshHandlerTest.php` now covers it: rotation and the
+fail-closed clear both emit `Path=/{base}/{slug}/auth` in path mode, and the
+install base elsewhere. Reverting the handler to the pre-fix
+`BasePath::fromRequest()` fails 3 of its 4 tests, so the coverage is real.
+
+Deploying the flipped bundle is tracked separately; this amendment records the
+code change, not the rollout.
+
 ## Related
 
 - Issue: `#701` (this ADR); fleet bug `#38` (path-mode refresh-cookie
