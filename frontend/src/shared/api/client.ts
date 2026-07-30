@@ -3,7 +3,7 @@ import {
   isNene2ClientError,
   type TokenStore,
 } from '@hideyukimori/nene2-client'
-import { apiBasePath, isPathTenancy } from '@/shared/config/app-base'
+import { apiBasePath } from '@/shared/config/app-base'
 import { AppError } from './errors'
 
 /**
@@ -12,7 +12,7 @@ import { AppError } from './errors'
  * replay) is delegated to the fleet-standard `@hideyukimori/nene2-client`
  * transport (ADR 0008 seam). This module owns only the invoice-specific bits:
  * the in-memory token posture, the refresh mechanics (endpoint + CSRF cookie),
- * the promotion gate, and mapping the transport's errors to {@link AppError}.
+ * and mapping the transport's errors to {@link AppError}.
  *
  * The exported surface (`apiClient`, `setAuthToken`, `hasAuthToken`,
  * `wasSessionExpired`, `subscribeAuthChange`, `refreshSession`, `revokeSession`)
@@ -139,13 +139,14 @@ const transport = createNene2Transport({
     sessionExpired = true
     notify()
   },
-  // Promotion gate (ADR 0008 / issue #38): silent refresh only where it is safe.
-  // Under path-scoped tenancy the rotated `ni_refresh` is reissued at a
-  // slug-stripped `Path` (#38), so a second refresh re-presents a consumed token
-  // → server-side reuse defense revokes the family (hard logout). Single/host
-  // mode has no slug, so refresh is safe there today — pass `recoverAuth`. Path
-  // mode omits it (fail-closed one-shot) until #38 lands server-side.
-  ...(isPathTenancy ? {} : { recoverAuth }),
+  // Silent refresh is enabled in every tenancy mode (ADR 0022). It used to be
+  // gated off under path-scoped tenancy because the rotated `ni_refresh` was
+  // reissued at a slug-stripped `Path` (#38), so the second refresh re-presented
+  // a consumed token and the server-side reuse defense burned the family (hard
+  // logout). The server now reissues at the app base (install base + slug) —
+  // `OrgResolverMiddleware` records it and Login/Refresh/Logout use it — so the
+  // rotation stays inside `/{base}/{slug}/auth`. See `RefreshHandlerTest`.
+  recoverAuth,
 })
 
 /**
@@ -153,7 +154,7 @@ const transport = createNene2Transport({
  * token is gone, but the refresh cookie may still be valid. Routes through
  * `transport.recover()` (never `recoverAuth` directly) so the boot probe and any
  * early 401-retry share one in-flight refresh — concurrent refreshes would trip
- * the rotation reuse defense. Resolves false in path mode (no `recoverAuth`).
+ * the rotation reuse defense.
  */
 export function refreshSession(): Promise<boolean> {
   return transport.recover()

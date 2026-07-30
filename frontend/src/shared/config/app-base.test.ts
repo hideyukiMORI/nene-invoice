@@ -38,7 +38,7 @@ describe('path tenancy app base (型B Phase 2)', () => {
   })
 })
 
-describe('deriveInstallBase — install base without the tenant slug (promotion gate)', () => {
+describe('deriveInstallBase — install base without the tenant slug', () => {
   it('strips the shell-appended /admin/ to reveal the install base', () => {
     expect(deriveInstallBase('/admin/')).toBe('')
     expect(deriveInstallBase('/invoice/admin/')).toBe('/invoice')
