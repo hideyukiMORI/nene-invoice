@@ -29,7 +29,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check (type-check, lint, format, test, knip, build-storybook)
+      # `build` is in the chain because `build-storybook` does not stand in for it:
+      # .storybook/main.ts only bundles src/shared/ui/**/*.stories.*, so main.tsx and
+      # everything reachable only from it (app/, entities/, features/, pages/) is never
+      # bundled by any other gate. tsc checks those files' types but not module
+      # resolution. See docs/development/frontend-standards.md.
+      - name: Check (type-check, lint, format, test, knip, build, build-storybook)
         run: npm run check
 
       # audit-ci = npm audit + a per-advisory allowlist, so a not-yet-fixable advisory can be

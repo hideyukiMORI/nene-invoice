@@ -505,11 +505,19 @@ observable outcome). New `use-{feature}` hooks without a colocated `*.test.ts(x)
 npm ci --prefix frontend
 npm run dev --prefix frontend          # Vite dev server; API proxied to the PHP app
 npm run codegen --prefix frontend      # regenerate shared/api/schema.gen.ts from OpenAPI
-npm run check --prefix frontend        # type-check + lint + format + test + knip + build-storybook
+npm run check --prefix frontend        # type-check + lint + format + test + knip + build + build-storybook
 npm run build --prefix frontend        # production build → public_html/admin/
 ```
 
-CI on frontend changes: `npm ci` → `npm run check` → `npm audit --audit-level=high`.
+CI on frontend changes: `npm ci` → `npm run check` → `npm run audit` (audit-ci; see
+`dependency-audit.md`).
+
+`check` runs the production `build`, and `build-storybook` does not substitute for it:
+`.storybook/main.ts` bundles only `src/shared/ui/**/*.stories.*`, so `main.tsx` and
+everything reachable only from it — `app/`, `entities/`, `features/`, `pages/` — is bundled
+by no other gate. `tsc -b` type-checks those files but does not resolve modules, so a
+missing asset or package import there type-checks and lints clean while the production
+build fails.
 
 ESLint encodes the boundaries:
 
