@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import {
   BANK_IMPORT_PRESETS,
   useImportBankCsv,
@@ -7,6 +7,7 @@ import {
 } from '@/entities/bank-transaction'
 import { useTranslation } from '@/shared/i18n'
 import { cn } from '@/shared/lib/cn'
+import { useFileDropZone } from '@/shared/lib/use-file-drop-zone'
 import { Badge, Button, Field, Select, Stack, Text, useToast } from '@/shared/ui'
 
 function formatSize(bytes: number): string {
@@ -32,7 +33,6 @@ export function BankImportPanel() {
   const [preset, setPreset] = useState<BankImportPreset>('net_bank_credit_debit')
   const [file, setFile] = useState<File | null>(null)
   const [result, setResult] = useState<BankImportResult | null>(null)
-  const [drag, setDrag] = useState(false)
 
   const pick = (picked: File): void => {
     setResult(null)
@@ -44,12 +44,7 @@ export function BankImportPanel() {
     if (picked !== undefined) pick(picked)
   }
 
-  const onDrop = (event: DragEvent<HTMLLabelElement>): void => {
-    event.preventDefault()
-    setDrag(false)
-    const picked = event.dataTransfer.files[0]
-    if (picked !== undefined) pick(picked)
-  }
+  const { ref: dropRef, dragging } = useFileDropZone(pick)
 
   const reset = (): void => {
     setFile(null)
@@ -112,20 +107,7 @@ export function BankImportPanel() {
         </Select>
       </Field>
 
-      <label
-        className={cn('dropzone', drag && 'is-drag')}
-        onDragEnter={(e) => {
-          e.preventDefault()
-          setDrag(true)
-        }}
-        onDragOver={(e) => {
-          e.preventDefault()
-        }}
-        onDragLeave={() => {
-          setDrag(false)
-        }}
-        onDrop={onDrop}
-      >
+      <label ref={dropRef} className={cn('dropzone', dragging && 'is-drag')}>
         <input
           ref={inputRef}
           type="file"

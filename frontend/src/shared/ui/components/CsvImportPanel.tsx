@@ -1,5 +1,6 @@
-import { useState, type ChangeEvent, type DragEvent } from 'react'
+import { useState, type ChangeEvent } from 'react'
 import { cn } from '@/shared/lib/cn'
+import { useFileDropZone } from '@/shared/lib/use-file-drop-zone'
 import type { CsvImportReport } from '@/shared/lib/csv-import'
 import { useTranslation } from '@/shared/i18n'
 import { Button } from '../primitives/Button'
@@ -49,7 +50,6 @@ export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelPr
   const [csv, setCsv] = useState<string | null>(null)
   const [report, setReport] = useState<CsvImportReport | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [drag, setDrag] = useState(false)
 
   const pick = (picked: File): void => {
     setError(null)
@@ -75,12 +75,7 @@ export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelPr
     if (picked !== undefined) pick(picked)
   }
 
-  const onDrop = (event: DragEvent<HTMLLabelElement>): void => {
-    event.preventDefault()
-    setDrag(false)
-    const picked = event.dataTransfer.files[0]
-    if (picked !== undefined) pick(picked)
-  }
+  const { ref: dropRef, dragging } = useFileDropZone(pick)
 
   const reset = (): void => {
     setPhase('idle')
@@ -154,20 +149,7 @@ export function CsvImportPanel({ template, runImport, onDone }: CsvImportPanelPr
               <div className="st-d">{t('common.csvImport.step2Desc')}</div>
             </div>
           </div>
-          <label
-            className={cn('dropzone', drag && 'is-drag')}
-            onDragEnter={(e) => {
-              e.preventDefault()
-              setDrag(true)
-            }}
-            onDragOver={(e) => {
-              e.preventDefault()
-            }}
-            onDragLeave={() => {
-              setDrag(false)
-            }}
-            onDrop={onDrop}
-          >
+          <label ref={dropRef} className={cn('dropzone', dragging && 'is-drag')}>
             <input
               type="file"
               accept=".csv,text/csv"
