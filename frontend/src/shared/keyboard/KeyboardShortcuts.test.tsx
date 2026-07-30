@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
@@ -6,16 +6,31 @@ import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { openShortcutsOverlay } from './overlay-control'
 import { useRowCursor } from './use-row-cursor'
 
+// The probe exposes the current path through a queryable role rather than a test
+// id, so assertions use the same accessible surface a user would.
 function LocationProbe() {
-  return <div data-testid="loc">{useLocation().pathname}</div>
+  return (
+    <div role="status" aria-label="location">
+      {useLocation().pathname}
+    </div>
+  )
 }
+
+const locationProbe = () => screen.getByRole('status', { name: 'location' })
 
 function ListHarness({ onOpen }: { onOpen: (index: number) => void }) {
   const cursor = useRowCursor(3, onOpen)
   return (
     <ul>
       {[0, 1, 2].map((i) => (
-        <li key={i} data-kbd-row={i} className={cursor === i ? 'is-cursor' : undefined}>
+        <li
+          key={i}
+          data-kbd-row={i}
+          // aria-current is the accessible expression of "this row holds the
+          // cursor" — it replaces reaching into the DOM for the .is-cursor class.
+          aria-current={cursor === i ? true : undefined}
+          className={cursor === i ? 'is-cursor' : undefined}
+        >
           row{i}
         </li>
       ))}
@@ -25,7 +40,7 @@ function ListHarness({ onOpen }: { onOpen: (index: number) => void }) {
 
 describe('KeyboardShortcuts', () => {
   it('navigates with the g-prefix sequence (g then i → invoices)', async () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -36,12 +51,12 @@ describe('KeyboardShortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'i' })
 
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/invoices')
+      expect(locationProbe()).toHaveTextContent('/invoices')
     })
   })
 
   it('navigates to items (g m) and templates (g t), and n opens new item', async () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -51,23 +66,23 @@ describe('KeyboardShortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'g' })
     fireEvent.keyDown(document.body, { key: 'm' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/items')
+      expect(locationProbe()).toHaveTextContent('/items')
     })
 
     fireEvent.keyDown(document.body, { key: 'n' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/items/new')
+      expect(locationProbe()).toHaveTextContent('/items/new')
     })
 
     fireEvent.keyDown(document.body, { key: 'g' })
     fireEvent.keyDown(document.body, { key: 't' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/templates')
+      expect(locationProbe()).toHaveTextContent('/templates')
     })
   })
 
   it('returns to the parent list with u from a detail view', () => {
-    const { getByTestId } = render(
+    render(
       <MemoryRouter initialEntries={['/invoices/42']}>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -75,11 +90,11 @@ describe('KeyboardShortcuts', () => {
     )
 
     fireEvent.keyDown(document.body, { key: 'u' })
-    expect(getByTestId('loc').textContent).toBe('/invoices')
+    expect(locationProbe()).toHaveTextContent('/invoices')
   })
 
   it('returns to the parent list with u from an edit form when no field is focused (#374)', () => {
-    const { getByTestId } = render(
+    render(
       <MemoryRouter initialEntries={['/clients/42/edit']}>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -87,136 +102,139 @@ describe('KeyboardShortcuts', () => {
     )
 
     fireEvent.keyDown(document.body, { key: 'u' })
-    expect(getByTestId('loc').textContent).toBe('/clients')
+    expect(locationProbe()).toHaveTextContent('/clients')
   })
 
   it('does not fire u while a form field is focused (typing wins) (#374)', () => {
-    const { getByTestId, container } = render(
+    render(
       <MemoryRouter initialEntries={['/clients/42/edit']}>
         <KeyboardShortcuts />
         <LocationProbe />
-        <input data-testid="field" />
+        <input aria-label="field" />
       </MemoryRouter>,
     )
-    const field = container.querySelector('[data-testid="field"]') as HTMLInputElement
+    const field = screen.getByRole('textbox')
     field.focus()
 
     fireEvent.keyDown(field, { key: 'u' })
-    expect(getByTestId('loc').textContent).toBe('/clients/42/edit')
+    expect(locationProbe()).toHaveTextContent('/clients/42/edit')
   })
 
   it('blurs the search field on Esc so j/k work again (#362)', () => {
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
-        <input data-kbd="search" />
+        <input data-kbd="search" aria-label="search" />
       </>,
     )
-    const search = container.querySelector('[data-kbd="search"]') as HTMLInputElement
+    const search = screen.getByRole('textbox')
     search.focus()
-    expect(document.activeElement).toBe(search)
+    expect(search).toHaveFocus()
 
     fireEvent.keyDown(search, { key: 'Escape' })
-    expect(document.activeElement).not.toBe(search)
+    expect(search).not.toHaveFocus()
   })
 
   it('blurs any focused form field on Esc, not just search (#364)', () => {
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
-        <input id="plain" />
-        <textarea id="notes" />
+        <input aria-label="plain" />
+        <textarea aria-label="notes" />
       </>,
     )
-    const plain = container.querySelector('#plain') as HTMLInputElement
+    const plain = screen.getByRole('textbox', { name: 'plain' })
     plain.focus()
     fireEvent.keyDown(plain, { key: 'Escape' })
-    expect(document.activeElement).not.toBe(plain)
+    expect(plain).not.toHaveFocus()
 
-    const notes = container.querySelector('#notes') as HTMLTextAreaElement
+    const notes = screen.getByRole('textbox', { name: 'notes' })
     notes.focus()
     fireEvent.keyDown(notes, { key: 'Escape' })
-    expect(document.activeElement).not.toBe(notes)
+    expect(notes).not.toHaveFocus()
   })
 
   it('keeps focus on Esc while composing in the search field (IME cancel) (#362)', () => {
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
-        <input data-kbd="search" />
+        <input data-kbd="search" aria-label="search" />
       </>,
     )
-    const search = container.querySelector('[data-kbd="search"]') as HTMLInputElement
+    const search = screen.getByRole('textbox')
     search.focus()
 
     fireEvent.keyDown(search, { key: 'Escape', isComposing: true })
-    expect(document.activeElement).toBe(search)
+    expect(search).toHaveFocus()
   })
 
   it('opens the command palette on Ctrl/⌘+K and navigates with j + Enter (#370)', async () => {
-    const { getByRole, getByTestId, queryByRole } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
       </>,
     )
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
-    expect(getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     // cursor starts on the first command (dashboard); j → quotes, Enter goes.
     fireEvent.keyDown(document.body, { key: 'j' })
     fireEvent.keyDown(document.body, { key: 'Enter' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/quotes')
+      expect(locationProbe()).toHaveTextContent('/quotes')
     })
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('closes the command palette on Esc (#370)', () => {
-    const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
+    renderWithProviders(<KeyboardShortcuts />)
     fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
-    expect(getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     fireEvent.keyDown(document.body, { key: 'Escape' })
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('groups palette commands with non-selectable headers (design 案A, #370)', () => {
-    const { getByRole, getAllByRole } = renderWithProviders(<KeyboardShortcuts />)
+    renderWithProviders(<KeyboardShortcuts />)
     fireEvent.keyDown(document.body, { key: 'k', metaKey: true })
 
-    const dialog = getByRole('dialog')
     // Group headers are presentation (not options); 10 navigable options remain.
-    expect(getAllByRole('option')).toHaveLength(10)
-    expect(dialog.querySelectorAll('.cmdp-grp')).toHaveLength(3)
-    // Keys render as the joined .keycombo (not the 3D .kbd).
-    expect(dialog.querySelector('.keycombo')).not.toBeNull()
+    const list = screen.getByRole('listbox')
+    expect(screen.getAllByRole('option')).toHaveLength(10)
+    expect(within(list).getAllByRole('presentation')).toHaveLength(3)
+    // Each option shows its key combo as separate caps (g then d for dashboard).
+    const firstOption = screen.getAllByRole('option')[0]
+    expect(firstOption).toBeDefined()
+    expect(within(firstOption as HTMLElement).getByText('g')).toBeInTheDocument()
+    expect(within(firstOption as HTMLElement).getByText('d')).toBeInTheDocument()
   })
 
   it('opens the cheat-sheet via openShortcutsOverlay()', () => {
-    const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    renderWithProviders(<KeyboardShortcuts />)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     act(() => {
       openShortcutsOverlay()
     })
-    expect(getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
   it('opens the cheat-sheet on ? and closes it on Esc', () => {
-    const { getByRole, queryByRole } = renderWithProviders(<KeyboardShortcuts />)
+    renderWithProviders(<KeyboardShortcuts />)
 
     fireEvent.keyDown(document.body, { key: '?' })
-    expect(getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     fireEvent.keyDown(document.body, { key: 'Escape' })
-    expect(queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('ignores single keys while the IME is composing', () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -226,27 +244,27 @@ describe('KeyboardShortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'g', isComposing: true })
     fireEvent.keyDown(document.body, { key: 'i' })
 
-    expect(getByTestId('loc')).toHaveTextContent('/')
+    expect(locationProbe()).toHaveTextContent('/')
   })
 
   it('ignores single keys when focus is in an editable field', () => {
-    const { getByTestId, getByRole } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
         <input aria-label="field" />
       </>,
     )
-    const input = getByRole('textbox')
+    const input = screen.getByRole('textbox')
 
     fireEvent.keyDown(input, { key: 'g' })
     fireEvent.keyDown(input, { key: 'i' })
 
-    expect(getByTestId('loc')).toHaveTextContent('/')
+    expect(locationProbe()).toHaveTextContent('/')
   })
 
   it('focuses the list search box on /', () => {
-    const { getByRole } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <input data-kbd="search" aria-label="search" />
@@ -255,11 +273,11 @@ describe('KeyboardShortcuts', () => {
 
     fireEvent.keyDown(document.body, { key: '/' })
 
-    expect(getByRole('textbox')).toHaveFocus()
+    expect(screen.getByRole('textbox')).toHaveFocus()
   })
 
   it('opens the contextual new form on n (invoices → /invoices/new)', async () => {
-    const { getByTestId } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <LocationProbe />
@@ -269,18 +287,18 @@ describe('KeyboardShortcuts', () => {
     fireEvent.keyDown(document.body, { key: 'g' })
     fireEvent.keyDown(document.body, { key: 'i' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/invoices')
+      expect(locationProbe()).toHaveTextContent('/invoices')
     })
 
     fireEvent.keyDown(document.body, { key: 'n' })
     await waitFor(() => {
-      expect(getByTestId('loc')).toHaveTextContent('/invoices/new')
+      expect(locationProbe()).toHaveTextContent('/invoices/new')
     })
   })
 
   it('moves the row cursor with j/k and opens the cursored row with o', () => {
     const onOpen = vi.fn()
-    const { container } = renderWithProviders(
+    renderWithProviders(
       <>
         <KeyboardShortcuts />
         <ListHarness onOpen={onOpen} />
@@ -288,11 +306,11 @@ describe('KeyboardShortcuts', () => {
     )
 
     fireEvent.keyDown(document.body, { key: 'j' })
-    expect(container.querySelector('.is-cursor')).toHaveTextContent('row0')
+    expect(screen.getByRole('listitem', { current: true })).toHaveTextContent('row0')
     fireEvent.keyDown(document.body, { key: 'j' })
-    expect(container.querySelector('.is-cursor')).toHaveTextContent('row1')
+    expect(screen.getByRole('listitem', { current: true })).toHaveTextContent('row1')
     fireEvent.keyDown(document.body, { key: 'k' })
-    expect(container.querySelector('.is-cursor')).toHaveTextContent('row0')
+    expect(screen.getByRole('listitem', { current: true })).toHaveTextContent('row0')
 
     fireEvent.keyDown(document.body, { key: 'o' })
     expect(onOpen).toHaveBeenCalledWith(0)
@@ -302,7 +320,7 @@ describe('KeyboardShortcuts', () => {
     const onSubmit = vi.fn((e: { preventDefault: () => void }) => {
       e.preventDefault()
     })
-    const { getByRole } = renderWithProviders(
+    renderWithProviders(
       <form onSubmit={onSubmit}>
         <input aria-label="field" />
         <button type="submit">submit</button>
@@ -310,7 +328,7 @@ describe('KeyboardShortcuts', () => {
     )
     // KeyboardShortcuts is also needed; render it alongside via a second mount.
     renderWithProviders(<KeyboardShortcuts />)
-    const input = getByRole('textbox')
+    const input = screen.getByRole('textbox')
 
     fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
 

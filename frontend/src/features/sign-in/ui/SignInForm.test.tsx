@@ -1,4 +1,4 @@
-import { waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -11,11 +11,11 @@ import { SignInForm } from './SignInForm'
 describe('SignInForm', () => {
   it('signs in and stores the session token', async () => {
     const user = userEvent.setup()
-    const { getByLabelText, getByRole } = renderWithProviders(<SignInForm />)
+    renderWithProviders(<SignInForm />)
 
-    await user.type(getByLabelText('Email'), 'admin@example.com')
-    await user.type(getByLabelText('Password'), 'password123')
-    await user.click(getByRole('button', { name: 'Sign in' }))
+    await user.type(screen.getByLabelText('Email'), 'admin@example.com')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
     await waitFor(() => {
       expect(hasAuthToken()).toBe(true)
@@ -39,13 +39,13 @@ describe('SignInForm', () => {
     )
 
     const user = userEvent.setup()
-    const { getByLabelText, getByRole, findByRole } = renderWithProviders(<SignInForm />)
+    renderWithProviders(<SignInForm />)
 
-    await user.type(getByLabelText('Email'), 'admin@example.com')
-    await user.type(getByLabelText('Password'), 'wrong-password')
-    await user.click(getByRole('button', { name: 'Sign in' }))
+    await user.type(screen.getByLabelText('Email'), 'admin@example.com')
+    await user.type(screen.getByLabelText('Password'), 'wrong-password')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
 
-    await findByRole('alert')
+    await screen.findByRole('alert')
     expect(hasAuthToken()).toBe(false)
   })
 })

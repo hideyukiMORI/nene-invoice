@@ -1,4 +1,4 @@
-import { act, fireEvent } from '@testing-library/react'
+import { act, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@tests/render/render-with-providers'
 import { useToast } from './context'
@@ -41,33 +41,33 @@ describe('Toast system', () => {
   })
 
   it('shows a success toast with role="status" and auto-dismisses', () => {
-    const { getByText, queryByText } = renderWithProviders(<Harness />)
+    renderWithProviders(<Harness />)
 
-    fireEvent.click(getByText('notify-ok'))
-    const toast = getByText('Email sent')
-    expect(toast).toBeInTheDocument()
-    expect(toast.closest('.toast')).toHaveAttribute('role', 'status')
+    fireEvent.click(screen.getByRole('button', { name: 'notify-ok' }))
+    // role="status" is the toast element itself, so finding it by role proves
+    // both that the toast rendered and that it carries the gentle live region.
+    expect(within(screen.getByRole('status')).getByText('Email sent')).toBeInTheDocument()
 
     act(() => {
       vi.advanceTimersByTime(5000)
     })
-    expect(queryByText('Email sent')).not.toBeInTheDocument()
+    expect(screen.queryByText('Email sent')).not.toBeInTheDocument()
   })
 
   it('shows an error toast with role="alert"', () => {
-    const { getByText } = renderWithProviders(<Harness />)
+    renderWithProviders(<Harness />)
 
-    fireEvent.click(getByText('notify-err'))
-    expect(getByText('Connection failed').closest('.toast')).toHaveAttribute('role', 'alert')
+    fireEvent.click(screen.getByRole('button', { name: 'notify-err' }))
+    expect(within(screen.getByRole('alert')).getByText('Connection failed')).toBeInTheDocument()
   })
 
   it('dismisses manually via the close button before the timer fires', () => {
-    const { getByText, getByLabelText, queryByText } = renderWithProviders(<Harness />)
+    renderWithProviders(<Harness />)
 
-    fireEvent.click(getByText('notify-ok'))
-    expect(getByText('Email sent')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'notify-ok' }))
+    expect(screen.getByText('Email sent')).toBeInTheDocument()
 
-    fireEvent.click(getByLabelText('Close'))
-    expect(queryByText('Email sent')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText('Close'))
+    expect(screen.queryByText('Email sent')).not.toBeInTheDocument()
   })
 })

@@ -98,17 +98,18 @@ describe('useListInvoices', () => {
     })
 
     await waitFor(() => {
-      const last = seen.at(-1) ?? ''
-      expect(last).toContain('q=INV-001')
-      expect(last).toContain('status=issued')
-      expect(last).toContain('overdue=1')
-      expect(last).toContain('due_from=2026-06-01')
-      expect(last).toContain('issued_from=2026-04-01')
-      expect(last).toContain('issued_to=2026-06-30')
-      expect(last).toContain('total_min=1000')
-      expect(last).toContain('sort=total')
-      expect(last).toContain('order=asc')
+      expect(seen.at(-1) ?? '').toContain('sort=total')
     })
+
+    const last = seen.at(-1) ?? ''
+    expect(last).toContain('q=INV-001')
+    expect(last).toContain('status=issued')
+    expect(last).toContain('overdue=1')
+    expect(last).toContain('due_from=2026-06-01')
+    expect(last).toContain('issued_from=2026-04-01')
+    expect(last).toContain('issued_to=2026-06-30')
+    expect(last).toContain('total_min=1000')
+    expect(last).toContain('order=asc')
   })
 
   it('exposes an error state on a 5xx response', async () => {

@@ -12,32 +12,9 @@ import tseslint from 'typescript-eslint'
 //
 // 「既存は列挙して off・新規は full 強制」。列挙に無いファイルは初日から落ちる。
 // ここに足すのは移行のためだけで、**drain 計画つきでしか増やさない**（#739）。
-//   testing-library → C3-2 で drain
 //   no-restricted-syntax（i18n ハードコード）→ C3-3 で drain
 //   no-restricted-imports（@/shared/ui 集約バレル）→ C3-4（構造是正・判例23）
 // ---------------------------------------------------------------------------
-
-/** testing-library 系の既存違反（18 ファイル・218 件）— C3-2 で drain。 */
-const testingLibraryLedger = [
-  'src/features/create-recurring-invoice/ui/CreateRecurringInvoiceForm.test.tsx',
-  'src/features/list-audit-logs/model/use-list-audit-logs.test.ts',
-  'src/features/list-clients/model/use-list-clients.test.ts',
-  'src/features/list-invoices/model/use-list-invoices.test.ts',
-  'src/features/list-items/model/use-list-items.test.ts',
-  'src/features/list-quotes/model/use-list-quotes.test.ts',
-  'src/features/sign-in/ui/SignInForm.test.tsx',
-  'src/features/view-invoice/model/use-generate-download-link.test.ts',
-  'src/features/view-invoice/ui/ViewInvoice.test.tsx',
-  'src/shared/keyboard/KeyboardShortcuts.test.tsx',
-  'src/shared/keyboard/use-line-grid-enter.test.tsx',
-  'src/shared/ui/components/ActionError.test.tsx',
-  'src/shared/ui/components/ClientCombobox.test.tsx',
-  'src/shared/ui/components/DatePicker.test.tsx',
-  'src/shared/ui/components/InlineAlert.test.tsx',
-  'src/shared/ui/components/LineItemSuggestInput.test.tsx',
-  'src/shared/ui/toast/toast.test.tsx',
-  'tests/setup/vitest.setup.ts',
-]
 
 /** i18n ハードコード等 no-restricted-syntax の既存違反（7 ファイル・188 件）— C3-3 で drain。 */
 const restrictedSyntaxLedger = [
@@ -198,20 +175,17 @@ export default tseslint.config(
   },
   // --- 判例26 台帳の適用（既存のみ off・新規は full 強制） ---
   {
-    files: testingLibraryLedger,
-    rules: {
-      'testing-library/no-container': 'off',
-      'testing-library/no-manual-cleanup': 'off',
-      'testing-library/no-node-access': 'off',
-      'testing-library/no-wait-for-multiple-assertions': 'off',
-      'testing-library/prefer-presence-queries': 'off',
-      'testing-library/prefer-screen-queries': 'off',
-      'testing-library/render-result-naming-convention': 'off',
-    },
-  },
-  {
     files: restrictedSyntaxLedger,
     rules: { 'no-restricted-syntax': 'off' },
+  },
+  // 公認差異（台帳ではない・drain 対象外）: vitest.config.ts が `globals: false` なので
+  // React Testing Library は自前の auto-cleanup を登録できない（登録条件がグローバル
+  // afterEach の存在）。よって setup での手動 cleanup() は必須で、外すと DOM が
+  // テスト間に漏れる（実測: 11 ファイル / 42 テストが失敗）。将来 `globals: true` へ
+  // 倒すなら、この登録ごと不要になる。
+  {
+    files: ['tests/setup/**'],
+    rules: { 'testing-library/no-manual-cleanup': 'off' },
   },
   {
     files: sharedUiBarrelLedger,

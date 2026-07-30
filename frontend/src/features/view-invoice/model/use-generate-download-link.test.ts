@@ -8,11 +8,15 @@ import { useGenerateDownloadLink } from './use-generate-download-link'
 
 describe('useGenerateDownloadLink', () => {
   it('only allows generation for an issued invoice', () => {
-    const issued = renderHookWithProviders(() => useGenerateDownloadLink(toInvoiceId(1), true))
-    expect(issued.result.current.canGenerate).toBe(true)
+    const { result: issued } = renderHookWithProviders(() =>
+      useGenerateDownloadLink(toInvoiceId(1), true),
+    )
+    expect(issued.current.canGenerate).toBe(true)
 
-    const draft = renderHookWithProviders(() => useGenerateDownloadLink(toInvoiceId(1), false))
-    expect(draft.result.current.canGenerate).toBe(false)
+    const { result: draft } = renderHookWithProviders(() =>
+      useGenerateDownloadLink(toInvoiceId(1), false),
+    )
+    expect(draft.current.canGenerate).toBe(false)
   })
 
   it('generates a link and truncates the expiry to a date', async () => {

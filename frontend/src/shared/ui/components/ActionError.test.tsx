@@ -1,17 +1,17 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { ActionError } from './ActionError'
 
 describe('ActionError', () => {
   it('announces the error with role="alert" and shows title + description', () => {
-    const { getByRole, getByText } = render(
+    render(
       <ActionError title="Couldn't send the email" description="Check the address and retry." />,
     )
 
-    const alert = getByRole('alert')
+    const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent("Couldn't send the email")
-    expect(getByText('Check the address and retry.')).toBeInTheDocument()
+    expect(screen.getByText('Check the address and retry.')).toBeInTheDocument()
   })
 
   it('renders recovery actions and invokes their handlers', async () => {
@@ -19,7 +19,7 @@ describe('ActionError', () => {
     const onRetry = vi.fn()
     const onCheck = vi.fn()
 
-    const { getByRole } = render(
+    render(
       <ActionError
         title="Failed"
         description="Try again."
@@ -30,8 +30,8 @@ describe('ActionError', () => {
       />,
     )
 
-    await user.click(getByRole('button', { name: 'Resend' }))
-    await user.click(getByRole('button', { name: 'Check client' }))
+    await user.click(screen.getByRole('button', { name: 'Resend' }))
+    await user.click(screen.getByRole('button', { name: 'Check client' }))
 
     expect(onRetry).toHaveBeenCalledOnce()
     expect(onCheck).toHaveBeenCalledOnce()
@@ -41,11 +41,11 @@ describe('ActionError', () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
 
-    const { getByRole } = render(
+    render(
       <ActionError title="Failed" description="Try again." onClose={onClose} closeLabel="Close" />,
     )
 
-    await user.click(getByRole('button', { name: 'Close' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
     expect(onClose).toHaveBeenCalledOnce()
   })
 })
