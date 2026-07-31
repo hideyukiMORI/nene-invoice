@@ -183,6 +183,7 @@ In progress / designed: MFA (TOTP), fee write-off & over-payment split (tax-advi
 | **Glossary** | [`docs/explanation/glossary.md`](./docs/explanation/glossary.md) |
 | **Terminology registry** | [`docs/explanation/terminology.md`](./docs/explanation/terminology.md) |
 | **Operator guide (Tier A, ja)** | [`docs/operator-guide-ja.md`](./docs/operator-guide-ja.md) |
+| **Deployment runbook (ja)** | [`docs/deployment-runbook-ja.md`](./docs/deployment-runbook-ja.md) |
 | **Start here (agents)** | [`AGENTS.md`](./AGENTS.md) |
 | **Workflow** | [`docs/workflow.md`](./docs/workflow.md) |
 
