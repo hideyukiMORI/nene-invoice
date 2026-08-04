@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Tests\Support;
 
+use Nene2\Http\ClockInterface;
 use Nene2\Http\RequestScopedHolder;
+use Nene2\Http\UtcClock;
 use NeneInvoice\Invoice\Invoice;
 use NeneInvoice\Invoice\InvoiceListFilter;
 use NeneInvoice\Invoice\InvoiceListRow;
@@ -28,8 +30,11 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     /** @var RequestScopedHolder<int> */
     private RequestScopedHolder $orgId;
 
+    /** Mirrors PdoInvoiceRepository's clock; pass a FixedClock to pin `overdueOnly`. */
+    private ClockInterface $clock;
+
     /** @param RequestScopedHolder<int>|null $orgId */
-    public function __construct(?RequestScopedHolder $orgId = null)
+    public function __construct(?RequestScopedHolder $orgId = null, ?ClockInterface $clock = null)
     {
         if ($orgId === null) {
             $orgId = new RequestScopedHolder();
@@ -37,6 +42,7 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
         }
 
         $this->orgId = $orgId;
+        $this->clock = $clock ?? new UtcClock();
     }
 
     public function existsForQuote(int $quoteId): bool
@@ -128,7 +134,7 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     private function adminFiltered(InvoiceListFilter $filter): array
     {
         $orgId = $this->orgId->get();
-        $today = $filter->todayOrNow();
+        $today = $filter->todayOrNow($this->clock);
 
         return array_values(array_filter($this->byId, static function (Invoice $i) use ($orgId, $filter, $today): bool {
             if ($i->organizationId !== $orgId || $i->isDeleted) {
@@ -168,8 +174,9 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
     {
         $open  = [InvoiceStatus::Issued, InvoiceStatus::PartiallyPaid];
         $orgId = $this->orgId->get();
+        $today = $filter->todayOrNow($this->clock);
 
-        return array_values(array_filter($this->byId, function (Invoice $i) use ($orgId, $filter, $open): bool {
+        return array_values(array_filter($this->byId, static function (Invoice $i) use ($orgId, $filter, $open, $today): bool {
             if ($i->organizationId !== $orgId || $i->isDeleted) {
                 return false;
             }
@@ -188,7 +195,7 @@ final class InMemoryInvoiceRepository implements InvoiceRepositoryInterface
             if (($filter->outstandingOnly || $filter->overdueOnly) && !in_array($i->status, $open, true)) {
                 return false;
             }
-            if ($filter->overdueOnly && ($i->dueAt === null || $i->dueAt >= $filter->todayOrNow())) {
+            if ($filter->overdueOnly && ($i->dueAt === null || $i->dueAt >= $today)) {
                 return false;
             }
 
