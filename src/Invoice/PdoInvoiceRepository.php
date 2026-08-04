@@ -192,7 +192,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
         if ($filter->overdueOnly) {
             $clauses[] = "i.status IN ('issued', 'partially_paid')";
             $clauses[] = 'i.due_at IS NOT NULL AND i.due_at < ?';
-            $params[] = $filter->todayOrNow();
+            $params[] = $filter->todayOrNow($this->clock);
         }
 
         return [implode(' AND ', $clauses), $params];
@@ -258,7 +258,7 @@ final readonly class PdoInvoiceRepository implements InvoiceRepositoryInterface
 
         if ($filter->overdueOnly) {
             $clauses[] = 'due_at IS NOT NULL AND due_at < ?';
-            $params[] = $filter->todayOrNow();
+            $params[] = $filter->todayOrNow($this->clock);
         }
 
         return [implode(' AND ', $clauses), $params];

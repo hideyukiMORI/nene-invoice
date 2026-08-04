@@ -16,6 +16,9 @@ final class InvoiceResponse
 {
     /**
      * @param list<LineItem>|null $lines
+     * @param ?string $nowJst JST wall clock (`Y-m-d H:i:s`) the overdue check compares against.
+     *                        Omit to read the wall clock (current behaviour); pass it from a
+     *                        {@see \Nene2\Http\ClockInterface} to make `is_overdue` deterministic.
      * @return array<string, mixed>
      */
     public static function toArray(
@@ -23,6 +26,7 @@ final class InvoiceResponse
         ?array $lines = null,
         ?int $outstandingCents = null,
         ?string $clientName = null,
+        ?string $nowJst = null,
     ): array {
         $data = [
             'id' => $invoice->id,
@@ -32,7 +36,7 @@ final class InvoiceResponse
             'quote_id' => $invoice->quoteId,
             'invoice_number' => $invoice->invoiceNumber,
             'status' => $invoice->status->value,
-            'is_overdue' => self::computeIsOverdue($invoice),
+            'is_overdue' => self::computeIsOverdue($invoice, $nowJst),
             'is_qualified_invoice' => $invoice->isQualifiedInvoice,
             'issued_at' => $invoice->issuedAt,
             'due_at' => $invoice->dueAt,
@@ -55,7 +59,7 @@ final class InvoiceResponse
         return $data;
     }
 
-    private static function computeIsOverdue(Invoice $invoice): bool
+    private static function computeIsOverdue(Invoice $invoice, ?string $nowJst = null): bool
     {
         if ($invoice->status !== InvoiceStatus::Issued && $invoice->status !== InvoiceStatus::PartiallyPaid) {
             return false;
@@ -65,6 +69,6 @@ final class InvoiceResponse
             return false;
         }
 
-        return $invoice->dueAt < Jst::nowString();
+        return $invoice->dueAt < ($nowJst ?? Jst::nowString());
     }
 }

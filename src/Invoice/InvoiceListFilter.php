@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NeneInvoice\Invoice;
 
+use Nene2\Http\ClockInterface;
 use NeneInvoice\Support\Jst;
 
 /**
@@ -57,8 +58,14 @@ final readonly class InvoiceListFilter
             && $this->issuedTo === null;
     }
 
-    public function todayOrNow(): string
+    /**
+     * Reference JST calendar date for `overdueOnly`. Takes the clock from the
+     * caller rather than reading the wall clock, so the date boundary (UTC
+     * 15:00 = JST midnight) is deterministic under test. Passing a
+     * {@see \Nene2\Http\UtcClock} reproduces the previous `Jst::today()`.
+     */
+    public function todayOrNow(ClockInterface $clock): string
     {
-        return $this->today ?? Jst::today();
+        return $this->today ?? Jst::of($clock->now())->format('Y-m-d');
     }
 }
