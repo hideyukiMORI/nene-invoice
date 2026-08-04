@@ -34,29 +34,22 @@
     // re-argued in a PR — not silently extended.
     "GHSA-qwww-vcr4-c8h2",
 
-    // GHSA-mh99-v99m-4gvg — brace-expansion "DoS via unbounded expansion length" (high).
-    // Vulnerable range <=5.0.7; the fix is 5.0.8. We TAKE that fix where it is adoptable
-    // (`"brace-expansion@5": "^5.0.8"` in overrides). It is not adoptable on the 1.x / 2.x
-    // branches: there is no patched 1.x or 2.x release at all, and forcing 5.0.8 into them
-    // breaks the consumers — measured 2026-07-29: brace-expansion 5 exports a *named*
-    // `expand`, while `minimatch@3` does `require('brace-expansion')` and calls the module
-    // itself, so `npm run lint` dies with `TypeError: expand is not a function`. Overriding
-    // `minimatch@3` upward fails the same way (`eslint-plugin-import` / `eslint-plugin-jsx-a11y`
-    // do `_interopRequireDefault(require('minimatch'))` and call it; minimatch >=9 has no
-    // callable default export). Retiring the 1.x/2.x chain therefore needs an eslint-10-era
-    // major upgrade of eslint + its plugins — not something this gate PR can take.
+    // NOTE (2026-08-04, Issue #755) — brace-expansion and fast-uri are deliberately NOT
+    // listed here. Both are fixed by the lockfile, which is the outcome this gate prefers.
     //
-    // Why the residual risk is acceptable here (measured 2026-07-29): brace-expansion is
-    // **dev-only** in this tree — `npm ls brace-expansion --omit=dev --all` is empty, so it
-    // is in no shipped bundle and reaches no request path. The remaining vulnerable copies
-    // are 1.1.16 (via `minimatch@3` ← eslint / eslintrc / config-array / plugin-import /
-    // plugin-jsx-a11y) and 2.1.3 (via `glob` and `@redocly/openapi-core`), i.e. lint and
-    // codegen tooling run on our own repo contents. The advisory needs an attacker-supplied
-    // brace pattern; our glob patterns are literals in committed config.
+    // * brace-expansion — `GHSA-mh99-v99m-4gvg` was allowlisted on 2026-07-29 because the
+    //   1.x / 2.x branches had no patched release at the time. They do now: upstream shipped
+    //   1.1.17 / 1.1.18 and 2.1.4, and the whole tree moved to 1.1.18 / 2.1.4 / 5.0.9. That
+    //   also clears the follow-up advisory `GHSA-rgw5-rvv9-x895` ("bypassing the
+    //   CVE-2026-14257 mitigation", patched 1.1.18 / 2.1.4 / 5.0.9), so the entry was
+    //   REMOVED rather than renewed — audit-ci itself reported it as no longer needed.
+    //   The scope-limited `"brace-expansion@5"` override stays (floor raised to ^5.0.9); the
+    //   negative control for it still passes — `require('minimatch')` is callable and
+    //   `minimatch('a.js','*.js') === true` / `minimatch('a.js','*.ts') === false`, i.e. the
+    //   named-export shape of brace-expansion 5 has not leaked into the `minimatch@3` chain.
     //
-    // Expiry: 2026-08-31. Removed by the eslint 10 / plugin major wave (which moves the whole
-    // chain to `minimatch@10` → `brace-expansion@^5`), or by an upstream 1.x/2.x backport if
-    // one appears. Re-check at expiry — do not extend by reflex.
-    "GHSA-mh99-v99m-4gvg",
+    // * fast-uri — `GHSA-7p8r-x3mc-p8w7` ("host confusion via backslash authority
+    //   introducer") is patched at 3.1.5 within the 3.x line. `ajv@8.20.0` accepts it, so a
+    //   plain patch bump from 3.1.4 resolves it with no breaking change and no exception.
   ],
 }
