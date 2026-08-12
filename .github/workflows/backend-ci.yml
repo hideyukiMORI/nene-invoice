@@ -37,6 +37,11 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      # Verified locally with `composer audit --format=plain` before adding this step:
+      # 0 advisories at the time of introduction (2026-08-12).
+      - name: composer audit
+        run: composer audit --no-interaction
+
       - name: Prepare environment
         run: cp .env.example .env
 
