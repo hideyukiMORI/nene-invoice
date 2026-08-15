@@ -57,7 +57,6 @@
     // Expiry: 2026-08-31. Removed by the react-router v8 migration wave (bundled with the
     // NENE2 RR8 re-evaluation). If that wave slips past the expiry, the entry must be
     // re-argued in a PR — not silently extended.
-
     // NOTE (2026-08-04, Issue #755) — brace-expansion and fast-uri are deliberately NOT
     // listed here. Both are fixed by the lockfile, which is the outcome this gate prefers.
     //
