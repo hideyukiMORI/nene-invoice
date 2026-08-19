@@ -73,6 +73,10 @@ Handler → UseCase → RepositoryInterface → PdoRepository
 - **マルチテナント**: テナントスコープの全テーブル/クエリに `organization_id`。superadmin のみクロステナント（ADR 0006）
 - SQL: `Pdo*Repository` 内のみ
 
+> `cents` は**その通貨の最小単位**であって、表示額の 1/100 ではない。
+> **JPY は小数点以下 0 桁（ISO 4217）なので、`*_cents` には円をそのまま格納する——×100 しない。**
+> 例: ¥1,500 は `1500` として格納する。`116480` は ¥116,480 であって ¥1,164.80 ではない。
+
 詳細: `docs/development/backend-standards.md`, `docs/development/naming-conventions.md`, `docs/explanation/terminology.md`（用語レジストリ＝唯一の真実）
 
 ---
