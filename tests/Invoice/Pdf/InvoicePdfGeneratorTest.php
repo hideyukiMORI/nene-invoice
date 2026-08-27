@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 
 final class InvoicePdfGeneratorTest extends TestCase
 {
-    public function test_renders_japanese_with_a_cjk_font_not_dejavu(): void
+    public function test_renders_japanese_with_the_bundled_ipaex_font(): void
     {
         $invoice = new Invoice(
             organizationId: 1,
@@ -44,9 +44,11 @@ final class InvoicePdfGeneratorTest extends TestCase
         $pdf = (new InvoicePdfGenerator(new TaxCalculator(), new MpdfFactory()))->generate($data);
 
         self::assertStringStartsWith('%PDF', $pdf);
-        // Regression guard: Japanese must embed a CJK font (mode=ja), never the
-        // non-CJK DejaVu — which would render every 日本語 character as tofu (□).
-        self::assertStringContainsString('Sun-ExtA', $pdf);
+        // Regression guards: Japanese must embed the bundled IPAex (Japanese) font —
+        // never DejaVu (tofu □) and never mPDF's Sun-ExtA, a Chinese font whose
+        // glyph shapes are wrong for Japanese (2026-08-27, first real quote).
+        self::assertStringContainsString('IPAexGothic', $pdf);
+        self::assertStringNotContainsString('Sun-ExtA', $pdf);
         self::assertStringNotContainsString('DejaVu', $pdf);
     }
 

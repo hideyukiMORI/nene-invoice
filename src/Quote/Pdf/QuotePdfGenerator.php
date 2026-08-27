@@ -182,7 +182,7 @@ final readonly class QuotePdfGenerator
 <table class="items">
   <thead>
     <tr>
-      <th class="tc" width="5%">No.</th>
+      <th class="tc" width="7%">No.</th>
       <th>品目</th>
       <th class="tr" width="8%">数量</th>
       <th class="tr" width="14%">単価</th>
