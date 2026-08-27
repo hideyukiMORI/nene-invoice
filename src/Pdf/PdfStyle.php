@@ -106,11 +106,12 @@ final readonly class PdfStyle
         $headingFamily = $this->headingFontFamily();
         $template      = $this->templateCss();
 
-        // The default (unset) font-family keeps mPDF's mode=ja CJK font for body
-        // text; only headings switch to the bundled IPAex font.
+        // Body text is IPAexGothic (a Japanese face); headings switch between the
+        // bundled IPAex ゴシック / 明朝. Never leave body unset — mPDF would fall
+        // back to Sun-ExtA, a Chinese font (see MpdfFactory).
         return <<<CSS
 <style>
-body { font-size: 10pt; color: #111; }
+body { font-family: ipaexgothic; font-size: 10pt; color: #111; }
 h1 { font-family: {$headingFamily}; font-size: 22pt; text-align: center; margin: 0 0 {$headingMb}; padding-bottom: {$cellPadV}; }
 .header-meta { text-align: right; font-size: 9pt; margin-bottom: {$metaMb}; }
 .parties { width: 100%; border-collapse: collapse; margin-bottom: {$partiesMb}; }
@@ -124,7 +125,7 @@ h1 { font-family: {$headingFamily}; font-size: 22pt; text-align: center; margin:
 .seal { width: 20mm; height: 20mm; }
 .greeting { margin-bottom: {$greetingMb}; }
 .items { width: 100%; border-collapse: collapse; margin-bottom: {$itemsMb}; }
-.items th { font-family: {$headingFamily}; padding: {$cellPad}; }
+.items th { font-family: {$headingFamily}; padding: {$cellPad}; white-space: nowrap; }
 .items td { padding: {$cellPad}; }
 .tc { text-align: center; }
 .tr { text-align: right; }

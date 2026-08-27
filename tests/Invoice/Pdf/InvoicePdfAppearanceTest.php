@@ -22,8 +22,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Every PDF appearance combination (Issue #449) must render a valid PDF. This is
  * the feasibility guard for the bundled IPAex fonts (both ゴシック and 明朝 must
- * load) and the regression guard that no template breaks generation or drops the
- * mode=ja CJK font for body text.
+ * load) and the regression guard that no template breaks generation or lets body
+ * text fall back to mPDF's Sun-ExtA (a Chinese font) instead of IPAex.
  */
 final class InvoicePdfAppearanceTest extends TestCase
 {
@@ -34,8 +34,10 @@ final class InvoicePdfAppearanceTest extends TestCase
 
         self::assertStringStartsWith('%PDF', $pdf);
         self::assertGreaterThan(2000, strlen($pdf));
-        // Body text keeps the mode=ja CJK font regardless of heading choice.
-        self::assertStringContainsString('Sun-ExtA', $pdf);
+        // Body text is IPAexGothic regardless of heading choice; Sun-ExtA (Chinese)
+        // must never be embedded.
+        self::assertStringContainsString('IPAexGothic', $pdf);
+        self::assertStringNotContainsString('Sun-ExtA', $pdf);
         self::assertStringNotContainsString('DejaVu', $pdf);
     }
 
