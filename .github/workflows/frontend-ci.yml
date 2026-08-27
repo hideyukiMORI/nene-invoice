@@ -34,6 +34,7 @@ concurrency:
 jobs:
   frontend-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
@@ -77,6 +78,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: frontend
@@ -120,6 +122,7 @@ jobs:
     if: failure() && (github.event_name == 'schedule' || inputs.simulate_failure)
     needs: [frontend-check, e2e]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       issues: write
     env:
@@ -131,7 +134,10 @@ jobs:
       - name: Create or update the failure issue
         run: |
           set -euo pipefail
-          existing="$(gh issue list --state open --limit 100 --json number,title \
+          # 🔴 --limit は 100 では足りない。open が 100 件を超えると同名を取りこぼし、
+          # 毎週重複 issue を立てながら「装置は動いている」ように見える。
+          # 発現条件が「通知が読まれず溜まっている状態」そのものなので、最も必要なときに壊れる。
+          existing="$(gh issue list --state open --limit 1000 --json number,title \
             | jq -r --arg t "$ISSUE_TITLE" 'map(select(.title == $t)) | .[0].number // empty')"
           body="週次の schedule 実行が失敗しました。 実行: ${RUN_URL}"
           if [ -n "$existing" ]; then

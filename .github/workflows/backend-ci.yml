@@ -11,6 +11,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -56,6 +57,7 @@ jobs:
   # this is what guards the dialect-portable SQL from regressing.
   integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       mysql:
