@@ -229,7 +229,7 @@ HTML;
     {
         $parts = array_filter([
             $company->bankName,
-            $company->bankBranch !== null ? $company->bankBranch . '支店' : null,
+            $company->bankBranch,
             $company->accountType,
             $company->accountNumber,
         ]);
