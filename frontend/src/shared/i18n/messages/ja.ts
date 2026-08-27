@@ -564,7 +564,6 @@ export const jaMessages = {
   'admin.invoices.detail.backToList': '一覧へ戻る',
   'admin.invoices.detail.billTo': '請求先',
   'admin.invoices.detail.payTo': 'お振込先',
-  'admin.invoices.detail.branchSuffix': '{{branch}}支店',
   'admin.invoices.detail.corpHonorific': '{{name}} 御中',
   'admin.invoices.detail.personHonorific': '{{name}} 様',
   'admin.invoices.detail.overdueNote': '支払期限（{{dueAt}}）を過ぎています。残高 {{amount}}。',

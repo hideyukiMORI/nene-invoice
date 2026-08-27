@@ -560,7 +560,6 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.detail.backToList': 'Back to list',
   'admin.invoices.detail.billTo': 'Bill to',
   'admin.invoices.detail.payTo': 'Remit to',
-  'admin.invoices.detail.branchSuffix': '{{branch}} Branch',
   'admin.invoices.detail.corpHonorific': '{{name}}',
   'admin.invoices.detail.personHonorific': '{{name}}',
   'admin.invoices.detail.overdueNote': 'Past due ({{dueAt}}). Outstanding balance {{amount}}.',
