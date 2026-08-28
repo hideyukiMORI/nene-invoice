@@ -70,3 +70,43 @@ export async function login(
   // The primary nav only renders once the auth gate reveals the app shell.
   await page.getByRole('link', { name: '取引先' }).waitFor()
 }
+
+/** Issuer profile stub. Only `registration_number` matters to most specs. */
+const COMPANY_SETTINGS = {
+  organization_id: 1,
+  legal_name: 'テスト株式会社',
+  address: null,
+  phone: null,
+  email: null,
+  registration_number: null as string | null,
+  bank_name: null,
+  bank_branch: null,
+  account_type: null,
+  account_number: null,
+}
+
+/**
+ * Stubs GET /admin/company-settings.
+ *
+ * 🔴 Any spec that reaches the invoice detail needs this (#771). The issue
+ * action derives 適格請求書 eligibility from the registration number, and an
+ * UNSTUBBED request does not fail loudly here — the preview server answers the
+ * XHR with `index.html`, the query errors, and eligibility stays unknown, so
+ * the button renders plain and disabled. That reads as "the label changed"
+ * rather than "the stub is missing", which is what it actually is.
+ *
+ * Pass a `T`+13-digit number for an issuer that can hand out a 適格請求書, or
+ * `null` for one that cannot.
+ */
+export async function stubCompanySettings(
+  page: Page,
+  registrationNumber: string | null,
+): Promise<void> {
+  await page.route('**/admin/company-settings', (route, request) => {
+    if (request.method() === 'GET') {
+      route.fulfill(json({ ...COMPANY_SETTINGS, registration_number: registrationNumber }))
+    } else {
+      route.fallback()
+    }
+  })
+}
