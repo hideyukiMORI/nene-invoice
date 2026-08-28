@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { json, login } from './helpers/auth'
+import { json, login, stubCompanySettings } from './helpers/auth'
 
 /**
  * 正常系「1日分の業務」シナリオ。
@@ -150,6 +150,9 @@ test.describe('1日の業務（正常系）', () => {
     })
 
     // --- 請求 API（draft → issued、入金記録まで） ---
+    // 1日の流れは適格請求書として発行する（#771 の既定は登録番号の有無で決まる）。
+    await stubCompanySettings(page, 'T1234567890123')
+
     await page.route('**/admin/invoices/1/issue', (route) => {
       invoiceStatus = 'issued'
       route.fulfill(json(invoicePayload()))

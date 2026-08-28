@@ -702,9 +702,13 @@ export const jaMessages = {
   'admin.bankReconciliation.confirm.done': '消込しました',
   'admin.bankReconciliation.confirm.doneBody': '{{amount}} を入金として記録しました。',
   'admin.bankReconciliation.confirm.error': '消込できませんでした。',
-  'admin.invoices.issue.action': '発行する（適格請求書）',
+  // 既定は括弧なし。適格の名乗りは登録番号が在るときだけ足す（#771）。
+  'admin.invoices.issue.action': '発行する',
+  'admin.invoices.issue.actionQualified': '発行する（適格請求書）',
   'admin.invoices.issue.submitting': '発行中…',
   'admin.invoices.issue.error': '発行できませんでした。会社情報の登録番号をご確認ください。',
+  'admin.invoices.issue.errorUnqualified':
+    '発行できませんでした。時間をおいて、もう一度お試しください。',
   'admin.invoices.issue.recover': '会社設定を開く →',
   'admin.invoices.issue.successTitle': '発行しました',
   'admin.invoices.issue.successBody': '{{number}} を発行しました。',
@@ -712,6 +716,8 @@ export const jaMessages = {
   'admin.invoices.issue.confirmTitle': '請求書を発行しますか？',
   'admin.invoices.issue.confirmMessage':
     '発行すると番号が採番され、内容は確定（変更不可）になります。内容の正確性および税務上の取り扱いは、ご利用者の責任でご確認ください。',
+  'admin.invoices.issue.confirmMessageUnqualified':
+    '会社情報に登録番号がないため、適格請求書ではない請求書として発行します。発行すると番号が採番され、内容は確定（変更不可）になります。内容の正確性および税務上の取り扱いは、ご利用者の責任でご確認ください。',
   'admin.payments.title': '入金',
   'admin.payments.loading': '入金を読み込み中…',
   'admin.payments.empty': '入金はまだありません。',

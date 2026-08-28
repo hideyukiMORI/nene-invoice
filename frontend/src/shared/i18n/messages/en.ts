@@ -694,10 +694,14 @@ export const enMessages: MessageCatalog = {
   'admin.bankReconciliation.confirm.done': 'Reconciled',
   'admin.bankReconciliation.confirm.doneBody': 'Recorded {{amount}} as a payment.',
   'admin.bankReconciliation.confirm.error': 'Could not reconcile.',
-  'admin.invoices.issue.action': 'Issue (qualified invoice)',
+  // Plain by default. The qualified wording is added only when a registration
+  // number exists (#771).
+  'admin.invoices.issue.action': 'Issue',
+  'admin.invoices.issue.actionQualified': 'Issue (qualified invoice)',
   'admin.invoices.issue.submitting': 'Issuing…',
   'admin.invoices.issue.error':
     'Could not issue. Please check the registration number in company settings.',
+  'admin.invoices.issue.errorUnqualified': 'Could not issue. Please try again in a moment.',
   'admin.invoices.issue.recover': 'Open company settings →',
   'admin.invoices.issue.successTitle': 'Issued',
   'admin.invoices.issue.successBody': '{{number}} has been issued.',
@@ -705,6 +709,8 @@ export const enMessages: MessageCatalog = {
   'admin.invoices.issue.confirmTitle': 'Issue this invoice?',
   'admin.invoices.issue.confirmMessage':
     'Issuing allocates the invoice number and locks the contents (no further edits). The accuracy of the contents and their tax treatment are your responsibility to verify.',
+  'admin.invoices.issue.confirmMessageUnqualified':
+    'Company settings hold no registration number, so this will be issued as a non-qualified invoice. Issuing allocates the invoice number and locks the contents (no further edits). The accuracy of the contents and their tax treatment are your responsibility to verify.',
   'admin.payments.title': 'Payments',
   'admin.payments.loading': 'Loading payments…',
   'admin.payments.empty': 'No payments yet.',
