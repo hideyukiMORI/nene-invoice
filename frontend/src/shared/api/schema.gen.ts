@@ -1708,6 +1708,7 @@ export interface components {
         LineItemInput: {
             description: string;
             quantity: number;
+            /** @description Unit price in the currency's smallest unit. May be negative for a discount line; it nets against the other lines of the same tax rate. A tax-rate group whose taxable amount ends up negative is rejected with 422 `validation-failed`. */
             unit_price_cents: number;
             /** @enum {integer} */
             tax_rate_bps: 800 | 1000;

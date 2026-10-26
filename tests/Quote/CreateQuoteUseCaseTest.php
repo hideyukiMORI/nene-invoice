@@ -210,7 +210,19 @@ final class CreateQuoteUseCaseTest extends TestCase
         self::assertSame(100_000_000, $result->quote->taxCents);
     }
 
-    public function test_rejects_negative_unit_price(): void
+    public function test_accepts_discount_line(): void
+    {
+        $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [
+            new LineItemInput('Work', 1, 330_000, 1000),
+            new LineItemInput('Discount', 1, -100_000, 1000),
+        ]));
+
+        self::assertSame(230_000, $result->quote->subtotalCents);
+        self::assertSame(23_000, $result->quote->taxCents);
+        self::assertSame(253_000, $result->quote->totalCents);
+    }
+
+    public function test_rejects_discount_that_makes_a_rate_group_negative(): void
     {
         $this->expectException(QuoteValidationException::class);
         $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, -1, 1000)]));
@@ -218,7 +230,7 @@ final class CreateQuoteUseCaseTest extends TestCase
 
     public function test_accepts_zero_unit_price(): void
     {
-        // Zero is the lower boundary of the >= 0 rule (free/discount lines).
+        // A free line: zero is still a valid unit price.
         $result = $this->useCase->execute(1, new CreateQuoteInput($this->clientId, [new LineItemInput('X', 1, 0, 1000)]));
 
         self::assertSame(0, $result->quote->subtotalCents);

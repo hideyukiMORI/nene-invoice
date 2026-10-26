@@ -209,9 +209,10 @@ final readonly class InvoicePdfGenerator implements InvoicePdfGeneratorInterface
 HTML;
     }
 
+    /** A discount line reads "−¥100,000" (U+2212 minus, ahead of the sign; Issue #787). */
     private static function yen(int $cents): string
     {
-        return '&yen;' . number_format($cents);
+        return ($cents < 0 ? '−' : '') . '&yen;' . number_format(abs($cents));
     }
 
     /** Issuer seal (社印) as a stamped data-URI image, or '' when none is set. */

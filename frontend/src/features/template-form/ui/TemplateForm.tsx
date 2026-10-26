@@ -3,6 +3,7 @@ import type { TemplateId } from '@/entities/template'
 import { useTranslation } from '@/shared/i18n'
 import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate } from '@/shared/lib/format-money'
+import { negativeTaxRateGroup } from '@/shared/lib/tax'
 import {
   Button,
   ErrorState,
@@ -53,8 +54,13 @@ export function TemplateForm({ templateId }: TemplateFormProps) {
   const { form, lines, addLine, onSubmit, isPending, errorMessage, isEdit } = state
   const {
     register,
+    getValues,
     formState: { errors },
   } = form
+  // A discount line (#787) may not take its rate group below zero; the schema's
+  // refine blocks the submit, this names the rate.
+  const negativeRate =
+    errors.line_items?.root !== undefined ? negativeTaxRateGroup(getValues('line_items')) : null
 
   return (
     <FormLayout>
@@ -81,6 +87,14 @@ export function TemplateForm({ templateId }: TemplateFormProps) {
             <LineGrid lines={lines} register={register} addLine={addLine} />
           </div>
 
+          {negativeRate !== null && (
+            <InlineAlert
+              tone="error"
+              message={t('admin.lineItems.negativeRateGroup', {
+                rate: formatTaxRate(negativeRate),
+              })}
+            />
+          )}
           {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
 
           <div>
@@ -134,7 +148,6 @@ function LineGrid({ lines, register, addLine }: LineGridProps) {
               id={`line-${index}-unit`}
               className="num text-right"
               type="number"
-              min={0}
               aria-label={t('admin.invoices.line.unitPrice')}
               {...register(`line_items.${index}.unit_price_cents`, { valueAsNumber: true })}
             />

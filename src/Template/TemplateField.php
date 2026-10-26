@@ -7,6 +7,8 @@ namespace NeneInvoice\Template;
 use Nene2\Validation\ValidationError;
 use Nene2\Validation\ValidationException;
 use NeneInvoice\LineItem\LineItemInput;
+use NeneInvoice\LineItem\NegativeTaxableAmountException;
+use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Support\TextLimit;
 
 /**
@@ -14,6 +16,8 @@ use NeneInvoice\Support\TextLimit;
  *
  * A template needs a name; line presets are optional (a notes-only template is
  * valid) but each present line must be well-formed with a supported tax rate.
+ * A line may carry a negative unit price (a discount line, Issue #787), held to
+ * the same per-rate rule as documents so a template never seeds one that is refused.
  * The defaults seed document lines and never override the tax that applies.
  */
 final class TemplateField
@@ -57,12 +61,18 @@ final class TemplateField
                 throw new ValidationException([new ValidationError($field, 'Each line item needs description (string) and quantity / unit_price_cents / tax_rate_bps (integers).', 'invalid')]);
             }
 
-            if ($quantity <= 0 || $unitPrice < 0 || !in_array($taxRate, self::ALLOWED_TAX_RATES, true)) {
-                throw new ValidationException([new ValidationError($field, 'Line item quantity must be > 0, unit price >= 0, and tax rate one of 800 or 1000.', 'invalid')]);
+            if ($quantity <= 0 || !in_array($taxRate, self::ALLOWED_TAX_RATES, true)) {
+                throw new ValidationException([new ValidationError($field, 'Line item quantity must be > 0 and tax rate one of 800 or 1000.', 'invalid')]);
             }
             TextLimit::check($description, $field . '.description', TextLimit::LONG);
 
             $lines[] = new LineItemInput($description, $quantity, $unitPrice, $taxRate);
+        }
+
+        try {
+            (new TaxCalculator())->calculate($lines);
+        } catch (NegativeTaxableAmountException $e) {
+            throw new ValidationException([new ValidationError('body.line_items', $e->getMessage(), 'invalid')]);
         }
 
         $notes = $body['notes'] ?? null;

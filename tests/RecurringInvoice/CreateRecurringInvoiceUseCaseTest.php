@@ -117,4 +117,28 @@ final class CreateRecurringInvoiceUseCaseTest extends TestCase
         $this->expectException(RecurringInvoiceValidationException::class);
         $this->useCase->execute(7, $this->input(firstRunOn: '2026-13-40'));
     }
+
+    public function test_accepts_discount_line_on_one_rate_only(): void
+    {
+        // 10%: ¥10,000 − ¥3,000 = ¥7,000 → ¥700; 8%: ¥5,000 → ¥400 (Issue #787).
+        $result = $this->useCase->execute(7, $this->input(lines: [
+            new LineItemInput('コンサル', 1, 10000, 1000),
+            new LineItemInput('軽減', 1, 5000, 800),
+            new LineItemInput('お値引き', 1, -3000, 1000),
+        ]));
+
+        self::assertSame(12000, $result->schedule->subtotalCents);
+        self::assertSame(1100, $result->schedule->taxCents);
+        self::assertSame(13100, $result->schedule->totalCents);
+    }
+
+    public function test_rejects_discount_that_makes_a_rate_group_negative(): void
+    {
+        $this->expectException(RecurringInvoiceValidationException::class);
+        $this->useCase->execute(7, $this->input(lines: [
+            new LineItemInput('コンサル', 1, 10000, 1000),
+            new LineItemInput('軽減', 1, 5000, 800),
+            new LineItemInput('お値引き', 1, -6000, 800),
+        ]));
+    }
 }

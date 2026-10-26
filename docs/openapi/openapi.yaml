@@ -3220,7 +3220,11 @@ components:
           minimum: 1
         unit_price_cents:
           type: integer
-          minimum: 0
+          description: >
+            Unit price in the currency's smallest unit. May be negative for a
+            discount line; it nets against the other lines of the same tax rate.
+            A tax-rate group whose taxable amount ends up negative is rejected
+            with 422 `validation-failed`.
         tax_rate_bps:
           type: integer
           enum: [800, 1000]

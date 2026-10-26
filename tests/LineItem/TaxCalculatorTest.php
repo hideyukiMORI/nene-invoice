@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace NeneInvoice\Tests\LineItem;
 
 use NeneInvoice\LineItem\LineItemInput;
+use NeneInvoice\LineItem\NegativeTaxableAmountException;
 use NeneInvoice\LineItem\TaxCalculator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -161,5 +162,67 @@ final class TaxCalculatorTest extends TestCase
         self::assertSame(999_999_999, $result->subtotalCents);
         self::assertSame(100_000_000, $result->taxCents);
         self::assertSame(1_099_999_999, $result->totalCents);
+    }
+
+    public function test_discount_line_nets_within_its_rate_before_rounding(): void
+    {
+        // ¥330,000 − ¥100,000 at 10% → taxable ¥230,000, tax ¥23,000 (Issue #787).
+        $result = $this->calculator->calculate([
+            new LineItemInput('Work', 1, 330_000, 1000),
+            new LineItemInput('Discount', 1, -100_000, 1000),
+        ]);
+
+        self::assertSame(230_000, $result->subtotalCents);
+        self::assertSame(23_000, $result->taxCents);
+        self::assertSame(253_000, $result->totalCents);
+        self::assertCount(1, $result->breakdown);
+    }
+
+    public function test_discount_on_one_rate_leaves_the_other_untouched(): void
+    {
+        // 10%: ¥10,000 − ¥2,000 = ¥8,000 → ¥800. 8%: ¥3,105 → round(248.4) = ¥248.
+        $result = $this->calculator->calculate([
+            new LineItemInput('Std', 1, 10_000, 1000),
+            new LineItemInput('Food', 1, 3_105, 800),
+            new LineItemInput('Discount', 1, -2_000, 1000),
+        ]);
+
+        self::assertSame(800, $result->breakdown[0]->taxRateBps);
+        self::assertSame(3_105, $result->breakdown[0]->taxableAmountCents);
+        self::assertSame(248, $result->breakdown[0]->taxCents);
+        self::assertSame(1000, $result->breakdown[1]->taxRateBps);
+        self::assertSame(8_000, $result->breakdown[1]->taxableAmountCents);
+        self::assertSame(800, $result->breakdown[1]->taxCents);
+        self::assertSame(11_105, $result->subtotalCents);
+        self::assertSame(1_048, $result->taxCents);
+        self::assertSame(12_153, $result->totalCents);
+    }
+
+    public function test_rate_group_driven_negative_is_refused(): void
+    {
+        // The total would be positive, but the 8% group nets to −¥500.
+        try {
+            $this->calculator->calculate([
+                new LineItemInput('Std', 1, 10_000, 1000),
+                new LineItemInput('Food', 1, 1_000, 800),
+                new LineItemInput('Food discount', 1, -1_500, 800),
+            ]);
+            self::fail('Expected NegativeTaxableAmountException');
+        } catch (NegativeTaxableAmountException $e) {
+            self::assertSame(800, $e->taxRateBps);
+        }
+    }
+
+    public function test_discount_cancelling_the_whole_document_gives_zero(): void
+    {
+        $result = $this->calculator->calculate([
+            new LineItemInput('Work', 1, 50_000, 1000),
+            new LineItemInput('Full discount', 1, -50_000, 1000),
+        ]);
+
+        self::assertSame(0, $result->subtotalCents);
+        self::assertSame(0, $result->taxCents);
+        self::assertSame(0, $result->totalCents);
+        self::assertSame(0, $result->breakdown[0]->taxableAmountCents);
     }
 }

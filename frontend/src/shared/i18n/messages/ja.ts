@@ -331,6 +331,8 @@ export const jaMessages = {
   'admin.clientPicker.registered': '「{{name}}」を取引先に登録しました',
   'admin.clientPicker.registerError': '取引先を登録できませんでした。',
   'admin.lineItemSuggest.usage': '{{count}}回使用',
+  'admin.lineItems.negativeRateGroup':
+    '{{rate}} 対象の合計がマイナスになります。値引きは同じ税率の明細の合計を超えられません。',
   'admin.lineItemSuggest.master': 'マスタ',
   'admin.clients.filter.search': '検索',
   'admin.clients.filter.searchPlaceholder': '名称・読み・担当者・メールで検索',
