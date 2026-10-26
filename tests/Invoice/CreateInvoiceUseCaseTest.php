@@ -200,14 +200,43 @@ final class CreateInvoiceUseCaseTest extends TestCase
         self::assertSame(100_000_000, $result->invoice->taxCents);
     }
 
-    public function test_rejects_negative_unit_price(): void
+    public function test_accepts_discount_line_within_one_rate(): void
     {
         $clientId = $this->client();
 
+        // 5 charges = ¥330,000, one discount line −¥100,000, all 10% (Issue #787).
+        $result = $this->useCase->execute(7, new CreateInvoiceInput(
+            clientId: $clientId,
+            lines: [
+                new LineItemInput('Migration', 1, 100_000, 1000),
+                new LineItemInput('Runtime upgrade', 1, 150_000, 1000),
+                new LineItemInput('Login hardening', 1, 40_000, 1000),
+                new LineItemInput('Backups', 1, 20_000, 1000),
+                new LineItemInput('QA', 1, 20_000, 1000),
+                new LineItemInput('Discount', 1, -100_000, 1000),
+            ],
+        ));
+
+        self::assertSame(230_000, $result->invoice->subtotalCents);
+        self::assertSame(23_000, $result->invoice->taxCents);
+        self::assertSame(253_000, $result->invoice->totalCents);
+        self::assertSame(-100_000, $result->lines[5]->unitPriceCents);
+    }
+
+    public function test_rejects_discount_that_makes_a_rate_group_negative(): void
+    {
+        $clientId = $this->client();
+
+        // The 8% group nets to −¥500 even though the document total stays positive.
         $this->expectException(InvoiceValidationException::class);
+        $this->expectExceptionMessage('8% 対象の合計がマイナス');
         $this->useCase->execute(7, new CreateInvoiceInput(
             clientId: $clientId,
-            lines: [new LineItemInput('X', 1, -1, 1000)],
+            lines: [
+                new LineItemInput('Std', 1, 10_000, 1000),
+                new LineItemInput('Food', 1, 1_000, 800),
+                new LineItemInput('Food discount', 1, -1_500, 800),
+            ],
         ));
     }
 
@@ -215,7 +244,7 @@ final class CreateInvoiceUseCaseTest extends TestCase
     {
         $clientId = $this->client();
 
-        // Zero is the lower boundary of the >= 0 rule (free/discount lines).
+        // A free line: zero is still a valid unit price.
         $result = $this->useCase->execute(7, new CreateInvoiceInput(
             clientId: $clientId,
             lines: [new LineItemInput('X', 1, 0, 1000)],

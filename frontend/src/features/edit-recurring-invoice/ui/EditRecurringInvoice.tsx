@@ -3,7 +3,7 @@ import { RECURRING_FREQUENCIES, type RecurringInvoiceId } from '@/entities/recur
 import { useTranslation } from '@/shared/i18n'
 import { useLineGridEnter } from '@/shared/keyboard'
 import { formatTaxRate, formatYen } from '@/shared/lib/format-money'
-import { computeDocumentTotals } from '@/shared/lib/tax'
+import { computeDocumentTotals, negativeTaxRateGroup } from '@/shared/lib/tax'
 import {
   Button,
   ClientCombobox,
@@ -103,13 +103,14 @@ function EditRecurringInvoiceForm({ state }: { state: EditRecurringInvoiceReady 
   }
 
   const watched = useWatch({ control, name: 'line_items' })
-  const totals = computeDocumentTotals(
-    watched.map((line) => ({
-      quantity: line.quantity,
-      unit_price_cents: line.unit_price_cents,
-      tax_rate_bps: line.tax_rate_bps,
-    })),
-  )
+  const taxableLines = watched.map((line) => ({
+    quantity: line.quantity,
+    unit_price_cents: line.unit_price_cents,
+    tax_rate_bps: line.tax_rate_bps,
+  }))
+  const totals = computeDocumentTotals(taxableLines)
+  // A discount line (#787) may not take its rate group below zero.
+  const negativeRate = negativeTaxRateGroup(taxableLines)
 
   return (
     <div className="content-mid">
@@ -242,7 +243,6 @@ function EditRecurringInvoiceForm({ state }: { state: EditRecurringInvoiceReady 
                       id={`line-${index}-unit`}
                       className="num text-right"
                       type="number"
-                      min={0}
                       aria-label={t('admin.invoices.line.unitPrice')}
                       {...register(`line_items.${index}.unit_price_cents`, { valueAsNumber: true })}
                     />
@@ -313,6 +313,14 @@ function EditRecurringInvoiceForm({ state }: { state: EditRecurringInvoiceReady 
             </div>
           </div>
 
+          {negativeRate !== null && (
+            <InlineAlert
+              tone="error"
+              message={t('admin.lineItems.negativeRateGroup', {
+                rate: formatTaxRate(negativeRate),
+              })}
+            />
+          )}
           {errorMessage !== null && <InlineAlert tone="error" message={errorMessage} />}
 
           <div className="form-actions-end">

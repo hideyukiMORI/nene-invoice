@@ -14,7 +14,11 @@ namespace NeneInvoice\LineItem;
  */
 final class TaxCalculator
 {
-    /** @param list<LineItemInput> $lines */
+    /**
+     * @param list<LineItemInput> $lines
+     *
+     * @throws NegativeTaxableAmountException when a rate group's taxable amount is negative
+     */
     public function calculate(array $lines): TaxCalculationResult
     {
         // Sum taxable amounts per rate, preserving first-seen order, then sort by rate.
@@ -32,6 +36,10 @@ final class TaxCalculator
         $taxCents = 0;
 
         foreach ($taxableByRate as $rateBps => $taxableAmountCents) {
+            if ($taxableAmountCents < 0) {
+                throw new NegativeTaxableAmountException($rateBps);
+            }
+
             $rateTaxCents = self::roundHalfUp($taxableAmountCents, $rateBps);
 
             $breakdown[] = new TaxBreakdownLine($rateBps, $taxableAmountCents, $rateTaxCents);
@@ -49,7 +57,9 @@ final class TaxCalculator
 
     /**
      * Half-up rounding of `taxableAmountCents * rateBps / 10000`, integer-only.
-     * Valid for non-negative amounts (billing amounts are non-negative).
+     * Valid for non-negative amounts only (`intdiv` truncates toward zero, so a
+     * negative amount would round the wrong way); {@see calculate()} guarantees
+     * this by refusing a negative rate group before rounding.
      */
     private static function roundHalfUp(int $taxableAmountCents, int $rateBps): int
     {

@@ -52,6 +52,38 @@ final class InvoicePdfGeneratorTest extends TestCase
         self::assertStringNotContainsString('DejaVu', $pdf);
     }
 
+    public function test_renders_a_discount_line_with_the_japanese_font(): void
+    {
+        $invoice = new Invoice(
+            organizationId: 1,
+            clientId: 1,
+            status: InvoiceStatus::Issued,
+            subtotalCents: 230000,
+            taxCents: 23000,
+            totalCents: 253000,
+            invoiceNumber: 'INV-2026-002',
+            issuedAt: '2026-10-31',
+            dueAt: '2026-11-30',
+        );
+        $lines = [
+            new LineItem(LineItemParent::Invoice, 1, 'サーバー移転', 1, 330000, 1000),
+            new LineItem(LineItemParent::Invoice, 1, 'お値引き', 1, -100000, 1000, 1),
+        ];
+        $data = new InvoicePdfData(
+            new InvoiceWithLines($invoice, $lines, 253000),
+            new CompanySettings(organizationId: 1, legalName: '株式会社ネネ商会'),
+            new Client(organizationId: 1, name: '株式会社サンプル製作所'),
+        );
+
+        $pdf = (new InvoicePdfGenerator(new TaxCalculator(), new MpdfFactory()))->generate($data);
+
+        // The "−" (U+2212) of "−¥100,000" must come from IPAex too — no fallback font (Issue #787).
+        self::assertStringStartsWith('%PDF', $pdf);
+        self::assertStringContainsString('IPAexGothic', $pdf);
+        self::assertStringNotContainsString('DejaVu', $pdf);
+        self::assertStringNotContainsString('Sun-ExtA', $pdf);
+    }
+
     public function test_renders_a_valid_pdf_with_a_base64_logo(): void
     {
         // 1x1 transparent PNG stored in company_settings.logo_url (Issue #510).

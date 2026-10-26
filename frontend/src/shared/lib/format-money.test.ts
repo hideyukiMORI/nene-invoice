@@ -10,6 +10,10 @@ describe('formatYen', () => {
   it('handles zero', () => {
     expect(formatYen(0)).toBe('¥0')
   })
+
+  it('puts a minus sign (U+2212) ahead of the yen mark for a discount', () => {
+    expect(formatYen(-100000)).toBe('−¥100,000')
+  })
 })
 
 describe('formatTaxRate', () => {

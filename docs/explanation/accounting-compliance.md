@@ -87,6 +87,12 @@ validated in the UseCase before any document is issued or rendered.
   document.
 - The per-rate consumption tax figure produced here is exactly the
   税率ごとの消費税額 the qualified invoice must display.
+- **Discount lines** (値引き, #787): a line may carry a negative unit price
+  (quantity stays ≥ 1). It nets against the other lines **of the same rate**
+  before that rate's single rounding, so the per-rate taxable amount and tax are
+  the discounted figures. A document in which any rate group's taxable amount
+  is negative is rejected (422); hence subtotal, tax and total are never
+  negative. A discount spanning both rates must be split per rate by the user.
 
 ---
 

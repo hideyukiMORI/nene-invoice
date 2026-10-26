@@ -13,18 +13,23 @@ import { useLineItemSuggestions, type LineItemSuggestion } from '@/entities/line
 import { useCreateQuote as useCreateQuoteMutation, type CreateQuoteInput } from '@/entities/quote'
 import { useTranslation } from '@/shared/i18n'
 import { useDebouncedValue } from '@/shared/lib/use-debounced-value'
+import { negativeTaxRateGroup } from '@/shared/lib/tax'
 import { useToast } from '@/shared/ui'
 
 const lineSchema = z.object({
   description: z.string().min(1),
   quantity: z.number().int().min(1),
-  unit_price_cents: z.number().int().min(0),
+  // May be negative: a discount line (#787), held to the per-rate rule below.
+  unit_price_cents: z.number().int(),
   tax_rate_bps: z.union([z.literal(800), z.literal(1000)]),
 })
 
 const schema = z.object({
   client_id: z.number().int().positive(),
-  line_items: z.array(lineSchema).min(1),
+  line_items: z
+    .array(lineSchema)
+    .min(1)
+    .refine((ls) => negativeTaxRateGroup(ls) === null),
   valid_until: z.string(),
   notes: z.string(),
 })

@@ -19,6 +19,7 @@ use NeneInvoice\DocumentSequence\DocumentType;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\NegativeTaxableAmountException;
 use NeneInvoice\LineItem\TaxCalculator;
 use NeneInvoice\Support\Jst;
 
@@ -80,13 +81,13 @@ final readonly class CreateQuoteUseCase implements CreateQuoteUseCaseInterface
             if ($line->quantity <= 0) {
                 throw new QuoteValidationException('Line item quantity must be greater than zero.');
             }
-
-            if ($line->unitPriceCents < 0) {
-                throw new QuoteValidationException('Line item unit price must not be negative.');
-            }
         }
 
-        $totals = $this->taxCalculator->calculate($input->lines);
+        try {
+            $totals = $this->taxCalculator->calculate($input->lines);
+        } catch (NegativeTaxableAmountException $e) {
+            throw new QuoteValidationException($e->getMessage(), previous: $e);
+        }
 
         // Fiscal year and the "today" the validity period is measured from use the
         // JST wall clock so the Japanese calendar date is correct (ADR 0010).

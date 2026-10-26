@@ -16,6 +16,7 @@ use NeneInvoice\Client\ClientRepositoryInterface;
 use NeneInvoice\LineItem\LineItem;
 use NeneInvoice\LineItem\LineItemParent;
 use NeneInvoice\LineItem\LineItemRepositoryInterface;
+use NeneInvoice\LineItem\NegativeTaxableAmountException;
 use NeneInvoice\LineItem\TaxCalculator;
 
 /**
@@ -75,12 +76,13 @@ final readonly class CreateRecurringInvoiceUseCase
             if ($line->quantity <= 0) {
                 throw new RecurringInvoiceValidationException('Line item quantity must be greater than zero.');
             }
-            if ($line->unitPriceCents < 0) {
-                throw new RecurringInvoiceValidationException('Line item unit price must not be negative.');
-            }
         }
 
-        $totals = $this->taxCalculator->calculate($input->lines);
+        try {
+            $totals = $this->taxCalculator->calculate($input->lines);
+        } catch (NegativeTaxableAmountException $e) {
+            throw new RecurringInvoiceValidationException($e->getMessage(), previous: $e);
+        }
 
         return $this->tx->transactional(function (DatabaseQueryExecutorInterface $exec) use (
             $actorUserId,
